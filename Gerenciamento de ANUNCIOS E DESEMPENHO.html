@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mentoria Ferraretto - Gerenciamento de Produtos</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tabs button { padding: 10px 20px; border: none; background: #ccc; cursor: pointer; }
+    .tabs button.active { background: #4CAF50; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 5px;
+    }
+    
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef9c3; color: #854d0e; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .sugestao-item {
+      transition: all 0.3s ease;
+    }
+    
+    .sugestao-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 min-h-screen p-4">
+  <div class="max-w-7xl mx-auto">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">
+        <i class="fas fa-store mr-2 text-green-600"></i>Mentoria Ferraretto - Gerenciamento de Produtos
+      </h1>
+      <p class="text-gray-600">Gerencie seus anúncios, importe dados e analise desempenho</p>
+    </header>
+
+    <div class="flex flex-wrap gap-2 mb-6 justify-center">
+      <button class="tab-button active px-4 py-2 bg-green-600 text-white rounded-lg shadow flex items-center" data-tab="cadastro">
+        <i class="fas fa-file-import mr-2"></i>Cadastro/Atualização
+      </button>
+      <button class="tab-button px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center" data-tab="anuncios">
+        <i class="fas fa-list mr-2"></i>Anúncios Salvos
+      </button>
+      <button class="tab-button px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center" data-tab="analise">
+        <i class="fas fa-chart-line mr-2"></i>Análise/Sugestão
+      </button>
+      <button class="tab-button px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center" data-tab="evolucao">
+        <i class="fas fa-history mr-2"></i>Evolução
+      </button>
+    </div>
+
+    <!-- Cadastro/Atualização -->
+    <div id="cadastro" class="tab-content active bg-white p-6 rounded-lg shadow">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-file-import text-2xl text-green-600 mr-3"></i>
+        <h2 class="text-2xl font-bold">Importar Dados de Produtos</h2>
+      </div>
+      
+      <p class="text-gray-600 mb-6">
+        Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Card Básico -->
+        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+          <div class="flex items-start mb-3">
+            <div class="bg-blue-100 p-3 rounded-full mr-3">
+              <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Informações Básicas</h3>
+              <p class="text-gray-600 text-sm">Nome, Descrição, Categoria</p>
+            </div>
+          </div>
+          <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
+                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+        </div>
+        
+        <!-- Card Vendas -->
+        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+          <div class="flex items-start mb-3">
+            <div class="bg-green-100 p-3 rounded-full mr-3">
+              <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Informações de Vendas</h3>
+              <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
+            </div>
+          </div>
+          <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
+                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+        </div>
+        
+        <!-- Card Frete -->
+        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+          <div class="flex items-start mb-3">
+            <div class="bg-yellow-100 p-3 rounded-full mr-3">
+              <i class="fas fa-truck text-yellow-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Informações de Frete</h3>
+              <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
+            </div>
+          </div>
+          <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
+                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
+        </div>
+        
+        <!-- Card Mídia -->
+        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+          <div class="flex items-start mb-3">
+            <div class="bg-purple-100 p-3 rounded-full mr-3">
+              <i class="fas fa-image text-purple-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Informações de Mídia</h3>
+              <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
+            </div>
+          </div>
+          <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
+                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+        </div>
+        
+        <!-- Card Desempenho -->
+        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition md:col-span-2">
+          <div class="flex items-start mb-3">
+            <div class="bg-red-100 p-3 rounded-full mr-3">
+              <i class="fas fa-chart-bar text-red-600 text-xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
+              <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
+            </div>
+          </div>
+          <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
+                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+        </div>
+      </div>
+      
+      <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div class="flex items-center mb-2">
+          <i class="fas fa-database text-blue-500 mr-2"></i>
+          <span class="font-semibold">Dados para Salvar:</span>
+          <span id="contador-produtos" class="ml-2 bg-blue-500 text-white px-2 py-1 rounded-full text-sm">0 produtos</span>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Após importar as planilhas, clique abaixo para salvar no Firebase</p>
+        <button onclick="salvarNoFirebase()" class="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition flex items-center">
+          <i class="fas fa-save mr-2"></i>Salvar no Firebase
+        </button>
+      </div>
+    </div>
+
+    <!-- Anúncios Salvos -->
+    <div id="anuncios" class="tab-content bg-white p-6 rounded-lg shadow">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-list text-2xl text-blue-600 mr-3"></i>
+        <h2 class="text-2xl font-bold">Anúncios Salvos</h2>
+      </div>
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <button onclick="carregarAnuncios()" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center">
+          <i class="fas fa-sync-alt mr-2"></i>Recarregar Anúncios
+        </button>
+        
+        <div class="relative flex-grow max-w-md">
+          <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+          <input type="text" id="campoBusca" placeholder="Buscar por ID, Nome ou SKU..." 
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table id="tabelaAnuncios" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(0)">ID</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagem</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+      
+      <div class="mt-4 text-sm text-gray-500">
+        <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
+      </div>
+    </div>
+
+    <!-- Análise/Sugestão -->
+    <div id="analise" class="tab-content bg-white p-6 rounded-lg shadow">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-chart-line text-2xl text-purple-600 mr-3"></i>
+        <h2 class="text-2xl font-bold">Análise e Sugestões de Otimização</h2>
+      </div>
+      
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start">
+          <i class="fas fa-robot text-purple-500 text-xl mt-1 mr-3"></i>
+          <div>
+            <p class="font-medium">Sugestões baseadas em análise de:</p>
+            <ul class="list-disc pl-5 mt-2 text-gray-700">
+              <li>Taxa de conversão abaixo do esperado</li>
+              <li>Imagens de capa ausentes ou de baixa qualidade</li>
+              <li>Títulos incompletos ou pouco atrativos</li>
+              <li>Descrições com poucas informações</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <button onclick="gerarSugestoes()" class="bg-purple-600 text-white px-5 py-3 rounded-lg shadow hover:bg-purple-700 transition flex items-center mb-6">
+        <i class="fas fa-bolt mr-2"></i>Gerar Sugestões de Otimização
+      </button>
+      
+      <div id="sugestoesIA" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <!-- Evolução -->
+    <div id="evolucao" class="tab-content bg-white p-6 rounded-lg shadow">
+      <div class="flex items-center mb-4">
+        <i class="fas fa-history text-2xl text-yellow-600 mr-3"></i>
+        <h2 class="text-2xl font-bold">Evolução dos Anúncios</h2>
+      </div>
+      
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div class="flex items-start">
+          <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1 mr-3"></i>
+          <div>
+            <p class="font-medium">Acompanhe a evolução dos seus produtos:</p>
+            <ul class="list-disc pl-5 mt-2 text-gray-700">
+              <li>Histórico de alterações nos produtos</li>
+              <li>Evolução de visualizações e vendas</li>
+              <li>Comparação entre versões anteriores</li>
+              <li>Impacto das alterações no desempenho</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <button onclick="carregarEvolucao()" class="bg-yellow-600 text-white px-5 py-3 rounded-lg shadow hover:bg-yellow-700 transition flex items-center mb-6">
+        <i class="fas fa-sync-alt mr-2"></i>Carregar Dados de Evolução
+      </button>
+      
+      <div id="conteudoEvolucao" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalhes -->
+  <div id="modalDetalhes" class="modal">
+    <div class="modal-content w-full max-w-3xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold"><i class="fas fa-info-circle mr-2 text-blue-500"></i>Detalhes do Produto</h3>
+        <button onclick="fecharModal('modalDetalhes')" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="detalhesProduto" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- Modal Histórico -->
+  <div id="modalHistorico" class="modal">
+    <div class="modal-content w-full max-w-3xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold"><i class="fas fa-history mr-2 text-purple-500"></i>Histórico de Alterações</h3>
+        <button onclick="fecharModal('modalHistorico')" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="conteudoHistorico"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase configuration and initialization
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDskmCmkvGgnV9I_MkhBgHOsCoU4VarZbw",
+      authDomain: "sobra-shopee.firebaseapp.com",
+      projectId: "sobra-shopee",
+      storageBucket: "sobra-shopee.appspot.com",
+      messagingSenderId: "884927523696",
+      appId: "1:884927523696:web:334f198596e85462d2bdb5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Global products object
+    window.produtos = {};
+
+    // Update product counter
+    function atualizarContador() {
+      const count = Object.keys(window.produtos).length;
+      document.getElementById('contador-produtos').textContent = `${count} produto${count !== 1 ? 's' : ''}`;
+    }
+
+    // Process spreadsheets
+    window.processarPlanilha = function(file, tipo) {
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const workbook = XLSX.read(e.target.result, { type: "binary" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+          if (tipo === "desempenho") {
+            const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
+            if (!dataReferencia) return;
+            window.dataDesempenhoReferencia = dataReferencia;
+          }
+
+          for (const linha of dados) {
+            const id = linha["ID do Produto"] || linha["ID do Item"];
+            if (!id) continue;
+            
+            if (!window.produtos[id]) window.produtos[id] = { id };
+            const p = window.produtos[id];
+
+            switch (tipo) {
+              case "desempenho":
+                p.dataReferencia = window.dataDesempenhoReferencia;
+                p.visitas = linha["Visitantes do Produto (Visita)"];
+                p.visualizacoes = linha["Visualizações da Página do Produto"];
+                p.cliquesBusca = linha["Cliques em buscas"];
+                p.curtidas = linha["Curtidas"];
+                p.saidas = linha["Visitantes que saíram da página"];
+                p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
+                p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
+                p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
+                p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
+                p.compradoresPedido = linha["Compradores (Pedido realizado)"];
+                p.unidadesPedido = linha["Unidades (Pedido realizado)"];
+                p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
+                p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
+                p.compradoresPago = linha["Compradores (Pedidos pago)"];
+                p.unidadesPago = linha["Unidades (Pedido pago)"];
+                p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
+                p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
+                break;
+                
+              case "vendas":
+                p.preco = linha["Preço"];
+                p.estoque = linha["Estoque do Vendedor"];
+                p.gtin = linha["GTIN (EAN)"];
+                p.skuVariante = linha["SKU"];
+                p.nomeVariante = linha["Nome"];
+                p.varianteId = linha["Variante Identificador"];
+                break;
+
+              case "basica":
+                p.nome = linha["Nome do Produto"] || p.nome;
+                p.descricao = linha["Descrição do Produto"];
+                break;
+
+              case "frete":
+                p.peso = linha["Peso do Produto/kg"];
+                p.comprimento = linha["Comprimento"];
+                p.largura = linha["Largura"];
+                p.altura = linha["Altura"];
+                p.taxaFrete = linha["Taxa de frete"];
+                break;
+
+              case "midia":
+                p.categoria = linha["Categoria"];
+                p.imagemCapa = linha["Imagem de capa"];
+                p.tabelaMedidas = linha["Template da Tabela de Medidas"];
+                p.nomeVariacao = linha["Nome da Variação 1"];
+                p.opcoesVariacao = Object.keys(linha)
+                  .filter(k => k.startsWith("Opção"))
+                  .map(k => linha[k])
+                  .filter(Boolean);
+                break;
+            }
+          }
+
+          atualizarContador();
+          showNotification(`✅ Planilha ${tipo} importada com sucesso!`, 'success');
+        } catch (error) {
+          console.error("Erro ao processar planilha:", error);
+          showNotification(`❌ Erro ao processar planilha: ${error.message}`, 'error');
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
+
+    // Save to Firebase
+    window.salvarNoFirebase = async () => {
+      const total = Object.keys(window.produtos).length;
+      if (total === 0) {
+        showNotification("⚠️ Nenhum dado para salvar.", 'warning');
+        return;
+      }
+
+      let atualizados = 0;
+      const loadingMsg = showNotification("⏳ Salvando dados no Firebase...", 'info', true);
+
+      try {
+        for (const [id, novosParciais] of Object.entries(window.produtos)) {
+          const ref = doc(db, "anuncios", id);
+          const snapshot = await getDoc(ref);
+
+          let dadosAntigos = {};
+          let dadosCompletos = { ...novosParciais };
+          let salvar = true;
+          let registrarHistorico = false;
+
+          if (snapshot.exists()) {
+            dadosAntigos = snapshot.data();
+            dadosCompletos = { ...dadosAntigos, ...novosParciais };
+
+            // Check if something actually changed
+            if (objetosIguais(dadosAntigos, dadosCompletos)) {
+              salvar = false;
+            } else {
+              const camposAntigos = Object.keys(dadosAntigos);
+              registrarHistorico = camposAntigos.some(chave =>
+                !objetosIguais(dadosAntigos[chave], dadosCompletos[chave])
+              );
+            }
+          }
+
+          if (!salvar) continue;
+
+          await setDoc(ref, dadosCompletos);
+
+          if (registrarHistorico) {
+            await addDoc(collection(db, "atualizacoes"), {
+              id,
+              dataHora: new Date().toISOString(),
+              dadosAntigos,
+              dadosNovos: dadosCompletos,
+            });
+          }
+
+          atualizados++;
+        }
+
+        // Clear products after saving
+        window.produtos = {};
+        atualizarContador();
+        
+        loadingMsg.remove();
+        showNotification(`✅ ${atualizados} anúncio(s) salvos/atualizados no Firebase!`, 'success');
+      } catch (error) {
+        console.error("Erro ao salvar no Firebase:", error);
+        loadingMsg.remove();
+        showNotification(`❌ Erro ao salvar: ${error.message}`, 'error');
+      }
+    };
+
+    // Helper functions
+    function objetosIguais(a, b) {
+      if (a === b) return true;
+      if (a == null && b == null) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+
+      const chavesA = Object.keys(a).sort();
+      const chavesB = Object.keys(b).sort();
+      if (chavesA.length !== chavesB.length) return false;
+
+      return chavesA.every(k => objetosIguais(a[k], b[k]));
+    }
+
+    function showNotification(message, type = 'info', persistent = false) {
+      const notification = document.createElement('div');
+      notification.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+      }`;
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      if (!persistent) {
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
+      }
+      
+      return notification;
+    }
+
+    // Tab navigation
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Load products
+    window.carregarAnuncios = async function () {
+      const tbody = document.querySelector("#tabelaAnuncios tbody");
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
+      
+      try {
+        const querySnapshot = await getDocs(collection(db, "anuncios"));
+        tbody.innerHTML = '';
+        
+        if (querySnapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Nenhum anúncio encontrado</td></tr>';
+          return;
+        }
+
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          const conversao = data.conversaoPago ? parseFloat(data.conversaoPago) : 0;
+          const estoque = data.estoque ? parseInt(data.estoque) : 0;
+          
+          const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
+          const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
+          
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-gray-50";
+          tr.innerHTML = `
+            <td class="px-4 py-3 whitespace-nowrap">
+              <div class="font-mono text-sm">${data.id || ""}</div>
+            </td>
+            <td class="px-4 py-3">
+              ${data.imagemCapa ? `<img src="${data.imagemCapa}" class="w-16 h-16 object-contain rounded border">` : '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>'}
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-medium text-gray-900">${data.nome || "Sem nome"}</div>
+              <div class="text-gray-500 text-sm">${data.categoria || "Sem categoria"}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-semibold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
+              <div class="text-gray-500 text-sm">Frete: R$ ${data.taxaFrete || "0.00"}</div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="badge badge-${estoqueStatus}">
+                ${estoque} un
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="badge badge-${conversaoStatus}">
+                ${conversao}%
+              </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <button onclick="verDetalhes('${doc.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                <i class="fas fa-eye mr-1"></i>Ver Detalhes
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error("Erro ao carregar anúncios:", error);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erro ao carregar dados</td></tr>';
+      }
+    }
+
+    // View product details
+    window.verDetalhes = async function (id) {
+      try {
+        const docRef = doc(db, "anuncios", id);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+          showNotification("❌ Anúncio não encontrado", "error");
+          return;
+        }
+        
+        const data = docSnap.data();
+        const container = document.getElementById("detalhesProduto");
+        
+        container.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-1">
+              ${data.imagemCapa ? 
+                `<img src="${data.imagemCapa}" class="w-full h-auto rounded-lg border shadow">` : 
+                '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>'}
+            </div>
+            
+            <div class="md:col-span-2">
+              <h4 class="text-lg font-bold">${data.nome || "Sem nome"}</h4>
+              <div class="text-gray-600 mb-2">ID: ${data.id}</div>
+              
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-gray-50 p-3 rounded">
+                  <div class="text-sm text-gray-500">Preço</div>
+                  <div class="text-lg font-bold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded">
+                  <div class="text-sm text-gray-500">Frete</div>
+                  <div class="text-lg font-bold">R$ ${data.taxaFrete || "0.00"}</div>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded">
+                  <div class="text-sm text-gray-500">Estoque</div>
+                  <div class="text-lg font-bold">${data.estoque || "0"} un</div>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded">
+                  <div class="text-sm text-gray-500">Conversão</div>
+                  <div class="text-lg font-bold">${data.conversaoPago || "0.00"}%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t pt-4">
+            <h5 class="font-bold mb-2"><i class="fas fa-file-alt mr-2"></i>Descrição</h5>
+            <div class="bg-gray-50 p-4 rounded border">
+              ${data.descricao ? data.descricao.replace(/\n/g, '<br>') : "Sem descrição"}
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h5 class="font-bold mb-2"><i class="fas fa-chart-line mr-2"></i>Desempenho</h5>
+              <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
+                <div><span class="font-medium">Visualizações:</span> ${data.visualizacoes || "0"}</div>
+                <div><span class="font-medium">Curtidas:</span> ${data.curtidas || "0"}</div>
+                <div><span class="font-medium">Vendas (Pago):</span> R$ ${data.vendasPago || "0.00"}</div>
+                <div><span class="font-medium">Unidades Vendidas:</span> ${data.unidadesPago || "0"}</div>
+                <div><span class="font-medium">Taxa de Rejeição:</span> ${data.taxaRejeicao || "0.00"}%</div>
+              </div>
+            </div>
+            
+            <div>
+              <h5 class="font-bold mb-2"><i class="fas fa-cube mr-2"></i>Especificações</h5>
+              <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
+                <div><span class="font-medium">Peso:</span> ${data.peso || "0"} kg</div>
+                <div><span class="font-medium">Dimensões:</span> ${data.comprimento || "0"} x ${data.largura || "0"} x ${data.altura || "0"} cm</div>
+                <div><span class="font-medium">SKU:</span> ${data.skuVariante || ""}</div>
+                <div><span class="font-medium">Categoria:</span> ${data.categoria || ""}</div>
+                <div><span class="font-medium">Data Referência:</span> ${data.dataReferencia || ""}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-end space-x-2">
+            <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+              <i class="fas fa-history mr-2"></i>Ver Histórico
+            </button>
+            <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+              Fechar
+            </button>
+          </div>
+        `;
+        
+        document.getElementById("modalDetalhes").style.display = "flex";
+      } catch (error) {
+        console.error("Erro ao carregar detalhes:", error);
+        showNotification("❌ Erro ao carregar detalhes do produto", "error");
+      }
+    }
+
+    // View history
+    window.verHistorico = async function (id) {
+      const container = document.getElementById("conteudoHistorico");
+      container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando histórico...</div>';
+      document.getElementById("modalHistorico").style.display = "flex";
+
+      try {
+        const q = await getDocs(collection(db, "atualizacoes"));
+        const historico = [];
+        q.forEach(doc => {
+          const h = doc.data();
+          if (h.id === id) historico.push(h);
+        });
+
+        historico.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
+
+        if (historico.length === 0) {
+          container.innerHTML = '<div class="text-center py-4 text-gray-500">Nenhum histórico encontrado</div>';
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="mb-4 font-medium">Total de alterações: ${historico.length}</div>
+          <div class="space-y-4">
+            ${historico.map(h => `
+              <div class="border rounded-lg p-4 bg-white">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-semibold">${new Date(h.dataHora).toLocaleString("pt-BR")}</span>
+                  <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-blue-500 hover:text-blue-700">
+                    <i class="fas fa-chevron-down"></i>
+                  </button>
+                </div>
+                <div class="hidden bg-gray-50 p-3 rounded mt-2 text-sm">
+                  <pre class="whitespace-pre-wrap">${JSON.stringify(h.dadosNovos, null, 2)}</pre>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } catch (error) {
+        console.error("Erro ao carregar histórico:", error);
+        container.innerHTML = '<div class="text-center py-4 text-red-500">Erro ao carregar histórico</div>';
+      }
+    }
+
+    // Close modal
+    window.fecharModal = function(modalId) {
+      document.getElementById(modalId).style.display = "none";
+    }
+
+    // Generate suggestions
+    window.gerarSugestoes = async function () {
+      const container = document.getElementById("sugestoesIA");
+      container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Analisando anúncios...</div>';
+      
+      try {
+        const querySnapshot = await getDocs(collection(db, "anuncios"));
+        const sugestoes = [];
+        
+        querySnapshot.forEach(doc => {
+          const a = doc.data();
+          const id = a.id || "(sem ID)";
+          const nome = a.nome || "(sem nome)";
+          const conversao = parseFloat(a.conversaoPago || 0);
+          const visualizacoes = parseInt(a.visualizacoes || 0);
+          const imagemCapa = a.imagemCapa || "";
+          const descricao = a.descricao || "";
+          
+          let problemas = [];
+          let nivel = "baixo";
+
+          // Conversion analysis
+          if (conversao < 2 && visualizacoes >= 100) {
+            problemas.push("Conversão muito baixa para o volume de visualizações");
+            nivel = "alto";
+          } else if (conversao < 5 && visualizacoes >= 50) {
+            problemas.push("Conversão abaixo do esperado");
+            nivel = "médio";
+          }
+          
+          // Image analysis
+          if (!imagemCapa) {
+            problemas.push("Imagem de capa ausente");
+            nivel = problemas.length ? nivel : "médio";
+          }
+          
+          // Title analysis
+          if (!nome || nome.trim().length < 10) {
+            problemas.push("Título muito curto ou incompleto");
+            nivel = problemas.length ? nivel : "médio";
+          } else if (nome.length > 80) {
+            problemas.push("Título muito longo (acima de 80 caracteres)");
+            nivel = problemas.length ? nivel : "médio";
+          }
+          
+          // Description analysis
+          if (!descricao) {
+            problemas.push("Descrição do produto ausente");
+            nivel = problemas.length ? nivel : "médio";
+          } else if (descricao.length < 200) {
+            problemas.push("Descrição muito curta (menos de 200 caracteres)");
+            nivel = problemas.length ? nivel : "médio";
+          }
+          
+          if (problemas.length > 0) {
+            const corNivel = nivel === "alto" ? "bg-red-100 border-red-300" : 
+                             nivel === "médio" ? "bg-yellow-100 border-yellow-300" : "bg-blue-100 border-blue-300";
+            
+            const iconNivel = nivel === "alto" ? "fa-exclamation-triangle text-red-500" : 
+                             nivel === "médio" ? "fa-exclamation-circle text-yellow-500" : "fa-info-circle text-blue-500";
+            
+            sugestoes.push(`
+              <div class="sugestao-item border rounded-lg p-4 ${corNivel}">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 class="font-bold text-lg">${nome}</h4>
+                    <div class="text-sm text-gray-600">ID: ${id}</div>
+                  </div>
+                  <i class="fas ${iconNivel} text-xl"></i>
+                </div>
+                
+                <div class="mb-3">
+                  ${imagemCapa ? `<img src="${imagemCapa}" class="w-24 h-24 object-contain border rounded-lg mx-auto mb-2">` : ''}
+                </div>
+                
+                <div class="mb-3">
+                  <h5 class="font-medium mb-1">Problemas identificados:</h5>
+                  <ul class="list-disc pl-5 text-sm">
+                    ${problemas.map(p => `<li>${p}</li>`).join('')}
+                  </ul>
+                </div>
+                
+                <div class="text-sm">
+                  <h5 class="font-medium mb-1">Sugestões:</h5>
+                  <ul class="list-disc pl-5">
+                    ${problemas.includes("Imagem de capa ausente") ? '<li>Adicione uma imagem de capa atrativa</li>' : ''}
+                    ${problemas.includes("Título muito curto ou incompleto") ? '<li>Melhore o título com palavras-chave relevantes</li>' : ''}
+                    ${problemas.includes("Descrição muito curta") ? '<li>Amplie a descrição com detalhes do produto</li>' : ''}
+                    ${problemas.some(p => p.includes("Conversão")) ? '<li>Revise o preço e ofertas especiais</li>' : ''}
+                    <li>Verifique a qualidade das fotos</li>
+                    <li>Analise a concorrência</li>
+                  </ul>
+                </div>
+                
+                <div class="mt-3 flex justify-end">
+                  <button onclick="copiarTitulo('${nome.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm mr-2">
+                    <i class="far fa-copy mr-1"></i>Copiar Título
+                  </button>
+                  <button onclick="verDetalhes('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                    <i class="fas fa-eye mr-1"></i>Ver Detalhes
+                  </button>
+                </div>
+              </div>
+            `);
+          }
+        });
+
+        container.innerHTML = sugestoes.length ? 
+          sugestoes.join('') : 
+          '<div class="text-center py-8 text-green-600"><i class="fas fa-check-circle mr-2"></i>Nenhuma sugestão no momento. Seus anúncios estão bem otimizados!</div>';
+      } catch (error) {
+        console.error("Erro ao gerar sugestões:", error);
+        container.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>Erro ao gerar sugestões</div>';
+      }
+    }
+
+    // Copy title to clipboard
+    window.copiarTitulo = function (titulo) {
+      navigator.clipboard.writeText(titulo).then(() => {
+        showNotification("📋 Título copiado para a área de transferência!", "success");
+      });
+    }
+
+    // Load evolution data
+    window.carregarEvolucao = async function () {
+      const container = document.getElementById("conteudoEvolucao");
+      container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando dados de evolução...</div>';
+      
+      try {
+        const [anunciosSnap, historicoSnap] = await Promise.all([
+          getDocs(collection(db, "anuncios")),
+          getDocs(collection(db, "atualizacoes")),
+        ]);
+
+        const historicoPorId = {};
+        historicoSnap.forEach(doc => {
+          const h = doc.data();
+          if (!historicoPorId[h.id]) historicoPorId[h.id] = [];
+          historicoPorId[h.id].push(h);
+        });
+
+        const cards = [];
+
+        anunciosSnap.forEach(doc => {
+          const a = doc.data();
+          const id = a.id || "(sem ID)";
+          const nome = a.nome || "(sem nome)";
+          const visitas = a.visitas || a.visualizacoes || 0;
+          const vendas = a.vendasPago || 0;
+          const conversao = a.conversaoPago || 0;
+
+          const historico = (historicoPorId[id] || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
+          let evolucaoHTML = "";
+
+          if (historico.length > 0) {
+            evolucaoHTML = historico.map((h, index) => {
+              const antes = h.dadosAntigos;
+              const depois = h.dadosNovos;
+              const visitasAntes = antes.visitas || antes.visualizacoes || 0;
+              const visitasDepois = depois.visitas || depois.visualizacoes || 0;
+              const vendasAntes = antes.vendasPago || 0;
+              const vendasDepois = depois.vendasPago || 0;
+              
+              const difVisitas = visitasDepois - visitasAntes;
+              const difVendas = vendasDepois - vendasAntes;
+              
+              const iconVisitas = difVisitas >= 0 ? "fa-arrow-up text-green-500" : "fa-arrow-down text-red-500";
+              const iconVendas = difVendas >= 0 ? "fa-arrow-up text-green-500" : "fa-arrow-down text-red-500";
+              
+              return `
+                <div class="border-l-4 border-blue-400 pl-3 py-1">
+                  <div class="font-medium">Alteração #${index + 1} - ${new Date(h.dataHora).toLocaleDateString("pt-BR")}</div>
+                  <div class="grid grid-cols-2 gap-2 text-sm mt-1">
+                    <div class="flex items-center">
+                      <i class="fas ${iconVisitas} mr-1"></i>
+                      Visitas: ${visitasAntes} → ${visitasDepois} 
+                      <span class="ml-1 ${difVisitas >= 0 ? 'text-green-600' : 'text-red-600'}">(${difVisitas >= 0 ? '+' : ''}${difVisitas})</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas ${iconVendas} mr-1"></i>
+                      Vendas: ${vendasAntes} → ${vendasDepois}
+                      <span class="ml-1 ${difVendas >= 0 ? 'text-green-600' : 'text-red-600'}">(${difVendas >= 0 ? '+' : ''}${difVendas})</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("");
+          } else {
+            evolucaoHTML = '<div class="text-gray-500 italic">Sem histórico de alterações</div>';
+          }
+
+          cards.push(`
+            <div class="bg-white border rounded-lg p-4 shadow-sm">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h4 class="font-bold">${nome}</h4>
+                  <div class="text-sm text-gray-600">ID: ${id}</div>
+                </div>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                  ${historico.length} alterações
+                </span>
+              </div>
+              
+              <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                <div class="bg-gray-50 p-2 rounded">
+                  <div class="text-xs text-gray-500">Visitas</div>
+                  <div class="font-bold">${visitas}</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded">
+                  <div class="text-xs text-gray-500">Vendas</div>
+                  <div class="font-bold">${vendas}</div>
+                </div>
+                <div class="bg-gray-50 p-2 rounded">
+                  <div class="text-xs text-gray-500">Conversão</div>
+                  <div class="font-bold">${conversao}%</div>
+                </div>
+              </div>
+              
+              <div>
+                <h5 class="font-medium mb-2 border-b pb-1">Histórico de Alterações</h5>
+                <div class="space-y-3 text-sm max-h-60 overflow-y-auto p-2">
+                  ${evolucaoHTML}
+                </div>
+              </div>
+            </div>
+          `);
+        });
+
+        container.innerHTML = cards.length ? 
+          `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${cards.join('')}</div>` : 
+          '<div class="text-center py-8 text-gray-500">Nenhum dado de evolução encontrado</div>';
+      } catch (error) {
+        console.error("Erro ao carregar evolução:", error);
+        container.innerHTML = '<div class="text-center py-8 text-red-500">Erro ao carregar dados de evolução</div>';
+      }
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+      atualizarContador();
+    });
+  </script>
+</body>
+</html>

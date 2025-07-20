@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calculadora de Custo de Produção</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #3498db;
+      --accent: #e74c3c;
+      --light: #ecf0f1;
+      --dark: #34495e;
+      --success: #27ae60;
+      --warning: #f39c12;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    
+    .container {
+      background-color: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      border-bottom: 3px solid var(--secondary);
+      padding-bottom: 15px;
+    }
+    
+    h2 {
+      color: var(--secondary);
+      margin-top: 30px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #eee;
+    }
+    
+    h3 {
+      color: var(--dark);
+      margin-top: 25px;
+      margin-bottom: 15px;
+    }
+    
+    h4 {
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    
+    .tab-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+      justify-content: center;
+    }
+    
+    .tab-buttons button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .tab-buttons button:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    }
+    
+    .tab {
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .tab.active {
+      display: block;
+    }
+    
+    input, select {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    label {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    
+    button {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+    
+    button:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .result {
+      background: #f8f9fa;
+      padding: 20px;
+      margin-top: 25px;
+      border-radius: 10px;
+      border-left: 4px solid var(--secondary);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    
+    .result strong {
+      color: var(--primary);
+    }
+    
+    .cilindro-bloco {
+      margin-bottom: 25px;
+      padding: 20px;
+      border: 1px solid #e0e6ed;
+      border-radius: 12px;
+      background: #f8fafc;
+      transition: transform 0.3s ease;
+    }
+    
+    .cilindro-bloco:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .cilindro-linha {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .cilindro-linha label {
+      width: auto;
+      min-width: 100px;
+      font-weight: bold;
+      color: var(--dark);
+    }
+    
+    .cilindro-linha input,
+    .cilindro-linha select {
+      width: 120px;
+      padding: 10px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e0e6ed;
+    }
+    
+    th {
+      background-color: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    tr:hover {
+      background-color: #eef5fd;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-primary {
+      background: var(--success);
+    }
+    
+    .btn-secondary {
+      background: var(--warning);
+    }
+    
+    .btn-danger {
+      background: var(--accent);
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-weight: 500;
+    }
+    
+    .alert-warning {
+      background: #fef9e7;
+      border-left: 4px solid var(--warning);
+      color: #7d6608;
+    }
+    
+    .alert-success {
+      background: #eafaf1;
+      border-left: 4px solid var(--success);
+      color: #196f3d;
+    }
+    
+    .flex-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .flex-item {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .summary-box {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--secondary);
+    }
+    
+    .summary-box h3 {
+      margin-top: 0;
+      color: var(--primary);
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .resumo-container {
+      padding: 25px;
+      border: 1px solid #e0e6ed;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      margin-top: 20px;
+    }
+    
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--secondary);
+      color: white;
+      border-radius: 50%;
+      margin-right: 8px;
+      font-size: 14px;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+      border-top: 1px solid #eee;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .tab-buttons {
+        flex-direction: column;
+      }
+      
+      .tab-buttons button {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .cilindro-linha {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .cilindro-linha input,
+      .cilindro-linha select {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛠 Mentoria Ferraretto Cálculo de Produção</h1>
+
+    <div class="tab-buttons">
+      <button onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
+      <button onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
+      <button onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
+      <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
+      <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
+      <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
+    </div>
+
+    <div id="mdf" class="tab active">
+      <h2>🪵 Custo de MDF por Trio de Cilindros</h2>
+      <div class="alert alert-warning">
+        <strong>Nota:</strong> Para cada peça, preencha as medidas e selecione o tipo de chapa. 
+        Certifique-se de cadastrar as chapas na aba correspondente antes de selecionar.
+      </div>
+
+      <div class="flex-container">
+        <div class="flex-item">
+          <div class="cilindro-bloco">
+            <h4>🔹 Peça 1</h4>
+            <div class="cilindro-linha">
+              <label>Altura (cm):</label>
+              <input type="number" id="alturaP1" value="80" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Diâmetro (cm):</label>
+              <input type="number" id="diametroP1" value="50" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Chapa:</label>
+              <select id="chapaP1" class="chapaSelect"></select>
+            </div>
+          </div>
+
+          <div class="cilindro-bloco">
+            <h4>🔹 Peça 2</h4>
+            <div class="cilindro-linha">
+              <label>Altura (cm):</label>
+              <input type="number" id="alturaP2" value="60" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Diâmetro (cm):</label>
+              <input type="number" id="diametroP2" value="40" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Chapa:</label>
+              <select id="chapaP2" class="chapaSelect"></select>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex-item">
+          <div class="cilindro-bloco">
+            <h4>🔹 Peça 3</h4>
+            <div class="cilindro-linha">
+              <label>Altura (cm):</label>
+              <input type="number" id="alturaP3" value="40" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Diâmetro (cm):</label>
+              <input type="number" id="diametroP3" value="30" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Chapa:</label>
+              <select id="chapaP3" class="chapaSelect"></select>
+            </div>
+          </div>
+
+          <div class="cilindro-bloco">
+            <h4>🔹 Peça 4</h4>
+            <div class="cilindro-linha">
+              <label>Altura (cm):</label>
+              <input type="number" id="alturaP4" value="30" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Diâmetro (cm):</label>
+              <input type="number" id="diametroP4" value="25" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Chapa:</label>
+              <select id="chapaP4" class="chapaSelect"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <button class="btn-primary" onclick="calcularMDF()">Calcular Custo MDF</button>
+      <div class="result" id="resultadoMDF">
+        <p>Preencha os dados das peças e clique em calcular para ver o resultado.</p>
+      </div>
+    </div>
+
+    <div id="mao" class="tab">
+      <h2>👷 Cálculo de Mão de Obra</h2>
+      
+      <div class="summary-box">
+        <h3>Informações necessárias</h3>
+        <div class="cilindro-linha">
+          <label>Mão de Obra Direta por Peça (R$):</label>
+          <input type="number" id="maoDireta" value="4" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Mão de Obra Indireta Mensal (R$):</label>
+          <input type="number" id="maoIndireta" value="11000" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Peças Produzidas no Mês:</label>
+          <input type="number" id="quantidadeMes" value="8000" min="0">
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="calcularMaoObra()">Calcular Mão de Obra</button>
+      <div class="result" id="resultadoMaoObra">
+        <p>Preencha os dados acima e clique em calcular para ver o resultado.</p>
+      </div>
+    </div>
+
+    <div id="embalagem" class="tab">
+      <h2>📦 Cálculo de Custo de Embalagem Individual</h2>
+      
+      <div class="summary-box">
+        <h3>Componentes de Embalagem</h3>
+        <div class="cilindro-linha">
+          <label>Caixa (R$):</label>
+          <input type="number" id="caixa" value="2" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Plástico Bolha (R$):</label>
+          <input type="number" id="plastico" value="1.5" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Saco (R$):</label>
+          <input type="number" id="saco" value="0.5" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Etiqueta (R$):</label>
+          <input type="number" id="etiqueta" value="0.3" min="0" step="0.01">
+        </div>
+        <div class="cilindro-linha">
+          <label>Outros (R$):</label>
+          <input type="number" id="outros" value="0" min="0" step="0.01">
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="calcularEmbalagem()">Calcular Embalagem</button>
+      <div class="result" id="resultadoEmbalagem">
+        <p>Preencha os custos dos componentes acima e clique em calcular para ver o resultado.</p>
+      </div>
+    </div>
+    
+    <div id="cadastroChapas" class="tab">
+      <h2>📋 Cadastro de Chapas de MDF</h2>
+      
+      <div class="alert alert-success">
+        <strong>Instruções:</strong> Preencha os dados da chapa abaixo e clique em "Salvar Chapa". 
+        As chapas cadastradas aparecerão na tabela e estarão disponíveis para seleção na aba de Custo MDF.
+      </div>
+      
+      <div class="summary-box">
+        <h3>Dados da Chapa</h3>
+        <div class="cilindro-linha">
+          <label>Comprimento (cm):</label>
+          <input type="number" id="comprimentoChapa" min="0" placeholder="Ex: 275">
+        </div>
+        <div class="cilindro-linha">
+          <label>Largura (cm):</label>
+          <input type="number" id="larguraChapaCadastro" min="0" placeholder="Ex: 183">
+        </div>
+        <div class="cilindro-linha">
+          <label>Espessura (mm):</label>
+          <input type="number" id="espessuraChapa" min="0" placeholder="Ex: 15">
+        </div>
+        <div class="cilindro-linha">
+          <label>Tipo:</label>
+          <input type="text" id="tipoChapa" placeholder="Ex: Cru, BP Branco">
+        </div>
+        <div class="cilindro-linha">
+          <label>Preço (R$):</label>
+          <input type="number" id="precoChapaCadastro" min="0" step="0.01" placeholder="Ex: 420.00">
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="salvarChapa()">Salvar Chapa</button>
+
+      <h3>📦 Chapas Cadastradas:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Comprimento (cm)</th>
+            <th>Largura (cm)</th>
+            <th>Espessura (mm)</th>
+            <th>Tipo</th>
+            <th>Preço (R$)</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaChapas">
+          <tr>
+            <td colspan="6" style="text-align:center;">Nenhuma chapa cadastrada ainda</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="custosIndiretos" class="tab">
+      <h2>🏭 Custos Indiretos Mensais</h2>
+      
+      <div class="alert alert-warning">
+        <strong>Importante:</strong> Preencha os valores mensais de cada custo indireto. 
+        Esses valores serão usados para calcular o custo indireto unitário de cada peça.
+      </div>
+      
+      <div class="flex-container">
+        <div class="flex-item">
+          <h3>1. Estrutura e Instalações</h3>
+          <div class="cilindro-linha">
+            <label>Aluguel:</label>
+            <input type="number" class="indireto" id="aluguel" name="aluguel" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>IPTU e taxas:</label>
+            <input type="number" class="indireto" id="iptu" name="iptu" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Condomínio:</label>
+            <input type="number" class="indireto" id="condominio" name="condominio" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Seguro patrimonial:</label>
+            <input type="number" class="indireto" id="seguro" name="seguro" min="0" step="0.01">
+          </div>
+          
+          <h3>2. Utilidades e Manutenção</h3>
+          <div class="cilindro-linha">
+            <label>Energia elétrica:</label>
+            <input type="number" class="indireto" id="energia" name="energia" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Água e esgoto:</label>
+            <input type="number" class="indireto" id="agua" name="agua" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Manutenção de máquinas:</label>
+            <input type="number" class="indireto" id="manutencao" name="manutencao" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Gás:</label>
+            <input type="number" class="indireto" id="gas" name="gas" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Depreciação de máquinas:</label>
+            <input type="number" class="indireto" id="depreciacao" name="depreciacao" min="0" step="0.01">
+          </div>
+        </div>
+        
+        <div class="flex-item">
+          <h3>3. Logística e Armazenamento</h3>
+          <div class="cilindro-linha">
+            <label>Transporte interno:</label>
+            <input type="number" class="indireto" id="transporteInterno" name="transporteInterno" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Depósito/Estoque:</label>
+            <input type="number" class="indireto" id="deposito" name="deposito" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Empacotamento geral:</label>
+            <input type="number" class="indireto" id="empacotamentoGeral" name="empacotamentoGeral" min="0" step="0.01">
+          </div>
+          
+          <h3>4. Custos Administrativos</h3>
+          <div class="cilindro-linha">
+            <label>Sistema de gestão:</label>
+            <input type="number" class="indireto" id="erp" name="erp" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Contabilidade:</label>
+            <input type="number" class="indireto" id="contabilidade" name="contabilidade" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Licenças e alvarás:</label>
+            <input type="number" class="indireto" id="licencas" name="licencas" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Internet, telefone, papel:</label>
+            <input type="number" class="indireto" id="internet" name="internet" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Softwares:</label>
+            <input type="number" class="indireto" id="softwares" name="softwares" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Equipe adm/financeiro:</label>
+            <input type="number" class="indireto" id="admin" name="admin" min="0" step="0.01">
+          </div>
+          
+          <h3>5. Limpeza e Segurança</h3>
+          <div class="cilindro-linha">
+            <label>Produtos de limpeza:</label>
+            <input type="number" class="indireto" id="limpeza" name="limpeza" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>EPIs e uniformes:</label>
+            <input type="number" class="indireto" id="epis" name="epis" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Brigadista/Segurança:</label>
+            <input type="number" class="indireto" id="seguranca" name="seguranca" min="0" step="0.01">
+          </div>
+          
+          <h3>6. Marketing e Vendas</h3>
+          <div class="cilindro-linha">
+            <label>Fotos, vídeos e edição:</label>
+            <input type="number" class="indireto" id="midia" name="midia" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Marketing pago (Ads):</label>
+            <input type="number" class="indireto" id="ads" name="ads" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Ferramentas de atendimento:</label>
+            <input type="number" class="indireto" id="ferramentas" name="ferramentas" min="0" step="0.01">
+          </div>
+          <div class="cilindro-linha">
+            <label>Comissão de vendedores:</label>
+            <input type="number" class="indireto" id="comissao" name="comissao" min="0" step="0.01">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="calcularCustosIndiretos()">Calcular Custos Indiretos</button>
+      <div class="result" id="resultadoIndiretos">
+        <p>Preencha os custos acima e clique em calcular para ver o resultado.</p>
+      </div>
+    </div>
+    
+    <div id="resumoFinal" class="tab">
+      <h2>📊 Resumo Final do Produto</h2>
+      
+      <div class="alert alert-success">
+        <strong>Instruções:</strong> Os valores de custos serão preenchidos automaticamente conforme você calcula nas outras abas. 
+        Você pode ajustar manualmente se necessário. Preencha também a quantidade produzida e estimada de vendas.
+      </div>
+      
+      <div class="flex-container">
+        <div class="flex-item">
+          <div class="summary-box">
+            <h3>Dados de Custo</h3>
+            <div class="cilindro-linha">
+              <label>Custo MDF (R$):</label>
+              <input type="number" id="custoMDF" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Custo Mão de Obra (R$):</label>
+              <input type="number" id="custoMao" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Custo Embalagem (R$):</label>
+              <input type="number" id="custoEmbalagem" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Custo Indireto Total Mensal (R$):</label>
+              <input type="number" id="custoIndiretoMensal" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Qtd Produzida no Mês:</label>
+              <input type="number" id="qtdMensal" min="0">
+            </div>
+            <div class="cilindro-linha">
+              <label>Qtd Estimada de Vendas:</label>
+              <input type="number" id="qtdVendida" min="0">
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex-item">
+          <div class="summary-box">
+            <h3>Identificação do Produto</h3>
+            <div class="cilindro-linha">
+              <label><strong>📦 Nome do Produto:</strong></label>
+              <input type="text" id="nomeProduto" placeholder="Ex: Trio Cilindros Festa">
+            </div>
+            <div class="cilindro-linha">
+              <label><strong>🔢 Código / SKU:</strong></label>
+              <input type="text" id="codigoProduto" placeholder="Ex: KIT-CIL-PMG-001">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-primary" onclick="calcularResumoFinal()">Calcular Resumo</button>
+        <button class="btn-secondary" onclick="calcularResumoFinal(); exportarResumoPDF()">📄 Exportar PDF</button>
+      </div>
+      
+      <div class="resumo-container" id="resumoContainer">
+        <div id="resultadoResumo">
+          <p>Preencha os dados acima e clique em "Calcular Resumo" para ver os resultados.</p>
+        </div>
+      </div>
+      
+      <div id="resumoPDFContent" style="height: auto; visibility: hidden; position: absolute; left: -9999px;"></div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    Mentoria Matheus Ferraretto &copy; 2025 - Todos os direitos reservados
+  </div>
+
+  <script>
+    // Funções principais do sistema
+    function showTab(id) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      
+      // Salva a aba ativa
+      localStorage.setItem('activeTab', id);
+    }
+    
+    // Corrigido cálculo da área do cilindro (2 bases + lateral)
+    function areaCilindro(h, d) {
+      const pi = Math.PI;
+      const r = d / 2;
+      const areaBase = pi * r * r;
+      const areaLateral = 2 * pi * r * h;
+      return (2 * areaBase) + areaLateral;
+    }
+
+    function calcularMDF() {
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      let pecasComErro = false;
+      let htmlErros = '';
+      let total = 0;
+      
+      function calcularPeca(alturaId, diametroId, chapaId, pecaNum) {
+        const altura = parseFloat(document.getElementById(alturaId).value) || 0;
+        const diametro = parseFloat(document.getElementById(diametroId).value) || 0;
+        const index = document.getElementById(chapaId).value;
+        const chapa = chapas[index];
+        
+        if ((altura > 0 || diametro > 0) && index === "") {
+          pecasComErro = true;
+          htmlErros += `<div style="color: #e74c3c; margin: 5px 0;">
+            <strong>⚠️ Atenção:</strong> Selecione uma chapa para a Peça ${pecaNum}
+          </div>`;
+          return 0;
+        }
+        
+        if (!chapa || !chapa.comprimento || !chapa.largura || !chapa.preco) return 0;
+        
+        const area = areaCilindro(altura, diametro);
+        const precoCm2 = chapa.preco / (chapa.comprimento * chapa.largura);
+        const custo = area * precoCm2;
+        total += custo;
+        
+        return custo;
+      }
+      
+      const p1 = calcularPeca('alturaP1', 'diametroP1', 'chapaP1', 1);
+      const p2 = calcularPeca('alturaP2', 'diametroP2', 'chapaP2', 2);
+      const p3 = calcularPeca('alturaP3', 'diametroP3', 'chapaP3', 3);
+      const p4 = calcularPeca('alturaP4', 'diametroP4', 'chapaP4', 4);
+      
+      let htmlResult = `<strong>🔍 Resultado:</strong><br>`;
+      
+      if (pecasComErro) {
+        htmlResult += htmlErros + '<br>';
+      }
+      
+      htmlResult += `
+        ➤ Peça 1: R$ ${p1.toFixed(2)}<br>
+        ➤ Peça 2: R$ ${p2.toFixed(2)}<br>
+        ➤ Peça 3: R$ ${p3.toFixed(2)}<br>
+        ➤ Peça 4: R$ ${p4.toFixed(2)}<br><br>
+        <strong>💰 Custo total de MDF: R$ ${total.toFixed(2)}</strong>
+      `;
+      
+      document.getElementById('resultadoMDF').innerHTML = htmlResult;
+      
+      // Atualiza o campo do Resumo Final
+      const inputResumoMDF = document.getElementById('custoMDF');
+      if (inputResumoMDF) {
+        inputResumoMDF.value = total.toFixed(2);
+      }
+    }
+
+    function calcularMaoObra() {
+      const maoDireta = parseFloat(document.getElementById('maoDireta').value) || 0;
+      const maoIndireta = parseFloat(document.getElementById('maoIndireta').value) || 0;
+      const quantidadeMes = parseFloat(document.getElementById('quantidadeMes').value) || 0;
+
+      const maoIndiretaUnit = quantidadeMes > 0 ? maoIndireta / quantidadeMes : 0;
+      const custoTotalUnit = maoDireta + maoIndiretaUnit;
+
+      document.getElementById('resultadoMaoObra').innerHTML = `
+        <strong>🔍 Resultado:</strong><br>
+        ➤ Mão de Obra Direta: R$ ${maoDireta.toFixed(2)}<br>
+        ➤ Mão de Obra Indireta por peça: R$ ${maoIndiretaUnit.toFixed(2)}<br>
+        ➤ <strong>Custo total de mão de obra por peça: R$ ${custoTotalUnit.toFixed(2)}</strong>
+      `;
+
+      const inputResumoMao = document.getElementById('custoMao');
+      if (inputResumoMao) {
+        inputResumoMao.value = custoTotalUnit.toFixed(2);
+      }
+    }
+
+    function calcularEmbalagem() {
+      const caixa = parseFloat(document.getElementById('caixa').value) || 0;
+      const plastico = parseFloat(document.getElementById('plastico').value) || 0;
+      const saco = parseFloat(document.getElementById('saco').value) || 0;
+      const etiqueta = parseFloat(document.getElementById('etiqueta').value) || 0;
+      const outros = parseFloat(document.getElementById('outros').value) || 0;
+
+      const total = caixa + plastico + saco + etiqueta + outros;
+
+      document.getElementById('resultadoEmbalagem').innerHTML = `
+        <strong>🔍 Resultado:</strong><br>
+        ➤ Caixa: R$ ${caixa.toFixed(2)}<br>
+        ➤ Plástico Bolha: R$ ${plastico.toFixed(2)}<br>
+        ➤ Saco: R$ ${saco.toFixed(2)}<br>
+        ➤ Etiqueta: R$ ${etiqueta.toFixed(2)}<br>
+        ➤ Outros: R$ ${outros.toFixed(2)}<br><br>
+        <strong>Custo total de embalagem: R$ ${total.toFixed(2)}</strong>
+      `;
+
+      const inputResumoEmbalagem = document.getElementById('custoEmbalagem');
+      if (inputResumoEmbalagem) {
+        inputResumoEmbalagem.value = total.toFixed(2);
+      }
+    }
+    
+    function salvarChapa() {
+      const comprimento = document.getElementById('comprimentoChapa').value;
+      const largura = document.getElementById('larguraChapaCadastro').value;
+      const espessura = document.getElementById('espessuraChapa').value;
+      const tipo = document.getElementById('tipoChapa').value;
+      const preco = document.getElementById('precoChapaCadastro').value;
+
+      if (!comprimento || !largura || !espessura || !tipo || !preco) {
+        alert('Preencha todos os campos.');
+        return;
+      }
+
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      chapas.push({ comprimento, largura, espessura, tipo, preco });
+      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
+      listarChapas();
+      preencherSelectChapas(); // Atualiza os selects
+      
+      alert('Chapa cadastrada com sucesso!');
+    }
+
+    function listarChapas() {
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      const tabela = document.getElementById('tabelaChapas');
+      tabela.innerHTML = '';
+
+      if (chapas.length === 0) {
+        tabela.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;">Nenhuma chapa cadastrada ainda</td>
+          </tr>
+        `;
+        return;
+      }
+
+      chapas.forEach((chapa, index) => {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${chapa.comprimento}</td>
+          <td>${chapa.largura}</td>
+          <td>${chapa.espessura}</td>
+          <td>${chapa.tipo}</td>
+          <td>R$ ${parseFloat(chapa.preco).toFixed(2)}</td>
+          <td>
+            <button class="btn-danger" onclick="excluirChapa(${index})">🗑 Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(linha);
+      });
+    }
+
+    function excluirChapa(index) {
+      if (!confirm('Tem certeza que deseja excluir esta chapa?')) return;
+      
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      chapas.splice(index, 1);
+      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
+      listarChapas();
+      preencherSelectChapas(); // Atualiza os selects
+    }
+    
+    function preencherSelectChapas() {
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      const selects = document.querySelectorAll('.chapaSelect');
+
+      selects.forEach(select => {
+        select.innerHTML = `<option value="">-- Escolha uma chapa --</option>`;
+        chapas.forEach((chapa, index) => {
+          const texto = `${chapa.tipo} - ${chapa.comprimento}x${chapa.largura}cm - ${chapa.espessura}mm - R$${parseFloat(chapa.preco).toFixed(2)}`;
+          const option = document.createElement('option');
+          option.value = index;
+          option.textContent = texto;
+          select.appendChild(option);
+        });
+      });
+    }
+    
+    function calcularCustosIndiretos() {
+      const campos = document.querySelectorAll('.indireto');
+      let total = 0;
+      campos.forEach(campo => {
+        const valor = parseFloat(campo.value) || 0;
+        total += valor;
+      });
+
+      document.getElementById('resultadoIndiretos').innerHTML = `
+        <strong>🔍 Resultado:</strong><br>
+        ➤ Total de Custos Indiretos Mensais: <strong>R$ ${total.toFixed(2)}</strong>
+      `;
+
+      const inputResumoIndireto = document.getElementById('custoIndiretoMensal');
+      if (inputResumoIndireto) {
+        inputResumoIndireto.value = total.toFixed(2);
+      }
+    }
+    
+    function calcularResumoFinal() {
+      const nomeProduto = document.getElementById('nomeProduto')?.value || 'Produto não identificado';
+      const codigoProduto = document.getElementById('codigoProduto')?.value || 'Sem código';
+
+      const custoMDF = parseFloat(document.getElementById('custoMDF')?.value) || 0;
+      const custoMao = parseFloat(document.getElementById('custoMao')?.value) || 0;
+      const custoEmbalagem = parseFloat(document.getElementById('custoEmbalagem')?.value) || 0;
+      const custoIndiretoMensal = parseFloat(document.getElementById('custoIndiretoMensal')?.value) || 0;
+      const qtdMensal = parseFloat(document.getElementById('qtdMensal')?.value) || 1;
+      const qtdVendida = parseFloat(document.getElementById('qtdVendida')?.value) || 0;
+
+      const custoIndiretoUnit = custoIndiretoMensal / qtdMensal;
+      const custoTotalUnit = custoMDF + custoMao + custoEmbalagem + custoIndiretoUnit;
+
+      const preco20 = custoTotalUnit * 1.2;
+      const preco25 = custoTotalUnit * 1.25;
+      const preco30 = custoTotalUnit * 1.3;
+
+      const lucroUnit20 = preco20 - custoTotalUnit;
+      const lucroUnit25 = preco25 - custoTotalUnit;
+      const lucroUnit30 = preco30 - custoTotalUnit;
+
+      const pontoEquilibrio20 = lucroUnit20 > 0 ? custoIndiretoMensal / lucroUnit20 : 0;
+      const pontoEquilibrio25 = lucroUnit25 > 0 ? custoIndiretoMensal / lucroUnit25 : 0;
+      const pontoEquilibrio30 = lucroUnit30 > 0 ? custoIndiretoMensal / lucroUnit30 : 0;
+
+      const lucroEstimado = lucroUnit20 * qtdVendida;
+
+      // Mostra na tela com HTML estilizado
+      const resumoHTML = `
+        <strong>🧾 Identificação:</strong><br>
+        ➤ Nome: <strong>${nomeProduto}</strong><br>
+        ➤ Código: <strong>${codigoProduto}</strong><br><br>
+
+        <strong>📋 Resumo:</strong><br>
+        ➤ Custo MDF: R$ ${custoMDF.toFixed(2)}<br>
+        ➤ Mão de Obra: R$ ${custoMao.toFixed(2)}<br>
+        ➤ Embalagem: R$ ${custoEmbalagem.toFixed(2)}<br>
+        ➤ Custo Indireto Unitário: R$ ${custoIndiretoUnit.toFixed(2)}<br>
+        <strong>💰 Custo Total Unitário: R$ ${custoTotalUnit.toFixed(2)}</strong><br><br>
+
+        <strong>Preços com Lucro:</strong><br>
+        ➤ 20%: R$ ${preco20.toFixed(2)} | 📉 Ponto de Equilíbrio: ${Math.ceil(pontoEquilibrio20)} unidades<br>
+        ➤ 25%: R$ ${preco25.toFixed(2)} | 📉 Ponto de Equilíbrio: ${Math.ceil(pontoEquilibrio25)} unidades<br>
+        ➤ 30%: R$ ${preco30.toFixed(2)} | 📉 Ponto de Equilíbrio: ${Math.ceil(pontoEquilibrio30)} unidades<br><br>
+
+        <strong>💸 Lucro com ${qtdVendida} vendidas (20% lucro):</strong> R$ ${lucroEstimado.toFixed(2)}
+      `;
+
+      const resultadoResumo = document.getElementById('resultadoResumo');
+      if (resultadoResumo) {
+        resultadoResumo.innerHTML = resumoHTML;
+      }
+    }
+    
+    function exportarResumoPDF() {
+      // Aguarda a atualização da DOM antes de exportar
+      setTimeout(() => {
+        const element = document.getElementById('resumoContainer');
+        const nomeProduto = document.getElementById('nomeProduto').value.trim() || 'Produto';
+        const codigoProduto = document.getElementById('codigoProduto').value.trim() || 'codigo';
+
+        const opt = {
+          margin: 1,
+          filename: `${nomeProduto}-${codigoProduto}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+      }, 100);
+    }
+    
+    // Funções de persistência de dados
+    function salvarCustosIndiretos() {
+      const campos = document.querySelectorAll('#custosIndiretos .indireto');
+      campos.forEach(campo => {
+        localStorage.setItem(`indireto_${campo.name}`, campo.value);
+      });
+    }
+
+    function carregarCustosIndiretos() {
+      const campos = document.querySelectorAll('#custosIndiretos .indireto');
+      campos.forEach(campo => {
+        const valor = localStorage.getItem(`indireto_${campo.name}`);
+        if (valor !== null) {
+          campo.value = valor;
+        }
+      });
+    }
+    
+    // Inicialização do sistema
+    window.onload = () => {
+      // Carrega aba ativa
+      const activeTab = localStorage.getItem('activeTab') || 'mdf';
+      showTab(activeTab);
+      
+      // Carrega dados
+      listarChapas();
+      preencherSelectChapas();
+      carregarCustosIndiretos();
+      
+      // Configura listeners
+      const campos = document.querySelectorAll('#custosIndiretos .indireto');
+      campos.forEach(campo => {
+        campo.addEventListener('input', salvarCustosIndiretos);
+      });
+    };
+  </script>
+</body>
+</html>
