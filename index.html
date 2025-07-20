@@ -1,96 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mentoria Ferraretto - Sistemas</title>
+  <meta charset="UTF-8" />
+  <title>Mentoria Ferraretto - Página Inicial</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     body {
       background: linear-gradient(to right, #f0f4f8, #e2e8f0);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
     }
     .card {
-      background-color: white;
-      padding: 1.5rem;
-      border-radius: 1rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
-    .card:hover {
-      transform: translateY(-0.25rem);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      @apply bg-white p-6 rounded-xl shadow-lg transition hover:shadow-2xl hover:-translate-y-1;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-6 sm:p-10">
-  <header class="text-center mb-10">
-    <h1 class="text-4xl font-bold text-gray-800 mb-2">
-      <span aria-hidden="true">🚀</span> Mentoria Ferraretto - Sistemas
-    </h1>
-    <p class="text-gray-600 max-w-2xl">Ferramentas integradas para gestão de e-commerce e produção</p>
-  </header>
+<body class="min-h-screen flex flex-col items-center justify-center p-10">
 
-  <main class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
-    <!-- Sistema de Precificação -->
-    <section class="card">
-      <div class="flex items-start mb-4">
-        <span class="text-2xl mr-3" aria-hidden="true">📊</span>
-        <h2 class="text-2xl font-semibold">Sistema de Precificação Shopee</h2>
-      </div>
-      <p class="text-gray-600 mb-5">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
-      <a href="./sistema-precificacao-shopee.html" 
-         class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-md"
-         aria-label="Acessar Sistema de Precificação Shopee">
-        Acessar Sistema
-      </a>
-    </section>
+  <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">🚀 Mentoria Ferraretto - Sistemas</h1>
 
-    <!-- Gerenciamento de Anúncios -->
-    <section class="card">
-      <div class="flex items-start mb-4">
-        <span class="text-2xl mr-3" aria-hidden="true">🗂️</span>
-        <h2 class="text-2xl font-semibold">Gerenciamento de Anúncios</h2>
-      </div>
-      <p class="text-gray-600 mb-5">Sistema para gerenciar produtos, importar dados e analisar desempenho com IA.</p>
-      <a href="./gerenciamento-anuncios.html" 
-         class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
-         aria-label="Acessar Sistema de Gerenciamento de Anúncios">
-        Acessar Sistema
-      </a>
-    </section>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
 
-    <!-- Controle de Sobras -->
-    <section class="card">
-      <div class="flex items-start mb-4">
-        <span class="text-2xl mr-3" aria-hidden="true">📦</span>
-        <h2 class="text-2xl font-semibold">Controle de Sobras Shopee</h2>
-      </div>
-      <p class="text-gray-600 mb-5">Importe relatórios da Shopee e controle sobras com gráficos e metas por SKU.</p>
-      <a href="./controle-sobras-shopee.html" 
-         class="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition shadow-md"
-         aria-label="Acessar Sistema de Controle de Sobras">
-        Acessar Sistema
-      </a>
-    </section>
+    <div class="card">
+      <h2 class="text-2xl font-semibold mb-2">📊 Sistema de Precificação Shopee</h2>
+      <p class="text-gray-600 mb-4">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
+      <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Acessar Sistema</a>
+    </div>
 
-    <!-- Custeio de Produção -->
-    <section class="card">
-      <div class="flex items-start mb-4">
-        <span class="text-2xl mr-3" aria-hidden="true">🛠️</span>
-        <h2 class="text-2xl font-semibold">Custeio de Produção</h2>
-      </div>
-      <p class="text-gray-600 mb-5">Simule e calcule custos de produção por peça, incluindo MDF, mão de obra e indiretos.</p>
-      <a href="./custeio-producao.html" 
-         class="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition shadow-md"
-         aria-label="Acessar Sistema de Custeio de Produção">
-        Acessar Sistema
-      </a>
-    </section>
-  </main>
+    <div class="card">
+      <h2 class="text-2xl font-semibold mb-2">🗂️ Gerenciamento de Anúncios e Desempenho</h2>
+      <p class="text-gray-600 mb-4">Sistema para gerenciar produtos, importar dados e analisar desempenho com IA.</p>
+      <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Acessar Sistema</a>
+    </div>
 
-  <footer class="mt-12 text-center text-gray-500 text-sm">
-    <p>© 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
-  </footer>
+    <div class="card">
+      <h2 class="text-2xl font-semibold mb-2">📦 Controle de Sobras Shopee</h2>
+      <p class="text-gray-600 mb-4">Importe relatórios da Shopee e controle sobras com gráficos e metas por SKU.</p>
+      <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">Acessar Sistema</a>
+    </div>
+
+    <div class="card">
+      <h2 class="text-2xl font-semibold mb-2">🛠️ Custeio de Produção</h2>
+      <p class="text-gray-600 mb-4">Simule e calcule custos de produção por peça, incluindo MDF, mão de obra e indiretos.</p>
+      <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" target="_blank" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition">Acessar Sistema</a>
+    </div>
+
+  </div>
 </body>
 </html>
