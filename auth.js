@@ -53,19 +53,18 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
-const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
-const logout = () => signOut(auth);
-const register = (email, password) => createUserWithEmailAndPassword(auth, email, password);
-const resetPassword = (email) => sendPasswordResetEmail(auth, email);
-// API unificada para uso global
+
+// 🔑 Funções de autenticação
 export const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
 export const logout = () => signOut(auth);
 export const register = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
+
+// 🌐 API unificada (opcional para compatibilidade global)
 export const firebaseAuth = {
   auth,
   db,
-login,
+  login,
   logout,
   register,
   resetPassword
@@ -73,5 +72,4 @@ login,
 
 // Compatibilidade com sistemas antigos
 window.firebaseAuth = firebaseAuth;
-// Atalhos legados
 window.firebaseDb = db;
