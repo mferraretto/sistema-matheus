@@ -65,7 +65,7 @@
       margin-bottom: 10px;
     }
     
-    .tab-buttons {
+    .tabs {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -73,7 +73,7 @@
       justify-content: center;
     }
     
-    .tab-buttons button {
+    .tab-button {
       background: var(--primary);
       color: white;
       border: none;
@@ -88,7 +88,7 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
-    .tab-buttons button:hover {
+    .tab-button:hover {
       background: var(--secondary);
       transform: translateY(-2px);
       box-shadow: 0 6px 8px rgba(0,0,0,0.15);
@@ -330,11 +330,11 @@
         font-size: 1.8rem;
       }
       
-      .tab-buttons {
+      .tabs {
         flex-direction: column;
       }
       
-      .tab-buttons button {
+      .tab-button {
         width: 100%;
         justify-content: center;
       }
@@ -352,25 +352,16 @@
   </style>
 </head>
 <body>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-      authDomain: "matheus-35023.firebaseapp.com",
-      projectId: "matheus-35023",
-      storageBucket: "matheus-35023.appspot.com",
-      messagingSenderId: "1011113149395",
-      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
-    };
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    firebase.auth().onAuthStateChanged(user => {
+<script type="module">
+    import './firebase-init.js';
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(user => {
       if (!user) {
         window.location.href = 'index.html?login=1';
       }
     });
   </script>
-  <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
+  <nav class="bg-gray-800 text-white p-4 flex flex-wrap items-center space-x-4 mb-8 rounded">
     <a href="index.html" class="hover:underline">Início</a>
     <a href="#precificacao" onclick="showTab('precificacao'); return false;" class="hover:underline">Precificação</a>
     <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
@@ -380,14 +371,14 @@
   <div class="container">
     <h1>🛠 Mentoria Ferraretto Cálculo de Produção</h1>
 
-    <div class="tab-buttons">
-      <button onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
-      <button onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
-      <button onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
-      <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
-      <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
-      <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
-            <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
+   <div class="tabs">
+      <button class="tab-button" onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
+      <button class="tab-button" onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
+      <button class="tab-button" onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
+      <button class="tab-button" onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
+      <button class="tab-button" onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
+      <button class="tab-button" onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
+      <button class="tab-button" onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
     </div>
 
     <div id="mdf" class="tab active">
