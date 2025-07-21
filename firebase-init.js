@@ -3,10 +3,10 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 
-importar 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js' ;
-importar 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js' ;
-importar 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js' ;
-importar 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js' ;
+import 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+import 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js';
+import 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+import 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
