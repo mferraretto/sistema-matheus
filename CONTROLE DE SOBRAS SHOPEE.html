@@ -4,11 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Sobras - Shopee Premium</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-    <script type="module" src="./firebase-init.js"></script>
+ <script type="module" src="firebase-init.js"></script>
 
   <!-- Meta tag para CSP (Content Security Policy) -->
 <meta http-equiv="Content-Security-Policy" content="
@@ -655,7 +651,7 @@ try {
   // =============================================
    async function carregarProdutos() {
     try {
-      const snapshot = await db.collection("products").get();
+      const snapshot = await db.("products").get();
       produtos = {};
       const datalist = document.getElementById('listaSkus');
       if (datalist) datalist.innerHTML = '';
@@ -677,94 +673,107 @@ try {
     }
   }
 
-  async function carregarMetas() {
-    try {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
-      
-      return await executarComRetry(async () => {
-        metas = {};
-        // Carrega SKUs e preço mínimo da coleção de produtos
-        const produtosSnap = await db.collection("products").get();
-        produtosSnap.forEach((doc) => {
-          const data = doc.data();
-          if (data.sku && data.precoMinimo !== undefined) {
-            metas[data.sku] = {
-              valor: parseFloat(data.precoMinimo),
-              atualizadoEm: new Date()
-            };
-          }
-        });
+ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-        // Sobrepõe com metas salvas manualmente se existirem
-        const metasSnap = await db.collection("metasSKU").get();
-        metasSnap.forEach((doc) => {
-          const originalSku = doc.id.replaceAll('__', '/');
-          metas[originalSku] = {
-            valor: doc.data().valor,
-            atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
+async function carregarMetas() {
+  try {
+    toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+
+    return await executarComRetry(async () => {
+      metas = {};
+
+      // Carrega SKUs e preço mínimo da coleção de produtos
+      const produtosRef = collection(db, "products");
+      const produtosSnap = await getDocs(produtosRef);
+
+      produtosSnap.forEach((doc) => {
+        const data = doc.data();
+        if (data.sku && data.precoMinimo !== undefined) {
+          metas[data.sku] = {
+            valor: parseFloat(data.precoMinimo),
+            atualizadoEm: new Date()
           };
-        });
-        
-        renderizarMetas();
-        return true;
+        }
       });
-    } catch (error) {
-      mostrarErroFirebase(`Erro ao carregar metas: ${error.message}`);
-      console.error("Erro ao carregar metas:", error);
-      return false;
-    } finally {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
-    }
-  }
 
-  async function carregarHistorico() {
-    try {
-      return await executarComRetry(async () => {
-        historico = [];
-        const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
-        
-        snapshot.forEach((doc) => {
-          historico.push({
-            sku: doc.data().sku,
-            acao: doc.data().acao,
-            valorAnterior: doc.data().valorAnterior,
-            valorNovo: doc.data().valorNovo,
-            data: doc.data().data.toDate(),
-            usuario: doc.data().usuario || 'Sistema'
-          });
-        });
-        
-        renderizarHistorico();
-        return true;
-      });
-    } catch (error) {
-      mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
-      console.error("Erro ao carregar histórico:", error);
-      return false;
-    }
+      return metas;
+    });
+  } catch (error) {
+    console.error("Erro ao carregar metas:", error);
+    throw error;
   }
+}
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
-    try {
-      await executarComRetry(async () => {
-        await db.collection("historicoMetas").add({
-          sku: sku,
-          acao: acao,
-          valorAnterior: valorAnterior,
-          valorNovo: valorNovo,
-          data: new Date(),
-          usuario: "Usuário" // Em um sistema real, pegaria do auth
+const metasRef = collection(db, "metasSKU");
+const metasSnap = await getDocs(metasRef);
+
+metasSnap.forEach((doc) => {
+  const originalSku = doc.id.replaceAll('__', '/');
+  metas[originalSku] = {
+    valor: doc.data().valor,
+    atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
+  };
+});
+
+import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+async function carregarHistorico() {
+  try {
+    return await executarComRetry(async () => {
+      historico = [];
+
+      const historicoRef = collection(db, "historicoMetas");
+      const q = query(historicoRef, orderBy("data", "desc"), limit(50));
+      const snapshot = await getDocs(q);
+
+      snapshot.forEach((doc) => {
+        historico.push({
+          sku: doc.data().sku,
+          acao: doc.data().acao,
+          valorAnterior: doc.data().valorAnterior,
+          valorNovo: doc.data().valorNovo,
+          data: doc.data().data.toDate(),
+          usuario: doc.data().usuario || 'Sistema'
         });
-        
-        // Recarregar histórico após adicionar novo registro
-        await carregarHistorico();
-        return true;
       });
-    } catch (error) {
-      console.error("Erro ao registrar histórico:", error);
-      throw error;
-    }
+
+      renderizarHistorico();
+      return true;
+    });
+  } catch (error) {
+    mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
+    console.error("Erro ao carregar histórico:", error);
+    return false;
   }
+}
+
+
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
+  try {
+    await executarComRetry(async () => {
+      const ref = collection(db, "historicoMetas");
+      await addDoc(ref, {
+        sku: sku,
+        acao: acao,
+        valorAnterior: valorAnterior,
+        valorNovo: valorNovo,
+        data: new Date(),
+        usuario: "Usuário" // Em um sistema real, pegaria do auth
+      });
+
+      await carregarHistorico(); // Atualiza visualização após inserção
+      return true;
+    });
+  } catch (error) {
+    console.error("Erro ao registrar histórico:", error);
+    throw error;
+  }
+}
+
+
 
   function renderizarMetas() {
     const tbody = document.querySelector('#tabelaMetas tbody');
@@ -881,7 +890,10 @@ try {
       };
       
       await executarComRetry(async () => {
-        await db.collection("metasSKU").doc(safeSku).set(metaData);
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+const ref = doc(db, "metasSKU", safeSku);
+await setDoc(ref, metaData);
         return true;
       });
       
@@ -945,10 +957,13 @@ try {
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        await executarComRetry(async () => {
-          await db.collection("metasSKU").doc(safeSku).set(metaData);
-          return true;
-        });
+      import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+await executarComRetry(async () => {
+  const ref = doc(db, "metasSKU", safeSku);
+  await setDoc(ref, metaData);
+  return true;
+});
         
         // Atualizar localmente
         metas[sku] = {
@@ -991,10 +1006,13 @@ try {
       const valorAnterior = metas[sku].valor;
       const safeSku = sku.replaceAll('/', '__');
       
-      await executarComRetry(async () => {
-        await db.collection("metasSKU").doc(safeSku).delete();
-        return true;
-      });
+   import { doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+await executarComRetry(async () => {
+  const ref = doc(db, "metasSKU", safeSku);
+  await deleteDoc(ref);
+  return true;
+});
       
       // Remover localmente
       delete metas[sku];
