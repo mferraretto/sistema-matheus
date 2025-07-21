@@ -773,14 +773,10 @@ try {
       return;
     }
     
-    for (let sku in metas) {
-      const meta = metas[sku];
-const precoProduto = produtos[sku];
-      const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
-     const precoFormatado =
-        preco !== undefined
-          ? parseFloat(preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-          : 'N/A';
+   for (let sku in metas) {
+        const meta = metas[sku];
+        const precoProduto = produtos[sku];
+        const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
