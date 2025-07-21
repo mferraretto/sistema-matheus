@@ -363,98 +363,90 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
     }
 
     // Process spreadsheets
-    window.processarPlanilha = function(file, tipo) {
-      if (!file) return;
-      
+   window.processarPlanilha = function(file, tipo) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        try {
-          const workbook = XLSX.read(e.target.result, { type: "binary" });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        const workbook = XLSX.read(e.target.result, { type: "binary" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-          if (tipo === "desempenho") {
-            const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
-            if (!dataReferencia) return;
-            window.dataDesempenhoReferencia = dataReferencia;
+if (tipo === "desempenho") {
+  const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
+  window.dataDesempenhoReferencia = dataReferencia; // salva globalmente para uso posterior
+}
+
+        for (const linha of dados) {
+          const id = linha["ID do Produto"] || linha["ID do Item"];
+          if (!id) continue;
+          if (!window.produtos[id]) window.produtos[id] = { id };
+
+          const p = window.produtos[id];
+
+
+          switch (tipo) {
+            case "desempenho":
+              p.dataReferencia = window.dataDesempenhoReferencia;
+              p.visitas = linha["Visitantes do Produto (Visita)"];
+              p.visualizacoes = linha["Visualizações da Página do Produto"];
+              p.cliquesBusca = linha["Cliques em buscas"];
+              p.curtidas = linha["Curtidas"];
+              p.saidas = linha["Visitantes que saíram da página"];
+              p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
+              p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
+              p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
+              p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
+              p.compradoresPedido = linha["Compradores (Pedido realizado)"];
+              p.unidadesPedido = linha["Unidades (Pedido realizado)"];
+              p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
+              p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
+              p.compradoresPago = linha["Compradores (Pedidos pago)"];
+              p.unidadesPago = linha["Unidades (Pedido pago)"];
+              p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
+              p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
+              break;
+            case "vendas":
+              p.preco = linha["Preço"];
+              p.estoque = linha["Estoque do Vendedor"];
+              p.gtin = linha["GTIN (EAN)"];
+              p.skuVariante = linha["SKU"];
+              p.nomeVariante = linha["Nome"];
+              p.varianteId = linha["Variante Identificador"];
+              break;
+
+            case "basica":
+              p.nome = linha["Nome do Produto"] || p.nome;
+              p.descricao = linha["Descrição do Produto"];
+              break;
+
+            case "frete":
+              p.peso = linha["Peso do Produto/kg"];
+              p.comprimento = linha["Comprimento"];
+              p.largura = linha["Largura"];
+              p.altura = linha["Altura"];
+              p.taxaFrete = linha["Taxa de frete"];
+              break;
+
+            case "midia":
+              p.categoria = linha["Categoria"];
+              p.imagemCapa = linha["Imagem de capa"];
+              p.tabelaMedidas = linha["Template da Tabela de Medidas"];
+              p.nomeVariacao = linha["Nome da Variação 1"];
+              p.opcoesVariacao = Object.keys(linha)
+                .filter(k => k.startsWith("Opção"))
+                .map(k => linha[k])
+                .filter(Boolean);
+              break;
           }
-
-          for (const linha of dados) {
-            const id = linha["ID do Produto"] || linha["ID do Item"];
-            if (!id) continue;
-            
-            if (!window.produtos[id]) window.produtos[id] = { id };
-            const p = window.produtos[id];
-
-            switch (tipo) {
-              case "desempenho":
-                p.dataReferencia = window.dataDesempenhoReferencia;
-                p.visitas = linha["Visitantes do Produto (Visita)"];
-                p.visualizacoes = linha["Visualizações da Página do Produto"];
-                p.cliquesBusca = linha["Cliques em buscas"];
-                p.curtidas = linha["Curtidas"];
-                p.saidas = linha["Visitantes que saíram da página"];
-                p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
-                p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
-                p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
-                p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
-                p.compradoresPedido = linha["Compradores (Pedido realizado)"];
-                p.unidadesPedido = linha["Unidades (Pedido realizado)"];
-                p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
-                p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
-                p.compradoresPago = linha["Compradores (Pedidos pago)"];
-                p.unidadesPago = linha["Unidades (Pedido pago)"];
-                p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
-                p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
-                break;
-                
-              case "vendas":
-                p.preco = linha["Preço"];
-                p.estoque = linha["Estoque do Vendedor"];
-                p.gtin = linha["GTIN (EAN)"];
-                p.skuVariante = linha["SKU"];
-                p.nomeVariante = linha["Nome"];
-                p.varianteId = linha["Variante Identificador"];
-                break;
-
-              case "basica":
-                p.nome = linha["Nome do Produto"] || p.nome;
-                p.descricao = linha["Descrição do Produto"];
-                break;
-
-              case "frete":
-                p.peso = linha["Peso do Produto/kg"];
-                p.comprimento = linha["Comprimento"];
-                p.largura = linha["Largura"];
-                p.altura = linha["Altura"];
-                p.taxaFrete = linha["Taxa de frete"];
-                break;
-
-              case "midia":
-                p.categoria = linha["Categoria"];
-                p.imagemCapa = linha["Imagem de capa"];
-                p.tabelaMedidas = linha["Template da Tabela de Medidas"];
-                p.nomeVariacao = linha["Nome da Variação 1"];
-                p.opcoesVariacao = Object.keys(linha)
-                  .filter(k => k.startsWith("Opção"))
-                  .map(k => linha[k])
-                  .filter(Boolean);
-                break;
-            }
-          }
-
-          atualizarContador();
-          showNotification(`✅ Planilha ${tipo} importada com sucesso!`, 'success');
-        } catch (error) {
-          console.error("Erro ao processar planilha:", error);
-          showNotification(`❌ Erro ao processar planilha: ${error.message}`, 'error');
         }
+
+        alert(`✅ Planilha ${tipo.toUpperCase()} processada com sucesso!`);
       };
       reader.readAsBinaryString(file);
     }
 
+
     // Save to Firebase
-    window.salvarNoFirebase = async () => {
+window.salvarNoFirebase = async () => {
       const total = Object.keys(window.produtos).length;
       if (total === 0) {
         showNotification("⚠️ Nenhum dado para salvar.", 'warning');
