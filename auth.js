@@ -14,7 +14,15 @@ import {
   getDoc 
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
-const firebaseConfig = { /* ... */ };
+// ✅ Configuração Firebase única (matheus-35023)
+const firebaseConfig = {
+  apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+  authDomain: "matheus-35023.firebaseapp.com",
+  projectId: "matheus-35023",
+  storageBucket: "matheus-35023.appspot.com",
+  messagingSenderId: "1011113149395",
+  appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
+};
 
 // Inicialização única
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -25,7 +33,7 @@ const db = getFirestore(app);
 onAuthStateChanged(auth, async (user) => {
   const currentPath = window.location.pathname;
   const isLoginPage = currentPath.endsWith('index.html') || currentPath.endsWith('/');
-  
+
   if (!user && !isLoginPage) {
     window.location.href = 'index.html?login=1';
     return;
@@ -38,14 +46,14 @@ onAuthStateChanged(auth, async (user) => {
       perfil: perfilDoc.exists() ? perfilDoc.data().perfil : 'Leitor',
       email: user.email
     };
-    
+
     if (isLoginPage) {
-      window.location.href = 'home.html'; // Redirecionar logados para home
+      window.location.href = 'index.html'; // redireciona para index.html após login
     }
   }
 });
 
-// API unificada
+// API unificada para uso global
 export const firebaseAuth = {
   auth,
   db,
@@ -55,5 +63,6 @@ export const firebaseAuth = {
   resetPassword: (email) => sendPasswordResetEmail(auth, email)
 };
 
-// Para compatibilidade com módulos antigos
+// Compatibilidade com sistemas antigos
 window.firebaseAuth = firebaseAuth;
+
