@@ -352,7 +352,24 @@
   </style>
 </head>
 <body>
-    <script type="module" src="auth.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+      }
+    });
+  </script>
   <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
     <a href="index.html" class="hover:underline">Início</a>
     <a href="#precificacao" onclick="showTab('precificacao'); return false;" class="hover:underline">Precificação</a>
@@ -1091,7 +1108,7 @@
     // Inicialização do sistema
     window.onload = () => {
       // Carrega aba ativa
-      const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
       const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
       showTab(activeTab);
       

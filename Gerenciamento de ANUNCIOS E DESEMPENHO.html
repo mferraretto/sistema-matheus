@@ -70,13 +70,12 @@
       </h1>
       <p class="text-gray-600">Gerencie seus anúncios, importe dados e analise desempenho</p>
     </header>
-    <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-8 rounded">
+ <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-8 rounded">
       <a href="index.html" class="hover:underline">Início</a>
       <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
       <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
       <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
       <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
-      <a href="#" onclick="logout()" class="hover:underline">Sair</a>
     </nav>
 
     <div class="flex flex-wrap gap-2 mb-6 justify-center">
@@ -322,14 +321,32 @@
   </div>
 
   <script type="module">
-    import { auth, db, logout } from './auth.js';
-    window.logout = logout; // Torna a função global
-    
-    import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    // Firebase configuration and initialization
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
+    };
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+      }
+    });
+
     // Global products object
     window.produtos = {};
-    // Escape HTML for safe insertion of text content
+// Escape HTML for safe insertion of text content
     function escapeHTML(str) {
       return str
         .replace(/&/g, '&amp;')
@@ -353,10 +370,10 @@
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-        if (tipo === "desempenho") {
-          const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
-          window.dataDesempenhoReferencia = dataReferencia; // salva globalmente para uso posterior
-        }
+if (tipo === "desempenho") {
+  const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
+  window.dataDesempenhoReferencia = dataReferencia; // salva globalmente para uso posterior
+}
 
         for (const linha of dados) {
           const id = linha["ID do Produto"] || linha["ID do Item"];
@@ -364,6 +381,7 @@
           if (!window.produtos[id]) window.produtos[id] = { id };
 
           const p = window.produtos[id];
+
 
           switch (tipo) {
             case "desempenho":
@@ -426,8 +444,9 @@
       reader.readAsBinaryString(file);
     }
 
+
     // Save to Firebase
-    window.salvarNoFirebase = async () => {
+window.salvarNoFirebase = async () => {
       const total = Object.keys(window.produtos).length;
       if (total === 0) {
         showNotification("⚠️ Nenhum dado para salvar.", 'warning');
@@ -464,14 +483,14 @@
 
           if (!salvar) continue;
 
-          await setDoc(ref, { ...dadosCompletos, uid: auth.currentUser.uid });
+          await setDoc(ref, dadosCompletos);
+
           if (registrarHistorico) {
             await addDoc(collection(db, "atualizacoes"), {
               id,
               dataHora: new Date().toISOString(),
               dadosAntigos,
               dadosNovos: dadosCompletos,
-              uid: auth.currentUser.uid,
             });
           }
 
@@ -546,11 +565,7 @@
       tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
       
       try {
-        const user = auth.currentUser;
-        const perfil = window.usuarioLogado?.perfil;
-        let ref = collection(db, "anuncios");
-        const q = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(collection(db, "anuncios"));
         tbody.innerHTML = '';
         
         if (querySnapshot.empty) {
@@ -712,11 +727,7 @@
       document.getElementById("modalHistorico").style.display = "flex";
 
       try {
-        const user = auth.currentUser;
-        const perfil = window.usuarioLogado?.perfil;
-        let ref = collection(db, "atualizacoes");
-        const cq = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
-        const q = await getDocs(cq);
+        const q = await getDocs(collection(db, "atualizacoes"));
         const historico = [];
         q.forEach(doc => {
           const h = doc.data();
@@ -765,11 +776,7 @@
       container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Analisando anúncios...</div>';
       
       try {
-        const user = auth.currentUser;
-        const perfil = window.usuarioLogado?.perfil;
-        let ref = collection(db, "anuncios");
-        const q = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(collection(db, "anuncios"));
         const sugestoes = [];
         
         querySnapshot.forEach(doc => {
@@ -892,15 +899,9 @@
       container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando dados de evolução...</div>';
       
       try {
-        const user = auth.currentUser;
-        const perfil = window.usuarioLogado?.perfil;
-        let refAn = collection(db, "anuncios");
-        let refAt = collection(db, "atualizacoes");
-        const qAn = perfil === "ADM" ? refAn : query(refAn, where("uid", "==", user.uid));
-        const qAt = perfil === "ADM" ? refAt : query(refAt, where("uid", "==", user.uid));
         const [anunciosSnap, historicoSnap] = await Promise.all([
-          getDocs(qAn),
-          getDocs(qAt),
+          getDocs(collection(db, "anuncios")),
+          getDocs(collection(db, "atualizacoes")),
         ]);
 
         const historicoPorId = {};

@@ -23,6 +23,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
   <style>
     :root {
@@ -584,7 +587,6 @@
   </style>
 </head>
 <body>
-    <script type="module" src="auth.js"></script>
   <!-- Barra de navegação -->
   <nav class="navbar">
     <div class="nav-container">
@@ -608,12 +610,12 @@
     </div>
     
     <!-- Alertas e status de conexão -->
-    <div id="alertSuccess" class="alert alert-success" style="display: none;">
+    <div id="alertSuccess" class="alert alert-success">
       <i class="fas fa-check-circle"></i>
       <div class="alert-content"></div>
     </div>
     
-    <div id="alertError" class="alert alert-danger" style="display: none;">
+    <div id="alertError" class="alert alert-danger">
       <i class="fas fa-exclamation-circle"></i>
       <div class="alert-content"></div>
     </div>
@@ -871,33 +873,40 @@
     // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
     // =============================================
     
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
+      databaseURL: "https://matheus-35023.firebaseio.com"
+    };
+    
     // Variáveis globais
     let db;
-    let serverTimestamp;
     let metas = {};
     let historico = [];
     let produtos = {};
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
+    let app;
 
     // =============================================
     // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
     // =============================================
     
+    // Inicialização mais robusta do Firebase
     try {
-      // Usa as instâncias exportadas pelo auth.js
-      if (window.firebaseAuth) {
-        const { auth, db: firebaseDb, serverTimestamp: serverTimestampFn } = window.firebaseAuth;
-        db = firebaseDb;
-        serverTimestamp = serverTimestampFn;
-        auth.onAuthStateChanged(user => {
-          if (!user) {
-            window.location.href = 'index.html?login=1';
-          }
-        });
-      } else {
-        throw new Error('Firebase não inicializado');
-      }
+      const app = firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore(app);
+      const auth = firebase.auth();
+
+      auth.onAuthStateChanged(user => {
+        if (!user) {
+          window.location.href = 'index.html?login=1';
+        }
+      });
       
       // Configurações importantes para a conexão
       db.settings({
@@ -905,7 +914,7 @@
       });
       
       // Habilita persistência offline
-      db.enablePersistence()
+      firebase.firestore().enablePersistence()
         .catch((err) => {
           if (err.code == 'failed-precondition') {
             console.warn("Persistência offline não suportada em múltiplas abas");
@@ -939,7 +948,7 @@
     // =============================================
     
     function verificarConexao() {
-      db.enableNetwork()
+      firebase.firestore().enableNetwork()
         .then(() => {
           console.log("Conectado ao Firestore");
           document.getElementById('connectionStatus').className = 'connection-status online';
@@ -960,6 +969,18 @@
       errorBox.style.display = 'block';
       
       console.error("Erro Firebase:", error);
+    }
+
+    function updateConnectionStatus(online) {
+      const statusElement = document.getElementById('connectionStatus');
+      
+      if (online) {
+        statusElement.innerHTML = '<div class="status-dot"></div> <span>Online</span>';
+        statusElement.className = 'connection-status online';
+      } else {
+        statusElement.innerHTML = '<div class="status-dot"></div> <span>Offline - Trabalhando localmente</span>';
+        statusElement.className = 'connection-status offline';
+      }
     }
 
     // =============================================
@@ -993,7 +1014,7 @@
         btnText.innerHTML = texto;
       } else {
         botao.classList.add('loading');
-        btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+        btnText.innerHTML = '<div class="loading"></div> Carregando...';
       }
     }
 
@@ -1047,11 +1068,7 @@
     // =============================================
     async function carregarProdutos() {
       try {
-        let queryRef = db.collection("products");
-        if (window.usuarioLogado?.perfil !== 'ADM') {
-          queryRef = queryRef.where('uid', '==', window.usuarioLogado.uid);
-        }
-        const snapshot = await queryRef.get();
+        const snapshot = await db.collection("products").get();
         produtos = {};
         const datalist = document.getElementById('listaSkus');
         if (datalist) datalist.innerHTML = '';
@@ -1080,11 +1097,7 @@
         return await executarComRetry(async () => {
           metas = {};
           // Carrega SKUs e preço mínimo da coleção de produtos
-          let prodQuery = db.collection("products");
-          if (window.usuarioLogado?.perfil !== 'ADM') {
-            prodQuery = prodQuery.where('uid', '==', window.usuarioLogado.uid);
-          }
-          const produtosSnap = await prodQuery.get();
+          const produtosSnap = await db.collection("products").get();
           produtosSnap.forEach((doc) => {
             const data = doc.data();
             if (data.sku && data.precoMinimo !== undefined) {
@@ -1096,11 +1109,7 @@
           });
 
           // Sobrepõe com metas salvas manualmente se existirem
-          let metasQuery = db.collection("metasSKU");
-          if (window.usuarioLogado?.perfil !== 'ADM') {
-            metasQuery = metasQuery.where('uid', '==', window.usuarioLogado.uid);
-          }
-          const metasSnap = await metasQuery.get();
+          const metasSnap = await db.collection("metasSKU").get();
           metasSnap.forEach((doc) => {
             const originalSku = doc.id.replaceAll('__', '/');
             metas[originalSku] = {
@@ -1125,11 +1134,7 @@
       try {
         return await executarComRetry(async () => {
           historico = [];
-          let histQuery = db.collection("historicoMetas");
-          if (window.usuarioLogado?.perfil !== 'ADM') {
-            histQuery = histQuery.where('uid', '==', window.usuarioLogado.uid);
-          }
-          const snapshot = await histQuery.orderBy("data", "desc").limit(50).get();
+          const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
           
           snapshot.forEach((doc) => {
             historico.push({
@@ -1161,8 +1166,7 @@
             valorAnterior: valorAnterior,
             valorNovo: valorNovo,
             data: new Date(),
-            usuario: "Usuário",
-            uid: auth.currentUser.uid
+            usuario: "Usuário" // Em um sistema real, pegaria do auth
           });
           
           // Recarregar histórico após adicionar novo registro
@@ -1195,7 +1199,7 @@
           <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
           <td>
             <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            <input class="editInput" type="number" value="${meta.valor}" step="0.01" style="display: none;" />
+            <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
           </td>
           <td>${dataFormatada}</td>
           <td>
@@ -1293,8 +1297,7 @@
         const safeSku = sku.replaceAll('/', '__');
         const metaData = {
           valor: valor,
-          atualizadoEm: serverTimestamp(),
-          uid: auth.currentUser.uid
+          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         await executarComRetry(async () => {
@@ -1360,8 +1363,7 @@
           const safeSku = sku.replaceAll('/', '__');
           const metaData = {
             valor: novoValor,
-             atualizadoEm: serverTimestamp(),
-            uid: auth.currentUser.uid
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
           };
           
           await executarComRetry(async () => {
