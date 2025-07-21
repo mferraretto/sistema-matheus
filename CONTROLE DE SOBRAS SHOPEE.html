@@ -888,6 +888,7 @@
     let metas = {};
     let historico = [];
     let produtos = {};
+        let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
     let app;
@@ -902,10 +903,26 @@
       db = firebase.firestore(app);
       const auth = firebase.auth();
 
-      auth.onAuthStateChanged(user => {
+      auth.onAuthStateChanged(async user => {
         if (!user) {
           window.location.href = 'index.html?login=1';
+                    return;
         }
+         usuarioLogado.uid = user.uid;
+        try {
+          const perfilDoc = await db.collection('usuarios').doc(user.uid).get();
+          usuarioLogado.perfil = perfilDoc.exists ? (perfilDoc.data().perfil || '') : '';
+        } catch (e) {
+          console.error('Erro ao obter perfil do usuário:', e);
+        }
+
+        await carregarProdutos();
+        await carregarMetas();
+        carregarHistorico();
+
+        document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
+        document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
+        document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
       });
       
       // Configurações importantes para a conexão
@@ -931,17 +948,7 @@
       mostrarErroFirebase(error);
     }
 
-    // Carrega dados iniciais
-    document.addEventListener('DOMContentLoaded', async function() {
-      await carregarProdutos();
-      await carregarMetas();
-      carregarHistorico();
-      
-      // Adiciona listeners para filtros
-      document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
-      document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
-      document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
-    });
+   // Carregamento de dados acontece após autenticação
 
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
@@ -1068,7 +1075,11 @@
     // =============================================
     async function carregarProdutos() {
       try {
-        const snapshot = await db.collection("products").get();
+     let consulta = db.collection("products");
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          consulta = consulta.where('uid', '==', usuarioLogado.uid);
+        }
+        const snapshot = await consulta.get();
         produtos = {};
         const datalist = document.getElementById('listaSkus');
         if (datalist) datalist.innerHTML = '';
@@ -1097,7 +1108,11 @@
         return await executarComRetry(async () => {
           metas = {};
           // Carrega SKUs e preço mínimo da coleção de produtos
-          const produtosSnap = await db.collection("products").get();
+   let produtosSnapQuery = db.collection("products");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            produtosSnapQuery = produtosSnapQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const produtosSnap = await produtosSnapQuery.get();
           produtosSnap.forEach((doc) => {
             const data = doc.data();
             if (data.sku && data.precoMinimo !== undefined) {
@@ -1109,7 +1124,11 @@
           });
 
           // Sobrepõe com metas salvas manualmente se existirem
-          const metasSnap = await db.collection("metasSKU").get();
+  let metasSnapQuery = db.collection("metasSKU");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            metasSnapQuery = metasSnapQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const metasSnap = await metasSnapQuery.get();
           metasSnap.forEach((doc) => {
             const originalSku = doc.id.replaceAll('__', '/');
             metas[originalSku] = {
@@ -1134,8 +1153,11 @@
       try {
         return await executarComRetry(async () => {
           historico = [];
-          const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
-          
+  let histQuery = db.collection("historicoMetas");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            histQuery = histQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const snapshot = await histQuery.orderBy("data", "desc").limit(50).get();          
           snapshot.forEach((doc) => {
             historico.push({
               sku: doc.data().sku,
@@ -1166,7 +1188,8 @@
             valorAnterior: valorAnterior,
             valorNovo: valorNovo,
             data: new Date(),
-            usuario: "Usuário" // Em um sistema real, pegaria do auth
+  usuario: "Usuário", // Em um sistema real, pegaria do auth
+            uid: usuarioLogado.uid
           });
           
           // Recarregar histórico após adicionar novo registro
@@ -1297,7 +1320,8 @@
         const safeSku = sku.replaceAll('/', '__');
         const metaData = {
           valor: valor,
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+  atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          uid: usuarioLogado.uid
         };
         
         await executarComRetry(async () => {
@@ -1363,7 +1387,8 @@
           const safeSku = sku.replaceAll('/', '__');
           const metaData = {
             valor: novoValor,
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+ atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            uid: usuarioLogado.uid
           };
           
           await executarComRetry(async () => {
