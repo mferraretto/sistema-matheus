@@ -322,9 +322,9 @@
 
   <script type="module">
     // Firebase configuration and initialization
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     const firebaseConfig = {
       apiKey: "AIzaSyDskmCmkvGgnV9I_MkhBgHOsCoU4VarZbw",
       authDomain: "sobra-shopee.firebaseapp.com",
@@ -334,8 +334,15 @@
       appId: "1:884927523696:web:334f198596e85462d2bdb5"
     };
 
-    const app = initializeApp(firebaseConfig);
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+      }
+    });
 
     // Global products object
     window.produtos = {};
