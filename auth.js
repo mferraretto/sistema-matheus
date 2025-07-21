@@ -26,8 +26,8 @@ const firebaseConfig = {
 
 // Inicialização única
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // Gerenciamento de estado de autenticação
 onAuthStateChanged(auth, async (user) => {
@@ -54,15 +54,20 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // API unificada para uso global
+export const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
+export const logout = () => signOut(auth);
+export const register = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+export const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 export const firebaseAuth = {
   auth,
   db,
-  login: (email, password) => signInWithEmailAndPassword(auth, email, password),
-  logout: () => signOut(auth),
-  register: (email, password) => createUserWithEmailAndPassword(auth, email, password),
-  resetPassword: (email) => sendPasswordResetEmail(auth, email)
+login,
+  logout,
+  register,
+  resetPassword
 };
 
 // Compatibilidade com sistemas antigos
 window.firebaseAuth = firebaseAuth;
-
+// Atalhos legados
+window.firebaseDb = db;
