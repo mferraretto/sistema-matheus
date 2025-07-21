@@ -18,7 +18,12 @@ const firebaseConfig = {
 };
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
+// A biblioteca compat utiliza o namespace global `firebase` e 
+// precisa que o app padrão seja registrado através dela. Caso
+// ainda não exista um app no namespace compat, registramos aqui.
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 const auth = getAuth(app);
 const db = getFirestore(app);
