@@ -413,9 +413,41 @@
   </div>
 
   <script type="module">
-     import { auth } from './auth.js';
-    import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+    // Importando módulos do Firebase
+    import { 
+      initializeApp, 
+      getApps 
+    } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+    
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      sendPasswordResetEmail, 
+      onAuthStateChanged 
+    } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
+    };
+
+    // Inicialização do Firebase
+    let app;
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
+    }
+
+    const auth = getAuth(app);
+    
+    // Funções de controle de modal
     window.openModal = (id) => { 
       document.getElementById(id).style.display = 'block'; 
     };
@@ -429,35 +461,52 @@
       openModal('recoverModal'); 
     };
    
+    // Função de login
     window.login = () => {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
+      
       signInWithEmailAndPassword(auth, email, password)
-        .then((cred) => {
-          showUserArea(cred.user);
+        .then((userCredential) => {
+          showUserArea(userCredential.user);
           closeModal('loginModal');
         })
-        .catch(err => alert('Credenciais inválidas! ' + err.message));
+        .catch((error) => {
+          alert('Credenciais inválidas! ' + error.message);
+        });
     };
 
+    // Função de logout
     window.logout = () => {
-      signOut(auth).then(hideUserArea);
+      signOut(auth)
+        .then(() => {
+          hideUserArea();
+        })
+        .catch((error) => {
+          console.error('Erro ao fazer logout:', error);
+        });
     };
 
+    // Função de recuperação de senha
     window.sendRecovery = () => {
       const email = document.getElementById('recoverEmail').value;
+      
       if (!email.includes('@')) { 
         alert('E-mail inválido!'); 
         return; 
       }
+      
       sendPasswordResetEmail(auth, email)
         .then(() => { 
           alert('E-mail de recuperação enviado!'); 
           closeModal('recoverModal'); 
         })
-        .catch(err => alert('Erro ao enviar recuperação: ' + err.message));
+        .catch((error) => {
+          alert('Erro ao enviar recuperação: ' + error.message);
+        });
     };
 
+    // Mostrar área do usuário
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
       document.getElementById('currentUser').classList.remove('hidden');
@@ -465,6 +514,7 @@
       document.getElementById('logoutBtn').classList.remove('hidden');
     }
 
+    // Esconder área do usuário
     function hideUserArea() {
       document.getElementById('currentUser').textContent = '';
       document.getElementById('currentUser').classList.add('hidden');
@@ -472,6 +522,7 @@
       document.getElementById('logoutBtn').classList.add('hidden');
     }
 
+    // Verificar se login é necessário
     window.requireLogin = (event) => {
       if (!auth.currentUser) {
         event.preventDefault();
@@ -481,8 +532,9 @@
       return true;
     };
     
+    // Verificar estado de autenticação
     function checkLogin() {
-      onAuthStateChanged(auth, user => {
+      onAuthStateChanged(auth, (user) => {
         if (user) { 
           showUserArea(user); 
         } else { 
@@ -491,13 +543,16 @@
       });
     }
 
+    // Event listeners
     document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
+    // Abrir modal de login se solicitado
     if (window.location.search.includes('login=1')) {
       openModal('loginModal');
     }
     
+    // Verificar login ao carregar
     checkLogin();
   </script>
 </body>
