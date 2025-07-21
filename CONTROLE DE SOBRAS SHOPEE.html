@@ -873,6 +873,7 @@
     
     // Variáveis globais
     let db;
+    let serverTimestamp;
     let metas = {};
     let historico = [];
     let produtos = {};
@@ -885,9 +886,9 @@
     
     try {
       // Usa as instâncias exportadas pelo auth.js
-      const auth = window.firebaseAuth;
-      db = window.firebaseDb;
-
+      const { auth, db: firebaseDb, serverTimestamp: serverTimestampFn } = window.firebaseAuth;
+      db = firebaseDb;
+      serverTimestamp = serverTimestampFn;
       auth.onAuthStateChanged(user => {
         if (!user) {
           window.location.href = 'index.html?login=1';
@@ -1157,7 +1158,7 @@
             valorNovo: valorNovo,
             data: new Date(),
             usuario: "Usuário",
-            uid: firebase.auth().currentUser.uid
+            uid: auth.currentUser.uid
           });
           
           // Recarregar histórico após adicionar novo registro
@@ -1288,8 +1289,8 @@
         const safeSku = sku.replaceAll('/', '__');
         const metaData = {
           valor: valor,
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-          uid: firebase.auth().currentUser.uid
+          atualizadoEm: serverTimestamp(),
+          uid: auth.currentUser.uid
         };
         
         await executarComRetry(async () => {
@@ -1355,8 +1356,8 @@
           const safeSku = sku.replaceAll('/', '__');
           const metaData = {
             valor: novoValor,
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            uid: firebase.auth().currentUser.uid
+             atualizadoEm: serverTimestamp(),
+            uid: auth.currentUser.uid
           };
           
           await executarComRetry(async () => {
