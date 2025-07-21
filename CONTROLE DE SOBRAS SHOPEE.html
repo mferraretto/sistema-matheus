@@ -518,14 +518,10 @@ try {
 }
 
   // Carrega dados iniciais
-  document.addEventListener('DOMContentLoaded', function() {
-    carregarProdutos();
-    carregarMetas();
+ document.addEventListener('DOMContentLoaded', async function() {
+    await carregarProdutos();
+    await carregarMetas();
     carregarHistorico();
-    const skuInput = document.getElementById('metaSku');
-    if (skuInput) {
-      skuInput.addEventListener('input', atualizarPrecoMinimo);
-    }
   });
 
   // =============================================
@@ -679,9 +675,21 @@ try {
       
       return await executarComRetry(async () => {
         metas = {};
-        const snapshot = await db.collection("metasSKU").get();
-        
-        snapshot.forEach((doc) => {
+        // Carrega SKUs e preço mínimo da coleção de produtos
+        const produtosSnap = await db.collection("products").get();
+        produtosSnap.forEach((doc) => {
+          const data = doc.data();
+          if (data.sku && data.precoMinimo !== undefined) {
+            metas[data.sku] = {
+              valor: parseFloat(data.precoMinimo),
+              atualizadoEm: new Date()
+            };
+          }
+        });
+
+        // Sobrepõe com metas salvas manualmente se existirem
+        const metasSnap = await db.collection("metasSKU").get();
+        metasSnap.forEach((doc) => {
           const originalSku = doc.id.replaceAll('__', '/');
           metas[originalSku] = {
             valor: doc.data().valor,
@@ -763,7 +771,8 @@ try {
       const meta = metas[sku];
       const preco = produtos[sku];
       const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
-      
+      const preco = prod && prod.precoMinimo !== undefined ? `R$ ${parseFloat(prod.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${sku}</td>
