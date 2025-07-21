@@ -330,6 +330,7 @@
   <button class="aba-btn" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
   <button class="aba-btn" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
   <button class="aba-btn" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
+    <button class="aba-btn" onclick="trocarAba('produtosSalvos')"><i class="fas fa-boxes"></i> Produtos Salvos</button>
 
   <!-- Aba de Importação/Conferência -->
   <div id="importar" class="aba ativa">
@@ -455,7 +456,14 @@
       <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" style="width: 300px;" oninput="filtrarHistorico()" />
     </div>
     
-    <div id="listaHistorico" style="border: 1px solid #eee; border-radius: 5px; max-height: 500px; overflow-y: auto;"></div>
+   <div id="listaHistorico" style="border: 1px solid #eee; border-radius: 5px; max-height: 500px; overflow-y: auto;"></div>
+  </div>
+
+  <!-- Aba de Produtos Salvos -->
+  <div id="produtosSalvos" class="aba">
+    <div style="height:90vh;">
+      <iframe src="Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html?tab=produtos" style="width:100%;height:100%;border:none;"></iframe>
+    </div>
   </div>
 </div>
 
