@@ -827,9 +827,15 @@
         console.error("Erro ao carregar usuários:", error);
       }
       
-      // Carrega histórico
+      // Carrega histórico apenas do usuário logado
       try {
-        const historySnapshot = await db.collection("history").orderBy("timestamp", "desc").limit(100).get();
+const user = auth.currentUser;
+        if (!user) return;
+        const historySnapshot = await db.collection("history")
+          .where("userId", "==", user.uid)
+          .orderBy("timestamp", "desc")
+          .limit(100)
+          .get();
         sistema.historico = [];
         historySnapshot.forEach(doc => {
           sistema.historico.push({ id: doc.id, ...doc.data() });
@@ -840,9 +846,14 @@
         console.error("Erro ao carregar histórico:", error);
       }
       
-      // Carrega produtos
+      // Carrega produtos do usuário logado
       try {
-        const productsSnapshot = await db.collection("products").orderBy("createdAt", "desc").get();
+ const user = auth.currentUser;
+        if (!user) return;
+        const productsSnapshot = await db.collection("products")
+          .where("userId", "==", user.uid)
+          .orderBy("createdAt", "desc")
+          .get();
         sistema.produtos = [];
         productsSnapshot.forEach(doc => {
           sistema.produtos.push({ id: doc.id, ...doc.data() });
@@ -1022,6 +1033,7 @@
         action,
         description,
         user: user.email,
+        userId: user.uid,
         timestamp: new Date().toISOString()
       };
       
