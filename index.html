@@ -5,10 +5,7 @@
   <title>Mentoria Ferraretto - Página Inicial</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+ 
   <style>
     body {
       background: linear-gradient(to right, #f0f4f8, #e2e8f0);
@@ -107,7 +104,9 @@
     </div>
   </div>
 
-  <script>
+ <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
     const firebaseConfig = {
       apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
       authDomain: "matheus-35023.firebaseapp.com",
@@ -117,35 +116,35 @@
       appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+   const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-    function openModal(id) { document.getElementById(id).style.display = 'block'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function openRecoverModal() { closeModal('loginModal'); openModal('recoverModal'); }
-
-    function login() {
+    window.openModal = (id) => { document.getElementById(id).style.display = 'block'; };
+    window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
+    window.openRecoverModal = () => { closeModal('loginModal'); openModal('recoverModal'); };
+   
+    window.login = () => {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
-      auth.signInWithEmailAndPassword(email, password)
+      signInWithEmailAndPassword(auth, email, password)
         .then((cred) => {
           showUserArea(cred.user);
           closeModal('loginModal');
         })
         .catch(err => alert('Credenciais inválidas! ' + err.message));
-    }
+       };
 
-    function logout() {
-      auth.signOut().then(hideUserArea);
-    }
+     window.logout = () => {
+      signOut(auth).then(hideUserArea);
+    };
 
-    function sendRecovery() {
+    window.sendRecovery = () => {
       const email = document.getElementById('recoverEmail').value;
       if (!email.includes('@')) { alert('E-mail inválido!'); return; }
-      auth.sendPasswordResetEmail(email)
+      sendPasswordResetEmail(auth, email)
         .then(() => { alert('E-mail de recuperação enviado!'); closeModal('recoverModal'); })
         .catch(err => alert('Erro ao enviar recuperação: ' + err.message));
-    }
+     };
 
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
@@ -160,19 +159,20 @@
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('logoutBtn').classList.add('hidden');
     }
-function requireLogin(event) {
-      if (!auth.currentUser) {
-        event.preventDefault();
-        openModal('loginModal');
-        return false;
+window.requireLogin = (event) => {
+        if (!auth.currentUser) {
+          event.preventDefault();
+          openModal('loginModal');
+          return false;
+        }
+        return true;
+      };
+      function checkLogin() {
+        onAuthStateChanged(auth, user => {
+          if (user) { showUserArea(user); } else { hideUserArea(); }
+        });
       }
-      return true;
-    }
-    function checkLogin() {
-      auth.onAuthStateChanged(user => {
-        if (user) { showUserArea(user); } else { hideUserArea(); }
-      });
-    }
+     
 
     document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
     document.getElementById('logoutBtn').addEventListener('click', logout);
