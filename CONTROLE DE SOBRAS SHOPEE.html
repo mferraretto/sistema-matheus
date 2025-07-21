@@ -472,20 +472,18 @@
 <div id="connectionStatus" class="connection-status offline">Offline - Trabalhando localmente</div>
 
 <script type="module">
-  import './firebase-init.js';
+  import { db, auth } from './firebase-init.js';
   // =============================================
   // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
   // =============================================
   
   
   // Variáveis globais
-  let db;
   let metas = {};
   let historico = [];
   let produtos = {};
   let pedidosProcessados = [];
   let graficoBarras, graficoPizza;
-  let app;
 
   // =============================================
   // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
@@ -493,9 +491,7 @@
   
 // Inicialização mais robusta do Firebase
 try {
-  const app = firebase.app();
-  db = firebase.firestore(app);
-  const auth = firebase.auth();
+  
 
   auth.onAuthStateChanged(user => {
     if (!user) {
@@ -505,7 +501,7 @@ try {
   // Configurações importantes para a conexão
   db.settings({
   experimentalForceLongPolling: true
-});
+  });
   
   // Habilita persistência offline
   firebase.firestore().enablePersistence()
