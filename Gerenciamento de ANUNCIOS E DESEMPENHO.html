@@ -346,6 +346,15 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
     // Global products object
     window.produtos = {};
+// Escape HTML for safe insertion of text content
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     // Update product counter
     function atualizarContador() {
@@ -752,7 +761,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
                   </button>
                 </div>
                 <div class="hidden bg-gray-50 p-3 rounded mt-2 text-sm">
-                  <pre class="whitespace-pre-wrap">${JSON.stringify(h.dadosNovos, null, 2)}</pre>
+                  <pre class="whitespace-pre-wrap">${escapeHTML(JSON.stringify(h.dadosNovos, null, 2))}</pre>
                 </div>
               </div>
             `).join('')}
