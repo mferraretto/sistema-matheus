@@ -1,29 +1,59 @@
+// firebase-auth.js
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { 
+  getAuth, 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { 
+  getFirestore, 
+  doc, 
+  getDoc 
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-  authDomain: "matheus-35023.firebaseapp.com",
-  projectId: "matheus-35023",
-  storageBucket: "matheus-35023.appspot.com",
-  messagingSenderId: "1011113149395",
-  appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
-};
+const firebaseConfig = { /* ... */ };
 
+// Inicialização única
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
+// Gerenciamento de estado de autenticação
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    if (!window.location.pathname.endsWith('index.html')) {
-      window.location.href = 'index.html?login=1';
-    }
+  const currentPath = window.location.pathname;
+  const isLoginPage = currentPath.endsWith('index.html') || currentPath.endsWith('/');
+  
+  if (!user && !isLoginPage) {
+    window.location.href = 'index.html?login=1';
     return;
   }
 
-  const perfilDoc = await getDoc(doc(db, 'usuarios', user.uid));
-  const perfil = perfilDoc.exists() ? perfilDoc.data().perfil : 'Leitor';
-  window.usuarioLogado = { uid: user.uid, perfil, email: user.email };
+  if (user) {
+    const perfilDoc = await getDoc(doc(db, 'usuarios', user.uid));
+    window.usuarioLogado = {
+      uid: user.uid,
+      perfil: perfilDoc.exists() ? perfilDoc.data().perfil : 'Leitor',
+      email: user.email
+    };
+    
+    if (isLoginPage) {
+      window.location.href = 'home.html'; // Redirecionar logados para home
+    }
+  }
 });
+
+// API unificada
+export const firebaseAuth = {
+  auth,
+  db,
+  login: (email, password) => signInWithEmailAndPassword(auth, email, password),
+  logout: () => signOut(auth),
+  register: (email, password) => createUserWithEmailAndPassword(auth, email, password),
+  resetPassword: (email) => sendPasswordResetEmail(auth, email)
+};
+
+// Para compatibilidade com módulos antigos
+window.firebaseAuth = firebaseAuth;
