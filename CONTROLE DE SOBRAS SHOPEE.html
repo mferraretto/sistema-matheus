@@ -23,9 +23,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
   <style>
     :root {
@@ -611,12 +608,12 @@
     </div>
     
     <!-- Alertas e status de conexão -->
-    <div id="alertSuccess" class="alert alert-success">
+    <div id="alertSuccess" class="alert alert-success" style="display: none;">
       <i class="fas fa-check-circle"></i>
       <div class="alert-content"></div>
     </div>
     
-    <div id="alertError" class="alert alert-danger">
+    <div id="alertError" class="alert alert-danger" style="display: none;">
       <i class="fas fa-exclamation-circle"></i>
       <div class="alert-content"></div>
     </div>
@@ -874,16 +871,6 @@
     // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
     // =============================================
     
-    const firebaseConfig = {
-      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-      authDomain: "matheus-35023.firebaseapp.com",
-      projectId: "matheus-35023",
-      storageBucket: "matheus-35023.appspot.com",
-      messagingSenderId: "1011113149395",
-      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
-      databaseURL: "https://matheus-35023.firebaseio.com"
-    };
-    
     // Variáveis globais
     let db;
     let metas = {};
@@ -891,17 +878,15 @@
     let produtos = {};
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
-    let app;
 
     // =============================================
     // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
     // =============================================
     
-    // Inicialização mais robusta do Firebase
     try {
-      const app = firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore(app);
-      const auth = firebase.auth();
+      // Usa as instâncias exportadas pelo auth.js
+      const auth = window.firebaseAuth;
+      db = window.firebaseDb;
 
       auth.onAuthStateChanged(user => {
         if (!user) {
@@ -915,7 +900,7 @@
       });
       
       // Habilita persistência offline
-      firebase.firestore().enablePersistence()
+      db.enablePersistence()
         .catch((err) => {
           if (err.code == 'failed-precondition') {
             console.warn("Persistência offline não suportada em múltiplas abas");
@@ -949,7 +934,7 @@
     // =============================================
     
     function verificarConexao() {
-      firebase.firestore().enableNetwork()
+      db.enableNetwork()
         .then(() => {
           console.log("Conectado ao Firestore");
           document.getElementById('connectionStatus').className = 'connection-status online';
@@ -970,18 +955,6 @@
       errorBox.style.display = 'block';
       
       console.error("Erro Firebase:", error);
-    }
-
-    function updateConnectionStatus(online) {
-      const statusElement = document.getElementById('connectionStatus');
-      
-      if (online) {
-        statusElement.innerHTML = '<div class="status-dot"></div> <span>Online</span>';
-        statusElement.className = 'connection-status online';
-      } else {
-        statusElement.innerHTML = '<div class="status-dot"></div> <span>Offline - Trabalhando localmente</span>';
-        statusElement.className = 'connection-status offline';
-      }
     }
 
     // =============================================
@@ -1015,7 +988,7 @@
         btnText.innerHTML = texto;
       } else {
         botao.classList.add('loading');
-        btnText.innerHTML = '<div class="loading"></div> Carregando...';
+        btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
       }
     }
 
@@ -1069,7 +1042,7 @@
     // =============================================
     async function carregarProdutos() {
       try {
- let queryRef = db.collection("products");
+        let queryRef = db.collection("products");
         if (window.usuarioLogado?.perfil !== 'ADM') {
           queryRef = queryRef.where('uid', '==', window.usuarioLogado.uid);
         }
@@ -1102,7 +1075,7 @@
         return await executarComRetry(async () => {
           metas = {};
           // Carrega SKUs e preço mínimo da coleção de produtos
-let prodQuery = db.collection("products");
+          let prodQuery = db.collection("products");
           if (window.usuarioLogado?.perfil !== 'ADM') {
             prodQuery = prodQuery.where('uid', '==', window.usuarioLogado.uid);
           }
@@ -1118,7 +1091,7 @@ let prodQuery = db.collection("products");
           });
 
           // Sobrepõe com metas salvas manualmente se existirem
-  let metasQuery = db.collection("metasSKU");
+          let metasQuery = db.collection("metasSKU");
           if (window.usuarioLogado?.perfil !== 'ADM') {
             metasQuery = metasQuery.where('uid', '==', window.usuarioLogado.uid);
           }
@@ -1147,7 +1120,7 @@ let prodQuery = db.collection("products");
       try {
         return await executarComRetry(async () => {
           historico = [];
-   let histQuery = db.collection("historicoMetas");
+          let histQuery = db.collection("historicoMetas");
           if (window.usuarioLogado?.perfil !== 'ADM') {
             histQuery = histQuery.where('uid', '==', window.usuarioLogado.uid);
           }
@@ -1217,7 +1190,7 @@ let prodQuery = db.collection("products");
           <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
           <td>
             <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
+            <input class="editInput" type="number" value="${meta.valor}" step="0.01" style="display: none;" />
           </td>
           <td>${dataFormatada}</td>
           <td>
@@ -1315,7 +1288,7 @@ let prodQuery = db.collection("products");
         const safeSku = sku.replaceAll('/', '__');
         const metaData = {
           valor: valor,
- atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
           uid: firebase.auth().currentUser.uid
         };
         
@@ -1382,7 +1355,7 @@ let prodQuery = db.collection("products");
           const safeSku = sku.replaceAll('/', '__');
           const metaData = {
             valor: novoValor,
- atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
             uid: firebase.auth().currentUser.uid
           };
           
