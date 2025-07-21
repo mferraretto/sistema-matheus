@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Sobras - Shopee Premium</title>
- <script type="module" src="firebase-init.js"></script>
-
   <!-- Meta tag para CSP (Content Security Policy) -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self' 
@@ -25,6 +23,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
   <style>
     :root {
       --primary: #4a6bff;
@@ -86,8 +88,7 @@
     
     .ativa { display: block; }
     
-     .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tab-button {
+    .aba-btn {
       margin: 5px 10px 5px 0;
       padding: 10px 20px;
       cursor: pointer;
@@ -99,12 +100,12 @@
       transition: all 0.3s;
     }
     
-    .tab-button:hover, .tab-button.active {
+    .aba-btn:hover, .aba-btn.active {
       background: var(--primary);
       color: white;
     }
     
-    .tab-button.active {
+    .aba-btn.active {
       box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.3);
     }
     
@@ -297,7 +298,7 @@
         margin-bottom: 10px;
       }
       
-      .tab-button {
+      .aba-btn {
         display: block;
         width: 100%;
         margin: 5px 0;
@@ -306,7 +307,7 @@
   </style>
 </head>
 <body>
-  <nav class="bg-gray-800 text-white p-4 flex flex-wrap items-center space-x-4 mb-8 rounded">
+  <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
     <a href="index.html" class="hover:underline">Início</a>
     <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
     <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
@@ -325,13 +326,10 @@
   <h2><i class="fas fa-check-circle"></i> Mentoria Ferraretto - Conferência de Sobras</h2>
   
   <!-- Barra de navegação por abas -->
-<div class="tabs">
-    <button class="tab-button active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
-    <button class="tab-button" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
-    <button class="tab-button" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
-    <button class="tab-button" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
-   <button class="tab-button" onclick="trocarAba('produtosSalvos')"><i class="fas fa-history"></i> Produtos Salvos</button>
-  </div>
+  <button class="aba-btn active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
+  <button class="aba-btn" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
+  <button class="aba-btn" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
+  <button class="aba-btn" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
 
   <!-- Aba de Importação/Conferência -->
   <div id="importar" class="aba ativa">
@@ -457,76 +455,81 @@
       <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" style="width: 300px;" oninput="filtrarHistorico()" />
     </div>
     
-   <div id="listaHistorico" style="border: 1px solid #eee; border-radius: 5px; max-height: 500px; overflow-y: auto;"></div>
-  </div>
-
-  <!-- Aba de Produtos Salvos -->
-  <div id="produtosSalvos" class="aba">
-    <div style="height:90vh;">
-      <iframe src="Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html?tab=produtos" style="width:100%;height:100%;border:none;"></iframe>
-    </div>
+    <div id="listaHistorico" style="border: 1px solid #eee; border-radius: 5px; max-height: 500px; overflow-y: auto;"></div>
   </div>
 </div>
 
 <!-- Status de conexão -->
 <div id="connectionStatus" class="connection-status offline">Offline - Trabalhando localmente</div>
 
-<script type="module">
-import { db, auth } from './firebase-init.js'; // ✅ correto
+<script>
+  // =============================================
+  // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
+  // =============================================
+  
+  const firebaseConfig = {
+  apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+  authDomain: "matheus-35023.firebaseapp.com",
+  projectId: "matheus-35023",
+  storageBucket: "matheus-35023.appspot.com",  // Note que mudei de .firebasestorage.app para .appspot.com
+  messagingSenderId: "1011113149395",
+  appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
+  databaseURL: "https://matheus-35023.firebaseio.com"
+};
+  // Variáveis globais
+  let db;
+  let metas = {};
+  let historico = [];
+  let produtos = {};
+  let pedidosProcessados = [];
+  let graficoBarras, graficoPizza;
+  let app;
 
-import {
-  collection,
-  getDocs,
-  doc,
-  deleteDoc,
-  setDoc,
-  addDoc,
-  query,
-  orderBy,
-  limit
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-// ===========================
-// VARIÁVEIS GLOBAIS
-// ===========================
-let metas = {};
-let historico = [];
-let produtos = {};
-let pedidosProcessados = [];
-let graficoBarras, graficoPizza;
+  // =============================================
+  // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
+  // =============================================
+  
+// Inicialização mais robusta do Firebase
+try {
+  const app = firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore(app);
+  const auth = firebase.auth();
 
-// ===========================
-// AUTENTICAÇÃO E VERIFICAÇÃO
-// ===========================
-auth.onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = 'index.html?login=1';
-  }
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = 'index.html?login=1';
+    }
+  });
+  // Configurações importantes para a conexão
+  db.settings({
+  experimentalForceLongPolling: true
 });
+  
+  // Habilita persistência offline
+  firebase.firestore().enablePersistence()
+    .catch((err) => {
+      if (err.code == 'failed-precondition') {
+        console.warn("Persistência offline não suportada em múltiplas abas");
+      } else if (err.code == 'unimplemented') {
+        console.warn("Persistência offline não disponível no navegador");
+      }
+    });
+  
+  // Verifica conexão
+  verificarConexao();
+  
+} catch (error) {
+  console.error("Erro ao inicializar Firebase:", error);
+  mostrarErroFirebase(error);
+}
 
-// ===========================
-// PERSISTÊNCIA OFFLINE
-// ===========================
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn("Persistência offline não suportada em múltiplas abas");
-  } else if (err.code === 'unimplemented') {
-    console.warn("Persistência offline não disponível no navegador");
-  }
-});
-
-// ===========================
-// CARREGAMENTO INICIAL
-// ===========================
-document.addEventListener('DOMContentLoaded', async function() {
-  try {
+  // Carrega dados iniciais
+ document.addEventListener('DOMContentLoaded', async function() {
     await carregarProdutos();
     await carregarMetas();
     carregarHistorico();
-  } catch (e) {
-    console.error("Erro ao carregar dados iniciais:", e);
-    mostrarErroFirebase(e);
-  }
-});
+  });
+
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
   // =============================================
@@ -632,140 +635,134 @@ document.addEventListener('DOMContentLoaded', async function() {
   // =============================================
   // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
   // =============================================
- 
+  
+  function trocarAba(id) {
+    document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('ativa'));
+    document.querySelectorAll('.aba-btn').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById(id).classList.add('ativa');
+    document.querySelector(`.aba-btn[onclick="trocarAba('${id}')"]`).classList.add('active');
+    
+    if (id === 'graficos') {
+      setTimeout(atualizarGraficos, 100);
+    }
+  }
+
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE METAS
   // =============================================
-  
+   async function carregarProdutos() {
+    try {
+      const snapshot = await db.collection("products").get();
+      produtos = {};
+      const datalist = document.getElementById('listaSkus');
+      if (datalist) datalist.innerHTML = '';
 
-async function carregarProdutos() {
-  try {
-    const ref = collection(db, "products");
-    const snapshot = await getDocs(ref);
-
-    produtos = {}; // Deve estar declarado globalmente se usado fora dessa função
-
-    const datalist = document.getElementById('listaSkus');
-    if (datalist) datalist.innerHTML = '';
-
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (!data.sku) return;
-
-      produtos[data.sku] = data.precoMinimo;
-
-      if (datalist) {
-        const opt = document.createElement('option');
-        const preco = data.precoMinimo
-          ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-          : '0.00';
-        opt.value = data.sku;
-        opt.label = `${data.sku} - R$ ${preco}`;
-        datalist.appendChild(opt);
-      }
-    });
-  } catch (error) {
-    console.error('Erro ao carregar produtos:', error);
-  }
-}
-
-
-async function carregarMetas() {
-  try {
-    toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
-
-    return await executarComRetry(async () => {
-      metas = {};
-
-      // Carrega SKUs e preço mínimo da coleção de produtos
-      const produtosRef = collection(db, "products");
-      const produtosSnap = await getDocs(produtosRef);
-
-      produtosSnap.forEach((doc) => {
+      snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.sku && data.precoMinimo !== undefined) {
-          metas[data.sku] = {
-            valor: parseFloat(data.precoMinimo),
-            atualizadoEm: new Date()
-          };
+        if (!data.sku) return;
+        produtos[data.sku] = data.precoMinimo;
+        if (datalist) {
+          const opt = document.createElement('option');
+          const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
+          opt.value = data.sku;
+          opt.label = `${data.sku} - R$ ${preco}`;
+          datalist.appendChild(opt);
         }
       });
-
-      return metas;
-    });
-  } catch (error) {
-    console.error("Erro ao carregar metas:", error);
-    throw error;
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    }
   }
-}
 
-const metasRef = collection(db, "metasSKU");
-const metasSnap = await getDocs(metasRef);
-
-metasSnap.forEach((doc) => {
-  const originalSku = doc.id.replaceAll('__', '/');
-  metas[originalSku] = {
-    valor: doc.data().valor,
-    atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
-  };
-});
-
-
-async function carregarHistorico() {
-  try {
-    return await executarComRetry(async () => {
-      historico = [];
-
-      const historicoRef = collection(db, "historicoMetas");
-      const q = query(historicoRef, orderBy("data", "desc"), limit(50));
-const snapshot = await getDocs(q);
-
-      snapshot.forEach((doc) => {
-        historico.push({
-          sku: doc.data().sku,
-          acao: doc.data().acao,
-          valorAnterior: doc.data().valorAnterior,
-          valorNovo: doc.data().valorNovo,
-          data: doc.data().data.toDate(),
-          usuario: doc.data().usuario || 'Sistema'
+  async function carregarMetas() {
+    try {
+      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+      
+      return await executarComRetry(async () => {
+        metas = {};
+        // Carrega SKUs e preço mínimo da coleção de produtos
+        const produtosSnap = await db.collection("products").get();
+        produtosSnap.forEach((doc) => {
+          const data = doc.data();
+          if (data.sku && data.precoMinimo !== undefined) {
+            metas[data.sku] = {
+              valor: parseFloat(data.precoMinimo),
+              atualizadoEm: new Date()
+            };
+          }
         });
+
+        // Sobrepõe com metas salvas manualmente se existirem
+        const metasSnap = await db.collection("metasSKU").get();
+        metasSnap.forEach((doc) => {
+          const originalSku = doc.id.replaceAll('__', '/');
+          metas[originalSku] = {
+            valor: doc.data().valor,
+            atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
+          };
+        });
+        
+        renderizarMetas();
+        return true;
       });
-
-      renderizarHistorico();
-      return true;
-    });
-  } catch (error) {
-    mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
-    console.error("Erro ao carregar histórico:", error);
-    return false;
+    } catch (error) {
+      mostrarErroFirebase(`Erro ao carregar metas: ${error.message}`);
+      console.error("Erro ao carregar metas:", error);
+      return false;
+    } finally {
+      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+    }
   }
-}
 
-
-
-async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
-  try {
-    await executarComRetry(async () => {
-      const ref = collection(db, "historicoMetas");
-      await addDoc(ref, {
-        sku: sku,
-        acao: acao,
-        valorAnterior: valorAnterior,
-        valorNovo: valorNovo,
-        data: new Date(),
-        usuario: "Usuário" // Em um sistema real, pegaria do auth
+  async function carregarHistorico() {
+    try {
+      return await executarComRetry(async () => {
+        historico = [];
+        const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
+        
+        snapshot.forEach((doc) => {
+          historico.push({
+            sku: doc.data().sku,
+            acao: doc.data().acao,
+            valorAnterior: doc.data().valorAnterior,
+            valorNovo: doc.data().valorNovo,
+            data: doc.data().data.toDate(),
+            usuario: doc.data().usuario || 'Sistema'
+          });
+        });
+        
+        renderizarHistorico();
+        return true;
       });
-
-      await carregarHistorico(); // Atualiza visualização após inserção
-      return true;
-    });
-  } catch (error) {
-    console.error("Erro ao registrar histórico:", error);
-    throw error;
+    } catch (error) {
+      mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
+      console.error("Erro ao carregar histórico:", error);
+      return false;
+    }
   }
-}
 
-
+  async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
+    try {
+      await executarComRetry(async () => {
+        await db.collection("historicoMetas").add({
+          sku: sku,
+          acao: acao,
+          valorAnterior: valorAnterior,
+          valorNovo: valorNovo,
+          data: new Date(),
+          usuario: "Usuário" // Em um sistema real, pegaria do auth
+        });
+        
+        // Recarregar histórico após adicionar novo registro
+        await carregarHistorico();
+        return true;
+      });
+    } catch (error) {
+      console.error("Erro ao registrar histórico:", error);
+      throw error;
+    }
+  }
 
   function renderizarMetas() {
     const tbody = document.querySelector('#tabelaMetas tbody');
@@ -882,9 +879,7 @@ async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
       };
       
       await executarComRetry(async () => {
-
-const ref = doc(db, "metasSKU", safeSku);
-await setDoc(ref, metaData);
+        await db.collection("metasSKU").doc(safeSku).set(metaData);
         return true;
       });
       
@@ -948,12 +943,10 @@ await setDoc(ref, metaData);
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-
-await executarComRetry(async () => {
-  const ref = doc(db, "metasSKU", safeSku);
-  await setDoc(ref, metaData);
-  return true;
-});
+        await executarComRetry(async () => {
+          await db.collection("metasSKU").doc(safeSku).set(metaData);
+          return true;
+        });
         
         // Atualizar localmente
         metas[sku] = {
@@ -996,12 +989,10 @@ await executarComRetry(async () => {
       const valorAnterior = metas[sku].valor;
       const safeSku = sku.replaceAll('/', '__');
       
-
-await executarComRetry(async () => {
-  const ref = doc(db, "metasSKU", safeSku);
-  await deleteDoc(ref);
-  return true;
-});
+      await executarComRetry(async () => {
+        await db.collection("metasSKU").doc(safeSku).delete();
+        return true;
+      });
       
       // Remover localmente
       delete metas[sku];
@@ -1462,32 +1453,6 @@ await executarComRetry(async () => {
       console.error("Erro ao exportar JSON:", error);
     }
   }
-   // Exponha funções para uso em manipuladores inline
-  window.trocarAba = trocarAba;
-  window.verificarConexao = verificarConexao;
-  window.processarPlanilha = processarPlanilha;
-  window.limparFiltros = limparFiltros;
-  window.exportarCSV = exportarCSV;
-  window.exportarJSON = exportarJSON;
-  window.adicionarMeta = adicionarMeta;
-  window.atualizarGraficos = atualizarGraficos;
-  window.editarMeta = editarMeta;
-  window.excluirMeta = excluirMeta;
-  window.filtrarPorSKU = filtrarPorSKU;
-  window.filtrarHistorico = filtrarHistorico;
-  
-</script>
-<!-- Fim do conteúdo -->
-<script>
-function trocarAba(abaId) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-  document.getElementById(abaId).classList.remove('hidden');
-
-  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-  const abaBtn = document.querySelector(`[onclick*="${abaId}"]`);
-  if (abaBtn) abaBtn.classList.add('active');
-}
 </script>
 </body>
 </html>
-
