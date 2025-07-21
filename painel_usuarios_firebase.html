@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Gerenciamento de Usuários</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">👥 Gerenciamento de Usuários</h1>
+
+    <form id="userForm" class="space-y-4">
+      <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
+      <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
+      <select id="perfil" class="w-full p-2 border rounded">
+        <option value="Cliente">Cliente</option>
+        <option value="ADM">ADM</option>
+      </select>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Usuário</button>
+    </form>
+
+    <hr class="my-6">
+
+    <h2 class="text-xl font-semibold mb-2">📋 Lista de Usuários</h2>
+    <ul id="listaUsuarios" class="space-y-2"></ul>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH_DOMAIN",
+      projectId: "SEU_PROJECT_ID",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const form = document.getElementById("userForm");
+    const lista = document.getElementById("listaUsuarios");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const uid = document.getElementById("uid").value.trim();
+      const nome = document.getElementById("nome").value.trim();
+      const perfil = document.getElementById("perfil").value;
+
+      if (uid && nome) {
+        await db.collection("usuarios").doc(uid).set({ nome, perfil });
+        alert("Usuário salvo com sucesso!");
+        carregarUsuarios();
+      }
+    });
+
+    async function carregarUsuarios() {
+      lista.innerHTML = "";
+      const snapshot = await db.collection("usuarios").get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const item = document.createElement("li");
+        item.className = "p-2 bg-gray-50 border rounded";
+        item.innerText = `UID: ${doc.id} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+        lista.appendChild(item);
+      });
+    }
+
+    carregarUsuarios();
+  </script>
+</body>
+</html>
