@@ -321,29 +321,9 @@
   </div>
 
   <script type="module">
-    // Firebase configuration and initialization
-    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-      authDomain: "matheus-35023.firebaseapp.com",
-      projectId: "matheus-35023",
-      storageBucket: "matheus-35023.appspot.com",
-      messagingSenderId: "1011113149395",
-      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
-    };
-
-    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = 'index.html?login=1';
-      }
-    });
-
+     import { auth, db } from './auth.js';
+    import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     // Global products object
     window.produtos = {};
 // Escape HTML for safe insertion of text content
@@ -483,14 +463,14 @@ window.salvarNoFirebase = async () => {
 
           if (!salvar) continue;
 
-          await setDoc(ref, dadosCompletos);
-
+    await setDoc(ref, { ...dadosCompletos, uid: auth.currentUser.uid });
           if (registrarHistorico) {
             await addDoc(collection(db, "atualizacoes"), {
               id,
               dataHora: new Date().toISOString(),
               dadosAntigos,
               dadosNovos: dadosCompletos,
+                            uid: auth.currentUser.uid,
             });
           }
 
@@ -565,7 +545,11 @@ window.salvarNoFirebase = async () => {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
       
       try {
-        const querySnapshot = await getDocs(collection(db, "anuncios"));
+         const user = auth.currentUser;
+        const perfil = window.usuarioLogado?.perfil;
+        let ref = collection(db, "anuncios");
+        const q = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
         tbody.innerHTML = '';
         
         if (querySnapshot.empty) {
@@ -727,7 +711,11 @@ window.salvarNoFirebase = async () => {
       document.getElementById("modalHistorico").style.display = "flex";
 
       try {
-        const q = await getDocs(collection(db, "atualizacoes"));
+      const user = auth.currentUser;
+        const perfil = window.usuarioLogado?.perfil;
+        let ref = collection(db, "atualizacoes");
+        const cq = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
+        const q = await getDocs(cq);
         const historico = [];
         q.forEach(doc => {
           const h = doc.data();
@@ -776,7 +764,11 @@ window.salvarNoFirebase = async () => {
       container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Analisando anúncios...</div>';
       
       try {
-        const querySnapshot = await getDocs(collection(db, "anuncios"));
+            const user = auth.currentUser;
+        const perfil = window.usuarioLogado?.perfil;
+        let ref = collection(db, "anuncios");
+        const q = perfil === "ADM" ? ref : query(ref, where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
         const sugestoes = [];
         
         querySnapshot.forEach(doc => {
@@ -899,9 +891,15 @@ window.salvarNoFirebase = async () => {
       container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando dados de evolução...</div>';
       
       try {
+           const user = auth.currentUser;
+        const perfil = window.usuarioLogado?.perfil;
+        let refAn = collection(db, "anuncios");
+        let refAt = collection(db, "atualizacoes");
+        const qAn = perfil === "ADM" ? refAn : query(refAn, where("uid", "==", user.uid));
+        const qAt = perfil === "ADM" ? refAt : query(refAt, where("uid", "==", user.uid));
         const [anunciosSnap, historicoSnap] = await Promise.all([
-          getDocs(collection(db, "anuncios")),
-          getDocs(collection(db, "atualizacoes")),
+           getDocs(qAn),
+          getDocs(qAt),
         ]);
 
         const historicoPorId = {};
