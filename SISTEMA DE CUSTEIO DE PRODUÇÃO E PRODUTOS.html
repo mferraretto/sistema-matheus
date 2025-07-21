@@ -361,15 +361,12 @@
       messagingSenderId: "1011113149395",
       appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
     };
-        let storagePrefix = '';
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
         window.location.href = 'index.html?login=1';
-         } else {
-        storagePrefix = user.uid + '_';
       }
     });
   </script>
@@ -798,24 +795,12 @@
 
   <script>
     // Funções principais do sistema
-    function storageKey(key) {
-      return storagePrefix + key;
-    }
-
-    function storageGet(key) {
-      return localStorage.getItem(storageKey(key));
-    }
-
-    function storageSet(key, value) {
-      localStorage.setItem(storageKey(key), value);
-    }
-
     function showTab(id) {
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       
       // Salva a aba ativa
-      storageSet('activeTab', id);
+      localStorage.setItem('activeTab', id);
             window.location.hash = id;
     }
     
@@ -829,7 +814,7 @@
     }
 
     function calcularMDF() {
-      const chapas = JSON.parse(storageGet('chapasMDF') || '[]');
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       let pecasComErro = false;
       let htmlErros = '';
       let total = 0;
@@ -944,9 +929,9 @@
         return;
       }
 
-      const chapas = JSON.parse(storageGet('chapasMDF') || '[]');
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       chapas.push({ comprimento, largura, espessura, tipo, preco });
-      storageSet('chapasMDF', JSON.stringify(chapas));
+      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
       listarChapas();
       preencherSelectChapas(); // Atualiza os selects
       
@@ -954,7 +939,7 @@
     }
 
     function listarChapas() {
-      const chapas = JSON.parse(storageGet('chapasMDF') || '[]');
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       const tabela = document.getElementById('tabelaChapas');
       tabela.innerHTML = '';
 
@@ -986,15 +971,15 @@
     function excluirChapa(index) {
       if (!confirm('Tem certeza que deseja excluir esta chapa?')) return;
       
-      const chapas = JSON.parse(storageGet('chapasMDF') || '[]');
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       chapas.splice(index, 1);
-      storageSet('chapasMDF', JSON.stringify(chapas));
+      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
       listarChapas();
       preencherSelectChapas(); // Atualiza os selects
     }
     
     function preencherSelectChapas() {
-      const chapas = JSON.parse(storageGet('chapasMDF') || '[]');
+      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       const selects = document.querySelectorAll('.chapaSelect');
 
       selects.forEach(select => {
@@ -1106,14 +1091,14 @@
     function salvarCustosIndiretos() {
       const campos = document.querySelectorAll('#custosIndiretos .indireto');
       campos.forEach(campo => {
-        storageSet(`indireto_${campo.name}`, campo.value);
+        localStorage.setItem(`indireto_${campo.name}`, campo.value);
       });
     }
 
     function carregarCustosIndiretos() {
       const campos = document.querySelectorAll('#custosIndiretos .indireto');
       campos.forEach(campo => {
-        const valor = storageGet(`indireto_${campo.name}`);
+        const valor = localStorage.getItem(`indireto_${campo.name}`);
         if (valor !== null) {
           campo.value = valor;
         }
@@ -1124,7 +1109,7 @@
     window.onload = () => {
       // Carrega aba ativa
 const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-      const activeTab = hashTab || storageGet('activeTab') || 'mdf';
+      const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
       showTab(activeTab);
       
       // Carrega dados
