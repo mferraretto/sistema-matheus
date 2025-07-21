@@ -472,62 +472,62 @@
 <div id="connectionStatus" class="connection-status offline">Offline - Trabalhando localmente</div>
 
 <script type="module">
-  import { db, auth } from './firebase-init.js';
-  // =============================================
-  // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
-  // =============================================
-  
-  
-  // Variáveis globais
-  let metas = {};
-  let historico = [];
-  let produtos = {};
-  let pedidosProcessados = [];
-  let graficoBarras, graficoPizza;
+import { db, auth } from './firebase-init.js'; // ✅ correto
 
-  // =============================================
-  // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
-  // =============================================
-  
-// Inicialização mais robusta do Firebase
-try {
-  
+import {
+  collection,
+  getDocs,
+  doc,
+  deleteDoc,
+  setDoc,
+  addDoc,
+  query,
+  orderBy,
+  enableIndexedDbPersistence
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = 'index.html?login=1';
-    }
-  });
-  // Configurações importantes para a conexão
-  s({
-  experimentalForceLongPolling: true
-  });
-  
-  // Habilita persistência offline
-  firebase.firestore().enablePersistence()
-    .catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn("Persistência offline não suportada em múltiplas abas");
-      } else if (err.code == 'unimplemented') {
-        console.warn("Persistência offline não disponível no navegador");
-      }
-    });
-  
-  // Verifica conexão
-  verificarConexao();
-  
-} catch (error) {
-  console.error("Erro ao inicializar Firebase:", error);
-  mostrarErroFirebase(error);
-}
+// ===========================
+// VARIÁVEIS GLOBAIS
+// ===========================
+let metas = {};
+let historico = [];
+let produtos = {};
+let pedidosProcessados = [];
+let graficoBarras, graficoPizza;
 
-  // Carrega dados iniciais
- document.addEventListener('DOMContentLoaded', async function() {
+// ===========================
+// AUTENTICAÇÃO E VERIFICAÇÃO
+// ===========================
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'index.html?login=1';
+  }
+});
+
+// ===========================
+// PERSISTÊNCIA OFFLINE
+// ===========================
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === 'failed-precondition') {
+    console.warn("Persistência offline não suportada em múltiplas abas");
+  } else if (err.code === 'unimplemented') {
+    console.warn("Persistência offline não disponível no navegador");
+  }
+});
+
+// ===========================
+// CARREGAMENTO INICIAL
+// ===========================
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
     await carregarProdutos();
     await carregarMetas();
     carregarHistorico();
-  });
-
+  } catch (e) {
+    console.error("Erro ao carregar dados iniciais:", e);
+    mostrarErroFirebase(e);
+  }
+});
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
   // =============================================
@@ -638,7 +638,6 @@ try {
   // FUNÇÕES DE GERENCIAMENTO DE METAS
   // =============================================
   
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 async function carregarProdutos() {
   try {
@@ -671,7 +670,6 @@ async function carregarProdutos() {
   }
 }
 
- import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 async function carregarMetas() {
   try {
@@ -701,7 +699,6 @@ async function carregarMetas() {
     throw error;
   }
 }
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 const metasRef = collection(db, "metasSKU");
 const metasSnap = await getDocs(metasRef);
@@ -714,7 +711,6 @@ metasSnap.forEach((doc) => {
   };
 });
 
-import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 async function carregarHistorico() {
   try {
@@ -747,7 +743,6 @@ const snapshot = await getDocs(q);
 }
 
 
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
   try {
@@ -888,7 +883,6 @@ async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
       };
       
       await executarComRetry(async () => {
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 const ref = doc(db, "metasSKU", safeSku);
 await setDoc(ref, metaData);
@@ -955,7 +949,6 @@ await setDoc(ref, metaData);
           atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-      import { doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 await executarComRetry(async () => {
   const ref = doc(db, "metasSKU", safeSku);
@@ -1004,7 +997,6 @@ await executarComRetry(async () => {
       const valorAnterior = metas[sku].valor;
       const safeSku = sku.replaceAll('/', '__');
       
-   import { doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 await executarComRetry(async () => {
   const ref = doc(db, "metasSKU", safeSku);
