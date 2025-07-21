@@ -23,9 +23,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+   <script type="module" src="firebase-init.js"></script>
 
   <style>
     :root {
@@ -88,7 +86,8 @@
     
     .ativa { display: block; }
     
-    .aba-btn {
+     .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab-button {
       margin: 5px 10px 5px 0;
       padding: 10px 20px;
       cursor: pointer;
@@ -100,12 +99,12 @@
       transition: all 0.3s;
     }
     
-    .aba-btn:hover, .aba-btn.active {
+    .tab-button:hover, .tab-button.active {
       background: var(--primary);
       color: white;
     }
     
-    .aba-btn.active {
+    .tab-button.active {
       box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.3);
     }
     
@@ -298,7 +297,7 @@
         margin-bottom: 10px;
       }
       
-      .aba-btn {
+      .tab-button {
         display: block;
         width: 100%;
         margin: 5px 0;
@@ -307,7 +306,7 @@
   </style>
 </head>
 <body>
-  <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
+  <nav class="bg-gray-800 text-white p-4 flex flex-wrap items-center space-x-4 mb-8 rounded">
     <a href="index.html" class="hover:underline">Início</a>
     <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
     <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
@@ -326,11 +325,13 @@
   <h2><i class="fas fa-check-circle"></i> Mentoria Ferraretto - Conferência de Sobras</h2>
   
   <!-- Barra de navegação por abas -->
-  <button class="aba-btn active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
-  <button class="aba-btn" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
-  <button class="aba-btn" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
-  <button class="aba-btn" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
-    <button class="aba-btn" onclick="trocarAba('produtosSalvos')"><i class="fas fa-boxes"></i> Produtos Salvos</button>
+<div class="tabs">
+    <button class="tab-button active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
+    <button class="tab-button" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
+    <button class="tab-button" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
+    <button class="tab-button" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
+   <button class="tab-button" onclick="trocarAba('produtosSalvos')"><i class="fas fa-history"></i> Produtos Salvos</button>
+  </div>
 
   <!-- Aba de Importação/Conferência -->
   <div id="importar" class="aba ativa">
@@ -470,20 +471,13 @@
 <!-- Status de conexão -->
 <div id="connectionStatus" class="connection-status offline">Offline - Trabalhando localmente</div>
 
-<script>
+<script type="module">
+  import './firebase-init.js';
   // =============================================
   // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
   // =============================================
   
-  const firebaseConfig = {
-  apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-  authDomain: "matheus-35023.firebaseapp.com",
-  projectId: "matheus-35023",
-  storageBucket: "matheus-35023.appspot.com",  // Note que mudei de .firebasestorage.app para .appspot.com
-  messagingSenderId: "1011113149395",
-  appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
-  databaseURL: "https://matheus-35023.firebaseio.com"
-};
+  
   // Variáveis globais
   let db;
   let metas = {};
@@ -499,7 +493,7 @@
   
 // Inicialização mais robusta do Firebase
 try {
-  const app = firebase.initializeApp(firebaseConfig);
+  const app = firebase.app();
   db = firebase.firestore(app);
   const auth = firebase.auth();
 
@@ -646,10 +640,10 @@ try {
   
   function trocarAba(id) {
     document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('ativa'));
-    document.querySelectorAll('.aba-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     
     document.getElementById(id).classList.add('ativa');
-    document.querySelector(`.aba-btn[onclick="trocarAba('${id}')"]`).classList.add('active');
+    document.querySelector(`.tab-button[onclick="trocarAba('${id}')"]`).classList.add('active');
     
     if (id === 'graficos') {
       setTimeout(atualizarGraficos, 100);
