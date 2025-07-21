@@ -169,7 +169,7 @@
     <div class="flex items-center space-x-1 md:space-x-4 mt-4 md:mt-0">
       <a href="index.html" class="nav-link font-medium hover:bg-gray-700">Início</a>
       <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-gray-700">Precificação</a>
-      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-gray-700">Anúncios</a>
+      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-gray-700 requires-admin">Anúncios</a>
       <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-gray-700">Sobras</a>
       <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-gray-700">Custeio</a>
     </div>
@@ -178,6 +178,9 @@
       <span id="currentUser" class="hidden bg-blue-500/20 text-blue-200 px-3 py-1 rounded-lg"></span>
       <button id="loginBtn" class="btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium">
         <i class="fas fa-sign-in-alt mr-2"></i>Entrar
+      </button>
+        <button id="signupBtn" class="btn bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg font-medium">
+        <i class="fas fa-user-plus mr-2"></i>Cadastrar
       </button>
       <button id="logoutBtn" class="btn bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg font-medium hidden">
         <i class="fas fa-sign-out-alt mr-2"></i>Sair
@@ -205,7 +208,7 @@
   
   <!-- Cards Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full mb-16">
-    <div class="card">
+    <div class="card requires-admin">
       <div class="flex items-start mb-4">
         <div class="bg-blue-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
           <i class="fas fa-calculator text-blue-600 text-2xl"></i>
@@ -230,7 +233,7 @@
           <p class="text-gray-600">Gerencie produtos, importe dados e analise desempenho com IA.</p>
         </div>
       </div>
-      <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-3 rounded-lg font-medium">
+      <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-3 rounded-lg font-medium requires-admin">
         Acessar Sistema
       </a>
     </div>
@@ -411,11 +414,49 @@
       </div>
     </div>
   </div>
+ <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="btn-close" onclick="closeModal('signupModal')">&times;</span>
 
+      <div class="text-center mb-6">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-user-plus text-white text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800">Criar Conta</h3>
+        <p class="text-gray-600 mt-2">Preencha os campos para se cadastrar</p>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-envelope text-gray-400"></i>
+            </div>
+            <input type="email" id="signupEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="seu@email.com">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2 text-gray-700">Senha</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="fas fa-lock text-gray-400"></i>
+            </div>
+            <input type="password" id="signupPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="••••••••">
+          </div>
+        </div>
+
+        <button onclick="signup()" class="btn w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3.5 rounded-lg font-medium text-lg">
+          <i class="fas fa-user-plus mr-2"></i> Cadastrar
+        </button>
+      </div>
+    </div>
+  </div>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-    
+import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';    
     const firebaseConfig = {
       apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
       authDomain: "matheus-35023.firebaseapp.com",
@@ -427,6 +468,8 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+const db = getFirestore(app);
+    let currentUserRole = null;
 
     window.openModal = (id) => { 
       document.getElementById(id).style.display = 'block'; 
@@ -451,6 +494,17 @@
         })
         .catch(err => alert('Credenciais inválidas! ' + err.message));
     };
+window.signup = () => {
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(async (cred) => {
+          await setDoc(doc(db, 'users', cred.user.uid), { email, perfil: 'viewer' });
+          showUserArea(cred.user);
+          closeModal('signupModal');
+        })
+        .catch(err => alert('Erro ao cadastrar: ' + err.message));
+    };
 
     window.logout = () => {
       signOut(auth).then(hideUserArea);
@@ -470,18 +524,30 @@
         .catch(err => alert('Erro ao enviar recuperação: ' + err.message));
     };
 
-    function showUserArea(user) {
+    async function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
       document.getElementById('currentUser').classList.remove('hidden');
       document.getElementById('loginBtn').classList.add('hidden');
+            document.getElementById('signupBtn').classList.add('hidden');
       document.getElementById('logoutBtn').classList.remove('hidden');
+       try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        currentUserRole = snap.exists() ? snap.data().perfil : 'viewer';
+      } catch (e) {
+        console.error('Erro ao obter perfil:', e);
+        currentUserRole = 'viewer';
+      }
+      applyPermissions();
     }
 
     function hideUserArea() {
       document.getElementById('currentUser').textContent = '';
       document.getElementById('currentUser').classList.add('hidden');
       document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('signupBtn').classList.remove('hidden');
       document.getElementById('logoutBtn').classList.add('hidden');
+      currentUserRole = null;
+      applyPermissions();
     }
 
     window.requireLogin = (event) => {
@@ -492,24 +558,35 @@
       }
       return true;
     };
-    
+     function applyPermissions() {
+      document.querySelectorAll('.requires-admin').forEach(el => {
+        if (currentUserRole === 'admin') {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+    }
+
     function checkLogin() {
       onAuthStateChanged(auth, user => {
-        if (user) { 
-          showUserArea(user); 
-        } else { 
-          hideUserArea(); 
+        if (user) {
+          showUserArea(user);
+        } else {
+          hideUserArea();
         }
       });
     }
 
     document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
+        document.getElementById('signupBtn').addEventListener('click', () => openModal('signupModal'));
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
     if (window.location.search.includes('login=1')) {
       openModal('loginModal');
     }
     
+     applyPermissions();
     checkLogin();
   </script>
 </body>
