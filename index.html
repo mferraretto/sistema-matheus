@@ -26,10 +26,10 @@
 <body class="min-h-screen flex flex-col items-center justify-center p-10">
   <nav class="bg-gray-800 text-white p-4 flex flex-wrap items-center space-x-4 mb-8 rounded">
     <a href="index.html" class="hover:underline">Início</a>
-    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
-    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
-    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
-    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
+     <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" class="hover:underline">Precificação</a>
+    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="hover:underline">Anúncios</a>
+    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" class="hover:underline">Sobras</a>
+    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" class="hover:underline">Custeio</a>
     <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html?login=1" class="hover:underline">Login</a>
     <div class="flex items-center space-x-2 ml-auto">
       <span id="currentUser" class="hidden"></span>
@@ -44,25 +44,26 @@
     <div class="card">
       <h2 class="text-2xl font-semibold mb-2">📊 Sistema de Precificação Shopee</h2>
       <p class="text-gray-600 mb-4">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
-      <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Acessar Sistema</a>
+      <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Acessar Sistema</a>
     </div>
 
     <div class="card">
       <h2 class="text-2xl font-semibold mb-2">🗂️ Gerenciamento de Anúncios e Desempenho</h2>
       <p class="text-gray-600 mb-4">Sistema para gerenciar produtos, importar dados e analisar desempenho com IA.</p>
-      <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Acessar Sistema</a>
+           <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Acessar Sistema</a>
+
     </div>
 
     <div class="card">
       <h2 class="text-2xl font-semibold mb-2">📦 Controle de Sobras Shopee</h2>
       <p class="text-gray-600 mb-4">Importe relatórios da Shopee e controle sobras com gráficos e metas por SKU.</p>
-      <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">Acessar Sistema</a>
+     <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">Acessar Sistema</a>
     </div>
 
     <div class="card">
       <h2 class="text-2xl font-semibold mb-2">🛠️ Custeio de Produção</h2>
       <p class="text-gray-600 mb-4">Simule e calcule custos de produção por peça, incluindo MDF, mão de obra e indiretos.</p>
-      <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" target="_blank" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition">Acessar Sistema</a>
+      <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition">Acessar Sistema</a>
     </div>
 <!-- Modais de Login -->
   <div id="loginModal" class="modal">
@@ -157,7 +158,14 @@
       document.getElementById('loginBtn').classList.remove('hidden');
       document.getElementById('logoutBtn').classList.add('hidden');
     }
-
+function requireLogin(event) {
+      if (!auth.currentUser) {
+        event.preventDefault();
+        openModal('loginModal');
+        return false;
+      }
+      return true;
+    }
     function checkLogin() {
       auth.onAuthStateChanged(user => {
         if (user) { showUserArea(user); } else { hideUserArea(); }
