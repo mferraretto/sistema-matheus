@@ -1455,6 +1455,20 @@ try {
       console.error("Erro ao exportar JSON:", error);
     }
   }
+  
+  // Torna funções acessíveis no escopo global
+  window.verificarConexao = verificarConexao;
+  window.trocarAba = trocarAba;
+  window.processarPlanilha = processarPlanilha;
+  window.limparFiltros = limparFiltros;
+  window.exportarCSV = exportarCSV;
+  window.exportarJSON = exportarJSON;
+  window.adicionarMeta = adicionarMeta;
+  window.atualizarGraficos = atualizarGraficos;
+  window.filtrarPorSKU = filtrarPorSKU;
+  window.filtrarHistorico = filtrarHistorico;
+  window.editarMeta = editarMeta;
+  window.excluirMeta = excluirMeta;
 </script>
 </body>
 </html>
