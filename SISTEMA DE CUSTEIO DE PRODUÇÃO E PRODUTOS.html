@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <title>Calculadora de Custo de Produção</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+   <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <style>
     :root {
       --primary: #2c3e50;
@@ -364,9 +368,17 @@
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
+    const db = firebase.firestore();
+    let currentUser = null;
+    let chapas = [];
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
         window.location.href = 'index.html?login=1';
+         } else {
+        currentUser = user;
+        listarChapas().then(preencherSelectChapas);
+        carregarCustosIndiretos();
+        listarCalculos();
       }
     });
   </script>
@@ -774,6 +786,7 @@
       <div class="btn-group">
         <button class="btn-primary" onclick="calcularResumoFinal()">Calcular Resumo</button>
         <button class="btn-secondary" onclick="calcularResumoFinal(); exportarResumoPDF()">📄 Exportar PDF</button>
+          <button class="btn-primary" onclick="salvarResumo()">💾 Salvar Resumo</button>
       </div>
       
       <div class="resumo-container" id="resumoContainer">
@@ -783,6 +796,22 @@
       </div>
       
       <div id="resumoPDFContent" style="height: auto; visibility: hidden; position: absolute; left: -9999px;"></div>
+        <h3>🗂 Cálculos Salvos</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>SKU</th>
+            <th>Data</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaCalculos">
+          <tr>
+            <td colspan="4" style="text-align:center;">Nenhum cálculo salvo</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <div id="precificacao" class="tab">
       <iframe src="Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html" style="width:100%;height:90vh;border:none;"></iframe>
@@ -814,7 +843,7 @@
     }
 
     function calcularMDF() {
-      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+      const chapas = window.chapas || [];
       let pecasComErro = false;
       let htmlErros = '';
       let total = 0;
@@ -822,10 +851,10 @@
       function calcularPeca(alturaId, diametroId, chapaId, pecaNum) {
         const altura = parseFloat(document.getElementById(alturaId).value) || 0;
         const diametro = parseFloat(document.getElementById(diametroId).value) || 0;
-        const index = document.getElementById(chapaId).value;
-        const chapa = chapas[index];
-        
-        if ((altura > 0 || diametro > 0) && index === "") {
+      const chapaIdValue = document.getElementById(chapaId).value;
+        const chapa = chapas.find(c => c.id === chapaIdValue);
+
+        if ((altura > 0 || diametro > 0) && chapaIdValue === "") {
           pecasComErro = true;
           htmlErros += `<div style="color: #e74c3c; margin: 5px 0;">
             <strong>⚠️ Atenção:</strong> Selecione uma chapa para a Peça ${pecaNum}
@@ -917,8 +946,8 @@
       }
     }
     
-    function salvarChapa() {
-      const comprimento = document.getElementById('comprimentoChapa').value;
+ async function salvarChapa() {
+   const comprimento = document.getElementById('comprimentoChapa').value;
       const largura = document.getElementById('larguraChapaCadastro').value;
       const espessura = document.getElementById('espessuraChapa').value;
       const tipo = document.getElementById('tipoChapa').value;
@@ -929,17 +958,40 @@
         return;
       }
 
-      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
-      chapas.push({ comprimento, largura, espessura, tipo, preco });
-      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
-      listarChapas();
-      preencherSelectChapas(); // Atualiza os selects
-      
-      alert('Chapa cadastrada com sucesso!');
+       if (!currentUser) {
+        alert('Usuário não autenticado!');
+        return;
+      }
+
+      try {
+        await db.collection('chapasMDF').add({
+          comprimento,
+          largura,
+          espessura,
+          tipo,
+          preco,
+          uid: currentUser.uid,
+          createdAt: new Date().toISOString()
+        });
+        listarChapas();
+        preencherSelectChapas();
+        alert('Chapa cadastrada com sucesso!');
+      } catch (e) {
+        console.error('Erro ao salvar chapa', e);
+        alert('Erro ao salvar chapa');
+      }
     }
 
-    function listarChapas() {
-      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
+    async function listarChapas() {
+      if (!currentUser) return;
+      const snapshot = await db.collection('chapasMDF')
+        .where('uid', '==', currentUser.uid)
+        .orderBy('createdAt', 'desc')
+        .get();
+      chapas = [];
+      snapshot.forEach(doc => {
+        chapas.push({ id: doc.id, ...doc.data() });
+      });
       const tabela = document.getElementById('tabelaChapas');
       tabela.innerHTML = '';
 
@@ -961,33 +1013,34 @@
           <td>${chapa.tipo}</td>
           <td>R$ ${parseFloat(chapa.preco).toFixed(2)}</td>
           <td>
-            <button class="btn-danger" onclick="excluirChapa(${index})">🗑 Excluir</button>
+            <button class="btn-danger" onclick="excluirChapa('${chapa.id}')">🗑 Excluir</button>
           </td>
         `;
         tabela.appendChild(linha);
       });
     }
 
-    function excluirChapa(index) {
+    async function excluirChapa(id) {
       if (!confirm('Tem certeza que deseja excluir esta chapa?')) return;
-      
-      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
-      chapas.splice(index, 1);
-      localStorage.setItem('chapasMDF', JSON.stringify(chapas));
-      listarChapas();
-      preencherSelectChapas(); // Atualiza os selects
+        try {
+        await db.collection('chapasMDF').doc(id).delete();
+        listarChapas();
+        preencherSelectChapas();
+      } catch (e) {
+        console.error('Erro ao excluir chapa', e);
+        alert('Erro ao excluir chapa');
+      }
     }
     
     function preencherSelectChapas() {
-      const chapas = JSON.parse(localStorage.getItem('chapasMDF') || '[]');
       const selects = document.querySelectorAll('.chapaSelect');
 
       selects.forEach(select => {
         select.innerHTML = `<option value="">-- Escolha uma chapa --</option>`;
-        chapas.forEach((chapa, index) => {
+        chapas.forEach((chapa) => {
           const texto = `${chapa.tipo} - ${chapa.comprimento}x${chapa.largura}cm - ${chapa.espessura}mm - R$${parseFloat(chapa.preco).toFixed(2)}`;
           const option = document.createElement('option');
-          option.value = index;
+          option.value = chapa.id;
           option.textContent = texto;
           select.appendChild(option);
         });
@@ -1086,7 +1139,70 @@
         html2pdf().set(opt).from(element).save();
       }, 100);
     }
-    
+      async function salvarResumo() {
+      if (!currentUser) {
+        alert('Usuário não autenticado!');
+        return;
+      }
+
+      const resumo = {
+        nomeProduto: document.getElementById('nomeProduto').value || '',
+        codigoProduto: document.getElementById('codigoProduto').value || '',
+        custoMDF: parseFloat(document.getElementById('custoMDF').value) || 0,
+        custoMao: parseFloat(document.getElementById('custoMao').value) || 0,
+        custoEmbalagem: parseFloat(document.getElementById('custoEmbalagem').value) || 0,
+        custoIndiretoMensal: parseFloat(document.getElementById('custoIndiretoMensal').value) || 0,
+        qtdMensal: parseFloat(document.getElementById('qtdMensal').value) || 0,
+        qtdVendida: parseFloat(document.getElementById('qtdVendida').value) || 0,
+        uid: currentUser.uid,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        await db.collection('calculos').add(resumo);
+        listarCalculos();
+        alert('Resumo salvo com sucesso!');
+      } catch (e) {
+        console.error('Erro ao salvar resumo', e);
+        alert('Erro ao salvar resumo');
+      }
+    }
+
+    async function listarCalculos() {
+      if (!currentUser) return;
+      const snapshot = await db.collection('calculos')
+        .where('uid', '==', currentUser.uid)
+        .orderBy('timestamp', 'desc')
+        .get();
+      const tabela = document.getElementById('tabelaCalculos');
+      tabela.innerHTML = '';
+      if (snapshot.empty) {
+        tabela.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhum cálculo salvo</td></tr>`;
+        return;
+      }
+      snapshot.forEach(doc => {
+        const c = doc.data();
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${c.nomeProduto}</td>
+          <td>${c.codigoProduto}</td>
+          <td>${new Date(c.timestamp).toLocaleDateString()}</td>
+          <td><button class="btn-danger" onclick="excluirCalculo('${doc.id}')">🗑 Excluir</button></td>
+        `;
+        tabela.appendChild(linha);
+      });
+    }
+
+    async function excluirCalculo(id) {
+      if (!confirm('Tem certeza que deseja excluir este cálculo?')) return;
+      try {
+        await db.collection('calculos').doc(id).delete();
+        listarCalculos();
+      } catch (e) {
+        console.error('Erro ao excluir cálculo', e);
+        alert('Erro ao excluir cálculo');
+      }
+    }
     // Funções de persistência de dados
     function salvarCustosIndiretos() {
       const campos = document.querySelectorAll('#custosIndiretos .indireto');
@@ -1107,17 +1223,11 @@
     
     // Inicialização do sistema
     window.onload = () => {
-      // Carrega aba ativa
-const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+   const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
       const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
       showTab(activeTab);
       
-      // Carrega dados
-      listarChapas();
-      preencherSelectChapas();
-      carregarCustosIndiretos();
-      
-      // Configura listeners
+   
       const campos = document.querySelectorAll('#custosIndiretos .indireto');
       campos.forEach(campo => {
         campo.addEventListener('input', salvarCustosIndiretos);
