@@ -8,10 +8,11 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { 
-  getFirestore, 
-  doc, 
-  getDoc 
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
 // ✅ Configuração Firebase única (matheus-35023)
@@ -52,7 +53,10 @@ onAuthStateChanged(auth, async (user) => {
     }
   }
 });
-
+const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
+const logout = () => signOut(auth);
+const register = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+const resetPassword = (email) => sendPasswordResetEmail(auth, email);
 // API unificada para uso global
 export const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
 export const logout = () => signOut(auth);
