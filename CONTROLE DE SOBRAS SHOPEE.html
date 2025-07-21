@@ -633,7 +633,14 @@ try {
   // =============================================
   // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
   // =============================================
-  
+  function trocarAba(abaId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.getElementById(abaId).classList.remove('hidden');
+
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    const abaBtn = document.querySelector(`[onclick*="${abaId}"]`);
+    if (abaBtn) abaBtn.classList.add('active');
+  }
   function trocarAba(id) {
     document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('ativa'));
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -649,29 +656,39 @@ try {
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE METAS
   // =============================================
-   async function carregarProdutos() {
-    try {
-      const snapshot = await db.("products").get();
-      produtos = {};
-      const datalist = document.getElementById('listaSkus');
-      if (datalist) datalist.innerHTML = '';
+  
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (!data.sku) return;
-        produtos[data.sku] = data.precoMinimo;
-        if (datalist) {
-          const opt = document.createElement('option');
-          const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
-          opt.value = data.sku;
-          opt.label = `${data.sku} - R$ ${preco}`;
-          datalist.appendChild(opt);
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-    }
+async function carregarProdutos() {
+  try {
+    const ref = collection(db, "products");
+    const snapshot = await getDocs(ref);
+
+    produtos = {}; // Deve estar declarado globalmente se usado fora dessa função
+
+    const datalist = document.getElementById('listaSkus');
+    if (datalist) datalist.innerHTML = '';
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!data.sku) return;
+
+      produtos[data.sku] = data.precoMinimo;
+
+      if (datalist) {
+        const opt = document.createElement('option');
+        const preco = data.precoMinimo
+          ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '0.00';
+        opt.value = data.sku;
+        opt.label = `${data.sku} - R$ ${preco}`;
+        datalist.appendChild(opt);
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao carregar produtos:', error);
   }
+}
 
  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
@@ -725,7 +742,7 @@ async function carregarHistorico() {
 
       const historicoRef = collection(db, "historicoMetas");
       const q = query(historicoRef, orderBy("data", "desc"), limit(50));
-      const snapshot = await getDocs(q);
+const snapshot = await getDocs(q);
 
       snapshot.forEach((doc) => {
         historico.push({
