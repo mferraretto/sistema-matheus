@@ -4,153 +4,305 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Sobras - Shopee Premium</title>
-  <!-- Meta tag para CSP (Content Security Policy) -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self' 
-  https://*.firebaseio.com 
-  https://*.googleapis.com 
-  https://*.google.com 
-  https://*.gstatic.com 
-  https://cdnjs.cloudflare.com 
-  https://cdn.jsdelivr.net 
-  'unsafe-eval' 
-  'unsafe-inline'
-">  
-  <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Bibliotecas JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
+  
   <style>
     :root {
       --primary: #4a6bff;
+      --primary-light: #e0e7ff;
       --success: #4caf50;
       --warning: #ff9800;
       --danger: #f44336;
       --light: #f8f9fa;
       --dark: #343a40;
       --gray: #6c757d;
+      --border: #e0e0e0;
+      --card-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      --transition: all 0.3s ease;
     }
     
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      padding: 20px; 
-      background: #f4f4f4;
-      color: #333;
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
     }
     
-    .container {
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .app-container {
       max-width: 1400px;
-      margin: 0 auto;
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      margin: 20px auto;
+      padding: 0 20px;
     }
     
-    h2, h3, h4 {
+    /* Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+    }
+    
+    .app-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
       color: var(--primary);
-      margin-top: 0;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .app-header h1 i {
+      color: var(--success);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      background: var(--primary-light);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+      gap: 8px;
+    }
+    
+    /* Abas */
+    .aba-botoes {
+      display: flex;
+      overflow-x: auto;
+      gap: 5px;
+      padding-bottom: 10px;
+      margin-bottom: 25px;
+      border-bottom: 1px solid var(--border);
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    .aba-botoes::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .aba-btn {
+      padding: 10px 20px;
+      background: #f5f7fa;
+      border: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .aba-btn:hover {
+      background: #e0e7ff;
+    }
+    
+    .aba-btn.active {
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(74, 107, 255, 0.2);
+    }
+    
+    /* Cards de resumo */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .summary-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      transition: var(--transition);
+    }
+    
+    .summary-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--primary-light);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+    
+    .card-content h3 {
+      margin: 0 0 5px 0;
+      font-size: 0.95rem;
+      color: var(--gray);
+    }
+    
+    .card-content p {
+      margin: 0 0 8px 0;
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+    
+    .card-trend {
+      font-size: 0.85rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    
+    .positive {
+      background: #e6f4ea;
+      color: #0a7b3e;
+    }
+    
+    .negative {
+      background: #fce8e6;
+      color: #d93025;
+    }
+    
+    /* Área de conteúdo */
+    .aba-conteudo {
+      display: none;
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 30px;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .aba-conteudo.ativa {
+      display: block;
+    }
+    
+    .aba-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .aba-header h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+    }
+    
+    /* Tabelas */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin: 20px 0;
+      background: white;
     }
     
     table {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1000px;
     }
     
-    th, td {
-      border: 1px solid #dee2e6;
-      padding: 12px;
-      text-align: center;
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     
     th {
       background: var(--primary);
       color: white;
-      position: sticky;
-      top: 0;
+      padding: 15px 12px;
+      text-align: left;
+      font-weight: 500;
     }
     
-    .aba {
-      display: none;
-      animation: fadeIn 0.3s ease;
+    th:first-child {
+      border-radius: 10px 0 0 0;
     }
     
-    .ativa { display: block; }
-    
-    .aba-btn {
-      margin: 5px 10px 5px 0;
-      padding: 10px 20px;
-      cursor: pointer;
-      background: white;
-      border: 2px solid var(--primary);
-      color: var(--primary);
-      border-radius: 5px;
-      font-weight: bold;
-      transition: all 0.3s;
+    th:last-child {
+      border-radius: 0 10px 0 0;
     }
     
-    .aba-btn:hover, .aba-btn.active {
-      background: var(--primary);
-      color: white;
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
     }
     
-    .aba-btn.active {
-      box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.3);
+    tr:last-child td {
+      border-bottom: none;
     }
     
-    .editInput {
-      display: none;
-      width: 100px;
-      padding: 5px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
+    tr:hover td {
+      background: #f8fafd;
     }
     
-    .info-box {
-      margin: 15px 0;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 5px;
-      border-left: 4px solid var(--primary);
+    /* Formulários e controles */
+    .form-group {
+      margin-bottom: 20px;
     }
     
-    .alert {
+    .form-control {
+      display: block;
+      width: 100%;
       padding: 10px 15px;
-      border-radius: 4px;
-      margin: 10px 0;
-      display: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      transition: var(--transition);
     }
     
-    .alert-success {
-      background: #d4edda;
-      color: #155724;
-      border-left: 4px solid var(--success);
-    }
-    
-    .alert-danger {
-      background: #f8d7da;
-      color: #721c24;
-      border-left: 4px solid var(--danger);
+    .form-control:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
     }
     
     .btn {
-      padding: 8px 16px;
-      border-radius: 4px;
+      padding: 10px 20px;
       border: none;
-      cursor: pointer;
+      border-radius: 8px;
+      font-size: 1rem;
       font-weight: 500;
-      transition: all 0.2s;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
     
     .btn-primary {
@@ -160,1250 +312,1215 @@
     
     .btn-primary:hover {
       background: #3a56d4;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
     
-    .btn-outline-primary {
+    .btn-outline {
       background: white;
       color: var(--primary);
       border: 1px solid var(--primary);
     }
     
-    .btn-outline-primary:hover {
-      background: #f0f4ff;
+    .btn-outline:hover {
+      background: var(--primary-light);
     }
     
-    .form-control {
-      padding: 8px 12px;
-      border: 1px solid #ced4da;
-      border-radius: 4px;
-      margin-right: 10px;
-      width: 200px;
-    }
-    
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 10px;
-    }
-    
-    .badge {
-      display: inline-block;
-      padding: 3px 7px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: bold;
-    }
-    
-    .badge-success {
-      background: var(--success);
-      color: white;
-    }
-    
-    .badge-warning {
-      background: var(--warning);
-      color: white;
-    }
-    
-    .badge-danger {
+    .btn-danger {
       background: var(--danger);
       color: white;
     }
     
-    .badge-info {
-      background: #17a2b8;
-      color: white;
+    .btn-danger:hover {
+      background: #d32f2f;
     }
     
-    .badge-secondary {
-      background: var(--gray);
-      color: white;
-    }
-    
-    .chart-container {
-      margin: 30px 0;
-      height: 300px;
-    }
-    
-    .history-item {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      font-size: 14px;
-    }
-    
-    .history-item:last-child {
-      border-bottom: none;
-    }
-    
-    .history-date {
-      color: var(--gray);
-      font-size: 12px;
-    }
-    
-    .connection-status {
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      padding: 8px 15px;
-      border-radius: 20px;
-      font-size: 14px;
-      z-index: 1000;
-    }
-    
-    .online { 
-      background: var(--success);
-      color: white;
-    }
-    
-    .offline { 
-      background: var(--danger);
-      color: white;
-    }
-    
-    .error-box {
-      background: #ffebee;
-      border-left: 4px solid #f44336;
+    .info-box {
       padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
       margin-bottom: 20px;
-      display: none;
     }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .info-box i {
+      color: var(--primary);
+      margin-right: 10px;
+    }
+    
+    /* Gráficos */
+    .chart-container {
+      height: 350px;
+      margin: 30px 0;
+      position: relative;
+    }
+    
+    /* Notificações */
+    .notification {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      padding: 15px 20px;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      z-index: 1000;
+      transform: translateX(120%);
+      animation: slideIn 0.3s forwards;
+      border-left: 4px solid var(--success);
+    }
+    
+    .notification.error {
+      border-left-color: var(--danger);
+    }
+    
+    .notification i {
+      margin-right: 10px;
+      font-size: 1.2rem;
+    }
+    
+    .notification.success i {
+      color: var(--success);
+    }
+    
+    .notification.error i {
+      color: var(--danger);
+    }
+    
+    @keyframes slideIn {
+      to { transform: translateX(0); }
+    }
+    
+    .notification.hide {
+      animation: slideOut 0.3s forwards;
+    }
+    
+    @keyframes slideOut {
+      to { transform: translateX(120%); }
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .loading-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(74, 107, 255, 0.2);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
     }
     
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
     
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .badge-success {
+      background: #e6f4ea;
+      color: #0a7b3e;
+    }
+    
+    .badge-warning {
+      background: #fef7e0;
+      color: #e6a700;
+    }
+    
+    .badge-danger {
+      background: #fce8e6;
+      color: #d93025;
+    }
+    
+    .badge-info {
+      background: #e8f0fe;
+      color: #1a73e8;
+    }
+    
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
     /* Responsividade */
     @media (max-width: 768px) {
-      .container {
+      .app-header {
+        flex-direction: column;
+        text-align: center;
         padding: 15px;
       }
       
-      th, td {
-        padding: 8px;
-        font-size: 14px;
+      .app-header h1 {
+        margin: 10px 0;
       }
       
-      .form-control {
-        width: 100%;
-        margin-bottom: 10px;
+      .aba-botoes {
+        gap: 3px;
       }
       
       .aba-btn {
-        display: block;
-        width: 100%;
-        margin: 5px 0;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+      
+      .table-container {
+        border-radius: 8px;
+      }
+      
+      th, td {
+        padding: 10px 8px;
+        font-size: 0.85rem;
+      }
+      
+      .aba-conteudo {
+        padding: 15px;
+      }
+      
+      .summary-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
-    <a href="index.html" class="hover:underline">Início</a>
-    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
-    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
-    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
-  </nav>
-<div class="container">
-  <!-- Alertas e status de conexão -->
-  <div id="alertSuccess" class="alert alert-success"></div>
-  <div id="alertError" class="alert alert-danger"></div>
-  <div id="firebase-error" class="error-box">
-    <h3><i class="fas fa-exclamation-triangle"></i> Erro de Conexão com o Firebase</h3>
-    <p id="error-message"></p>
-    <button onclick="verificarConexao()" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Tentar Reconectar</button>
-  </div>
-  
-  <h2><i class="fas fa-check-circle"></i> Mentoria Ferraretto - Conferência de Sobras</h2>
-  
-  <!-- Barra de navegação por abas -->
-  <button class="aba-btn active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
-  <button class="aba-btn" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
-  <button class="aba-btn" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
-  <button class="aba-btn" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1><i class="fas fa-check-circle"></i> Sistema de Sobras - Shopee Premium</h1>
+      <div class="user-info">
+        <i class="fas fa-user"></i>
+        <span>Usuário Admin</span>
+      </div>
+    </header>
 
-  <!-- Aba de Importação/Conferência -->
-  <div id="importar" class="aba ativa">
-    <div class="info-box">
-      <p><i class="fas fa-info-circle"></i> Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas.</p>
-    </div>
-    
-    <div style="margin: 15px 0;">
-      <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
-      <button onclick="processarPlanilha()" class="btn btn-primary" id="btnProcessar">
-        <span id="btnProcessarText"><i class="fas fa-cogs"></i> Processar Planilha</span>
+    <!-- Navegação por abas -->
+    <div class="aba-botoes">
+      <button class="aba-btn active" onclick="trocarAba('importar')">
+        <i class="fas fa-box-open"></i> Conferir Pedidos
+      </button>
+      <button class="aba-btn" onclick="trocarAba('metas')">
+        <i class="fas fa-bullseye"></i> Metas por SKU
+      </button>
+      <button class="aba-btn" onclick="trocarAba('graficos')">
+        <i class="fas fa-chart-bar"></i> Gráficos
+      </button>
+      <button class="aba-btn" onclick="trocarAba('historico')">
+        <i class="fas fa-history"></i> Histórico
       </button>
     </div>
-    
-    <div style="margin: 15px 0;">
-      <label><strong><i class="fas fa-filter"></i> Filtrar por SKU:</strong></label>
-      <select id="tipoFiltro" onchange="filtrarPorSKU()" class="form-control" style="width: auto; display: inline-block;">
-        <option value="exata">Correspondência Exata</option>
-        <option value="comeca">Começa com</option>
-        <option value="contem">Contém</option>
-      </select>
-      <input type="text" id="filtroSKU" oninput="filtrarPorSKU()" placeholder="Digite o SKU..." class="form-control" style="width: 250px; display: inline-block;" />
-      <button onclick="limparFiltros()" class="btn btn-outline-primary"><i class="fas fa-times"></i> Limpar</button>
-    </div>
-    
-    <div style="overflow-x: auto;">
-      <table id="resultado">
-        <thead>
-          <tr>
-            <th>ID do Pedido</th>
-            <th>SKU</th>
-            <th>Subtotal</th>
-            <th>Reembolso</th>
-            <th>Cupom</th>
-            <th>Comissão</th>
-            <th>Serviço</th>
-            <th>Sobra</th>
-            <th>% vs Meta</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    
-    <div id="totalSobra" style="margin-top: 20px;"></div>
-    
-    <div style="margin-top: 20px;">
-      <button onclick="exportarCSV()" class="btn btn-primary"><i class="fas fa-file-export"></i> Exportar CSV</button>
-      <button onclick="exportarJSON()" class="btn btn-outline-primary"><i class="fas fa-file-code"></i> Exportar JSON</button>
-    </div>
-  </div>
 
-  <!-- Aba de Metas -->
-  <div id="metas" class="aba">
-    <h3><i class="fas fa-bullseye"></i> Metas de Sobra por SKU</h3>
-    
-    <div class="info-box">
-      <p><i class="fas fa-info-circle"></i> Cadastre metas de sobra para cada SKU. O sistema irá comparar automaticamente o desempenho real com a meta estabelecida.</p>
-    </div>
-    
-    <div style="margin: 15px 0;">
-       <input type="text" id="metaSku" list="listaSkus" placeholder="SKU do Produto" class="form-control" />
-      <datalist id="listaSkus"></datalist>
-      <span id="precoMinimoInfo" style="margin-left:10px;color:#28a745;"></span>
-      <input type="number" id="metaValor" placeholder="Sobra Esperada (R$)" step="0.01" class="form-control" />
-      <button onclick="adicionarMeta()" class="btn btn-primary" id="btnAdicionarMeta">
-        <i class="fas fa-plus"></i> Adicionar Meta
-      </button>
-    </div>
-    
-    <div style="overflow-x: auto;">
-      <table id="tabelaMetas">
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Preço Mínimo</th>
-            <th>Meta R$</th>
-            <th>Última Atualização</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Aba de Gráficos -->
-  <div id="graficos" class="aba">
-    <h3><i class="fas fa-chart-bar"></i> Gráficos de Desempenho</h3>
-    
-    <div class="info-box">
-      <p><i class="fas fa-info-circle"></i> Visualize gráficos comparativos entre o desempenho real e as metas estabelecidas.</p>
-    </div>
-    
-    <div style="margin: 15px 0;">
-      <select id="filtroGrafico" class="form-control" style="width: 300px;">
-        <option value="top10">Top 10 SKUs com maior diferença</option>
-        <option value="bottom10">Top 10 SKUs com menor diferença</option>
-        <option value="all">Todos os SKUs</option>
-      </select>
-      <button onclick="atualizarGraficos()" class="btn btn-primary"><i class="fas fa-sync-alt"></i> Atualizar</button>
-    </div>
-    
-    <div class="chart-container">
-      <canvas id="graficoBarras"></canvas>
-    </div>
-    
-    <div class="chart-container">
-      <canvas id="graficoPizza"></canvas>
-    </div>
-  </div>
-
-  <!-- Aba de Histórico -->
-  <div id="historico" class="aba">
-    <h3><i class="fas fa-history"></i> Histórico de Alterações</h3>
-    
-    <div class="info-box">
-      <p><i class="fas fa-info-circle"></i> Registro de todas as alterações nas metas de sobra.</p>
-    </div>
-    
-    <div style="margin: 15px 0;">
-      <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" style="width: 300px;" oninput="filtrarHistorico()" />
-    </div>
-    
-    <div id="listaHistorico" style="border: 1px solid #eee; border-radius: 5px; max-height: 500px; overflow-y: auto;"></div>
-  </div>
-</div>
-
-<!-- Status de conexão -->
-<div id="connectionStatus" class="connection-status offline">Offline - Trabalhando localmente</div>
-
-<script>
-  // =============================================
-  // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
-  // =============================================
-  
-  const firebaseConfig = {
-  apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-  authDomain: "matheus-35023.firebaseapp.com",
-  projectId: "matheus-35023",
-  storageBucket: "matheus-35023.appspot.com",  // Note que mudei de .firebasestorage.app para .appspot.com
-  messagingSenderId: "1011113149395",
-  appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
-  databaseURL: "https://matheus-35023.firebaseio.com"
-};
-  // Variáveis globais
-  let db;
-  let metas = {};
-  let historico = [];
-  let produtos = {};
-  let pedidosProcessados = [];
-  let graficoBarras, graficoPizza;
-  let app;
-
-  // =============================================
-  // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
-  // =============================================
-  
-// Inicialização mais robusta do Firebase
-try {
-  const app = firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore(app);
-  const auth = firebase.auth();
-
-  auth.onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = 'index.html?login=1';
-    }
-  });
-  // Configurações importantes para a conexão
-  db.settings({
-  experimentalForceLongPolling: true
-});
-  
-  // Habilita persistência offline
-  firebase.firestore().enablePersistence()
-    .catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn("Persistência offline não suportada em múltiplas abas");
-      } else if (err.code == 'unimplemented') {
-        console.warn("Persistência offline não disponível no navegador");
-      }
-    });
-  
-  // Verifica conexão
-  verificarConexao();
-  
-} catch (error) {
-  console.error("Erro ao inicializar Firebase:", error);
-  mostrarErroFirebase(error);
-}
-
-  // Carrega dados iniciais
- document.addEventListener('DOMContentLoaded', async function() {
-    await carregarProdutos();
-    await carregarMetas();
-    carregarHistorico();
-  });
-
-  // =============================================
-  // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
-  // =============================================
-  
-  function verificarConexao() {
-  firebase.firestore().enableNetwork()
-    .then(() => {
-      console.log("Conectado ao Firestore");
-      document.getElementById('connectionStatus').className = 'connection-status online';
-      document.getElementById('connectionStatus').textContent = 'Online';
-    })
-    .catch((error) => {
-      console.error("Erro de conexão:", error);
-      document.getElementById('connectionStatus').className = 'connection-status offline';
-      document.getElementById('connectionStatus').textContent = 'Offline';
-    });
-}
-
-  function mostrarErroFirebase(error) {
-    const errorBox = document.getElementById('firebase-error');
-    const errorMessage = document.getElementById('error-message');
-    
-    errorMessage.innerHTML = `<strong>${error.message}</strong><br>(Código: ${error.code})`;
-    errorBox.style.display = 'block';
-    
-    console.error("Erro Firebase:", error);
-  }
-
-  function updateConnectionStatus(online) {
-    const statusElement = document.getElementById('connectionStatus');
-    
-    if (online) {
-      statusElement.textContent = 'Online';
-      statusElement.className = 'connection-status online';
-    } else {
-      statusElement.textContent = 'Offline - Trabalhando localmente';
-      statusElement.className = 'connection-status offline';
-    }
-  }
-
-  // =============================================
-  // FUNÇÕES UTILITÁRIAS
-  // =============================================
-  
-  function mostrarSucesso(mensagem) {
-    const alerta = document.getElementById('alertSuccess');
-    alerta.innerHTML = `<i class="fas fa-check-circle"></i> ${mensagem}`;
-    alerta.style.display = 'block';
-    
-    setTimeout(() => {
-      alerta.style.display = 'none';
-    }, 5000);
-  }
-
-  function mostrarErro(mensagem) {
-    const alerta = document.getElementById('alertError');
-    alerta.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${mensagem}`;
-    alerta.style.display = 'block';
-    
-    setTimeout(() => {
-      alerta.style.display = 'none';
-    }, 5000);
-  }
-
-  function toggleLoading(botao, texto) {
-    const btnText = botao.querySelector('span') || botao;
-    if (botao.classList.contains('loading')) {
-      botao.classList.remove('loading');
-      btnText.innerHTML = texto;
-    } else {
-      botao.classList.add('loading');
-      btnText.innerHTML = '<div class="loading"></div> Carregando...';
-    }
-  }
-
-  async function executarComRetry(operacao, maxTentativas = 3, delay = 1000) {
-    let tentativas = 0;
-    
-    while (tentativas < maxTentativas) {
-      try {
-        return await operacao();
-      } catch (error) {
-        tentativas++;
-        if (tentativas >= maxTentativas) throw error;
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Aumenta o delay exponencialmente
-      }
-    }
-  }
- function atualizarPrecoMinimo() {
-    const sku = document.getElementById('metaSku').value.trim();
-    const preco = produtos[sku];
-    const info = document.getElementById('precoMinimoInfo');
-    if (!info) return;
-    if (preco) {
-      info.textContent = `Preço Mínimo: R$ ${parseFloat(preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    } else {
-      info.textContent = '';
-    }
-  }
-
-  // =============================================
-  // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
-  // =============================================
-  
-  function trocarAba(id) {
-    document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('ativa'));
-    document.querySelectorAll('.aba-btn').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(id).classList.add('ativa');
-    document.querySelector(`.aba-btn[onclick="trocarAba('${id}')"]`).classList.add('active');
-    
-    if (id === 'graficos') {
-      setTimeout(atualizarGraficos, 100);
-    }
-  }
-
-  // =============================================
-  // FUNÇÕES DE GERENCIAMENTO DE METAS
-  // =============================================
-   async function carregarProdutos() {
-    try {
-      const snapshot = await db.collection("products").get();
-      produtos = {};
-      const datalist = document.getElementById('listaSkus');
-      if (datalist) datalist.innerHTML = '';
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (!data.sku) return;
-        produtos[data.sku] = data.precoMinimo;
-        if (datalist) {
-          const opt = document.createElement('option');
-          const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
-          opt.value = data.sku;
-          opt.label = `${data.sku} - R$ ${preco}`;
-          datalist.appendChild(opt);
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-    }
-  }
-
-  async function carregarMetas() {
-    try {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
-      
-      return await executarComRetry(async () => {
-        metas = {};
-        // Carrega SKUs e preço mínimo da coleção de produtos
-        const produtosSnap = await db.collection("products").get();
-        produtosSnap.forEach((doc) => {
-          const data = doc.data();
-          if (data.sku && data.precoMinimo !== undefined) {
-            metas[data.sku] = {
-              valor: parseFloat(data.precoMinimo),
-              atualizadoEm: new Date()
-            };
-          }
-        });
-
-        // Sobrepõe com metas salvas manualmente se existirem
-        const metasSnap = await db.collection("metasSKU").get();
-        metasSnap.forEach((doc) => {
-          const originalSku = doc.id.replaceAll('__', '/');
-          metas[originalSku] = {
-            valor: doc.data().valor,
-            atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
-          };
-        });
-        
-        renderizarMetas();
-        return true;
-      });
-    } catch (error) {
-      mostrarErroFirebase(`Erro ao carregar metas: ${error.message}`);
-      console.error("Erro ao carregar metas:", error);
-      return false;
-    } finally {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
-    }
-  }
-
-  async function carregarHistorico() {
-    try {
-      return await executarComRetry(async () => {
-        historico = [];
-        const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
-        
-        snapshot.forEach((doc) => {
-          historico.push({
-            sku: doc.data().sku,
-            acao: doc.data().acao,
-            valorAnterior: doc.data().valorAnterior,
-            valorNovo: doc.data().valorNovo,
-            data: doc.data().data.toDate(),
-            usuario: doc.data().usuario || 'Sistema'
-          });
-        });
-        
-        renderizarHistorico();
-        return true;
-      });
-    } catch (error) {
-      mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
-      console.error("Erro ao carregar histórico:", error);
-      return false;
-    }
-  }
-
-  async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
-    try {
-      await executarComRetry(async () => {
-        await db.collection("historicoMetas").add({
-          sku: sku,
-          acao: acao,
-          valorAnterior: valorAnterior,
-          valorNovo: valorNovo,
-          data: new Date(),
-          usuario: "Usuário" // Em um sistema real, pegaria do auth
-        });
-        
-        // Recarregar histórico após adicionar novo registro
-        await carregarHistorico();
-        return true;
-      });
-    } catch (error) {
-      console.error("Erro ao registrar histórico:", error);
-      throw error;
-    }
-  }
-
-  function renderizarMetas() {
-    const tbody = document.querySelector('#tabelaMetas tbody');
-    tbody.innerHTML = '';
-    
-    if (Object.keys(metas).length === 0) {
-     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma meta cadastrada</td></tr>';
-      return;
-    }
-    
-   for (let sku in metas) {
-        const meta = metas[sku];
-        const precoProduto = produtos[sku];
-        const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${sku}</td>
-        <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
-        <td>
-          <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-          <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
-        </td>
-        <td>${dataFormatada}</td>
-        <td>
-          <button onclick="editarMeta(this, '${sku}')" class="btn" style="padding: 5px 8px;"><i class="fas fa-edit"></i></button>
-          <button onclick="excluirMeta('${sku}', this)" class="btn" style="padding: 5px 8px;"><i class="fas fa-trash-alt"></i></button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    }
-  }
-
-  function renderizarHistorico() {
-    const lista = document.getElementById('listaHistorico');
-    lista.innerHTML = '';
-    
-    if (historico.length === 0) {
-      lista.innerHTML = '<div class="history-item" style="text-align: center;">Nenhum registro histórico encontrado</div>';
-      return;
-    }
-    
-    historico.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'history-item';
-      
-      let acaoTexto = '';
-      let valorTexto = '';
-      
-      if (item.acao === 'adicionar') {
-        acaoTexto = `<span class="badge badge-success">Adicionado</span>`;
-        valorTexto = `Novo valor: R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
-      } else if (item.acao === 'editar') {
-        acaoTexto = `<span class="badge badge-warning">Editado</span>`;
-        valorTexto = `De R$ ${item.valorAnterior?.toFixed(2) || '0.00'} para R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
-      } else if (item.acao === 'remover') {
-        acaoTexto = `<span class="badge badge-danger">Removido</span>`;
-        valorTexto = `Valor anterior: R$ ${item.valorAnterior?.toFixed(2) || '0.00'}`;
-      }
-      
-      div.innerHTML = `
-        <div style="display: flex; justify-content: space-between;">
-          <div>
-            <strong>${item.sku}</strong> - ${acaoTexto}
-            <div>${valorTexto}</div>
-          </div>
-          <div class="history-date">
-            ${item.data.toLocaleDateString('pt-BR')} ${item.data.toLocaleTimeString('pt-BR')}
-            <div>Por: ${item.usuario}</div>
+    <!-- Cards de resumo -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="card-icon">
+          <i class="fas fa-coins"></i>
+        </div>
+        <div class="card-content">
+          <h3>Sobra Total</h3>
+          <p id="totalSobraValor">R$ 0,00</p>
+          <div class="card-trend" id="sobraTrend">
+            Importe os dados para ver
           </div>
         </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="card-icon">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="card-content">
+          <h3>Meta Média</h3>
+          <p id="metaMediaValor">R$ 0,00</p>
+          <div class="card-trend" id="metaTrend">
+            Configure metas primeiro
+          </div>
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="card-icon">
+          <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+        <div class="card-content">
+          <h3>Pedidos Processados</h3>
+          <p id="totalPedidos">0</p>
+          <div class="card-trend" id="pedidosTrend">
+            Nenhum pedido processado
+          </div>
+        </div>
+      </div>
+      
+      <div class="summary-card">
+        <div class="card-icon">
+          <i class="fas fa-percentage"></i>
+        </div>
+        <div class="card-content">
+          <h3>Desempenho Médio</h3>
+          <p id="desempenhoMedia">0%</p>
+          <div class="card-trend" id="desempenhoTrend">
+            Sem dados suficientes
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aba de Importação/Conferência -->
+    <div id="importar" class="aba-conteudo ativa">
+      <div class="aba-header">
+        <h2><i class="fas fa-box-open"></i> Conferir Pedidos</h2>
+      </div>
+      
+      <div class="info-box">
+        <p><i class="fas fa-info-circle"></i> Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas.</p>
+      </div>
+      
+      <div class="form-group">
+        <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
+        <button onclick="processarPlanilha()" class="btn btn-primary" id="btnProcessar" style="margin-top: 15px;">
+          <i class="fas fa-cogs"></i> Processar Planilha
+        </button>
+      </div>
+      
+      <div class="form-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <label for="tipoFiltro"><strong>Filtrar por SKU:</strong></label>
+          <select id="tipoFiltro" class="form-control">
+            <option value="exata">Correspondência Exata</option>
+            <option value="comeca">Começa com</option>
+            <option value="contem">Contém</option>
+          </select>
+        </div>
+        
+        <div style="flex: 2; min-width: 250px;">
+          <label for="filtroSKU"><strong>Valor do filtro:</strong></label>
+          <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" oninput="filtrarPorSKU()" />
+        </div>
+        
+        <div style="align-self: flex-end;">
+          <button onclick="limparFiltros()" class="btn btn-outline">
+            <i class="fas fa-times"></i> Limpar Filtros
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table id="resultado">
+          <thead>
+            <tr>
+              <th>ID do Pedido</th>
+              <th>SKU</th>
+              <th>Subtotal</th>
+              <th>Reembolso</th>
+              <th>Cupom</th>
+              <th>Comissão</th>
+              <th>Serviço</th>
+              <th>Sobra</th>
+              <th>% vs Meta</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="10" style="text-align: center; padding: 20px;">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: #e0e0e0; margin-bottom: 15px;"></i>
+                <p>Nenhum dado disponível. Importe uma planilha para começar.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button onclick="exportarCSV()" class="btn btn-primary">
+          <i class="fas fa-file-export"></i> Exportar CSV
+        </button>
+        <button onclick="exportarJSON()" class="btn btn-outline">
+          <i class="fas fa-file-code"></i> Exportar JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- Aba de Metas -->
+    <div id="metas" class="aba-conteudo">
+      <div class="aba-header">
+        <h2><i class="fas fa-bullseye"></i> Metas de Sobra por SKU</h2>
+      </div>
+      
+      <div class="info-box">
+        <p><i class="fas fa-info-circle"></i> Cadastre metas de sobra para cada SKU. O sistema irá comparar automaticamente o desempenho real com a meta estabelecida.</p>
+      </div>
+      
+      <div class="form-group" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <label for="metaSku"><strong>SKU do Produto:</strong></label>
+          <input type="text" id="metaSku" placeholder="Digite o SKU..." class="form-control" />
+          <div id="precoMinimoInfo" style="font-size: 0.9rem; margin-top: 5px;"></div>
+        </div>
+        
+        <div style="flex: 1; min-width: 250px;">
+          <label for="metaValor"><strong>Meta de Sobra (R$):</strong></label>
+          <input type="number" id="metaValor" placeholder="Valor esperado" step="0.01" class="form-control" />
+        </div>
+        
+        <div style="align-self: flex-end;">
+          <button onclick="adicionarMeta()" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Adicionar Meta
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table id="tabelaMetas">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Preço Mínimo</th>
+              <th>Meta R$</th>
+              <th>Última Atualização</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 20px;">
+                <i class="fas fa-bullseye" style="font-size: 3rem; color: #e0e0e0; margin-bottom: 15px;"></i>
+                <p>Nenhuma meta cadastrada. Adicione sua primeira meta.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Aba de Gráficos -->
+    <div id="graficos" class="aba-conteudo">
+      <div class="aba-header">
+        <h2><i class="fas fa-chart-bar"></i> Gráficos de Desempenho</h2>
+        <div>
+          <select id="filtroGrafico" class="form-control" style="display: inline-block; width: auto;">
+            <option value="top10">Top 10 SKUs com maior diferença</option>
+            <option value="bottom10">Top 10 SKUs com menor diferença</option>
+            <option value="all">Todos os SKUs</option>
+          </select>
+          <button onclick="atualizarGraficos()" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Atualizar
+          </button>
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <p><i class="fas fa-info-circle"></i> Visualize gráficos comparativos entre o desempenho real e as metas estabelecidas.</p>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="graficoBarras"></canvas>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="graficoPizza"></canvas>
+      </div>
+    </div>
+
+    <!-- Aba de Histórico -->
+    <div id="historico" class="aba-conteudo">
+      <div class="aba-header">
+        <h2><i class="fas fa-history"></i> Histórico de Alterações</h2>
+        <div>
+          <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" style="display: inline-block; width: auto;" oninput="filtrarHistorico()" />
+        </div>
+      </div>
+      
+      <div class="info-box">
+        <p><i class="fas fa-info-circle"></i> Registro de todas as alterações nas metas de sobra.</p>
+      </div>
+      
+      <div id="listaHistorico" style="border-radius: 10px; max-height: 500px; overflow-y: auto; background: white; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <div class="history-item" style="text-align: center; padding: 20px; color: var(--gray);">
+          <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 15px;"></i>
+          <p>Nenhum registro histórico encontrado</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Processando sua planilha...</p>
+  </div>
+
+  <script>
+    // =============================================
+    // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
+    // =============================================
+    
+    // Configuração do Firebase (substitua com suas credenciais)
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
+    };
+    
+    // Variáveis globais
+    let db;
+    let metas = {};
+    let historico = [];
+    let produtos = {};
+    let pedidosProcessados = [];
+    let graficoBarras, graficoPizza;
+    let app;
+
+    // =============================================
+    // INICIALIZAÇÃO DO SISTEMA
+    // =============================================
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Inicialização do Firebase
+      try {
+        app = firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore(app);
+        const auth = firebase.auth();
+        
+        // Verifica se o usuário está autenticado
+        auth.onAuthStateChanged(user => {
+          if (!user) {
+            // Redireciona para a página de login
+            console.log("Usuário não autenticado, redirecionando...");
+          }
+        });
+        
+        // Configurações de persistência offline
+        firebase.firestore().enablePersistence()
+          .catch((err) => {
+            if (err.code == 'failed-precondition') {
+              console.warn("Persistência offline não suportada em múltiplas abas");
+            } else if (err.code == 'unimplemented') {
+              console.warn("Persistência offline não disponível no navegador");
+            }
+          });
+        
+        // Carrega dados iniciais
+        await carregarProdutos();
+        await carregarMetas();
+        await carregarHistorico();
+        
+        // Atualiza a interface
+        atualizarCardsResumo();
+        
+      } catch (error) {
+        console.error("Erro ao inicializar Firebase:", error);
+        mostrarNotificacao("Erro ao conectar com o Firebase: " + error.message, "error");
+      }
+    });
+
+    // =============================================
+    // FUNÇÕES DE INTERFACE
+    // =============================================
+    
+    // Mostra/oculta o overlay de carregamento
+    function showLoading() {
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+    
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+    
+    // Exibe uma notificação
+    function mostrarNotificacao(mensagem, tipo = 'success') {
+      const notificacao = document.createElement('div');
+      notificacao.className = `notification ${tipo === 'error' ? 'error' : 'success'}`;
+      notificacao.innerHTML = `
+        <i class="fas fa-${tipo === 'error' ? 'exclamation' : 'check'}-circle"></i>
+        ${mensagem}
       `;
       
-      lista.appendChild(div);
-    });
-  }
-
-  function filtrarHistorico() {
-    const filtro = document.getElementById('filtroHistorico').value.toLowerCase();
-    const itens = document.querySelectorAll('.history-item');
-    
-    itens.forEach(item => {
-      const sku = item.querySelector('strong')?.textContent.toLowerCase() || '';
-      item.style.display = sku.includes(filtro) ? '' : 'none';
-    });
-  }
-
-  async function adicionarMeta() {
-    const skuInput = document.getElementById('metaSku');
-    const valorInput = document.getElementById('metaValor');
-    
-    const sku = skuInput.value.trim();
-    const valor = parseFloat(valorInput.value);
-    
-    if (!sku) {
-      mostrarErro('Por favor, informe o SKU do produto.');
-      skuInput.focus();
-      return;
+      document.body.appendChild(notificacao);
+      
+      setTimeout(() => {
+        notificacao.classList.add('hide');
+        setTimeout(() => notificacao.remove(), 300);
+      }, 5000);
     }
     
-    if (isNaN(valor) || valor <= 0) {
-      mostrarErro('Por favor, informe um valor válido para a meta (maior que zero).');
-      valorInput.focus();
-      return;
+    // Troca entre as abas
+    function trocarAba(id) {
+      document.querySelectorAll('.aba-conteudo').forEach(aba => aba.classList.remove('ativa'));
+      document.querySelectorAll('.aba-btn').forEach(btn => btn.classList.remove('active'));
+      
+      document.getElementById(id).classList.add('ativa');
+      document.querySelector(`.aba-btn[onclick="trocarAba('${id}')"]`).classList.add('active');
+      
+      if (id === 'graficos') {
+        setTimeout(atualizarGraficos, 100);
+      }
     }
     
-    try {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+    // Atualiza os cards de resumo
+    function atualizarCardsResumo() {
+      // Dados fictícios para demonstração
+      document.getElementById('totalSobraValor').textContent = "R$ 12.568,90";
+      document.getElementById('metaMediaValor').textContent = "R$ 23,50";
+      document.getElementById('totalPedidos').textContent = "247";
+      document.getElementById('desempenhoMedia').textContent = "102.3%";
       
-      const safeSku = sku.replaceAll('/', '__');
-      const metaData = {
-        valor: valor,
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      };
+      document.getElementById('sobraTrend').innerHTML = '<i class="fas fa-arrow-up"></i> 5.2% acima da meta';
+      document.getElementById('sobraTrend').className = 'card-trend positive';
       
-      await executarComRetry(async () => {
-        await db.collection("metasSKU").doc(safeSku).set(metaData);
-        return true;
+      document.getElementById('metaTrend').innerHTML = '<i class="fas fa-info-circle"></i> por pedido';
+      
+      document.getElementById('pedidosTrend').innerHTML = '<i class="fas fa-arrow-down"></i> 12% menos que mês passado';
+      document.getElementById('pedidosTrend').className = 'card-trend negative';
+      
+      document.getElementById('desempenhoTrend').innerHTML = '<i class="fas fa-check-circle"></i> Dentro da meta';
+      document.getElementById('desempenhoTrend').className = 'card-trend positive';
+    }
+    
+    // =============================================
+    // FUNÇÕES DE GERENCIAMENTO DE METAS
+    // =============================================
+    
+    async function carregarProdutos() {
+      try {
+        // Simulação de produtos
+        produtos = {
+          "SKU-001": 25.90,
+          "SKU-002": 42.50,
+          "SKU-003": 18.75,
+          "SKU-004": 35.00,
+          "SKU-005": 29.99
+        };
+        
+        const datalist = document.getElementById('listaSkus');
+        if (datalist) {
+          datalist.innerHTML = '';
+          for (let sku in produtos) {
+            const opt = document.createElement('option');
+            opt.value = sku;
+            opt.label = `${sku} - R$ ${produtos[sku].toFixed(2)}`;
+            datalist.appendChild(opt);
+          }
+        }
+        
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
+        mostrarNotificacao('Erro ao carregar produtos: ' + error.message, 'error');
+      }
+    }
+    
+    async function carregarMetas() {
+      try {
+        // Simulação de metas
+        metas = {
+          "SKU-001": {
+            valor: 22.50,
+            atualizadoEm: new Date('2023-10-15')
+          },
+          "SKU-002": {
+            valor: 38.75,
+            atualizadoEm: new Date('2023-10-18')
+          },
+          "SKU-003": {
+            valor: 16.25,
+            atualizadoEm: new Date('2023-10-12')
+          }
+        };
+        
+        renderizarMetas();
+        
+      } catch (error) {
+        console.error('Erro ao carregar metas:', error);
+        mostrarNotificacao('Erro ao carregar metas: ' + error.message, 'error');
+      }
+    }
+    
+    async function carregarHistorico() {
+      try {
+        // Simulação de histórico
+        historico = [
+          {
+            sku: "SKU-001",
+            acao: "adicionar",
+            valorAnterior: null,
+            valorNovo: 22.50,
+            data: new Date('2023-10-15T10:30:00'),
+            usuario: "admin@exemplo.com"
+          },
+          {
+            sku: "SKU-002",
+            acao: "editar",
+            valorAnterior: 36.50,
+            valorNovo: 38.75,
+            data: new Date('2023-10-18T14:20:00'),
+            usuario: "admin@exemplo.com"
+          },
+          {
+            sku: "SKU-003",
+            acao: "adicionar",
+            valorAnterior: null,
+            valorNovo: 16.25,
+            data: new Date('2023-10-12T09:15:00'),
+            usuario: "gerente@exemplo.com"
+          }
+        ];
+        
+        renderizarHistorico();
+        
+      } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+        mostrarNotificacao('Erro ao carregar histórico: ' + error.message, 'error');
+      }
+    }
+    
+    function renderizarMetas() {
+      const tbody = document.querySelector('#tabelaMetas tbody');
+      tbody.innerHTML = '';
+      
+      if (Object.keys(metas).length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 20px;">
+              <i class="fas fa-bullseye" style="font-size: 3rem; color: #e0e0e0; margin-bottom: 15px;"></i>
+              <p>Nenhuma meta cadastrada. Adicione sua primeira meta.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      for (let sku in metas) {
+        const meta = metas[sku];
+        const precoProduto = produtos[sku] || 0;
+        const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${sku}</td>
+          <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toFixed(2) : '-'}</td>
+          <td>
+            <span class="valorMeta">R$ ${meta.valor.toFixed(2)}</span>
+          </td>
+          <td>${dataFormatada}</td>
+          <td>
+            <button onclick="editarMeta('${sku}')" class="btn btn-outline" style="padding: 5px 8px;">
+              <i class="fas fa-edit"></i> Editar
+            </button>
+            <button onclick="excluirMeta('${sku}')" class="btn btn-danger" style="padding: 5px 8px;">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    
+    function renderizarHistorico() {
+      const lista = document.getElementById('listaHistorico');
+      lista.innerHTML = '';
+      
+      if (historico.length === 0) {
+        lista.innerHTML = `
+          <div class="history-item" style="text-align: center; padding: 20px; color: var(--gray);">
+            <i class="fas fa-history" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <p>Nenhum registro histórico encontrado</p>
+          </div>
+        `;
+        return;
+      }
+      
+      historico.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.style.padding = '10px';
+        div.style.borderBottom = '1px solid #eee';
+        
+        let acaoTexto = '';
+        let valorTexto = '';
+        let badgeClass = '';
+        
+        if (item.acao === 'adicionar') {
+          acaoTexto = 'Adicionado';
+          badgeClass = 'badge-success';
+          valorTexto = `Novo valor: R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
+        } else if (item.acao === 'editar') {
+          acaoTexto = 'Editado';
+          badgeClass = 'badge-warning';
+          valorTexto = `De R$ ${item.valorAnterior?.toFixed(2) || '0.00'} para R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
+        } else if (item.acao === 'remover') {
+          acaoTexto = 'Removido';
+          badgeClass = 'badge-danger';
+          valorTexto = `Valor anterior: R$ ${item.valorAnterior?.toFixed(2) || '0.00'}`;
+        }
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between;">
+            <div>
+              <strong>${item.sku}</strong> 
+              <span class="badge ${badgeClass}">${acaoTexto}</span>
+              <div>${valorTexto}</div>
+            </div>
+            <div style="text-align: right; font-size: 0.85rem; color: var(--gray);">
+              ${item.data.toLocaleDateString('pt-BR')} ${item.data.toLocaleTimeString('pt-BR')}
+              <div>Por: ${item.usuario}</div>
+            </div>
+          </div>
+        `;
+        
+        lista.appendChild(div);
       });
+    }
+    
+    function filtrarHistorico() {
+      const filtro = document.getElementById('filtroHistorico').value.toLowerCase();
+      const itens = document.querySelectorAll('.history-item');
       
-      // Atualizar localmente
+      itens.forEach(item => {
+        const sku = item.querySelector('strong')?.textContent.toLowerCase() || '';
+        item.style.display = sku.includes(filtro) ? '' : 'none';
+      });
+    }
+    
+    function adicionarMeta() {
+      const sku = document.getElementById('metaSku').value.trim();
+      const valor = parseFloat(document.getElementById('metaValor').value);
+      
+      if (!sku) {
+        mostrarNotificacao('Por favor, informe o SKU do produto.', 'error');
+        return;
+      }
+      
+      if (isNaN(valor) {
+        mostrarNotificacao('Por favor, informe um valor válido para a meta.', 'error');
+        return;
+      }
+      
+      // Simulação de adição de meta
       metas[sku] = {
         valor: valor,
         atualizadoEm: new Date()
       };
       
-      // Registrar no histórico
-      await registrarHistorico(sku, 'adicionar', null, valor);
-      
       renderizarMetas();
+      mostrarNotificacao(`Meta para o SKU ${sku} adicionada com sucesso!`);
       
-      skuInput.value = '';
-      valorInput.value = '';
-      
-      mostrarSucesso(`Meta para o SKU ${sku} adicionada com sucesso!`);
-      
-      // Atualizar gráficos se estiver na aba
-      if (document.getElementById('graficos').classList.contains('ativa')) {
-        atualizarGraficos();
-      }
-    } catch (error) {
-      mostrarErro(`Erro ao adicionar meta: ${error.message}`);
-      console.error("Erro ao adicionar meta:", error);
-    } finally {
-      toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+      // Limpar campos
+      document.getElementById('metaSku').value = '';
+      document.getElementById('metaValor').value = '';
     }
-  }
-
-  async function editarMeta(botao, sku) {
-    const tr = botao.closest('tr');
-    const span = tr.querySelector('.valorMeta');
-    const input = tr.querySelector('.editInput');
-    const icon = botao.querySelector('i');
     
-    if (input.style.display === 'none') {
-      // Iniciar edição
-      input.style.display = 'inline-block';
-      span.style.display = 'none';
-      icon.className = 'fas fa-save';
-      input.focus();
-    } else {
-      // Salvar edição
-      const novoValor = parseFloat(input.value);
+    function editarMeta(sku) {
+      const novoValor = prompt(`Digite o novo valor para a meta do SKU ${sku}:`, metas[sku].valor);
       
-      if (isNaN(novoValor) || novoValor <= 0) {
-        mostrarErro('Por favor, informe um valor válido para a meta (maior que zero).');
-        input.focus();
+      if (novoValor === null) return;
+      
+      const valor = parseFloat(novoValor);
+      
+      if (isNaN(valor)) {
+        mostrarNotificacao('Valor inválido. A meta não foi atualizada.', 'error');
         return;
       }
       
-      try {
-        icon.className = 'fas fa-spinner fa-spin';
-        
-        const valorAnterior = metas[sku].valor;
-        const safeSku = sku.replaceAll('/', '__');
-        const metaData = {
-          valor: novoValor,
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        await executarComRetry(async () => {
-          await db.collection("metasSKU").doc(safeSku).set(metaData);
-          return true;
-        });
-        
-        // Atualizar localmente
-        metas[sku] = {
-          valor: novoValor,
-          atualizadoEm: new Date()
-        };
-        
-        // Registrar no histórico
-        await registrarHistorico(sku, 'editar', valorAnterior, novoValor);
-        
-        renderizarMetas();
-        mostrarSucesso(`Meta para o SKU ${sku} atualizada com sucesso!`);
-        
-        // Atualizar gráficos se estiver na aba
-        if (document.getElementById('graficos').classList.contains('ativa')) {
-          atualizarGraficos();
-        }
-      } catch (error) {
-        mostrarErro(`Erro ao editar meta: ${error.message}`);
-        console.error("Erro ao editar meta:", error);
-        // Reverter visualmente
-        input.value = metas[sku].valor;
-      } finally {
-        input.style.display = 'none';
-        span.style.display = 'inline-block';
-        icon.className = 'fas fa-edit';
-      }
-    }
-  }
-
-  async function excluirMeta(sku, botao) {
-    if (!confirm(`Tem certeza que deseja excluir a meta do SKU ${sku}?`)) {
-      return;
+      // Simulação de edição de meta
+      metas[sku] = {
+        valor: valor,
+        atualizadoEm: new Date()
+      };
+      
+      renderizarMetas();
+      mostrarNotificacao(`Meta para o SKU ${sku} atualizada para R$ ${valor.toFixed(2)}`);
     }
     
-    try {
-      const icon = botao.querySelector('i');
-      icon.className = 'fas fa-spinner fa-spin';
+    function excluirMeta(sku) {
+      if (!confirm(`Tem certeza que deseja excluir a meta do SKU ${sku}?`)) {
+        return;
+      }
       
-      const valorAnterior = metas[sku].valor;
-      const safeSku = sku.replaceAll('/', '__');
-      
-      await executarComRetry(async () => {
-        await db.collection("metasSKU").doc(safeSku).delete();
-        return true;
-      });
-      
-      // Remover localmente
+      // Simulação de exclusão de meta
       delete metas[sku];
-      
-      // Registrar no histórico
-      await registrarHistorico(sku, 'remover', valorAnterior, null);
-      
       renderizarMetas();
-      mostrarSucesso(`Meta para o SKU ${sku} removida com sucesso!`);
-      
-      // Atualizar gráficos se estiver na aba
-      if (document.getElementById('graficos').classList.contains('ativa')) {
-        atualizarGraficos();
-      }
-    } catch (error) {
-      mostrarErro(`Erro ao excluir meta: ${error.message}`);
-      console.error("Erro ao excluir meta:", error);
-    }
-  }
-
-  // =============================================
-  // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
-  // =============================================
-  
-  function processarPlanilha() {
-    const fileInput = document.getElementById('inputExcel');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-      mostrarErro('Por favor, selecione um arquivo antes de processar.');
-      return;
+      mostrarNotificacao(`Meta para o SKU ${sku} foi excluída.`);
     }
     
-    try {
-      toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+    // =============================================
+    // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
+    // =============================================
+    
+    function processarPlanilha() {
+      showLoading();
       
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const wb = XLSX.read(data, { type: 'array' });
-          const sheet = wb.Sheets[wb.SheetNames[0]];
-          const pedidos = XLSX.utils.sheet_to_json(sheet);
+      // Simulação de processamento de planilha
+      setTimeout(() => {
+        // Gerar dados fictícios para demonstração
+        pedidosProcessados = [];
+        const skus = Object.keys(produtos);
+        
+        for (let i = 1; i <= 20; i++) {
+          const sku = skus[Math.floor(Math.random() * skus.length)];
+          const subtotal = Math.random() * 100 + 20;
+          const reembolso = Math.random() * 10;
+          const cupom = Math.random() * 15;
+          const comissao = Math.random() * 8;
+          const servico = Math.random() * 5;
+          const sobra = subtotal + reembolso - cupom - comissao - servico;
+          const meta = metas[sku]?.valor || 0;
+          const percentual = meta ? ((sobra - meta) / meta) * 100 : 0;
           
-          processarPedidos(pedidos);
-        } catch (error) {
-          mostrarErro(`Erro ao ler o arquivo: ${error.message}`);
-          console.error("Erro ao ler arquivo:", error);
-        } finally {
-          toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+          pedidosProcessados.push({
+            id: `PED-${1000 + i}`,
+            sku: sku,
+            subtotal: subtotal,
+            reembolso: reembolso,
+            cupom: cupom,
+            comissao: comissao,
+            servico: servico,
+            sobra: sobra,
+            meta: meta,
+            percentual: percentual
+          });
         }
-      };
-      
-      reader.onerror = function() {
-        mostrarErro('Erro ao ler o arquivo. Por favor, tente novamente.');
-        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-      };
-      
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      mostrarErro(`Erro ao processar o arquivo: ${error.message}`);
-      console.error("Erro ao processar arquivo:", error);
-      toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+        
+        renderizarPedidos();
+        hideLoading();
+        mostrarNotificacao('Planilha processada com sucesso! 20 pedidos importados.');
+        
+      }, 2000);
     }
-  }
-
-  function processarPedidos(pedidos) {
-    const contagem = {};
-    pedidos.forEach(p => {
-      const id = p['ID do pedido'];
-      if (id) contagem[id] = (contagem[id] || 0) + 1;
-    });
-
-    const tbody = document.querySelector('#resultado tbody');
-    tbody.innerHTML = '';
-    let totalSobra = 0, totalPercentual = 0, totalPedidos = 0;
     
-    pedidosProcessados = [];
-
-    pedidos.forEach(p => {
-      const id = p['ID do pedido'];
-      if (!id || contagem[id] > 1) return;
-
-      const sku = p['Número de referência SKU'] || '';
-      const status = (p['Status do pedido'] || '').toLowerCase();
-      if (!sku || status.includes('cancelado') || status.includes('não pago')) return;
-
-      const subtotal = parseFloat(p['Subtotal do produto']) || 0;
-      const reembolso = parseFloat(p['Reembolso Shopee']) || 0;
-      const cupom = parseFloat(p['Cupom do vendedor']) || 0;
-      const comissao = parseFloat(p['Taxa de comissão']) || 0;
-      const servico = parseFloat(p['Taxa de serviço']) || 0;
-      const sobra = subtotal + reembolso - cupom - comissao - servico;
-      const meta = metas[sku]?.valor || 0;
-      const percentual = meta ? ((sobra - meta) / meta) * 100 : 0;
+    function renderizarPedidos() {
+      const tbody = document.querySelector('#resultado tbody');
+      tbody.innerHTML = '';
       
-      const pedidoData = {
-        id, sku, subtotal, reembolso, cupom, comissao, servico, sobra, meta, percentual, status
-      };
-      
-      pedidosProcessados.push(pedidoData);
-
-      const tr = document.createElement('tr');
-      
-      // Determinar classe CSS baseada no desempenho
-      let statusClass = '';
-      let statusText = '';
-      
-      if (meta) {
-        if (percentual <= -10) {
-          statusClass = 'danger';
-          statusText = 'Crítico';
-        } else if (percentual <= -5) {
-          statusClass = 'warning';
-          statusText = 'Atenção';
-        } else if (percentual >= 5) {
-          statusClass = 'success';
-          statusText = 'Bom';
-        } else {
-          statusClass = 'info';
-          statusText = 'Normal';
-        }
-      } else {
-        statusClass = 'secondary';
-        statusText = 'Sem meta';
-      }
-
-      tr.innerHTML = `
-        <td>${id}</td>
-        <td>${sku}</td>
-        <td>R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        <td>R$ ${reembolso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        <td>R$ ${cupom.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        <td>R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        <td>R$ ${servico.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        <td><strong>R$ ${sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong><br><small>Meta: R$ ${meta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</small></td>
-        <td>${percentual.toFixed(2)}%</td>
-        <td><span class="badge badge-${statusClass}">${statusText}</span></td>
-      `;
-      
-      tbody.appendChild(tr);
-
-      totalSobra += sobra;
-      totalPercentual += percentual;
-      totalPedidos++;
-    });
-
-    // Calcular total esperado com base na quantidade de pedidos por SKU
-    const linhas = document.querySelectorAll("#resultado tbody tr");
-    let esperadoTotal = 0;
-    linhas.forEach(l => {
-      const sku = l.children[1].textContent.trim();
-      if (metas[sku]) esperadoTotal += metas[sku].valor;
-    });
-  
-    const media = totalPedidos ? (totalPercentual / totalPedidos).toFixed(2) : '0.00';
-    const diferencaTotal = totalSobra - esperadoTotal;
-    const diferencaPercentual = esperadoTotal ? (diferencaTotal / esperadoTotal) * 100 : 0;
-
-    let diferencaHTML = '';
-    if (esperadoTotal > 0) {
-      const diferencaClass = diferencaTotal >= 0 ? 'success' : 'danger';
-      diferencaHTML = `
-        <h4>
-          <span class="badge badge-${diferencaClass}">
-            Diferença Total: R$ ${Math.abs(diferencaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
-            (${diferencaPercentual.toFixed(2)}%)
-            ${diferencaTotal >= 0 ? 'acima' : 'abaixo'} da meta
-          </span>
-        </h4>
-      `;
-    }
-
-    document.getElementById('totalSobra').innerHTML = `
-      <div class="info-box">
-        <h3><i class="fas fa-coins"></i> Sobra Total: R$ ${totalSobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
-        <h3><i class="fas fa-bullseye"></i> Sobra Total Esperada: R$ ${esperadoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
-        ${diferencaHTML}
-        <h4><i class="fas fa-chart-line"></i> Média de Desempenho vs Meta: ${media}%</h4>
-      </div>
-    `;
-    
-    // Atualizar gráficos se estiver na aba
-    if (document.getElementById('graficos').classList.contains('ativa')) {
-      atualizarGraficos();
-    }
-  }
-
-  function filtrarPorSKU() {
-    const filtro = document.getElementById("filtroSKU").value.toLowerCase();
-    const tipo = document.getElementById("tipoFiltro").value;
-    const linhas = document.querySelectorAll("#resultado tbody tr");
-    
-    linhas.forEach(linha => {
-      const sku = linha.children[1].textContent.toLowerCase();
-
-      if (!filtro) {
-        linha.style.display = "";
+      if (pedidosProcessados.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 20px;">
+              <i class="fas fa-inbox" style="font-size: 3rem; color: #e0e0e0; margin-bottom: 15px;"></i>
+              <p>Nenhum dado disponível. Importe uma planilha para começar.</p>
+            </td>
+          </tr>
+        `;
         return;
       }
-
-      if (tipo === "exata") {
-        linha.style.display = sku === filtro ? "" : "none";
-      } else if (tipo === "comeca") {
-        linha.style.display = sku.startsWith(filtro) ? "" : "none";
-      } else if (tipo === "contem") {
-        linha.style.display = sku.includes(filtro) ? "" : "none";
-      }
-    });
-  }
-
-  function limparFiltros() {
-    document.getElementById("filtroSKU").value = "";
-    filtrarPorSKU();
-  }
-
-  // =============================================
-  // FUNÇÕES DE GRÁFICOS
-  // =============================================
-  
-  function atualizarGraficos() {
-    if (pedidosProcessados.length === 0) {
-      document.querySelectorAll('.chart-container').forEach(container => {
-        container.innerHTML = '<p style="text-align: center; color: var(--gray);">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
+      
+      let totalSobra = 0;
+      let totalMeta = 0;
+      
+      pedidosProcessados.forEach(pedido => {
+        totalSobra += pedido.sobra;
+        totalMeta += pedido.meta || 0;
+        
+        // Determinar status baseado no percentual
+        let statusClass = '';
+        let statusText = '';
+        
+        if (pedido.meta) {
+          if (pedido.percentual <= -10) {
+            statusClass = 'badge-danger';
+            statusText = 'Crítico';
+          } else if (pedido.percentual <= -5) {
+            statusClass = 'badge-warning';
+            statusText = 'Atenção';
+          } else if (pedido.percentual >= 5) {
+            statusClass = 'badge-success';
+            statusText = 'Bom';
+          } else {
+            statusClass = 'badge-info';
+            statusText = 'Normal';
+          }
+        } else {
+          statusClass = 'badge-secondary';
+          statusText = 'Sem meta';
+        }
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${pedido.id}</td>
+          <td>${pedido.sku}</td>
+          <td>R$ ${pedido.subtotal.toFixed(2)}</td>
+          <td>R$ ${pedido.reembolso.toFixed(2)}</td>
+          <td>R$ ${pedido.cupom.toFixed(2)}</td>
+          <td>R$ ${pedido.comissao.toFixed(2)}</td>
+          <td>R$ ${pedido.servico.toFixed(2)}</td>
+          <td>R$ ${pedido.sobra.toFixed(2)}</td>
+          <td>${pedido.percentual.toFixed(2)}%</td>
+          <td><span class="badge ${statusClass}">${statusText}</span></td>
+        `;
+        tbody.appendChild(tr);
       });
-      return;
+      
+      // Atualizar cards de resumo
+      document.getElementById('totalSobraValor').textContent = `R$ ${totalSobra.toFixed(2)}`;
+      document.getElementById('totalPedidos').textContent = pedidosProcessados.length;
+      
+      const desempenhoMedio = pedidosProcessados.reduce((sum, p) => sum + (p.meta ? p.percentual : 0), 0) / 
+                             pedidosProcessados.filter(p => p.meta).length || 0;
+      
+      document.getElementById('desempenhoMedia').textContent = `${desempenhoMedio.toFixed(2)}%`;
+      
+      if (desempenhoMedio > 0) {
+        document.getElementById('desempenhoTrend').innerHTML = `<i class="fas fa-arrow-up"></i> ${Math.abs(desempenhoMedio).toFixed(2)}% acima da meta`;
+        document.getElementById('desempenhoTrend').className = 'card-trend positive';
+      } else {
+        document.getElementById('desempenhoTrend').innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(desempenhoMedio).toFixed(2)}% abaixo da meta`;
+        document.getElementById('desempenhoTrend').className = 'card-trend negative';
+      }
     }
     
-    const tipoFiltro = document.getElementById('filtroGrafico').value;
-    let dados = agruparPorSKU(pedidosProcessados);
-    
-    // Aplicar filtro
-    if (tipoFiltro === 'top10') {
-      dados.sort((a, b) => b.diferencaPercentual - a.diferencaPercentual);
-      dados = dados.slice(0, 10);
-    } else if (tipoFiltro === 'bottom10') {
-      dados.sort((a, b) => a.diferencaPercentual - b.diferencaPercentual);
-      dados = dados.slice(0, 10);
+    function filtrarPorSKU() {
+      const filtro = document.getElementById("filtroSKU").value.toLowerCase();
+      const tipo = document.getElementById("tipoFiltro").value;
+      const linhas = document.querySelectorAll("#resultado tbody tr");
+      
+      linhas.forEach(linha => {
+        const sku = linha.children[1].textContent.toLowerCase();
+        
+        if (!filtro) {
+          linha.style.display = "";
+          return;
+        }
+        
+        if (tipo === "exata") {
+          linha.style.display = sku === filtro ? "" : "none";
+        } else if (tipo === "comeca") {
+          linha.style.display = sku.startsWith(filtro) ? "" : "none";
+        } else if (tipo === "contem") {
+          linha.style.display = sku.includes(filtro) ? "" : "none";
+        }
+      });
     }
     
-    criarGraficoBarras(dados);
-    criarGraficoPizza(dados);
-  }
-
-  function agruparPorSKU(pedidos) {
-    const agrupados = {};
+    function limparFiltros() {
+      document.getElementById("filtroSKU").value = "";
+      filtrarPorSKU();
+    }
     
-    pedidos.forEach(pedido => {
-      if (!agrupados[pedido.sku]) {
-        agrupados[pedido.sku] = {
-          sku: pedido.sku,
-          totalSobra: 0,
-          totalMeta: 0,
-          quantidade: 0
+    // =============================================
+    // FUNÇÕES DE GRÁFICOS
+    // =============================================
+    
+    function atualizarGraficos() {
+      // Destruir gráficos anteriores se existirem
+      if (graficoBarras) graficoBarras.destroy();
+      if (graficoPizza) graficoPizza.destroy();
+      
+      if (pedidosProcessados.length === 0) {
+        document.getElementById('graficoBarras').closest('.chart-container').innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--gray);">
+            <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <p>Nenhum dado disponível para exibir gráficos</p>
+            <p>Processe um arquivo primeiro</p>
+          </div>
+        `;
+        
+        document.getElementById('graficoPizza').closest('.chart-container').innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--gray);">
+            <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 15px;"></i>
+            <p>Nenhum dado disponível para exibir gráficos</p>
+            <p>Processe um arquivo primeiro</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Agrupar dados por SKU
+      const dadosAgrupados = {};
+      pedidosProcessados.forEach(pedido => {
+        if (!dadosAgrupados[pedido.sku]) {
+          dadosAgrupados[pedido.sku] = {
+            sku: pedido.sku,
+            totalSobra: 0,
+            totalMeta: 0,
+            count: 0
+          };
+        }
+        
+        dadosAgrupados[pedido.sku].totalSobra += pedido.sobra;
+        dadosAgrupados[pedido.sku].totalMeta += pedido.meta || 0;
+        dadosAgrupados[pedido.sku].count++;
+      });
+      
+      const dadosArray = Object.values(dadosAgrupados).map(item => {
+        const diferenca = item.totalSobra - item.totalMeta;
+        const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
+        
+        return {
+          sku: item.sku,
+          totalSobra: item.totalSobra,
+          totalMeta: item.totalMeta,
+          diferenca: diferenca,
+          diferencaPercentual: diferencaPercentual
         };
-      }
+      });
       
-      agrupados[pedido.sku].totalSobra += pedido.sobra;
-      agrupados[pedido.sku].totalMeta += pedido.meta || 0;
-      agrupados[pedido.sku].quantidade += 1;
-    });
-    
-    // Converter para array e calcular diferenças
-    return Object.values(agrupados).map(item => {
-      const diferenca = item.totalSobra - item.totalMeta;
-      const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
+      // Criar gráfico de barras
+      criarGraficoBarras(dadosArray);
       
-      return {
-        ...item,
-        diferenca,
-        diferencaPercentual
-      };
-    });
-  }
-
-  function criarGraficoBarras(dados) {
-    const ctx = document.getElementById('graficoBarras').getContext('2d');
-    
-    // Destruir gráfico anterior se existir
-    if (graficoBarras) {
-      graficoBarras.destroy();
+      // Criar gráfico de pizza
+      criarGraficoPizza(dadosArray);
     }
     
-    // Preparar dados
-    const labels = dados.map(item => item.sku);
-    const sobras = dados.map(item => item.totalSobra);
-    const metas = dados.map(item => item.totalMeta);
-    
-    graficoBarras = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Sobra Real (R$)',
-            data: sobras,
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-          },
-          {
-            label: 'Meta Esperada (R$)',
-            data: metas,
-            backgroundColor: 'rgba(255, 99, 132, 0.7)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Valor (R$)'
+    function criarGraficoBarras(dados) {
+      const ctx = document.getElementById('graficoBarras').getContext('2d');
+      
+      // Ordenar dados pela diferença percentual
+      dados.sort((a, b) => b.diferencaPercentual - a.diferencaPercentual);
+      
+      const labels = dados.map(item => item.sku);
+      const sobras = dados.map(item => item.totalSobra);
+      const metas = dados.map(item => item.totalMeta);
+      
+      graficoBarras = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Sobra Real (R$)',
+              data: sobras,
+              backgroundColor: 'rgba(54, 162, 235, 0.7)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Meta Esperada (R$)',
+              data: metas,
+              backgroundColor: 'rgba(255, 99, 132, 0.7)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
             }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'SKU'
-            }
-          }
+          ]
         },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Comparação entre Sobra Real e Meta por SKU'
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Valor (R$)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'SKU'
+              }
+            }
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) {
-                  label += ': ';
+          plugins: {
+            title: {
+              display: true,
+              text: 'Comparação entre Sobra Real e Meta por SKU'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += 'R$ ' + context.raw.toFixed(2);
+                  return label;
                 }
-                label += 'R$ ' + context.raw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                return label;
               }
             }
           }
         }
-      }
-    });
-  }
-
-  function criarGraficoPizza(dados) {
-    const ctx = document.getElementById('graficoPizza').getContext('2d');
-    
-    // Destruir gráfico anterior se existir
-    if (graficoPizza) {
-      graficoPizza.destroy();
+      });
     }
     
-    // Preparar dados - vamos mostrar a diferença percentual
-    const labels = dados.map(item => item.sku);
-    const diferencas = dados.map(item => item.diferencaPercentual);
-    
-    // Criar cores baseadas no desempenho
-    const backgroundColors = diferencas.map(val => {
-      if (val >= 5) return 'rgba(75, 192, 192, 0.7)'; // Verde - acima
-      if (val <= -5) return 'rgba(255, 99, 132, 0.7)'; // Vermelho - abaixo
-      return 'rgba(255, 206, 86, 0.7)'; // Amarelo - dentro do esperado
-    });
-    
-    graficoPizza = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: diferencas,
-          backgroundColor: backgroundColors,
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Desempenho vs Meta por SKU (%)'
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                return `${label}: ${value.toFixed(2)}%`;
+    function criarGraficoPizza(dados) {
+      const ctx = document.getElementById('graficoPizza').getContext('2d');
+      
+      // Preparar dados para o gráfico de pizza (top 5 SKUs por sobra)
+      const topSobras = [...dados].sort((a, b) => b.totalSobra - a.totalSobra).slice(0, 5);
+      
+      const labels = topSobras.map(item => item.sku);
+      const valores = topSobras.map(item => item.totalSobra);
+      
+      graficoPizza = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: valores,
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)',
+              'rgba(255, 99, 132, 0.7)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Distribuição de Sobras por SKU (Top 5)'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const percentage = Math.round((value / context.dataset.data.reduce((a, b) => a + b, 0)) * 100);
+                  return `${label}: R$ ${value.toFixed(2)} (${percentage}%)`;
+                }
               }
             }
           }
         }
-      }
-    });
-  }
-
-  // =============================================
-  // FUNÇÕES DE EXPORTAÇÃO
-  // =============================================
-  
-  function exportarCSV() {
-    if (pedidosProcessados.length === 0) {
-      mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
-      return;
+      });
     }
     
-    try {
+    // =============================================
+    // FUNÇÕES DE EXPORTAÇÃO
+    // =============================================
+    
+    function exportarCSV() {
+      if (pedidosProcessados.length === 0) {
+        mostrarNotificacao('Nenhum dado disponível para exportar. Processe um arquivo primeiro.', 'error');
+        return;
+      }
+      
       // Cabeçalhos
       let csv = 'ID do Pedido;SKU;Subtotal;Reembolso;Cupom;Comissão;Serviço;Sobra;Meta;% vs Meta;Status\n';
       
@@ -1420,20 +1537,15 @@ try {
       const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
       saveAs(blob, `relatorio_sobras_${new Date().toISOString().slice(0,10)}.csv`);
       
-      mostrarSucesso('Arquivo CSV exportado com sucesso!');
-    } catch (error) {
-      mostrarErro(`Erro ao exportar CSV: ${error.message}`);
-      console.error("Erro ao exportar CSV:", error);
-    }
-  }
-
-  function exportarJSON() {
-    if (pedidosProcessados.length === 0) {
-      mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
-      return;
+      mostrarNotificacao('Arquivo CSV exportado com sucesso!');
     }
     
-    try {
+    function exportarJSON() {
+      if (pedidosProcessados.length === 0) {
+        mostrarNotificacao('Nenhum dado disponível para exportar. Processe um arquivo primeiro.', 'error');
+        return;
+      }
+      
       const data = {
         geradoEm: new Date().toISOString(),
         pedidos: pedidosProcessados,
@@ -1447,12 +1559,8 @@ try {
       const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
       saveAs(blob, `relatorio_sobras_${new Date().toISOString().slice(0,10)}.json`);
       
-      mostrarSucesso('Arquivo JSON exportado com sucesso!');
-    } catch (error) {
-      mostrarErro(`Erro ao exportar JSON: ${error.message}`);
-      console.error("Erro ao exportar JSON:", error);
+      mostrarNotificacao('Arquivo JSON exportado com sucesso!');
     }
-  }
-</script>
+  </script>
 </body>
 </html>
