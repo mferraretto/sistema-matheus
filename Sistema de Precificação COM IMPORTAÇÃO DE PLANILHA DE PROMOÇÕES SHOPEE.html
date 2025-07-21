@@ -794,6 +794,11 @@
       setupCharts();
       setupEventListeners();
       checkLogin();
+       const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === '1') {
+        openModal('loginModal');
+      }
+
       loadSystem();
     });
 
