@@ -794,16 +794,26 @@
       setupCharts();
       setupEventListeners();
       checkLogin();
-       const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.location.search);
       if (params.get('login') === '1') {
         openModal('loginModal');
       }
-
-      loadSystem();
     });
 
     // Funções principais do sistema
     async function loadSystem() {
+       const user = auth.currentUser;
+      if (!user) return;
+
+      let isAdmin = false;
+      try {
+        const userDoc = await db.collection("users").doc(user.uid).get();
+        if (userDoc.exists) {
+          isAdmin = userDoc.data().perfil === 'admin';
+        }
+      } catch (error) {
+        console.error("Erro ao verificar perfil do usuário:", error);
+      }
       // Carrega configurações do Firestore
       try {
         const configDoc = await db.collection("config").doc("systemConfig").get();
@@ -815,21 +825,27 @@
         console.error("Erro ao carregar configurações:", error);
       }
       
-      // Carrega usuários
+      // Carrega usuários somente se admin
       try {
-        const usersSnapshot = await db.collection("users").get();
-        sistema.usuarios = [];
-        usersSnapshot.forEach(doc => {
-          sistema.usuarios.push({ id: doc.id, ...doc.data() });
-        });
-        loadUsers();
+         if (isAdmin) {
+          const usersSnapshot = await db.collection("users").get();
+          sistema.usuarios = [];
+          usersSnapshot.forEach(doc => {
+            sistema.usuarios.push({ id: doc.id, ...doc.data() });
+          });
+          loadUsers();
+        }
       } catch (error) {
         console.error("Erro ao carregar usuários:", error);
       }
       
       // Carrega histórico
       try {
-        const historySnapshot = await db.collection("history").orderBy("timestamp", "desc").limit(100).get();
+ let historyQuery = db.collection("history").orderBy("timestamp", "desc").limit(100);
+        if (!isAdmin) {
+          historyQuery = db.collection("history").where("userId", "==", user.uid).orderBy("timestamp", "desc").limit(100);
+        }
+        const historySnapshot = await historyQuery.get();
         sistema.historico = [];
         historySnapshot.forEach(doc => {
           sistema.historico.push({ id: doc.id, ...doc.data() });
@@ -842,7 +858,11 @@
       
       // Carrega produtos
       try {
-        const productsSnapshot = await db.collection("products").orderBy("createdAt", "desc").get();
+   let productsQuery = db.collection("products").orderBy("createdAt", "desc");
+        if (!isAdmin) {
+          productsQuery = db.collection("products").where("userId", "==", user.uid).orderBy("createdAt", "desc");
+        }
+        const productsSnapshot = await productsQuery.get();
         sistema.produtos = [];
         productsSnapshot.forEach(doc => {
           sistema.produtos.push({ id: doc.id, ...doc.data() });
@@ -992,6 +1012,8 @@
       
       // Verifica permissões
       checkPermissions(user);
+       // Carrega dados do sistema para o usuário logado
+      loadSystem();
     }
 
     function hideUserArea() {
@@ -1003,6 +1025,12 @@
       // Remove todas as restrições de permissão
       document.getElementById('configTab').classList.remove('hidden');
       document.getElementById('historyTab').classList.remove('hidden');
+      // Limpa dados carregados
+      sistema.produtos = [];
+      sistema.historico = [];
+      atualizarLista();
+      loadHistory();
+      updateKPIs();
     }
 
     function checkPermissions(user) {
@@ -1022,6 +1050,7 @@
         action,
         description,
         user: user.email,
+                userId: user.uid,
         timestamp: new Date().toISOString()
       };
       
