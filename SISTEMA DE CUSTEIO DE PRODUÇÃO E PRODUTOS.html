@@ -372,7 +372,7 @@
   </script>
   <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
     <a href="index.html" class="hover:underline">Início</a>
-    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
+    <a href="#precificacao" onclick="showTab('precificacao'); return false;" class="hover:underline">Precificação</a>
     <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
     <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
     <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
@@ -387,6 +387,7 @@
       <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
       <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
       <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
+            <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
     </div>
 
     <div id="mdf" class="tab active">
@@ -783,6 +784,9 @@
       
       <div id="resumoPDFContent" style="height: auto; visibility: hidden; position: absolute; left: -9999px;"></div>
     </div>
+    <div id="precificacao" class="tab">
+      <iframe src="Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html" style="width:100%;height:90vh;border:none;"></iframe>
+    </div>
   </div>
   
   <div class="footer">
@@ -797,6 +801,7 @@
       
       // Salva a aba ativa
       localStorage.setItem('activeTab', id);
+            window.location.hash = id;
     }
     
     // Corrigido cálculo da área do cilindro (2 bases + lateral)
@@ -1103,7 +1108,8 @@
     // Inicialização do sistema
     window.onload = () => {
       // Carrega aba ativa
-      const activeTab = localStorage.getItem('activeTab') || 'mdf';
+const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+      const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
       showTab(activeTab);
       
       // Carrega dados
