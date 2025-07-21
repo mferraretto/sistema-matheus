@@ -105,8 +105,13 @@
   </div>
 
  <script type="module">
-    import './firebase-init.js';
-    const auth = firebase.auth();
+   import { auth } from './firebase-init.js';
+    import {
+      signInWithEmailAndPassword,
+      signOut,
+      sendPasswordResetEmail,
+      onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
     window.openModal = (id) => { document.getElementById(id).style.display = 'block'; };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
@@ -115,7 +120,7 @@
     window.login = () => {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
-      auth.signInWithEmailAndPassword(email, password)
+      signInWithEmailAndPassword(auth, email, password)
         .then((cred) => {
           showUserArea(cred.user);
           closeModal('loginModal');
@@ -124,13 +129,13 @@
        };
 
      window.logout = () => {
-      auth.signOut().then(hideUserArea);
+      signOut(auth).then(hideUserArea);
     };
 
     window.sendRecovery = () => {
       const email = document.getElementById('recoverEmail').value;
       if (!email.includes('@')) { alert('E-mail inválido!'); return; }
-      auth.sendPasswordResetEmail(email)
+      sendPasswordResetEmail(auth, email)
         .then(() => { alert('E-mail de recuperação enviado!'); closeModal('recoverModal'); })
         .catch(err => alert('Erro ao enviar recuperação: ' + err.message));
      };
@@ -157,7 +162,7 @@ window.requireLogin = (event) => {
         return true;
       };
       function checkLogin() {
-        auth.onAuthStateChanged(user => {
+        onAuthStateChanged(auth, user => {
           if (user) { showUserArea(user); } else { hideUserArea(); }
         });
       }
