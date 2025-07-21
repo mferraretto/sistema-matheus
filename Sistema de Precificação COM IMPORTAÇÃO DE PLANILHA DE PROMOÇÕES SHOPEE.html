@@ -89,6 +89,7 @@
   </style>
 </head>
 <body class="bg-gray-50">
+    <script type="module" src="auth.js"></script>
   <!-- Barra de navegação superior -->
   <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
     <div class="flex items-center">
@@ -829,7 +830,11 @@
       
       // Carrega histórico
       try {
-        const historySnapshot = await db.collection("history").orderBy("timestamp", "desc").limit(100).get();
+         let histQuery = db.collection("history");
+        if (window.usuarioLogado?.perfil !== 'ADM') {
+          histQuery = histQuery.where('uid', '==', window.usuarioLogado.uid);
+        }
+        const historySnapshot = await histQuery.orderBy("timestamp", "desc").limit(100).get();
         sistema.historico = [];
         historySnapshot.forEach(doc => {
           sistema.historico.push({ id: doc.id, ...doc.data() });
@@ -842,7 +847,11 @@
       
       // Carrega produtos
       try {
-        const productsSnapshot = await db.collection("products").orderBy("createdAt", "desc").get();
+ let prodQuery = db.collection("products");
+        if (window.usuarioLogado?.perfil !== 'ADM') {
+          prodQuery = prodQuery.where('uid', '==', window.usuarioLogado.uid);
+        }
+        const productsSnapshot = await prodQuery.orderBy("createdAt", "desc").get();
         sistema.produtos = [];
         productsSnapshot.forEach(doc => {
           sistema.produtos.push({ id: doc.id, ...doc.data() });
@@ -1022,6 +1031,7 @@
         action,
         description,
         user: user.email,
+         uid: user.uid,
         timestamp: new Date().toISOString()
       };
       
@@ -1179,7 +1189,8 @@
           historico: sistema.historico,
           usuarios: sistema.usuarios,
           config: sistema.config,
-          timestamp: new Date().toISOString()
+ timestamp: new Date().toISOString(),
+          uid: auth.currentUser.uid
         };
         
         // Salvar backup no Firestore
@@ -1198,7 +1209,11 @@
 
     async function restoreBackup() {
       try {
-        const backupsSnapshot = await db.collection("backups").orderBy("timestamp", "desc").limit(1).get();
+ let backupQuery = db.collection("backups");
+        if (window.usuarioLogado?.perfil !== 'ADM') {
+          backupQuery = backupQuery.where('uid', '==', window.usuarioLogado.uid);
+        }
+        const backupsSnapshot = await backupQuery.orderBy("timestamp", "desc").limit(1).get();
         if (backupsSnapshot.empty) {
           alert('Nenhum backup encontrado!');
           return;
@@ -1513,7 +1528,7 @@
         precoPromo,
         custo,
         taxas,
-        userId: user.uid,
+        uid: user.uid,
         createdAt: new Date().toISOString()
       };
 
