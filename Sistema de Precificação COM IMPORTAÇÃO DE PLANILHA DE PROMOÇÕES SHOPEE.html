@@ -2003,6 +2003,410 @@
       addHistoryEntry('export', 'Exportação para PDF realizada');
     }
 
+    function atualizarLista() {
+      const filtro = document.getElementById("filtroPlataforma").value;
+      const container = document.getElementById("listaProdutos");
+      
+      container.innerHTML = "";
+      
+      const listaFiltrada = filtro === "Todas" ? 
+          sistema.produtos : 
+          sistema.produtos.filter(item => item.plataforma === filtro);
+      
+      if (listaFiltrada.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-2 text-center py-10">
+            <i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-500">Nenhum produto encontrado</h3>
+            <p class="text-gray-400">Adicione produtos na aba de Precificação</p>
+          </div>
+        `;
+        return;
+      }
+      
+      listaFiltrada.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "product-card";
+        
+        // Determinar classe de cor para a plataforma
+        let platformClass = "";
+        let platformName = "";
+        switch(item.plataforma) {
+          case "ML":
+            platformClass = "platform-ml";
+            platformName = "Mercado Livre";
+            break;
+          case "SHOPEE":
+            platformClass = "platform-shopee";
+            platformName = "Shopee";
+            break;
+          case "MAGALU":
+            platformClass = "platform-magalu";
+            platformName = "Magalu";
+            break;
+          case "SHEIN":
+            platformClass = "platform-shein";
+            platformName = "SHEIN";
+            break;
+        }
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-lg">${item.produto}</h3>
+              ${item.sku ? `<div class="text-sm text-gray-500">SKU: ${item.sku}</div>` : ''}
+              <div class="mt-1">
+                <span class="${platformClass} platform-tag">${platformName}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-gray-500 text-sm">Preço mínimo</div>
+              <div class="product-price text-green-600">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+            <div class="text-sm text-gray-500">
+              <i class="far fa-calendar-alt"></i> ${new Date(item.createdAt).toLocaleDateString('pt-BR')}
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="verDetalhes('${item.id}')" class="btn-action btn-view">
+                <i class="fas fa-eye"></i> Ver
+              </button>
+              <button onclick="editarProduto('${item.id}')" class="btn-action btn-edit">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button onclick="excluirProduto('${item.id}')" class="btn-action btn-delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      
+      // Atualiza KPIs
+      updateKPIs();
+    }
+
+    async function verDetalhes(id) {
+      const produto = sistema.produtos.find(item => item.id === id);
+      
+      if (!produto) return;
+      
+      let html = `
+        <h3 class="text-2xl font-bold mb-2">${produto.produto}</h3>
+        ${produto.sku ? `<div class="text-gray-600 mb-2">SKU: ${produto.sku}</div>` : ''}
+        <div class="flex items-center mb-6">
+          <span class="${getPlatformClass(produto.plataforma)} platform-tag mr-3">${getPlatformName(produto.plataforma)}</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="scenario-card scenario-promo">
+            <div class="scenario-title">Sem Lucro (0%)</div>
+            <div class="scenario-value">R$ ${produto.precoPromo}</div>
+          </div>
+          
+          <div class="scenario-card scenario-medium">
+              <div class="scenario-title">Lucro 5%</div>
+            <div class="scenario-value">R$ ${produto.precoMedio}</div>
+          </div>
+          
+          <div class="scenario-card scenario-ideal">
+            <div class="scenario-title">Lucro 10%</div>
+            <div class="scenario-value">R$ ${produto.precoIdeal}</div>
+          </div>
+          
+          <div class="bg-gray-100 p-4 rounded-lg">
+            <div class="font-semibold">Preço Mínimo</div>
+            <div class="text-xl font-bold text-green-600">R$ ${produto.precoMinimo}</div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-gray-50 p-5 rounded-xl">
+            <h4 class="font-semibold text-lg mb-4 pb-2 border-b">Informações Básicas</h4>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Custo do produto:</span>
+                <span class="font-medium">R$ ${produto.custo}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Data de cadastro:</span>
+                <span class="font-medium">${new Date(produto.createdAt).toLocaleDateString('pt-BR')}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-50 p-5 rounded-xl">
+            <h4 class="font-semibold text-lg mb-4 pb-2 border-b">Detalhes das Taxas</h4>
+            <div class="space-y-3">
+      `;
+      
+      for (const [campo, valor] of Object.entries(produto.taxas)) {
+        const unidade = campo.includes('%') ? '%' : 'R$';
+        html += `
+          <div class="flex justify-between">
+            <span class="text-gray-600">${campo}:</span>
+            <span class="font-medium">${valor} ${unidade}</span>
+          </div>
+        `;
+      }
+      
+      html += `
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-8 text-right">
+          <button onclick="fecharModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-medium">
+            Fechar
+          </button>
+        </div>
+      `;
+      
+      document.getElementById("modalContent").innerHTML = html;
+      document.getElementById("detalhesModal").style.display = "block";
+    }
+
+    function getPlatformClass(plataforma) {
+      switch(plataforma) {
+        case "ML": return "platform-ml";
+        case "SHOPEE": return "platform-shopee";
+        case "MAGALU": return "platform-magalu";
+        case "SHEIN": return "platform-shein";
+        default: return "";
+      }
+    }
+
+    function getPlatformName(plataforma) {
+      switch(plataforma) {
+        case "ML": return "Mercado Livre";
+        case "SHOPEE": return "Shopee";
+        case "MAGALU": return "Magalu";
+        case "SHEIN": return "SHEIN";
+        default: return plataforma;
+      }
+    }
+
+    function editarProduto(id) {
+      const produto = sistema.produtos.find(item => item.id === id);
+      
+      if (!produto) return;
+      
+      // Preencher campos básicos
+      document.getElementById("produto").value = produto.produto;
+      document.getElementById("sku").value = produto.sku || '';
+      document.getElementById("custo").value = produto.custo;
+      
+      // Preencher campos específicos da plataforma
+      const plataforma = produto.plataforma.toLowerCase();
+      
+      // Taxa
+      document.getElementById(`${plataforma}_taxa_custom`).value = produto.taxas['Taxas da Plataforma (%)'];
+      document.getElementById(`${plataforma}_taxa_select`).selectedIndex = -1;
+      
+      // Fixo
+      document.getElementById(`${plataforma}_fixo_custom`).value = produto.taxas['Custo Fixo Plataforma (R$)'];
+      document.getElementById(`${plataforma}_fixo_select`).selectedIndex = -1;
+      
+      // Preencher outros campos
+      const container = document.getElementById(`${plataforma}Campos`);
+      const inputs = container.querySelectorAll('input[data-campo]');
+      inputs.forEach(input => {
+        const campo = input.getAttribute('data-campo');
+        input.value = produto.taxas[campo] || '';
+      });
+      
+      // Ativar aba de precificação
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.querySelector(`.tab-button[data-tab="precificacao"]`).classList.add("active");
+      document.getElementById('precificacao').classList.add("active");
+      
+      // Salvar referência do produto que está sendo editado
+      sistema.produtoEditando = produto;
+      
+      // Rolar para o topo
+      window.scrollTo(0, 0);
+    }
+
+    async function excluirProduto(id) {
+      if (!confirm('Tem certeza que deseja excluir este produto permanentemente?')) {
+        return;
+      }
+      
+      try {
+        await db.collection("products").doc(id).delete();
+        
+        // Atualizar lista local
+        sistema.produtos = sistema.produtos.filter(item => item.id !== id);
+        atualizarLista();
+        
+        // Mostrar feedback visual
+        const feedback = document.createElement('div');
+        feedback.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        feedback.innerHTML = `<i class="fas fa-trash-alt mr-2"></i> Produto excluído com sucesso!`;
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+          feedback.remove();
+        }, 3000);
+        
+        // Registrar no histórico
+        addHistoryEntry('product_delete', `Produto excluído`);
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        alert("Erro ao excluir produto!");
+      }
+    }
+
+    function fecharModal() {
+      document.getElementById("detalhesModal").style.display = "none";
+    }
+
+    function exportarExcel() {
+      if (sistema.produtos.length === 0) {
+        alert("Nenhum produto para exportar!");
+        return;
+      }
+      
+      // Definir cabeçalhos
+      const headers = [
+        "Produto", 
+        "SKU",
+        "Plataforma", 
+        "Custo (R$)", 
+        "Preço Mínimo (R$)", 
+        "Preço Ideal (R$)",
+        "Preço Médio (R$)",
+        "Preço Promo (R$)",
+        "Data",
+        "Taxas da Plataforma (%)",
+        "Custo Fixo Plataforma (R$)",
+        "Frete (R$)",
+        "Taxa de Transação (%)",
+        "Taxa de Transferência (%)",
+        "Taxa de Antecipação (%)",
+        "Custos Variáveis (R$)",
+        "Imposto (%)",
+        "Comissão do Vendedor (%)"
+      ];
+      
+      // Criar conteúdo CSV
+      let csvContent = headers.join(";") + "\n";
+      
+      // Adicionar dados
+      sistema.produtos.forEach(item => {
+        const row = [
+          `"${item.produto}"`,
+          `"${item.sku || ''}"`,
+          getPlatformName(item.plataforma),
+          item.custo,
+          item.precoMinimo,
+          item.precoIdeal,
+          item.precoMedio,
+          item.precoPromo,
+          `"${new Date(item.createdAt).toLocaleDateString('pt-BR')}"`,
+          item.taxas['Taxas da Plataforma (%)'] || '0',
+          item.taxas['Custo Fixo Plataforma (R$)'] || '0',
+          item.taxas['Frete (R$)'] || '0',
+          item.taxas['Taxa de Transação (%)'] || '0',
+          item.taxas['Taxa de Transferência (%)'] || '0',
+          item.taxas['Taxa de Antecipação (%)'] || '0',
+          item.taxas['Custos Variáveis (R$)'] || '0',
+          item.taxas['Imposto (%)'] || '0',
+          item.taxas['Comissão do Vendedor (%)'] || '0'
+        ];
+        
+        csvContent += row.join(";") + "\n";
+      });
+      
+      // Criar e baixar arquivo
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "precificacao_produtos.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      addHistoryEntry('export', 'Exportação para Excel realizada');
+    }
+
+    function exportarPDF() {
+      if (sistema.produtos.length === 0) {
+        alert("Nenhum produto para exportar!");
+        return;
+      }
+      
+      // Criar novo documento PDF
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Título do documento
+      doc.setFontSize(18);
+      doc.text("Relatório de Precificação de Produtos", 105, 15, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 22, { align: 'center' });
+      
+      // Preparar dados da tabela
+      const headers = [
+        "Produto", 
+        "SKU",
+        "Plataforma", 
+        "Custo (R$)", 
+        "Preço Mínimo (R$)", 
+        "Preço Ideal (R$)",
+        "Preço Médio (R$)",
+        "Preço Promo (R$)",
+        "Data"
+      ];
+      
+      const data = sistema.produtos.map(item => [
+        item.produto,
+        item.sku || '-',
+        getPlatformName(item.plataforma),
+        parseFloat(item.custo).toFixed(2),
+        parseFloat(item.precoMinimo).toFixed(2),
+        parseFloat(item.precoIdeal).toFixed(2),
+        parseFloat(item.precoMedio).toFixed(2),
+        parseFloat(item.precoPromo).toFixed(2),
+        new Date(item.createdAt).toLocaleDateString('pt-BR')
+      ]);
+      
+      // Criar tabela
+      doc.autoTable({
+        head: [headers],
+        body: data,
+        startY: 30,
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          cellPadding: 2,
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [76, 175, 80],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [240, 240, 240]
+        },
+        margin: { top: 30 }
+      });
+      
+      // Salvar PDF
+      doc.save(`precificacao_produtos_${new Date().toISOString().slice(0, 10)}.pdf`);
+      
+      addHistoryEntry('export', 'Exportação para PDF realizada');
+    }
     // Funções para importação/exportação Shopee
     function importShopeeFile() {
       const fileInput = document.getElementById('shopeeFileInput');
