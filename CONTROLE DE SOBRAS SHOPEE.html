@@ -633,26 +633,7 @@ try {
   // =============================================
   // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
   // =============================================
-  function trocarAba(abaId) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-    document.getElementById(abaId).classList.remove('hidden');
-
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    const abaBtn = document.querySelector(`[onclick*="${abaId}"]`);
-    if (abaBtn) abaBtn.classList.add('active');
-  }
-  function trocarAba(id) {
-    document.querySelectorAll('.aba').forEach(aba => aba.classList.remove('ativa'));
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(id).classList.add('ativa');
-    document.querySelector(`.tab-button[onclick="trocarAba('${id}')"]`).classList.add('active');
-    
-    if (id === 'graficos') {
-      setTimeout(atualizarGraficos, 100);
-    }
-  }
-
+ 
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE METAS
   // =============================================
@@ -1505,5 +1486,17 @@ await executarComRetry(async () => {
   window.filtrarHistorico = filtrarHistorico;
   
 </script>
+<!-- Fim do conteúdo -->
+<script>
+function trocarAba(abaId) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+  document.getElementById(abaId).classList.remove('hidden');
+
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  const abaBtn = document.querySelector(`[onclick*="${abaId}"]`);
+  if (abaBtn) abaBtn.classList.add('active');
+}
+</script>
 </body>
 </html>
+
