@@ -329,7 +329,9 @@
   <button class="aba-btn active" onclick="trocarAba('importar')"><i class="fas fa-box-open"></i> Conferir Pedidos</button>
   <button class="aba-btn" onclick="trocarAba('metas')"><i class="fas fa-bullseye"></i> Metas por SKU</button>
   <button class="aba-btn" onclick="trocarAba('graficos')"><i class="fas fa-chart-bar"></i> Gráficos</button>
+  <button class="aba-btn" onclick="trocarAba('produtos')"><i class="fas fa-box"></i> Produtos</button>
   <button class="aba-btn" onclick="trocarAba('historico')"><i class="fas fa-history"></i> Histórico</button>
+  
 
   <!-- Aba de Importação/Conferência -->
   <div id="importar" class="aba ativa">
@@ -442,6 +444,83 @@
       <canvas id="graficoPizza"></canvas>
     </div>
   </div>
+ <div id="produtos" class="tab-content p-4">
+      <div class="bg-white rounded-xl p-6 shadow mb-6">
+        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-boxes"></i> Produtos Salvos</h2>
+        
+        <div class="import-export-section">
+          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import"></i> Importar/Exportar Promoções Shopee</h3>
+          
+          <div class="flex flex-wrap gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
+              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg">
+            </div>
+            <button onclick="importShopeeFile()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium h-10 mt-auto">
+              <i class="fas fa-upload"></i> Importar
+            </button>
+          </div>
+          
+          <div id="importedShopeeProducts" class="mt-4" style="display: none;">
+            <h4 class="font-semibold mb-2">Produtos importados:</h4>
+            <div class="overflow-x-auto">
+              <table class="imported-products-table">
+                <thead>
+                  <tr>
+                    <th>ID Produto</th>
+                    <th>Nome</th>
+                    <th>Parent SKU</th>
+                    <th>ID Variação</th>
+                    <th>Variação</th>
+                    <th>SKU</th>
+                    <th>Preço Original</th>
+                    <th>Preço Desconto</th>
+                  </tr>
+                </thead>
+                <tbody id="importedProductsTableBody"></tbody>
+              </table>
+            </div>
+            
+            <div class="price-update-options">
+              <button onclick="applyPriceUpdate('promo')" class="btn-apply-promo">
+                <i class="fas fa-tag"></i> Aplicar Sem Lucro (0%)
+              </button>
+              <button onclick="applyPriceUpdate('medium')" class="btn-apply-medium">
+                <i class="fas fa-chart-line"></i> Aplicar Lucro 5%
+              </button>
+              <button onclick="applyPriceUpdate('ideal')" class="btn-apply-ideal">
+                <i class="fas fa-star"></i> Aplicar Lucro 10%
+              </button>
+              <button onclick="exportShopeeFile()" class="btn-export-shopee ml-auto">
+                <i class="fas fa-file-export"></i> Exportar Planilha
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-4 mb-6">
+          <button onclick="exportarExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium">
+            <i class="fas fa-file-excel"></i> Exportar Excel
+          </button>
+          <button onclick="exportarPDF()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-medium">
+            <i class="fas fa-file-pdf"></i> Exportar PDF
+          </button>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2">Filtrar por Plataforma:</label>
+          <select id="filtroPlataforma" class="border p-3 rounded-lg w-full md:w-1/3">
+            <option value="Todas">Todas as Plataformas</option>
+            <option value="SHOPEE">Shopee</option>
+            <option value="MAGALU">Magalu</option>
+            <option value="ML">Mercado Livre</option>
+            <option value="SHEIN">SHEIN</option>
+          </select>
+        </div>
+        
+        <div id="listaProdutos" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+      </div>
+    </div>
 
   <!-- Aba de Histórico -->
   <div id="historico" class="aba">
@@ -1453,6 +1532,728 @@ try {
       console.error("Erro ao exportar JSON:", error);
     }
   }
+  
+    function atualizarLista() {
+      const filtro = document.getElementById("filtroPlataforma").value;
+      const container = document.getElementById("listaProdutos");
+      
+      container.innerHTML = "";
+      
+      const listaFiltrada = filtro === "Todas" ? 
+          sistema.produtos : 
+          sistema.produtos.filter(item => item.plataforma === filtro);
+      
+      if (listaFiltrada.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-2 text-center py-10">
+            <i class="fas fa-box-open text-5xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-500">Nenhum produto encontrado</h3>
+            <p class="text-gray-400">Adicione produtos na aba de Precificação</p>
+          </div>
+        `;
+        return;
+      }
+      
+      listaFiltrada.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "product-card";
+        
+        // Determinar classe de cor para a plataforma
+        let platformClass = "";
+        let platformName = "";
+        switch(item.plataforma) {
+          case "ML":
+            platformClass = "platform-ml";
+            platformName = "Mercado Livre";
+            break;
+          case "SHOPEE":
+            platformClass = "platform-shopee";
+            platformName = "Shopee";
+            break;
+          case "MAGALU":
+            platformClass = "platform-magalu";
+            platformName = "Magalu";
+            break;
+          case "SHEIN":
+            platformClass = "platform-shein";
+            platformName = "SHEIN";
+            break;
+        }
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-lg">${item.produto}</h3>
+              ${item.sku ? `<div class="text-sm text-gray-500">SKU: ${item.sku}</div>` : ''}
+              <div class="mt-1">
+                <span class="${platformClass} platform-tag">${platformName}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-gray-500 text-sm">Preço mínimo</div>
+              <div class="product-price text-green-600">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+            <div class="text-sm text-gray-500">
+              <i class="far fa-calendar-alt"></i> ${new Date(item.createdAt).toLocaleDateString('pt-BR')}
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="verDetalhes('${item.id}')" class="btn-action btn-view">
+                <i class="fas fa-eye"></i> Ver
+              </button>
+              <button onclick="editarProduto('${item.id}')" class="btn-action btn-edit">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button onclick="excluirProduto('${item.id}')" class="btn-action btn-delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      
+      // Atualiza KPIs
+      updateKPIs();
+    }
+
+    async function verDetalhes(id) {
+      const produto = sistema.produtos.find(item => item.id === id);
+      
+      if (!produto) return;
+      
+      let html = `
+        <h3 class="text-2xl font-bold mb-2">${produto.produto}</h3>
+        ${produto.sku ? `<div class="text-gray-600 mb-2">SKU: ${produto.sku}</div>` : ''}
+        <div class="flex items-center mb-6">
+          <span class="${getPlatformClass(produto.plataforma)} platform-tag mr-3">${getPlatformName(produto.plataforma)}</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="scenario-card scenario-promo">
+            <div class="scenario-title">Sem Lucro (0%)</div>
+            <div class="scenario-value">R$ ${produto.precoPromo}</div>
+          </div>
+          
+          <div class="scenario-card scenario-medium">
+              <div class="scenario-title">Lucro 5%</div>
+            <div class="scenario-value">R$ ${produto.precoMedio}</div>
+          </div>
+          
+          <div class="scenario-card scenario-ideal">
+            <div class="scenario-title">Lucro 10%</div>
+            <div class="scenario-value">R$ ${produto.precoIdeal}</div>
+          </div>
+          
+          <div class="bg-gray-100 p-4 rounded-lg">
+            <div class="font-semibold">Preço Mínimo</div>
+            <div class="text-xl font-bold text-green-600">R$ ${produto.precoMinimo}</div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-gray-50 p-5 rounded-xl">
+            <h4 class="font-semibold text-lg mb-4 pb-2 border-b">Informações Básicas</h4>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Custo do produto:</span>
+                <span class="font-medium">R$ ${produto.custo}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Data de cadastro:</span>
+                <span class="font-medium">${new Date(produto.createdAt).toLocaleDateString('pt-BR')}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-gray-50 p-5 rounded-xl">
+            <h4 class="font-semibold text-lg mb-4 pb-2 border-b">Detalhes das Taxas</h4>
+            <div class="space-y-3">
+      `;
+      
+      for (const [campo, valor] of Object.entries(produto.taxas)) {
+        const unidade = campo.includes('%') ? '%' : 'R$';
+        html += `
+          <div class="flex justify-between">
+            <span class="text-gray-600">${campo}:</span>
+            <span class="font-medium">${valor} ${unidade}</span>
+          </div>
+        `;
+      }
+      
+      html += `
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-8 text-right">
+          <button onclick="fecharModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-medium">
+            Fechar
+          </button>
+        </div>
+      `;
+      
+      document.getElementById("modalContent").innerHTML = html;
+      document.getElementById("detalhesModal").style.display = "block";
+    }
+
+    function getPlatformClass(plataforma) {
+      switch(plataforma) {
+        case "ML": return "platform-ml";
+        case "SHOPEE": return "platform-shopee";
+        case "MAGALU": return "platform-magalu";
+        case "SHEIN": return "platform-shein";
+        default: return "";
+      }
+    }
+
+    function getPlatformName(plataforma) {
+      switch(plataforma) {
+        case "ML": return "Mercado Livre";
+        case "SHOPEE": return "Shopee";
+        case "MAGALU": return "Magalu";
+        case "SHEIN": return "SHEIN";
+        default: return plataforma;
+      }
+    }
+
+    function editarProduto(id) {
+      const produto = sistema.produtos.find(item => item.id === id);
+      
+      if (!produto) return;
+      
+      // Preencher campos básicos
+      document.getElementById("produto").value = produto.produto;
+      document.getElementById("sku").value = produto.sku || '';
+      document.getElementById("custo").value = produto.custo;
+      
+      // Preencher campos específicos da plataforma
+      const plataforma = produto.plataforma.toLowerCase();
+      
+      // Taxa
+      document.getElementById(`${plataforma}_taxa_custom`).value = produto.taxas['Taxas da Plataforma (%)'];
+      document.getElementById(`${plataforma}_taxa_select`).selectedIndex = -1;
+      
+      // Fixo
+      document.getElementById(`${plataforma}_fixo_custom`).value = produto.taxas['Custo Fixo Plataforma (R$)'];
+      document.getElementById(`${plataforma}_fixo_select`).selectedIndex = -1;
+      
+      // Preencher outros campos
+      const container = document.getElementById(`${plataforma}Campos`);
+      const inputs = container.querySelectorAll('input[data-campo]');
+      inputs.forEach(input => {
+        const campo = input.getAttribute('data-campo');
+        input.value = produto.taxas[campo] || '';
+      });
+      
+      // Ativar aba de precificação
+      document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.querySelector(`.tab-button[data-tab="precificacao"]`).classList.add("active");
+      document.getElementById('precificacao').classList.add("active");
+      
+      // Salvar referência do produto que está sendo editado
+      sistema.produtoEditando = produto;
+      
+      // Rolar para o topo
+      window.scrollTo(0, 0);
+    }
+
+    async function excluirProduto(id) {
+      if (!confirm('Tem certeza que deseja excluir este produto permanentemente?')) {
+        return;
+      }
+      
+      try {
+        await db.collection("products").doc(id).delete();
+        
+        // Atualizar lista local
+        sistema.produtos = sistema.produtos.filter(item => item.id !== id);
+        atualizarLista();
+        
+        // Mostrar feedback visual
+        const feedback = document.createElement('div');
+        feedback.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        feedback.innerHTML = `<i class="fas fa-trash-alt mr-2"></i> Produto excluído com sucesso!`;
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+          feedback.remove();
+        }, 3000);
+        
+        // Registrar no histórico
+        addHistoryEntry('product_delete', `Produto excluído`);
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        alert("Erro ao excluir produto!");
+      }
+    }
+
+    function fecharModal() {
+      document.getElementById("detalhesModal").style.display = "none";
+    }
+
+    function exportarExcel() {
+      if (sistema.produtos.length === 0) {
+        alert("Nenhum produto para exportar!");
+        return;
+      }
+      
+      // Definir cabeçalhos
+      const headers = [
+        "Produto", 
+        "SKU",
+        "Plataforma", 
+        "Custo (R$)", 
+        "Preço Mínimo (R$)", 
+        "Preço Ideal (R$)",
+        "Preço Médio (R$)",
+        "Preço Promo (R$)",
+        "Data",
+        "Taxas da Plataforma (%)",
+        "Custo Fixo Plataforma (R$)",
+        "Frete (R$)",
+        "Taxa de Transação (%)",
+        "Taxa de Transferência (%)",
+        "Taxa de Antecipação (%)",
+        "Custos Variáveis (R$)",
+        "Imposto (%)",
+        "Comissão do Vendedor (%)"
+      ];
+      
+      // Criar conteúdo CSV
+      let csvContent = headers.join(";") + "\n";
+      
+      // Adicionar dados
+      sistema.produtos.forEach(item => {
+        const row = [
+          `"${item.produto}"`,
+          `"${item.sku || ''}"`,
+          getPlatformName(item.plataforma),
+          item.custo,
+          item.precoMinimo,
+          item.precoIdeal,
+          item.precoMedio,
+          item.precoPromo,
+          `"${new Date(item.createdAt).toLocaleDateString('pt-BR')}"`,
+          item.taxas['Taxas da Plataforma (%)'] || '0',
+          item.taxas['Custo Fixo Plataforma (R$)'] || '0',
+          item.taxas['Frete (R$)'] || '0',
+          item.taxas['Taxa de Transação (%)'] || '0',
+          item.taxas['Taxa de Transferência (%)'] || '0',
+          item.taxas['Taxa de Antecipação (%)'] || '0',
+          item.taxas['Custos Variáveis (R$)'] || '0',
+          item.taxas['Imposto (%)'] || '0',
+          item.taxas['Comissão do Vendedor (%)'] || '0'
+        ];
+        
+        csvContent += row.join(";") + "\n";
+      });
+      
+      // Criar e baixar arquivo
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "precificacao_produtos.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      addHistoryEntry('export', 'Exportação para Excel realizada');
+    }
+
+    function exportarPDF() {
+      if (sistema.produtos.length === 0) {
+        alert("Nenhum produto para exportar!");
+        return;
+      }
+      
+      // Criar novo documento PDF
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Título do documento
+      doc.setFontSize(18);
+      doc.text("Relatório de Precificação de Produtos", 105, 15, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 22, { align: 'center' });
+      
+      // Preparar dados da tabela
+      const headers = [
+        "Produto", 
+        "SKU",
+        "Plataforma", 
+        "Custo (R$)", 
+        "Preço Mínimo (R$)", 
+        "Preço Ideal (R$)",
+        "Preço Médio (R$)",
+        "Preço Promo (R$)",
+        "Data"
+      ];
+      
+      const data = sistema.produtos.map(item => [
+        item.produto,
+        item.sku || '-',
+        getPlatformName(item.plataforma),
+        parseFloat(item.custo).toFixed(2),
+        parseFloat(item.precoMinimo).toFixed(2),
+        parseFloat(item.precoIdeal).toFixed(2),
+        parseFloat(item.precoMedio).toFixed(2),
+        parseFloat(item.precoPromo).toFixed(2),
+        new Date(item.createdAt).toLocaleDateString('pt-BR')
+      ]);
+      
+      // Criar tabela
+      doc.autoTable({
+        head: [headers],
+        body: data,
+        startY: 30,
+        theme: 'grid',
+        styles: { 
+          fontSize: 8,
+          cellPadding: 2,
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [76, 175, 80],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [240, 240, 240]
+        },
+        margin: { top: 30 }
+      });
+      
+      // Salvar PDF
+      doc.save(`precificacao_produtos_${new Date().toISOString().slice(0, 10)}.pdf`);
+      
+      addHistoryEntry('export', 'Exportação para PDF realizada');
+    }
+  function importShopeeFile() {
+      const fileInput = document.getElementById('shopeeFileInput');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert('Selecione um arquivo primeiro!');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Assume que os dados estão na primeira planilha
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        // Converter para JSON
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          alert('Planilha vazia ou formato inválido!');
+          return;
+        }
+        
+        // Extrair cabeçalhos
+        const headers = jsonData[0];
+        
+        // Processar linhas de dados
+        const products = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row.length === 0) continue;
+          
+          const product = {};
+          for (let j = 0; j < headers.length; j++) {
+            product[headers[j]] = row[j];
+          }
+          products.push(product);
+        }
+        
+        // Armazenar dados importados
+        sistema.importedShopeeData = products;
+        sistema.originalShopeeData = JSON.parse(JSON.stringify(products)); // Cópia profunda para backup
+        
+        // Exibir dados na tabela
+        displayImportedProducts(products);
+        
+        // Mostrar seção de produtos importados
+        document.getElementById('importedShopeeProducts').style.display = 'block';
+        
+        addHistoryEntry('import', `${products.length} produtos importados da Shopee`);
+      };
+      
+      reader.readAsArrayBuffer(file);
+    }
+
+    function displayImportedProducts(products) {
+      const tableBody = document.getElementById('importedProductsTableBody');
+      tableBody.innerHTML = '';
+      
+      products.forEach(product => {
+        const row = document.createElement('tr');
+        
+        // Mapear campos importantes para exibição
+        row.innerHTML = `
+          <td>${product['ID do produto'] || ''}</td>
+          <td>${product['Nome do Produto. (Opcional)'] || ''}</td>
+          <td>${product['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
+          <td>${product['ID de variação'] || ''}</td>
+          <td>${product['Variação de nome. (Opcional)'] || ''}</td>
+          <td>${product['Nº de Ref. SKU. (Opcional)'] || ''}</td>
+          <td>${product['Preço original (opcional)'] || ''}</td>
+          <td class="font-bold">${product['Preço de desconto'] || ''}</td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+    }
+
+    function applyPriceUpdate(type) {
+      if (!sistema.importedShopeeData) {
+        alert('Importe os dados da Shopee primeiro!');
+        return;
+      }
+      
+      // Obter todos os produtos do sistema
+      const systemProducts = sistema.produtos;
+      let productsWithNoSku = 0;
+      let productsNotFound = 0;
+      let productsUpdated = 0;
+      
+      // Percorrer produtos importados
+      for (const importedProduct of sistema.importedShopeeData) {
+        // Determinar o SKU a ser buscado (primeiro tenta SKU, depois Parent SKU)
+        const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ? 
+                   String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
+        
+        const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ? 
+                         String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
+        
+        const searchSku = sku || parentSku;
+        
+        if (!searchSku) {
+          console.log('Produto sem SKU identificável:', importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
+          productsWithNoSku++;
+          continue;
+        }
+        
+        // Buscar produto correspondente no sistema (comparação exata de strings)
+        const systemProduct = systemProducts.find(p => {
+          const systemSku = p.sku ? String(p.sku).trim() : '';
+          return systemSku === searchSku;
+        });
+        
+        if (!systemProduct) {
+          console.log('Produto não encontrado no sistema:', searchSku, importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
+          productsNotFound++;
+          continue;
+        }
+        
+        // Aplicar preço conforme o tipo selecionado, formatando com 2 casas decimais
+        let priceToApply = 0;
+        switch(type) {
+          case 'promo':
+            priceToApply = parseFloat(systemProduct.precoPromo).toFixed(2);
+            break;
+          case 'medium':
+            priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
+            break;
+          case 'ideal':
+            priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
+            break;
+        }
+        
+        importedProduct['Preço de desconto'] = priceToApply;
+        productsUpdated++;
+      }
+      
+      // Atualizar exibição
+      displayImportedProducts(sistema.importedShopeeData);
+      
+      // Feedback visual detalhado
+      const feedback = document.createElement('div');
+      feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+      feedback.innerHTML = `
+        <i class="fas fa-check-circle mr-2"></i> 
+        Operação concluída!<br>
+        Produtos atualizados: ${productsUpdated}<br>
+        Produtos não encontrados: ${productsNotFound}<br>
+        Produtos sem SKU: ${productsWithNoSku}
+      `;
+      document.body.appendChild(feedback);
+      
+      setTimeout(() => {
+        feedback.remove();
+      }, 5000);
+      
+      // Registrar no histórico
+      addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
+    }
+
+    function exportShopeeFile() {
+      if (!sistema.importedShopeeData) {
+        alert('Nenhum dado para exportar!');
+        return;
+      }
+      
+      // Recriar estrutura original com cabeçalhos
+      const headers = Object.keys(sistema.originalShopeeData[0]);
+      const dataToExport = [headers];
+      
+      // Adicionar dados modificados mantendo a estrutura original
+      sistema.importedShopeeData.forEach(product => {
+        const row = headers.map(header => product[header]);
+        dataToExport.push(row);
+      });
+      
+      // Criar planilha
+      const ws = XLSX.utils.aoa_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Promoções");
+      
+      // Exportar
+      XLSX.writeFile(wb, `promocoes_shopee_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+      addHistoryEntry('export', 'Planilha Shopee exportada');
+    }
+
+    // Funções auxiliares
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'block';
+    }
+
+    function openRecoverModal() {
+      closeModal('loginModal');
+      openModal('recoverModal');
+    }
+
+    function sendRecovery() {
+      const email = document.getElementById('recoverEmail').value;
+      if (!email.includes('@')) {
+        alert('E-mail inválido!');
+        return;
+      }
+      
+      // Simulação de envio
+      alert(`Link de recuperação enviado para ${email}`);
+      closeModal('recoverModal');
+      addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
+    }
+
+    function setupEventListeners() {
+      // Login/logout
+      document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      
+      // Tabs
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+      });
+      
+      // Filtros
+      document.getElementById('filterHistoryType').addEventListener('change', loadHistory);
+      document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
+      document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
+      document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
+      
+      // Configurações
+      document.getElementById('autoBackup').addEventListener('change', function() {
+        sistema.config.backupAuto = this.checked;
+        saveSystem();
+      });
+      
+      document.getElementById('backupFrequency').addEventListener('change', function() {
+        sistema.config.backupFrequency = this.value;
+        saveSystem();
+      });
+    }
+
+    function updateUI() {
+      // Atualiza checkbox de backup automático
+      document.getElementById('autoBackup').checked = sistema.config.backupAuto;
+      document.getElementById('backupFrequency').value = sistema.config.backupFrequency || 'daily';
+      
+      // Atualiza status de conexão
+      updateApiStatusUI();
+      
+      // Atualiza histórico recente
+      updateRecentUpdates();
+    }
+
+    function updateKPIs() {
+      const totalProducts = sistema.produtos.length;
+      
+      // Calcula margem média
+      let avgMargin = 0;
+      if (sistema.produtos.length > 0) {
+        const totalMargin = sistema.produtos.reduce((sum, produto) => {
+          const custo = parseFloat(produto.custo);
+          const precoMinimo = parseFloat(produto.precoMinimo);
+          return sum + ((precoMinimo - custo) / precoMinimo * 100);
+        }, 0);
+        avgMargin = (totalMargin / sistema.produtos.length).toFixed(2);
+      }
+      
+      // Conta conexões ativas
+      const activeConnections = Object.values(sistema.config.apiConfig)
+        .filter(api => api.connected).length;
+      
+      document.getElementById('totalProducts').textContent = totalProducts;
+      document.getElementById('avgMargin').textContent = `${avgMargin}%`;
+      document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
+      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+    }
+
+    // Verificações periódicas
+    setInterval(() => {
+      checkApiConnections();
+      updateKPIs();
+      
+      // Backup automático
+      if (sistema.config.backupAuto) {
+        const now = new Date();
+        const lastBackup = localStorage.getItem("lastBackupTime");
+        const lastBackupTime = lastBackup ? new Date(lastBackup) : null;
+        
+        let needsBackup = false;
+        if (!lastBackupTime) {
+          needsBackup = true;
+        } else {
+          const diffHours = (now - lastBackupTime) / (1000 * 60 * 60);
+          
+          if (sistema.config.backupFrequency === 'daily' && diffHours >= 24) {
+            needsBackup = true;
+          } else if (sistema.config.backupFrequency === 'weekly' && diffHours >= 168) {
+            needsBackup = true;
+          } else if (sistema.config.backupFrequency === 'monthly' && diffHours >= 720) {
+            needsBackup = true;
+          }
+        }
+        
+        if (needsBackup) {
+          createBackup();
+          localStorage.setItem("lastBackupTime", now.toISOString());
+        }
+      }
+    }, 300000); // 5 minutos
 </script>
 </body>
 </html>
