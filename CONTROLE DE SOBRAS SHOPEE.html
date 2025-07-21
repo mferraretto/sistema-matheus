@@ -1561,30 +1561,31 @@
       
       mostrarNotificacao('Arquivo JSON exportado com sucesso!');
     }
-     function trocarAba(abaId) {
-    // Remove classe 'active' de todos os botões
-    document.querySelectorAll('.aba-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-
-    // Adiciona classe 'active' ao botão clicado
-    const botaoClicado = document.querySelector(`.aba-btn[onclick*="${abaId}"]`);
-    if (botaoClicado) botaoClicado.classList.add('active');
-
-    // Esconde todas as abas
-    document.querySelectorAll('.aba-conteudo').forEach(aba => {
-      aba.style.display = 'none';
-    });
-
-    // Mostra apenas a aba ativa
-    const abaAtiva = document.getElementById(abaId);
-    if (abaAtiva) abaAtiva.style.display = 'block';
-  }
-
-  // Mostrar a primeira aba ao carregar
-  document.addEventListener('DOMContentLoaded', () => {
-    trocarAba('importar');
+    function trocarAba(abaId) {
+  // Remove classe 'active' de todos os botões
+  document.querySelectorAll('.aba-btn').forEach(btn => {
+    btn.classList.remove('active');
   });
+
+  // Adiciona classe 'active' ao botão clicado
+  const botaoClicado = document.querySelector(`.aba-btn[onclick*="${abaId}"]`);
+  if (botaoClicado) botaoClicado.classList.add('active');
+
+  // Remove a classe 'ativa' de todas as abas
+  document.querySelectorAll('.aba-conteudo').forEach(aba => {
+    aba.classList.remove('ativa');
+  });
+
+  // Adiciona a classe 'ativa' à aba correspondente
+  const abaAtiva = document.getElementById(abaId);
+  if (abaAtiva) abaAtiva.classList.add('ativa');
+}
+
+// Mostrar a primeira aba ao carregar
+document.addEventListener('DOMContentLoaded', () => {
+  trocarAba('importar');
+});
+
   </script>
 </body>
 </html>
