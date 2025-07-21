@@ -769,7 +769,7 @@ try {
     
     for (let sku in metas) {
       const meta = metas[sku];
-      const preco = produtos[sku];
+const precoProduto = produtos[sku];
       const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
      const precoFormatado =
         preco !== undefined
@@ -779,7 +779,7 @@ try {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${sku}</td>
-        <td>${preco !== undefined ? 'R$ ' + precoFormatado : '-'}</td>
+        <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
         <td>
           <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
