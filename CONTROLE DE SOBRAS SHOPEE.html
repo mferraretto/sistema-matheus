@@ -309,7 +309,6 @@
 <body>
   <nav class="bg-gray-800 text-white p-4 flex flex-wrap justify-center space-x-4 mb-4 rounded">
     <a href="index.html" class="hover:underline">Início</a>
-    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
     <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
     <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
     <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
@@ -393,7 +392,9 @@
     </div>
     
     <div style="margin: 15px 0;">
-      <input type="text" id="metaSku" placeholder="SKU do Produto" class="form-control" />
+       <input type="text" id="metaSku" list="listaSkus" placeholder="SKU do Produto" class="form-control" />
+      <datalist id="listaSkus"></datalist>
+      <span id="precoMinimoInfo" style="margin-left:10px;color:#28a745;"></span>
       <input type="number" id="metaValor" placeholder="Sobra Esperada (R$)" step="0.01" class="form-control" />
       <button onclick="adicionarMeta()" class="btn btn-primary" id="btnAdicionarMeta">
         <i class="fas fa-plus"></i> Adicionar Meta
@@ -405,6 +406,7 @@
         <thead>
           <tr>
             <th>SKU</th>
+            <th>Preço Mínimo</th>
             <th>Meta R$</th>
             <th>Última Atualização</th>
             <th>Ações</th>
@@ -478,6 +480,7 @@
   let db;
   let metas = {};
   let historico = [];
+  let produtos = {};
   let pedidosProcessados = [];
   let graficoBarras, graficoPizza;
   let app;
@@ -516,8 +519,13 @@ try {
 
   // Carrega dados iniciais
   document.addEventListener('DOMContentLoaded', function() {
+    carregarProdutos();
     carregarMetas();
     carregarHistorico();
+    const skuInput = document.getElementById('metaSku');
+    if (skuInput) {
+      skuInput.addEventListener('input', atualizarPrecoMinimo);
+    }
   });
 
   // =============================================
@@ -610,6 +618,17 @@ try {
       }
     }
   }
+ function atualizarPrecoMinimo() {
+    const sku = document.getElementById('metaSku').value.trim();
+    const preco = produtos[sku];
+    const info = document.getElementById('precoMinimoInfo');
+    if (!info) return;
+    if (preco) {
+      info.textContent = `Preço Mínimo: R$ ${parseFloat(preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    } else {
+      info.textContent = '';
+    }
+  }
 
   // =============================================
   // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
@@ -630,7 +649,30 @@ try {
   // =============================================
   // FUNÇÕES DE GERENCIAMENTO DE METAS
   // =============================================
-  
+   async function carregarProdutos() {
+    try {
+      const snapshot = await db.collection("products").get();
+      produtos = {};
+      const datalist = document.getElementById('listaSkus');
+      if (datalist) datalist.innerHTML = '';
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (!data.sku) return;
+        produtos[data.sku] = data.precoMinimo;
+        if (datalist) {
+          const opt = document.createElement('option');
+          const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
+          opt.value = data.sku;
+          opt.label = `${data.sku} - R$ ${preco}`;
+          datalist.appendChild(opt);
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    }
+  }
+
   async function carregarMetas() {
     try {
       toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
@@ -713,17 +755,19 @@ try {
     tbody.innerHTML = '';
     
     if (Object.keys(metas).length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhuma meta cadastrada</td></tr>';
+     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma meta cadastrada</td></tr>';
       return;
     }
     
     for (let sku in metas) {
       const meta = metas[sku];
+      const preco = produtos[sku];
       const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
       
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${sku}</td>
+        <td>${preco ? 'R$ ' + parseFloat(preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
         <td>
           <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
