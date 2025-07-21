@@ -1145,6 +1145,8 @@
       // Salvar produto
       salvarProduto(produto, sku, plataforma.toUpperCase(), precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas);
     }
+ // Disponibiliza a função no escopo global para uso em atributos inline
+    window.calcular = calcular;
 
     async function salvarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
       // Simulação de salvamento
