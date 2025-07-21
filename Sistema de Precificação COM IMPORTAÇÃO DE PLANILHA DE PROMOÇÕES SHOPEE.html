@@ -794,11 +794,20 @@
       setupCharts();
       setupEventListeners();
       checkLogin();
-       const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.location.search);
       if (params.get('login') === '1') {
         openModal('loginModal');
       }
-
+ const tabParam = params.get('tab');
+      if (tabParam) {
+        const btn = document.querySelector(`.tab-button[data-tab="${tabParam}"]`);
+        if (btn) {
+          document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(tabParam).classList.add('active');
+        }
+      }
       loadSystem();
     });
 
