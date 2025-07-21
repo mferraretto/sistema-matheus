@@ -323,7 +323,7 @@
   <script type="module">
     // Firebase configuration and initialization
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     const firebaseConfig = {
       apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
@@ -457,12 +457,14 @@ window.salvarNoFirebase = async () => {
       const loadingMsg = showNotification("⏳ Salvando dados no Firebase...", 'info', true);
 
       try {
+        const user = auth.currentUser;
+        if (!user) return;
         for (const [id, novosParciais] of Object.entries(window.produtos)) {
           const ref = doc(db, "anuncios", id);
           const snapshot = await getDoc(ref);
 
           let dadosAntigos = {};
-          let dadosCompletos = { ...novosParciais };
+          let dadosCompletos = { ...novosParciais, userId: user.uid };
           let salvar = true;
           let registrarHistorico = false;
 
@@ -488,6 +490,7 @@ window.salvarNoFirebase = async () => {
           if (registrarHistorico) {
             await addDoc(collection(db, "atualizacoes"), {
               id,
+              userId: user.uid,
               dataHora: new Date().toISOString(),
               dadosAntigos,
               dadosNovos: dadosCompletos,
@@ -566,6 +569,10 @@ window.salvarNoFirebase = async () => {
       
       try {
         const querySnapshot = await getDocs(collection(db, "anuncios"));
+        const user = auth.currentUser;
+        if (!user) return;
+        const q = query(collection(db, "anuncios"), where("userId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
         tbody.innerHTML = '';
         
         if (querySnapshot.empty) {
@@ -727,10 +734,12 @@ window.salvarNoFirebase = async () => {
       document.getElementById("modalHistorico").style.display = "flex";
 
       try {
-        const q = await getDocs(collection(db, "atualizacoes"));
+const user = auth.currentUser;
+        if (!user) return;
+        const qSnap = await getDocs(query(collection(db, "atualizacoes"), where("userId", "==", user.uid)));
         const historico = [];
-        q.forEach(doc => {
-          const h = doc.data();
+ qSnap.forEach(doc => {
+   const h = doc.data();
           if (h.id === id) historico.push(h);
         });
 
@@ -776,7 +785,10 @@ window.salvarNoFirebase = async () => {
       container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Analisando anúncios...</div>';
       
       try {
-        const querySnapshot = await getDocs(collection(db, "anuncios"));
+const user = auth.currentUser;
+        if (!user) return;
+        const q = query(collection(db, "anuncios"), where("userId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
         const sugestoes = [];
         
         querySnapshot.forEach(doc => {
@@ -899,9 +911,13 @@ window.salvarNoFirebase = async () => {
       container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando dados de evolução...</div>';
       
       try {
+        const user = auth.currentUser;
+        if (!user) return;
+        const anunciosQuery = query(collection(db, "anuncios"), where("userId", "==", user.uid));
+        const historicoQuery = query(collection(db, "atualizacoes"), where("userId", "==", user.uid));
         const [anunciosSnap, historicoSnap] = await Promise.all([
-          getDocs(collection(db, "anuncios")),
-          getDocs(collection(db, "atualizacoes")),
+          getDocs(anunciosQuery),
+          getDocs(historicoQuery),
         ]);
 
         const historicoPorId = {};
