@@ -587,6 +587,7 @@
   </style>
 </head>
 <body>
+    <script type="module" src="auth.js"></script>
   <!-- Barra de navegação -->
   <nav class="navbar">
     <div class="nav-container">
@@ -1068,7 +1069,11 @@
     // =============================================
     async function carregarProdutos() {
       try {
-        const snapshot = await db.collection("products").get();
+ let queryRef = db.collection("products");
+        if (window.usuarioLogado?.perfil !== 'ADM') {
+          queryRef = queryRef.where('uid', '==', window.usuarioLogado.uid);
+        }
+        const snapshot = await queryRef.get();
         produtos = {};
         const datalist = document.getElementById('listaSkus');
         if (datalist) datalist.innerHTML = '';
@@ -1097,7 +1102,11 @@
         return await executarComRetry(async () => {
           metas = {};
           // Carrega SKUs e preço mínimo da coleção de produtos
-          const produtosSnap = await db.collection("products").get();
+let prodQuery = db.collection("products");
+          if (window.usuarioLogado?.perfil !== 'ADM') {
+            prodQuery = prodQuery.where('uid', '==', window.usuarioLogado.uid);
+          }
+          const produtosSnap = await prodQuery.get();
           produtosSnap.forEach((doc) => {
             const data = doc.data();
             if (data.sku && data.precoMinimo !== undefined) {
@@ -1109,7 +1118,11 @@
           });
 
           // Sobrepõe com metas salvas manualmente se existirem
-          const metasSnap = await db.collection("metasSKU").get();
+  let metasQuery = db.collection("metasSKU");
+          if (window.usuarioLogado?.perfil !== 'ADM') {
+            metasQuery = metasQuery.where('uid', '==', window.usuarioLogado.uid);
+          }
+          const metasSnap = await metasQuery.get();
           metasSnap.forEach((doc) => {
             const originalSku = doc.id.replaceAll('__', '/');
             metas[originalSku] = {
@@ -1134,7 +1147,11 @@
       try {
         return await executarComRetry(async () => {
           historico = [];
-          const snapshot = await db.collection("historicoMetas").orderBy("data", "desc").limit(50).get();
+   let histQuery = db.collection("historicoMetas");
+          if (window.usuarioLogado?.perfil !== 'ADM') {
+            histQuery = histQuery.where('uid', '==', window.usuarioLogado.uid);
+          }
+          const snapshot = await histQuery.orderBy("data", "desc").limit(50).get();
           
           snapshot.forEach((doc) => {
             historico.push({
@@ -1166,7 +1183,8 @@
             valorAnterior: valorAnterior,
             valorNovo: valorNovo,
             data: new Date(),
-            usuario: "Usuário" // Em um sistema real, pegaria do auth
+            usuario: "Usuário",
+            uid: firebase.auth().currentUser.uid
           });
           
           // Recarregar histórico após adicionar novo registro
@@ -1297,7 +1315,8 @@
         const safeSku = sku.replaceAll('/', '__');
         const metaData = {
           valor: valor,
-          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+ atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          uid: firebase.auth().currentUser.uid
         };
         
         await executarComRetry(async () => {
@@ -1363,7 +1382,8 @@
           const safeSku = sku.replaceAll('/', '__');
           const metaData = {
             valor: novoValor,
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+ atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            uid: firebase.auth().currentUser.uid
           };
           
           await executarComRetry(async () => {
