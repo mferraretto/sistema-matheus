@@ -648,6 +648,7 @@
       <button class="tab-btn" onclick="trocarAba('faturamento')">
   <i class="fas fa-cash-register"></i> Faturamento Diário
 </button>
+      <button class="tab-btn" onclick="trocarAba('registroFaturamento')">📋 Registro de Faturamento</button>
     </div>
 
     <!-- Aba de Importação/Conferência -->
@@ -881,6 +882,16 @@
     <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
   </div>
 </div>
+ <div id="registroFaturamento" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-calendar-alt"></i>
+      <h3>Registros de Faturamento Diário</h3>
+    </div>
+    <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
+  </div>
+</div>
+ 
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
     <div class="status-dot"></div>
@@ -1911,7 +1922,7 @@ window.importarFaturamento = async function () {
         operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
       }
 
-      let bruto = 0, taxas = 0;
+let bruto = 0, taxas = 0, qtdVendas = 0;
 
       rows.forEach((row) => {
         const status = (row["Status do pedido"] || "").toLowerCase();
@@ -1925,6 +1936,7 @@ window.importarFaturamento = async function () {
 
         bruto += subtotal + reembolso;
         taxas += cupom + comissao + servico;
+        qtdVendas++;
       });
 
       const liquido = bruto - taxas;
@@ -1994,7 +2006,30 @@ window.importarFaturamento = async function () {
         console.error("Erro ao exportar CSV:", error);
       }
     }
+async function carregarRegistrosFaturamento() {
+  const ref = collection(db, "faturamento");
+  const snap = await getDocs(ref);
+  const container = document.getElementById("listaFaturamento");
+  container.innerHTML = "";
+  snap.forEach(doc => {
+    const d = doc.data();
+    const data = doc.id;
+    const bruto = d.valorBruto?.toFixed(2) || "-";
+    const liquido = d.valorLiquido?.toFixed(2) || "-";
+    const qtd = d.qtdVendas || 0;
+    const card = document.createElement("div");
+    card.innerHTML = `
+      <div style="border:1px solid black;text-align:center;font-weight:bold;background:#ddd;padding:5px">${data}</div>
+      <div style="border:1px solid black;padding:4px"><strong>BRUTO =</strong> R$ ${bruto}</div>
+      <div style="border:1px solid black;padding:4px"><strong>LIQUIDO =</strong> R$ ${liquido}</div>
+      <div style="border:1px solid black;padding:4px"><strong>QTD.VENDAS =</strong> ${qtd}</div>
+    `;
+    card.className = "bg-white shadow rounded overflow-hidden";
+    container.appendChild(card);
+  });
+}
 
+document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]").addEventListener("click", carregarRegistrosFaturamento);
     function exportarJSON() {
       if (pedidosProcessados.length === 0) {
         mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
