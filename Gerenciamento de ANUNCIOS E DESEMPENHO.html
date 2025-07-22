@@ -625,19 +625,26 @@ window.carregarAnuncios = async function () {
       const snap = await getDocs(variantesRef);
       const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
 
-      // 🔄 Buscar desempenho mais recente da subcoleção
+      // 🔄 Buscar últimos 7 dias da subcoleção desempenho
       const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
-      const desempenhoSnap = await getDocs(desempenhoRef);
-      let desempenho = {};
-      if (!desempenhoSnap.empty) {
-        const ordenado = desempenhoSnap.docs.sort((a, b) => b.id.localeCompare(a.id));
-        desempenho = ordenado[0].data();
-      }
+      const desempenhoQuery = query(desempenhoRef, orderBy("dataReferencia", "desc"), limit(7));
+      const desempenhoSnap = await getDocs(desempenhoQuery);
+
+      let total = { conversaoPago: 0 };
+      let count = 0;
+
+      desempenhoSnap.forEach(doc => {
+        const d = doc.data();
+        total.conversaoPago += parseFloat(d.conversaoPago || 0);
+        count++;
+      });
+
+      const mediaConversao = count > 0 ? (total.conversaoPago / count).toFixed(2) : 0;
 
       for (const variante of variantes) {
         const preco = variante.preco || data.preco || 0;
         const estoque = parseInt(variante.estoque || data.estoque || 0);
-        const conversao = parseFloat(variante.conversaoPago || desempenho.conversaoPago || data.conversaoPago || 0);
+        const conversao = parseFloat(variante.conversaoPago || mediaConversao || 0);
 
         const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
         const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
@@ -678,6 +685,7 @@ window.carregarAnuncios = async function () {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erro ao carregar dados</td></tr>';
   }
 };
+
 
 
 window.verDetalhes = async function (id) {
