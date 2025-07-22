@@ -367,7 +367,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
     // Process spreadsheets
    window.processarPlanilha = function(file, tipo) {
-const user = auth.currentUser;
+  const user = auth.currentUser;
   if (!user) return alert("Você precisa estar logado.");
 
   const uid = user.uid;
@@ -384,50 +384,61 @@ const user = auth.currentUser;
 
     for (const linha of dados) {
       const id = linha["ID do Produto"] || linha["ID do Item"];
-      if (!id) continue;
-      if (!window.produtos[id]) window.produtos[id] = { id };
+      const varianteId = linha["Variante Identificador"] || "unico";
+
+      if (!id || !varianteId) continue;
+
+      // Criar estrutura do produto pai
+      if (!window.produtos[id]) window.produtos[id] = {
+        id,
+        uid,
+        variantes: {}
+      };
 
       const p = window.produtos[id];
+      if (!p.variantes[varianteId]) p.variantes[varianteId] = { varianteId };
 
+      const v = p.variantes[varianteId];
+
+      // Separar por tipo de planilha
       switch (tipo) {
         case "desempenho":
-          p.dataReferencia = window.dataDesempenhoReferencia;
-          p.visitas = linha["Visitantes do Produto (Visita)"];
-          p.visualizacoes = linha["Visualizações da Página do Produto"];
-          p.cliquesBusca = linha["Cliques em buscas"];
-          p.curtidas = linha["Curtidas"];
-          p.saidas = linha["Visitantes que saíram da página"];
-          p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
-          p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
-          p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
-          p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
-          p.compradoresPedido = linha["Compradores (Pedido realizado)"];
-          p.unidadesPedido = linha["Unidades (Pedido realizado)"];
-          p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
-          p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
-          p.compradoresPago = linha["Compradores (Pedidos pago)"];
-          p.unidadesPago = linha["Unidades (Pedido pago)"];
-          p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
-          p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
+          v.dataReferencia = window.dataDesempenhoReferencia;
+          v.visitas = linha["Visitantes do Produto (Visita)"];
+          v.visualizacoes = linha["Visualizações da Página do Produto"];
+          v.cliquesBusca = linha["Cliques em buscas"];
+          v.curtidas = linha["Curtidas"];
+          v.saidas = linha["Visitantes que saíram da página"];
+          v.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
+          v.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
+          v.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
+          v.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
+          v.compradoresPedido = linha["Compradores (Pedido realizado)"];
+          v.unidadesPedido = linha["Unidades (Pedido realizado)"];
+          v.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
+          v.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
+          v.compradoresPago = linha["Compradores (Pedidos pago)"];
+          v.unidadesPago = linha["Unidades (Pedido pago)"];
+          v.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
+          v.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
           break;
         case "vendas":
-          p.preco = linha["Preço"];
-          p.estoque = linha["Estoque do Vendedor"];
-          p.gtin = linha["GTIN (EAN)"];
-          p.skuVariante = linha["SKU"];
-          p.nomeVariante = linha["Nome"];
-          p.varianteId = linha["Variante Identificador"];
+          v.preco = linha["Preço"];
+          v.estoque = linha["Estoque do Vendedor"];
+          v.gtin = linha["GTIN (EAN)"];
+          v.skuVariante = linha["SKU"];
+          v.nomeVariante = linha["Nome"];
           break;
         case "basica":
           p.nome = linha["Nome do Produto"] || p.nome;
           p.descricao = linha["Descrição do Produto"];
           break;
         case "frete":
-          p.peso = linha["Peso do Produto/kg"];
-          p.comprimento = linha["Comprimento"];
-          p.largura = linha["Largura"];
-          p.altura = linha["Altura"];
-          p.taxaFrete = linha["Taxa de frete"];
+          v.peso = linha["Peso do Produto/kg"];
+          v.comprimento = linha["Comprimento"];
+          v.largura = linha["Largura"];
+          v.altura = linha["Altura"];
+          v.taxaFrete = linha["Taxa de frete"];
           break;
         case "midia":
           p.categoria = linha["Categoria"];
@@ -447,7 +458,8 @@ const user = auth.currentUser;
   reader.readAsBinaryString(file);
 };
 
-// Save to Firebase
+
+// Save to Firebase com suporte a variantes
 window.salvarNoFirebase = async () => {
   const total = Object.keys(window.produtos).length;
   if (total === 0) {
@@ -460,53 +472,68 @@ window.salvarNoFirebase = async () => {
 
   try {
     const user = auth.currentUser;
-    for (const [id, novosParciais] of Object.entries(window.produtos)) {
+
+    for (const [id, produto] of Object.entries(window.produtos)) {
       const ref = doc(db, "anuncios", id);
       const snapshot = await getDoc(ref);
 
       let dadosAntigos = {};
-      let dadosCompletos = { ...novosParciais };
-      let salvar = true;
+      let dadosCompletos = { ...produto };
+      let salvarPai = true;
       let registrarHistorico = false;
+
+      // Remove variantes do objeto pai antes da comparação
+      const variantes = dadosCompletos.variantes || {};
+      delete dadosCompletos.variantes;
 
       if (snapshot.exists()) {
         dadosAntigos = snapshot.data();
         if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && user.email !== ADMIN_EMAIL) {
           continue;
         }
-        dadosCompletos = { ...dadosAntigos, ...novosParciais };
+
+        dadosCompletos = { ...dadosAntigos, ...dadosCompletos };
 
         if (objetosIguais(dadosAntigos, dadosCompletos)) {
-          salvar = false;
+          salvarPai = false;
         } else {
-          const camposAntigos = Object.keys(dadosAntigos);
-          registrarHistorico = camposAntigos.some(chave =>
+          registrarHistorico = Object.keys(dadosAntigos).some(chave =>
             !objetosIguais(dadosAntigos[chave], dadosCompletos[chave])
           );
         }
       }
 
-      if (!salvar) continue;
-      dadosCompletos.uid = dadosCompletos.uid || user.uid;
+      // 🔹 Salvar documento principal
+      if (salvarPai) {
+        dadosCompletos.uid = dadosCompletos.uid || user.uid;
+        await setDoc(ref, dadosCompletos);
 
-if (dadosCompletos.dataReferencia) {
-  const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${dadosCompletos.dataReferencia}`);
-  const { dataReferencia, ...metricas } = dadosCompletos;
-  await setDoc(desempenhoRef, metricas); // Salva desempenho separado
-} else {
-  await setDoc(ref, dadosCompletos); // Continua salvando o restante como antes
-}
-      if (registrarHistorico) {
-        await addDoc(collection(db, "atualizacoes"), {
-          id,
-          uid: dadosCompletos.uid,
-          dataHora: new Date().toISOString(),
-          dadosAntigos,
-          dadosNovos: dadosCompletos,
-        });
+        if (registrarHistorico) {
+          await addDoc(collection(db, "atualizacoes"), {
+            id,
+            uid: dadosCompletos.uid,
+            dataHora: new Date().toISOString(),
+            dadosAntigos,
+            dadosNovos: dadosCompletos,
+          });
+        }
+
+        atualizados++;
       }
 
-      atualizados++;
+      // 🔸 Salvar variações
+      for (const [varianteId, variante] of Object.entries(variantes)) {
+        const varianteRef = doc(db, `anuncios/${id}/variantes/${varianteId}`);
+
+        // Se for planilha de desempenho, salvar em subcoleção "desempenho"
+        if (variante.dataReferencia) {
+          const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${variante.dataReferencia}`);
+          const { dataReferencia, ...metricas } = variante;
+          await setDoc(desempenhoRef, metricas);
+        } else {
+          await setDoc(varianteRef, variante);
+        }
+      }
     }
 
     window.produtos = {};
