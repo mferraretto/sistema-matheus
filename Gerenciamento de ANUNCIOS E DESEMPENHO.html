@@ -489,8 +489,13 @@ window.salvarNoFirebase = async () => {
       if (!salvar) continue;
       dadosCompletos.uid = dadosCompletos.uid || user.uid;
 
-      await setDoc(ref, dadosCompletos);
-
+if (dadosCompletos.dataReferencia) {
+  const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${dadosCompletos.dataReferencia}`);
+  const { dataReferencia, ...metricas } = dadosCompletos;
+  await setDoc(desempenhoRef, metricas); // Salva desempenho separado
+} else {
+  await setDoc(ref, dadosCompletos); // Continua salvando o restante como antes
+}
       if (registrarHistorico) {
         await addDoc(collection(db, "atualizacoes"), {
           id,
