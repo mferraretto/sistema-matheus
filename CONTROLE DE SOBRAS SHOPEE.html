@@ -1087,7 +1087,7 @@
         snapshot.forEach(doc => {
           const data = doc.data();
           if (!data.sku) return;
-          produtos[data.sku] = data.precoMinimo;
+produtos[data.sku] = data.custo;
           if (datalist) {
             const opt = document.createElement('option');
             const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
