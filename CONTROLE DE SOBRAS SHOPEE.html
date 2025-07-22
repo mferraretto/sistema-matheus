@@ -921,7 +921,6 @@
         let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
-    let app;
 
     // =============================================
     // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
@@ -1882,41 +1881,36 @@ function atualizarGraficos() {
     criarGraficoPizza(dados);
 }
 
-    function agruparPorSKU(pedidos) {
-      const agrupados = {};
-      
-      pedidos.forEach(pedido => {
-        if (!agrupados[pedido.sku]) {
-          agrupados[pedido.sku] = {
-            sku: pedido.sku,
-            totalSobra: 0,
-            totalMeta: 0,
-            quantidade: 0
-          };
-        }
-        
-        agrupados[pedido.sku].totalSobra += pedido.sobra;
-        agrupados[pedido.sku].totalMeta += pedido.meta || 0;
-        agrupados[pedido.sku].quantidade += 1;
-      });
-      
-      // Converter para array e calcular diferenças
-      return Object.values(agrupados).map(item => {
-        const diferenca = item.totalSobra - item.totalMeta;
-        const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
-          document.querySelector('.chart-header').innerHTML += `
-        <button onclick="analisarTendenciasIA()" class="btn btn-outline">
-            <i class="fas fa-chart-line"></i> Analisar Tendências com IA
-        </button>
-    `;
-}
-        return {
-          ...item,
-          diferenca,
-          diferencaPercentual
-        };
-      });
+   function agruparPorSKU(pedidos) {
+  const agrupados = {};
+  
+  pedidos.forEach(pedido => {
+    if (!agrupados[pedido.sku]) {
+      agrupados[pedido.sku] = {
+        sku: pedido.sku,
+        totalSobra: 0,
+        totalMeta: 0,
+        quantidade: 0
+      };
     }
+    
+    agrupados[pedido.sku].totalSobra += pedido.sobra;
+    agrupados[pedido.sku].totalMeta += pedido.meta || 0;
+    agrupados[pedido.sku].quantidade += 1;
+  });
+  
+  // Converter para array e calcular diferenças
+  return Object.values(agrupados).map(item => {
+    const diferenca = item.totalSobra - item.totalMeta;
+    const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
+    
+    return {
+      ...item,
+      diferenca,
+      diferencaPercentual
+    };
+  });
+} // ← Fechamento correto da função
 async function analisarTendenciasIA() {
     try {
         const prompt = `Analise estes dados de desempenho de produtos:
