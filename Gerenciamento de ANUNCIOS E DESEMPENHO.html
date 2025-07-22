@@ -367,7 +367,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
     // Process spreadsheets
    window.processarPlanilha = function(file, tipo) {
-  const user = firebase.auth().currentUser;
+const user = auth.currentUser;
   if (!user) return alert("Você precisa estar logado.");
 
   const uid = user.uid;
