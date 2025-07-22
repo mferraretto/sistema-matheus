@@ -597,175 +597,215 @@ window.salvarNoFirebase = async () => {
     });
 
     // Load products
-    window.carregarAnuncios = async function () {
-      const tbody = document.querySelector("#tabelaAnuncios tbody");
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
-      
-      try {
- const user = auth.currentUser;
-        let q = collection(db, "anuncios");
-        if (user.email !== ADMIN_EMAIL) {
-          q = query(q, where("uid", "==", user.uid));
-        }
-        const querySnapshot = await getDocs(q);
-        tbody.innerHTML = '';
-        
-        if (querySnapshot.empty) {
-          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Nenhum anúncio encontrado</td></tr>';
-          return;
-        }
+   window.carregarAnuncios = async function () {
+  const tbody = document.querySelector("#tabelaAnuncios tbody");
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
 
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          const conversao = data.conversaoPago ? parseFloat(data.conversaoPago) : 0;
-          const estoque = data.estoque ? parseInt(data.estoque) : 0;
-          
-          const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
-          const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
-          
-          const tr = document.createElement("tr");
-          tr.className = "hover:bg-gray-50";
-          tr.innerHTML = `
-            <td class="px-4 py-3 whitespace-nowrap">
-              <div class="font-mono text-sm">${data.id || ""}</div>
-            </td>
-            <td class="px-4 py-3">
-              ${data.imagemCapa ? `<img src="${data.imagemCapa}" class="w-16 h-16 object-contain rounded border">` : '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>'}
-            </td>
-            <td class="px-4 py-3">
-              <div class="font-medium text-gray-900">${data.nome || "Sem nome"}</div>
-              <div class="text-gray-500 text-sm">${data.categoria || "Sem categoria"}</div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="font-semibold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
-              <div class="text-gray-500 text-sm">Frete: R$ ${data.taxaFrete || "0.00"}</div>
-            </td>
-            <td class="px-4 py-3">
-              <span class="badge badge-${estoqueStatus}">
-                ${estoque} un
-              </span>
-            </td>
-            <td class="px-4 py-3">
-              <span class="badge badge-${conversaoStatus}">
-                ${conversao}%
-              </span>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-              <button onclick="verDetalhes('${doc.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                <i class="fas fa-eye mr-1"></i>Ver Detalhes
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (error) {
-        console.error("Erro ao carregar anúncios:", error);
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erro ao carregar dados</td></tr>';
-      }
+  try {
+    const user = auth.currentUser;
+    let q = collection(db, "anuncios");
+    if (user.email !== ADMIN_EMAIL) {
+      q = query(q, where("uid", "==", user.uid));
     }
 
-    // View product details
-    window.verDetalhes = async function (id) {
-      try {
-        const docRef = doc(db, "anuncios", id);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-          showNotification("❌ Anúncio não encontrado", "error");
-          return;
-        }
-        
-        const data = docSnap.data();
-         const user = auth.currentUser;
-        if (user.email !== ADMIN_EMAIL && data.uid && data.uid !== user.uid) {
-          showNotification("❌ Acesso negado", "error");
-          return;
-        }
-        const container = document.getElementById("detalhesProduto");
-        
-        container.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="md:col-span-1">
-              ${data.imagemCapa ? 
-                `<img src="${data.imagemCapa}" class="w-full h-auto rounded-lg border shadow">` : 
-                '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>'}
-            </div>
-            
-            <div class="md:col-span-2">
-              <h4 class="text-lg font-bold">${data.nome || "Sem nome"}</h4>
-              <div class="text-gray-600 mb-2">ID: ${data.id}</div>
-              
-              <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="bg-gray-50 p-3 rounded">
-                  <div class="text-sm text-gray-500">Preço</div>
-                  <div class="text-lg font-bold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
-                </div>
-                
-                <div class="bg-gray-50 p-3 rounded">
-                  <div class="text-sm text-gray-500">Frete</div>
-                  <div class="text-lg font-bold">R$ ${data.taxaFrete || "0.00"}</div>
-                </div>
-                
-                <div class="bg-gray-50 p-3 rounded">
-                  <div class="text-sm text-gray-500">Estoque</div>
-                  <div class="text-lg font-bold">${data.estoque || "0"} un</div>
-                </div>
-                
-                <div class="bg-gray-50 p-3 rounded">
-                  <div class="text-sm text-gray-500">Conversão</div>
-                  <div class="text-lg font-bold">${data.conversaoPago || "0.00"}%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="border-t pt-4">
-            <h5 class="font-bold mb-2"><i class="fas fa-file-alt mr-2"></i>Descrição</h5>
-            <div class="bg-gray-50 p-4 rounded border">
-              ${data.descricao ? data.descricao.replace(/\n/g, '<br>') : "Sem descrição"}
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h5 class="font-bold mb-2"><i class="fas fa-chart-line mr-2"></i>Desempenho</h5>
-              <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
-                <div><span class="font-medium">Visualizações:</span> ${data.visualizacoes || "0"}</div>
-                <div><span class="font-medium">Curtidas:</span> ${data.curtidas || "0"}</div>
-                <div><span class="font-medium">Vendas (Pago):</span> R$ ${data.vendasPago || "0.00"}</div>
-                <div><span class="font-medium">Unidades Vendidas:</span> ${data.unidadesPago || "0"}</div>
-                <div><span class="font-medium">Taxa de Rejeição:</span> ${data.taxaRejeicao || "0.00"}%</div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 class="font-bold mb-2"><i class="fas fa-cube mr-2"></i>Especificações</h5>
-              <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
-                <div><span class="font-medium">Peso:</span> ${data.peso || "0"} kg</div>
-                <div><span class="font-medium">Dimensões:</span> ${data.comprimento || "0"} x ${data.largura || "0"} x ${data.altura || "0"} cm</div>
-                <div><span class="font-medium">SKU:</span> ${data.skuVariante || ""}</div>
-                <div><span class="font-medium">Categoria:</span> ${data.categoria || ""}</div>
-                <div><span class="font-medium">Data Referência:</span> ${data.dataReferencia || ""}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="flex justify-end space-x-2">
-            <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
-              <i class="fas fa-history mr-2"></i>Ver Histórico
+    const querySnapshot = await getDocs(q);
+    tbody.innerHTML = '';
+
+    if (querySnapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Nenhum anúncio encontrado</td></tr>';
+      return;
+    }
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      const id = doc.id;
+
+      // 🔄 Buscar subcoleção de variantes
+      const variantesRef = collection(db, `anuncios/${id}/variantes`);
+      const snap = await getDocs(variantesRef);
+      const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
+
+      for (const variante of variantes) {
+        const preco = variante.preco || data.preco || 0;
+        const estoque = parseInt(variante.estoque || data.estoque || 0);
+        const conversao = parseFloat(variante.conversaoPago || data.conversaoPago || 0);
+
+        const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
+        const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono text-sm">${id}</td>
+          <td class="px-4 py-3">
+            ${data.imagemCapa ? `<img src="${data.imagemCapa}" class="w-16 h-16 object-contain rounded border">` : '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>'}
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-gray-900">${data.nome || "Sem nome"}</div>
+            <div class="text-gray-500 text-sm">${data.categoria || "Sem categoria"}</div>
+            ${variante.nomeVariante ? `<div class="text-blue-600 text-xs mt-1">↳ ${variante.nomeVariante}</div>` : ''}
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-semibold">R$ ${parseFloat(preco).toFixed(2)}</div>
+            <div class="text-gray-500 text-sm">Frete: R$ ${data.taxaFrete || "0.00"}</div>
+          </td>
+          <td class="px-4 py-3">
+            <span class="badge badge-${estoqueStatus}">${estoque} un</span>
+          </td>
+          <td class="px-4 py-3">
+            <span class="badge badge-${conversaoStatus}">${conversao}%</span>
+          </td>
+          <td class="px-4 py-3 whitespace-nowrap">
+            <button onclick="verDetalhes('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+              <i class="fas fa-eye mr-1"></i>Ver Detalhes
             </button>
-            <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
-              Fechar
-            </button>
-          </div>
+          </td>
         `;
-        
-        document.getElementById("modalDetalhes").style.display = "flex";
-      } catch (error) {
-        console.error("Erro ao carregar detalhes:", error);
-        showNotification("❌ Erro ao carregar detalhes do produto", "error");
+        tbody.appendChild(tr);
       }
     }
+  } catch (error) {
+    console.error("Erro ao carregar anúncios:", error);
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-red-500">Erro ao carregar dados</td></tr>';
+  }
+};
+
+   window.verDetalhes = async function (id) {
+  try {
+    const docRef = doc(db, "anuncios", id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+      showNotification("❌ Anúncio não encontrado", "error");
+      return;
+    }
+
+    const data = docSnap.data();
+    const user = auth.currentUser;
+    if (user.email !== ADMIN_EMAIL && data.uid && data.uid !== user.uid) {
+      showNotification("❌ Acesso negado", "error");
+      return;
+    }
+
+    // 🔍 Buscar variantes
+    const variantesRef = collection(db, `anuncios/${id}/variantes`);
+    const variantesSnap = await getDocs(variantesRef);
+    const variantes = variantesSnap.docs.map(doc => doc.data());
+
+    const container = document.getElementById("detalhesProduto");
+
+    // 🔸 Tabela de variantes
+    let variantesHtml = '';
+    if (variantes.length > 0) {
+      variantesHtml = `
+        <h5 class="font-bold mt-6 mb-2"><i class="fas fa-layer-group mr-2"></i>Variações</h5>
+        <table class="w-full text-sm bg-white border rounded">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 border">Variante</th>
+              <th class="p-2 border">Preço</th>
+              <th class="p-2 border">Estoque</th>
+              <th class="p-2 border">Conversão</th>
+              <th class="p-2 border">SKU</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${variantes.map(v => `
+              <tr class="text-center">
+                <td class="p-2 border">${v.nomeVariante || "-"}</td>
+                <td class="p-2 border">R$ ${v.preco ? parseFloat(v.preco).toFixed(2) : "0.00"}</td>
+                <td class="p-2 border">${v.estoque || 0} un</td>
+                <td class="p-2 border">${v.conversaoPago || "0"}%</td>
+                <td class="p-2 border">${v.skuVariante || "-"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // 🔹 Dados principais
+    container.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-1">
+          ${data.imagemCapa ? 
+            `<img src="${data.imagemCapa}" class="w-full h-auto rounded-lg border shadow">` : 
+            '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-48 flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>'}
+        </div>
+        
+        <div class="md:col-span-2">
+          <h4 class="text-lg font-bold">${data.nome || "Sem nome"}</h4>
+          <div class="text-gray-600 mb-2">ID: ${data.id}</div>
+          
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="bg-gray-50 p-3 rounded">
+              <div class="text-sm text-gray-500">Preço</div>
+              <div class="text-lg font-bold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+              <div class="text-sm text-gray-500">Frete</div>
+              <div class="text-lg font-bold">R$ ${data.taxaFrete || "0.00"}</div>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+              <div class="text-sm text-gray-500">Estoque</div>
+              <div class="text-lg font-bold">${data.estoque || "0"} un</div>
+            </div>
+            <div class="bg-gray-50 p-3 rounded">
+              <div class="text-sm text-gray-500">Conversão</div>
+              <div class="text-lg font-bold">${data.conversaoPago || "0.00"}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t pt-4">
+        <h5 class="font-bold mb-2"><i class="fas fa-file-alt mr-2"></i>Descrição</h5>
+        <div class="bg-gray-50 p-4 rounded border">
+          ${data.descricao ? data.descricao.replace(/\n/g, '<br>') : "Sem descrição"}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h5 class="font-bold mb-2"><i class="fas fa-chart-line mr-2"></i>Desempenho</h5>
+          <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
+            <div><span class="font-medium">Visualizações:</span> ${data.visualizacoes || "0"}</div>
+            <div><span class="font-medium">Curtidas:</span> ${data.curtidas || "0"}</div>
+            <div><span class="font-medium">Vendas (Pago):</span> R$ ${data.vendasPago || "0.00"}</div>
+            <div><span class="font-medium">Unidades Vendidas:</span> ${data.unidadesPago || "0"}</div>
+            <div><span class="font-medium">Taxa de Rejeição:</span> ${data.taxaRejeicao || "0.00"}%</div>
+          </div>
+        </div>
+        
+        <div>
+          <h5 class="font-bold mb-2"><i class="fas fa-cube mr-2"></i>Especificações</h5>
+          <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
+            <div><span class="font-medium">Peso:</span> ${data.peso || "0"} kg</div>
+            <div><span class="font-medium">Dimensões:</span> ${data.comprimento || "0"} x ${data.largura || "0"} x ${data.altura || "0"} cm</div>
+            <div><span class="font-medium">SKU:</span> ${data.skuVariante || ""}</div>
+            <div><span class="font-medium">Categoria:</span> ${data.categoria || ""}</div>
+            <div><span class="font-medium">Data Referência:</span> ${data.dataReferencia || ""}</div>
+          </div>
+        </div>
+      </div>
+
+      ${variantesHtml}
+
+      <div class="flex justify-end space-x-2 mt-4">
+        <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+          <i class="fas fa-history mr-2"></i>Ver Histórico
+        </button>
+        <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+          Fechar
+        </button>
+      </div>
+    `;
+
+    document.getElementById("modalDetalhes").style.display = "flex";
+  } catch (error) {
+    console.error("Erro ao carregar detalhes:", error);
+    showNotification("❌ Erro ao carregar detalhes do produto", "error");
+  }
+};
 
     // View history
     window.verHistorico = async function (id) {
@@ -977,14 +1017,15 @@ window.salvarNoFirebase = async () => {
 
         const cards = [];
 
-        anunciosSnap.forEach(doc => {
+for (const doc of anunciosSnap.docs) {
           const a = doc.data();
           const id = a.id || "(sem ID)";
           const nome = a.nome || "(sem nome)";
           const visitas = a.visitas || a.visualizacoes || 0;
           const vendas = a.vendasPago || 0;
           const conversao = a.conversaoPago || 0;
-
+const variantesSnap = await getDocs(collection(db, `anuncios/${doc.id}/variantes`));
+const variantes = variantesSnap.docs.map(v => v.data());
           const historico = (historicoPorId[id] || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
           let evolucaoHTML = "";
 
@@ -1025,6 +1066,26 @@ window.salvarNoFirebase = async () => {
             evolucaoHTML = '<div class="text-gray-500 italic">Sem histórico de alterações</div>';
           }
 
+let variantesHtml = '';
+if (variantes.length > 0) {
+  variantesHtml = `
+    <div class="mt-4 border-t pt-3">
+      <h5 class="font-bold mb-2">📦 Variações</h5>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        ${variantes.map(vari => `
+          <div class="border rounded p-3 bg-gray-50">
+            <div><strong>Nome:</strong> ${vari.nomeVariante || "N/A"}</div>
+            <div><strong>SKU:</strong> ${vari.skuVariante || "N/A"}</div>
+            <div><strong>Estoque:</strong> ${vari.estoque || 0} un</div>
+            <div><strong>Preço:</strong> R$ ${vari.preco ? parseFloat(vari.preco).toFixed(2) : "0.00"}</div>
+            <div><strong>Conversão:</strong> ${vari.conversaoPago || "0"}%</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
           cards.push(`
             <div class="bg-white border rounded-lg p-4 shadow-sm">
               <div class="flex justify-between items-start mb-3">
@@ -1036,7 +1097,7 @@ window.salvarNoFirebase = async () => {
                   ${historico.length} alterações
                 </span>
               </div>
-              
+            
               <div class="grid grid-cols-3 gap-2 mb-4 text-center">
                 <div class="bg-gray-50 p-2 rounded">
                   <div class="text-xs text-gray-500">Visitas</div>
@@ -1058,6 +1119,7 @@ window.salvarNoFirebase = async () => {
                   ${evolucaoHTML}
                 </div>
               </div>
+         ${variantesHtml}
             </div>
           `);
         });
