@@ -5,17 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Sobras - Shopee Premium</title>
   <!-- Meta tag para CSP (Content Security Policy) -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self' 
-    https://*.firebaseio.com 
-    https://*.googleapis.com 
-    https://*.google.com 
-    https://*.gstatic.com 
-    https://cdnjs.cloudflare.com 
-    https://cdn.jsdelivr.net 
-    'unsafe-eval' 
-    'unsafe-inline'
-  ">  
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://api.deepseek.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data:;
+">  
   <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
