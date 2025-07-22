@@ -634,21 +634,41 @@ window.carregarAnuncios = async function () {
       const desempenhoQuery = query(desempenhoRef, orderBy("dataReferencia", "desc"), limit(7));
       const desempenhoSnap = await getDocs(desempenhoQuery);
 
-      let total = { conversaoPago: 0 };
-      let count = 0;
+let acumulado = {
+  visualizacoes: 0,
+  curtidas: 0,
+  vendasPago: 0,
+  unidadesPago: 0,
+  conversaoPago: 0,
+  taxaRejeicao: 0
+};
+let count = 0;
 
-      desempenhoSnap.forEach(doc => {
-        const d = doc.data();
-        total.conversaoPago += parseFloat(d.conversaoPago || 0);
-        count++;
-      });
+desempenhoSnap.forEach(doc => {
+  const d = doc.data();
+  acumulado.visualizacoes += Number(d.visualizacoes || 0);
+  acumulado.curtidas += Number(d.curtidas || 0);
+  acumulado.vendasPago += Number(d.vendasPago || 0);
+  acumulado.unidadesPago += Number(d.unidadesPago || 0);
+  acumulado.conversaoPago += Number(d.conversaoPago || 0);
+  acumulado.taxaRejeicao += Number(d.taxaRejeicao || 0);
+  count++;
+});
 
-      const mediaConversao = count > 0 ? (total.conversaoPago / count).toFixed(2) : 0;
+const mediaDesempenho = {
+  visualizacoes: count ? Math.round(acumulado.visualizacoes / count) : 0,
+  curtidas: count ? Math.round(acumulado.curtidas / count) : 0,
+  vendasPago: count ? (acumulado.vendasPago / count).toFixed(2) : "0.00",
+  unidadesPago: count ? Math.round(acumulado.unidadesPago / count) : 0,
+  conversaoPago: count ? (acumulado.conversaoPago / count).toFixed(2) : "0.00",
+  taxaRejeicao: count ? (acumulado.taxaRejeicao / count).toFixed(2) : "0.00"
+};
+
 
       for (const variante of variantes) {
         const preco = variante.preco || data.preco || 0;
         const estoque = parseInt(variante.estoque || data.estoque || 0);
-        const conversao = parseFloat(variante.conversaoPago || mediaConversao || 0);
+const conversao = parseFloat(variante.conversaoPago || mediaDesempenho.conversaoPago || 0);
 
         const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
         const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
@@ -750,7 +770,6 @@ if (!desempenhoSnap.empty) {
     taxaRejeicao: (acumulado.taxaRejeicao / divisor).toFixed(2),
   };
 }
-
 
     const container = document.getElementById("detalhesProduto");
 
