@@ -101,85 +101,86 @@
       </div>
       
       <p class="text-gray-600 mb-6">
-        Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
-      </p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Card Básico -->
-        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
-          <div class="flex items-start mb-3">
-            <div class="bg-blue-100 p-3 rounded-full mr-3">
-              <i class="fas fa-info-circle text-blue-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações Básicas</h3>
-              <p class="text-gray-600 text-sm">Nome, Descrição, Categoria</p>
-            </div>
-          </div>
-          <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
-                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-        </div>
-        
-        <!-- Card Vendas -->
-        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
-          <div class="flex items-start mb-3">
-            <div class="bg-green-100 p-3 rounded-full mr-3">
-              <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Vendas</h3>
-              <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
-            </div>
-          </div>
-          <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
-                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-        </div>
-        
-        <!-- Card Frete -->
-        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
-          <div class="flex items-start mb-3">
-            <div class="bg-yellow-100 p-3 rounded-full mr-3">
-              <i class="fas fa-truck text-yellow-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Frete</h3>
-              <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
-            </div>
-          </div>
-          <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
-                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
-        </div>
-        
-        <!-- Card Mídia -->
-        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
-          <div class="flex items-start mb-3">
-            <div class="bg-purple-100 p-3 rounded-full mr-3">
-              <i class="fas fa-image text-purple-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Mídia</h3>
-              <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
-            </div>
-          </div>
-          <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
-                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
-        </div>
-        
-        <!-- Card Desempenho -->
-        <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition md:col-span-2">
-          <div class="flex items-start mb-3">
-            <div class="bg-red-100 p-3 rounded-full mr-3">
-              <i class="fas fa-chart-bar text-red-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
-              <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
-            </div>
-          </div>
-          <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
-                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-        </div>
+  Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
+</p>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Card Básico -->
+  <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+    <div class="flex items-start mb-3">
+      <div class="bg-blue-100 p-3 rounded-full mr-3">
+        <i class="fas fa-info-circle text-blue-600 text-xl"></i>
       </div>
+      <div>
+        <h3 class="font-bold text-lg">Informações Básicas</h3>
+        <p class="text-gray-600 text-sm">Nome, Descrição</p>
+      </div>
+    </div>
+    <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
+           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+  </div>
+
+  <!-- Card Vendas -->
+  <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+    <div class="flex items-start mb-3">
+      <div class="bg-green-100 p-3 rounded-full mr-3">
+        <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg">Informações de Vendas</h3>
+        <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
+      </div>
+    </div>
+    <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
+           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+  </div>
+
+  <!-- Card Frete -->
+  <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+    <div class="flex items-start mb-3">
+      <div class="bg-yellow-100 p-3 rounded-full mr-3">
+        <i class="fas fa-truck text-yellow-600 text-xl"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg">Informações de Frete</h3>
+        <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
+      </div>
+    </div>
+    <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
+           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
+  </div>
+
+  <!-- Card Mídia -->
+  <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition">
+    <div class="flex items-start mb-3">
+      <div class="bg-purple-100 p-3 rounded-full mr-3">
+        <i class="fas fa-image text-purple-600 text-xl"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg">Informações de Mídia</h3>
+        <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
+      </div>
+    </div>
+    <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
+           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+  </div>
+
+  <!-- Card Desempenho -->
+  <div class="border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition md:col-span-2">
+    <div class="flex items-start mb-3">
+      <div class="bg-red-100 p-3 rounded-full mr-3">
+        <i class="fas fa-chart-bar text-red-600 text-xl"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
+        <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
+      </div>
+    </div>
+    <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
+           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+  </div>
+</div>
+
       
       <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div class="flex items-center mb-2">
