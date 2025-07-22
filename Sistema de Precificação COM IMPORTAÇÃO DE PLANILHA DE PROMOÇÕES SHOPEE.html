@@ -18,413 +18,103 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
   <style>
-    :root {
-      --primary: #1a56db;
-      --secondary: #0e9f6e;
-      --accent: #9061f9;
-      --dark: #1f2a37;
-      --light: #f9fafb;
-      --gray: #6b7280;
-    }
-    
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #f3f4f6;
-      color: var(--dark);
-    }
-    
-    .header-gradient {
-      background: linear-gradient(135deg, var(--primary), #0c4e8c);
-    }
-    
-    .nav-gradient {
-      background: linear-gradient(90deg, var(--primary), var(--accent));
-    }
-    
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      border: 1px solid #e5e7eb;
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .tab-button {
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s;
-      color: var(--gray);
-      background: #f1f5f9;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .tab-button:hover {
-      background: #e2e8f0;
-      color: var(--dark);
-    }
-    
-    .tab-button.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 6px rgba(26, 86, 219, 0.2);
-    }
-    
-    .input-group label {
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: 6px;
-      display: block;
-      font-size: 0.875rem;
-    }
-    
-    input, select {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      background: white;
-      font-size: 0.95rem;
-      transition: all 0.3s;
-    }
-    
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
-    }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-primary:hover {
-      background: #1e40af;
-      transform: translateY(-2px);
-    }
-    
-    .btn-secondary {
-      background: var(--secondary);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-secondary:hover {
-      background: #047857;
-      transform: translateY(-2px);
-    }
-    
-    .btn-accent {
-      background: var(--accent);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-accent:hover {
-      background: #7e3af2;
-      transform: translateY(-2px);
-    }
-    
-    .btn-outline {
-      background: transparent;
-      color: var(--primary);
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      border: 2px solid var(--primary);
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    
-    .btn-outline:hover {
-      background: rgba(26, 86, 219, 0.05);
-    }
-    
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 100;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-    }
-    
-    .modal-content {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 30px;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 700px;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-    }
-    
-    .platform-tag {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    
-    .platform-ml { background: #fee2e2; color: #b91c1c; }
-    .platform-shopee { background: #dbeafe; color: #1d4ed8; }
-    .platform-magalu { background: #dcfce7; color: #15803d; }
-    .platform-shein { background: #f3e8ff; color: #7e22ce; }
-    
-    .scenario-card {
-      background: white;
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 12px;
-      border-left: 4px solid;
-      transition: all 0.3s;
-    }
-    
-    .scenario-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    
-    .scenario-ideal { border-left-color: var(--secondary); background-color: #f0fdf4; }
-    .scenario-medium { border-left-color: #f59e0b; background-color: #fffbeb; }
-    .scenario-promo { border-left-color: #ef4444; background-color: #fef2f2; }
-    
-    .kpi-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      transition: all 0.3s;
-      text-align: center;
-    }
-    
-    .kpi-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-    }
-    
-    .kpi-value {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin: 8px 0;
-      color: var(--primary);
-    }
-    
-    .kpi-label {
-      color: var(--gray);
-      font-size: 0.875rem;
-    }
-    
-    .section-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid #e5e7eb;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-    }
-    
-    .product-card {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      transition: all 0.3s;
-    }
-    
-    .product-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-    }
-    
-    .product-price {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--secondary);
-    }
-    
-    .history-item {
-      background: white;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      border-left: 3px solid var(--primary);
-    }
-    
+    /* Estilos permanecem os mesmos do código anterior */
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tabs button { padding: 10px 20px; border: none; background: #e2e8f0; cursor: pointer; transition: all 0.3s; border-radius: 6px; }
+    .tabs button:hover { background: #cbd5e0; }
+    .tabs button.active { background: #4CAF50; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .grid-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.3s; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 8px; background: #fff; }
+    input:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2); }
+    button.calc-btn { background-color: #4CAF50; color: white; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.3s; }
+    button.calc-btn:hover { background-color: #3d8b40; }
+    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .btn-action { padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; border: none; font-weight: 500; transition: all 0.2s; }
+    .btn-action i { margin-right: 5px; }
+    .btn-edit { background-color: #FFC107; color: #333; }
+    .btn-edit:hover { background-color: #e0a800; }
+    .btn-delete { background-color: #F44336; color: white; }
+    .btn-delete:hover { background-color: #d32f2f; }
+    .btn-view { background-color: #2196F3; color: white; }
+    .btn-view:hover { background-color: #0b7dda; }
+    .btn-close { float: right; font-size: 24px; font-weight: bold; cursor: pointer; color: #777; }
+    .btn-close:hover { color: #333; }
+    .product-card { background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); padding: 20px; transition: all 0.3s; }
+    .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
+    .platform-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .platform-ml { background: #ffe0e0; color: #c62828; }
+    .platform-shopee { background: #e3f2fd; color: #1565c0; }
+    .platform-magalu { background: #e8f5e9; color: #2e7d32; }
+    .platform-shein { background: #f3e5f5; color: #6a1b9a; }
+    .product-price { font-size: 1.5rem; font-weight: 700; }
+    .header { background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #334155; }
+    .scenario-card { background: white; border-radius: 8px; padding: 15px; margin-top: 10px; border-left: 4px solid; }
+    .scenario-ideal { border-left-color: #4CAF50; background-color: #f0fdf4; }
+    .scenario-medium { border-left-color: #FFC107; background-color: #fffbeb; }
+    .scenario-promo { border-left-color: #F44336; background-color: #fef2f2; }
+    .scenario-title { font-weight: 600; margin-bottom: 5px; }
+    .scenario-value { font-size: 1.2rem; font-weight: 700; }
+    .import-export-section { background: #f0fdf4; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #d1fae5; }
+    .price-update-options { display: flex; gap: 10px; margin-top: 15px; }
+    .price-update-options button { padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; border: none; }
+    .btn-apply-promo { background-color: #F44336; color: white; }
+    .btn-apply-medium { background-color: #FFC107; color: #333; }
+    .btn-apply-ideal { background-color: #4CAF50; color: white; }
+    .btn-export-shopee { background-color: #2196F3; color: white; }
+    .imported-products-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .imported-products-table th, .imported-products-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+    .imported-products-table th { background-color: #f8fafc; font-weight: 600; }
+    .imported-products-table tr:nth-child(even) { background-color: #f8fafc; }
+    .dashboard-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .profile-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+    .admin-badge { background: #ffebee; color: #c62828; }
+    .operator-badge { background: #e3f2fd; color: #1565c0; }
+    .viewer-badge { background: #e8f5e9; color: #2e7d32; }
+    .history-item { border-left: 3px solid #4CAF50; padding-left: 10px; margin-bottom: 8px; }
+    .api-status { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .api-connected { background: #4CAF50; }
+    .api-disconnected { background: #F44336; }
     @media (max-width: 768px) {
-      .tabs {
-        flex-wrap: wrap;
-      }
-      
-      .tab-button {
-        flex: 1 0 40%;
-        margin-bottom: 8px;
-        text-align: center;
-        justify-content: center;
-      }
-      
-      .grid-cols-2 {
-        grid-template-columns: 1fr;
-      }
-      
-      .modal-content {
-        width: 95%;
-        margin: 10px auto;
-        padding: 20px;
-      }
-      
-      .product-grid {
-        grid-template-columns: 1fr;
-      }
+      .grid-cols-2 { grid-template-columns: 1fr; }
+      .modal-content { width: 95%; margin: 10px auto; }
+      .price-update-options { flex-wrap: wrap; }
     }
-    
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    
-    .badge-success { background: #dcfce7; color: #15803d; }
-    .badge-warning { background: #fef3c7; color: #b45309; }
-    .badge-danger { background: #fee2e2; color: #b91c1c; }
-    .badge-info { background: #dbeafe; color: #1d4ed8; }
-    
-    .api-status {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 8px;
-    }
-    
-    .api-connected { background: var(--secondary); }
-    .api-disconnected { background: #ef4444; }
-    
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 16px 24px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 500;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-    
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    .toast-success { background: var(--secondary); }
-    .toast-error { background: #ef4444; }
-    .toast-info { background: var(--primary); }
   </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
   <!-- Barra de navegação superior -->
-  <div class="header-gradient text-white p-4 flex justify-between items-center">
+  <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
     <div class="flex items-center">
       <i class="fas fa-calculator text-2xl mr-3"></i>
       <h1 class="text-xl font-bold">MENTORIA FERRARETTO</h1>
     </div>
     <div id="userArea" class="flex items-center">
       <span id="currentUser" class="mr-4 hidden"></span>
-      <button id="loginBtn" class="btn-outline bg-white bg-opacity-10 hover:bg-opacity-20">
+      <button id="loginBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
         <i class="fas fa-sign-in-alt mr-2"></i> Login
       </button>
-      <button id="logoutBtn" class="btn-outline bg-white bg-opacity-10 hover:bg-opacity-20 hidden">
+      <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden">
         <i class="fas fa-sign-out-alt mr-2"></i> Sair
       </button>
     </div>
   </div>
-  
-  <nav class="nav-gradient text-white p-3 flex flex-wrap justify-center gap-4 mb-6">
-    <a href="index.html" class="hover:underline flex items-center gap-2">
-      <i class="fas fa-home"></i> Início
-    </a>
-    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline flex items-center gap-2">
-      <i class="fas fa-calculator"></i> Precificação
-    </a>
-    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline flex items-center gap-2">
-      <i class="fas fa-bullhorn"></i> Anúncios
-    </a>
-    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline flex items-center gap-2">
-      <i class="fas fa-boxes"></i> Sobras
-    </a>
-    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline flex items-center gap-2">
-      <i class="fas fa-money-bill-wave"></i> Custeio
-    </a>
+ <nav class="bg-gray-700 text-white p-4 flex flex-wrap justify-center space-x-4 mb-6 rounded">
+    <a href="index.html" class="hover:underline">Início</a>
+    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
+    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
+    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
+    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
   </nav>
-  
-  <div class="container mx-auto px-4 py-6">
+  <div class="container mx-auto p-4">
     <!-- Abas principais -->
-    <div class="tabs flex flex-wrap gap-3 mb-6">
+    <div class="tabs">
       <button class="tab-button active" data-tab="dashboard">
         <i class="fas fa-tachometer-alt"></i> Dashboard
       </button>
@@ -445,36 +135,36 @@
     <!-- Conteúdo das abas -->
     <div id="dashboard" class="tab-content active">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="kpi-card">
-          <div class="kpi-value" id="totalProducts">0</div>
-          <div class="kpi-label">Produtos Cadastrados</div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Produtos Cadastrados</h3>
+          <p id="totalProducts" class="text-2xl font-bold">0</p>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="avgMargin">0%</div>
-          <div class="kpi-label">Margem Média</div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Margem Média</h3>
+          <p id="avgMargin" class="text-2xl font-bold">0%</p>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="activeConnections">0/3</div>
-          <div class="kpi-label">Conexões Ativas</div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Conexões Ativas</h3>
+          <p id="activeConnections" class="text-2xl font-bold">0/3</p>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="lastUpdate">-</div>
-          <div class="kpi-label">Última Atualização</div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Última Atualização</h3>
+          <p id="lastUpdate" class="text-2xl font-bold">-</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="card p-5">
+        <div class="dashboard-card">
           <h3 class="font-bold text-lg mb-4">Margem por Plataforma</h3>
           <canvas id="marginChart" height="200"></canvas>
         </div>
-        <div class="card p-5">
+        <div class="dashboard-card">
           <h3 class="font-bold text-lg mb-4">Produtos Mais Rentáveis</h3>
           <canvas id="topProductsChart" height="200"></canvas>
         </div>
-        <div class="card p-5">
+        <div class="dashboard-card">
           <h3 class="font-bold text-lg mb-4">Status de Conexão</h3>
-          <div class="space-y-3 mb-6">
+          <div class="space-y-3">
             <div class="flex items-center">
               <span class="api-status api-connected"></span>
               <span>Mercado Livre: <span class="font-semibold">Conectado</span></span>
@@ -488,7 +178,7 @@
               <span>Magalu: <span class="font-semibold">Desconectado</span></span>
             </div>
           </div>
-          <div>
+          <div class="mt-6">
             <h4 class="font-semibold mb-2">Últimas Atualizações</h4>
             <div id="recentUpdates" class="space-y-2">
               <!-- Preenchido dinamicamente -->
@@ -497,72 +187,67 @@
         </div>
       </div>
       
-      <div class="card p-5 mb-6">
+      <div class="dashboard-card mb-6">
         <h3 class="font-bold text-lg mb-4">Histórico de Preços</h3>
         <canvas id="priceHistoryChart" height="300"></canvas>
       </div>
     </div>
 
     <div id="precificacao" class="tab-content">
-      <div class="card p-6 mb-6">
-        <h2 class="section-title">
-          <i class="fas fa-info-circle"></i> Informações Básicas do Produto
-        </h2>
+      <div class="bg-white rounded-xl p-6 shadow mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="input-group">
             <label for="produto">Nome do Produto</label>
-            <input id="produto" placeholder="Ex: Tênis Esportivo">
+            <input id="produto" placeholder="Ex: Tênis Esportivo" class="p-3 border rounded-lg">
           </div>
           <div class="input-group">
             <label for="sku">Código SKU</label>
-            <input id="sku" placeholder="Ex: TN-ESPORT-001">
+            <input id="sku" placeholder="Ex: TN-ESPORT-001" class="p-3 border rounded-lg">
           </div>
           <div class="input-group">
             <label for="custo">Custo do Produto (R$)</label>
-            <input id="custo" placeholder="Ex: 89,90" type="number" step="0.01">
+            <input id="custo" placeholder="Ex: 89,90" type="number" step="0.01" class="p-3 border rounded-lg">
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+      <div class="grid-cols-2 mt-4">
         <!-- Mercado Livre -->
-        <div class="card p-6">
-          <h2 class="text-xl font-bold mb-4 text-red-600 flex items-center gap-2">
-            <i class="fas fa-store"></i> Mercado Livre
-          </h2>
+        <div class="card">
+          <h2 class="text-xl font-bold mb-4 text-red-600"><i class="fas fa-store"></i> Mercado Livre</h2>
           <div id="mlCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
-                <select id="ml_taxa_select" class="flex-1">
+                <select id="ml_taxa_select" class="flex-1 p-2 border rounded-lg">
                   <option value="16">16%</option>
                   <option value="21">21%</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="ml_taxa_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="ml_taxa_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
             <div class="input-group">
               <label>Custo Fixo Plataforma (R$)</label>
               <div class="flex gap-2">
-                <select id="ml_fixo_select" class="flex-1">
+                <select id="ml_fixo_select" class="flex-1 p-2 border rounded-lg">
                   <option value="6">R$ 6,00</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="ml_fixo_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="ml_fixo_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
-            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="mb-3">
-            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="mb-3">
-            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="mb-3">
-            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="mb-3">
-            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="mb-3">
-            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="mb-3">
-            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="mb-3">
+            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="p-2">
+            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="p-2">
+            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="p-2">
+            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="p-2">
+            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="p-2">
+            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="p-2">
+            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="p-2">
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_ml" disabled class="p-3 bg-gray-100 font-bold text-lg rounded-lg">
+              <input id="preco_ml" disabled class="p-3 bg-gray-100 font-bold text-lg">
             </div>
             
              <div class="scenario-card scenario-promo">
@@ -580,49 +265,47 @@
               <div class="scenario-value" id="preco_ml_ideal">R$ 0,00</div>
             </div>
           </div>
-          <button class="btn-primary w-full mt-4" onclick="calcular('ml')">
+          <button class="calc-btn w-full mt-4" onclick="calcular('ml')">
             <i class="fas fa-save"></i> Calcular e Salvar
           </button>
         </div>
 
         <!-- Shopee -->
-        <div class="card p-6">
-          <h2 class="text-xl font-bold mb-4 text-blue-600 flex items-center gap-2">
-            <i class="fas fa-store"></i> Shopee
-          </h2>
+        <div class="card">
+          <h2 class="text-xl font-bold mb-4 text-blue-600"><i class="fas fa-store"></i> Shopee</h2>
           <div id="shopeeCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
-                <select id="shopee_taxa_select" class="flex-1">
+                <select id="shopee_taxa_select" class="flex-1 p-2 border rounded-lg">
                   <option value="14">14%</option>
                   <option value="20">20%</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="shopee_taxa_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="shopee_taxa_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
             <div class="input-group">
               <label>Custo Fixo Plataforma (R$)</label>
               <div class="flex gap-2">
-                <select id="shopee_fixo_select" class="flex-1">
+                <select id="shopee_fixo_select" class="flex-1 p-2 border rounded-lg">
                   <option value="4">R$ 4,00</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="shopee_fixo_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="shopee_fixo_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
-            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="mb-3">
-            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="mb-3">
-            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="mb-3">
-            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="mb-3">
-            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="mb-3">
-            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="mb-3">
-            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="mb-3">
+            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="p-2">
+            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="p-2">
+            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="p-2">
+            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="p-2">
+            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="p-2">
+            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="p-2">
+            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="p-2">
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_shopee" disabled class="p-3 bg-gray-100 font-bold text-lg rounded-lg">
+              <input id="preco_shopee" disabled class="p-3 bg-gray-100 font-bold text-lg">
             </div>
             
              <div class="scenario-card scenario-promo">
@@ -640,50 +323,48 @@
               <div class="scenario-value" id="preco_shopee_ideal">R$ 0,00</div>
             </div>
           </div>
-          <button class="btn-primary w-full mt-4" onclick="calcular('shopee')">
+          <button class="calc-btn w-full mt-4" onclick="calcular('shopee')">
             <i class="fas fa-save"></i> Calcular e Salvar
           </button>
         </div>
 
         <!-- Magalu -->
-        <div class="card p-6">
-          <h2 class="text-xl font-bold mb-4 text-green-600 flex items-center gap-2">
-            <i class="fas fa-store"></i> Magalu
-          </h2>
+        <div class="card">
+          <h2 class="text-xl font-bold mb-4 text-green-600"><i class="fas fa-store"></i> Magalu</h2>
           <div id="magaluCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
-                <select id="magalu_taxa_select" class="flex-1">
+                <select id="magalu_taxa_select" class="flex-1 p-2 border rounded-lg">
                   <option value="10">10%</option>
                   <option value="16">16%</option>
                   <option value="20">20%</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="magalu_taxa_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="magalu_taxa_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
             <div class="input-group">
               <label>Custo Fixo Plataforma (R$)</label>
               <div class="flex gap-2">
-                <select id="magalu_fixo_select" class="flex-1">
+                <select id="magalu_fixo_select" class="flex-1 p-2 border rounded-lg">
                   <option value="3">R$ 3,00</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="magalu_fixo_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="magalu_fixo_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
-            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="mb-3">
-            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="mb-3">
-            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="mb-3">
-            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="mb-3">
-            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="mb-3">
-            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="mb-3">
-            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="mb-3">
+            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="p-2">
+            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="p-2">
+            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="p-2">
+            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="p-2">
+            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="p-2">
+            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="p-2">
+            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="p-2">
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_magalu" disabled class="p-3 bg-gray-100 font-bold text-lg rounded-lg">
+              <input id="preco_magalu" disabled class="p-3 bg-gray-100 font-bold text-lg">
             </div>
             
            <div class="scenario-card scenario-promo">
@@ -701,48 +382,46 @@
               <div class="scenario-value" id="preco_magalu_ideal">R$ 0,00</div>
             </div>
           </div>
-          <button class="btn-primary w-full mt-4" onclick="calcular('magalu')">
+          <button class="calc-btn w-full mt-4" onclick="calcular('magalu')">
             <i class="fas fa-save"></i> Calcular e Salvar
           </button>
         </div>
 
         <!-- SHEIN -->
-        <div class="card p-6">
-          <h2 class="text-xl font-bold mb-4 text-purple-600 flex items-center gap-2">
-            <i class="fas fa-store"></i> SHEIN
-          </h2>
+        <div class="card">
+          <h2 class="text-xl font-bold mb-4 text-purple-600"><i class="fas fa-store"></i> SHEIN</h2>
           <div id="sheinCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
-                <select id="shein_taxa_select" class="flex-1">
+                <select id="shein_taxa_select" class="flex-1 p-2 border rounded-lg">
                   <option value="16">16%</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="shein_taxa_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="shein_taxa_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
             <div class="input-group">
               <label>Custo Fixo Plataforma (R$)</label>
               <div class="flex gap-2">
-                <select id="shein_fixo_select" class="flex-1">
+                <select id="shein_fixo_select" class="flex-1 p-2 border rounded-lg">
                   <option value="0">R$ 0,00</option>
                 </select>
-                <input type="number" step="0.01" placeholder="Outro" id="shein_fixo_custom" class="flex-1">
+                <input type="number" step="0.01" placeholder="Outro" id="shein_fixo_custom" class="flex-1 p-2 border rounded-lg">
               </div>
             </div>
             
-            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="mb-3">
-            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="mb-3">
-            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="mb-3">
-            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="mb-3">
-            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="mb-3">
-            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="mb-3">
-            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="mb-3">
+            <input placeholder="Frete (R$)" data-campo="Frete (R$)" class="p-2">
+            <input placeholder="Taxa de Transação (%)" data-campo="Taxa de Transação (%)" class="p-2">
+            <input placeholder="Taxa de Transferência (%)" data-campo="Taxa de Transferência (%)" class="p-2">
+            <input placeholder="Taxa de Antecipação (%)" data-campo="Taxa de Antecipação (%)" class="p-2">
+            <input placeholder="Custos Variáveis (R$)" data-campo="Custos Variáveis (R$)" class="p-2">
+            <input placeholder="Imposto (%)" data-campo="Imposto (%)" class="p-2">
+            <input placeholder="Comissão do Vendedor (%)" data-campo="Comissão do Vendedor (%)" class="p-2">
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_shein" disabled class="p-3 bg-gray-100 font-bold text-lg rounded-lg">
+              <input id="preco_shein" disabled class="p-3 bg-gray-100 font-bold text-lg">
             </div>
             
             <div class="scenario-card scenario-promo">
@@ -760,65 +439,61 @@
               <div class="scenario-value" id="preco_shein_ideal">R$ 0,00</div>
             </div>
           </div>
-          <button class="btn-primary w-full mt-4" onclick="calcular('shein')">
+          <button class="calc-btn w-full mt-4" onclick="calcular('shein')">
             <i class="fas fa-save"></i> Calcular e Salvar
           </button>
         </div>
       </div>
     </div>
 
-    <div id="produtos" class="tab-content">
-      <div class="card p-6 mb-6">
-        <h2 class="section-title">
-          <i class="fas fa-boxes"></i> Produtos Salvos
-        </h2>
+    <div id="produtos" class="tab-content p-4">
+      <div class="bg-white rounded-xl p-6 shadow mb-6">
+        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-boxes"></i> Produtos Salvos</h2>
         
-        <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-6">
-          <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-            <i class="fas fa-file-import text-blue-600"></i> Importar/Exportar Promoções Shopee
-          </h3>
+        <div class="import-export-section">
+          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import"></i> Importar/Exportar Promoções Shopee</h3>
           
-          <div class="flex flex-wrap gap-4 items-end">
-            <div class="flex-1">
+          <div class="flex flex-wrap gap-4">
+            <div>
               <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
-              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="w-full">
+              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg">
             </div>
-            <button onclick="importShopeeFile()" class="btn-primary">
+            <button onclick="importShopeeFile()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium h-10 mt-auto">
               <i class="fas fa-upload"></i> Importar
             </button>
           </div>
           
-          <div id="importedShopeeProducts" class="mt-6" style="display: none;">
-            <h4 class="font-semibold mb-3">Produtos importados:</h4>
-            <div class="overflow-x-auto rounded-lg border border-gray-200">
-              <table class="w-full border-collapse">
+          <div id="importedShopeeProducts" class="mt-4" style="display: none;">
+            <h4 class="font-semibold mb-2">Produtos importados:</h4>
+            <div class="overflow-x-auto">
+              <table class="imported-products-table">
                 <thead>
-                  <tr class="bg-gray-50">
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">ID Produto</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">Nome</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">Parent SKU</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">ID Variação</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">Variação</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">SKU</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">Preço Original</th>
-                    <th class="p-3 text-left text-sm font-medium text-gray-700">Preço Desconto</th>
+                  <tr>
+                    <th>ID Produto</th>
+                    <th>Nome</th>
+                    <th>Parent SKU</th>
+                    <th>ID Variação</th>
+                    <th>Variação</th>
+                    <th>SKU</th>
+                    <th>Preço Original</th>
+                    <th>Preço Desconto</th>
                   </tr>
                 </thead>
-                <tbody id="importedProductsTableBody" class="divide-y divide-gray-200"></tbody>
+                <tbody id="importedProductsTableBody"></tbody>
               </table>
             </div>
             
-            <div class="flex flex-wrap gap-3 mt-6">
-              <button onclick="applyPriceUpdate('promo')" class="btn-danger">
+            <div class="price-update-options">
+              <button onclick="applyPriceUpdate('promo')" class="btn-apply-promo">
                 <i class="fas fa-tag"></i> Aplicar Sem Lucro (0%)
               </button>
-              <button onclick="applyPriceUpdate('medium')" class="btn-warning">
+              <button onclick="applyPriceUpdate('medium')" class="btn-apply-medium">
                 <i class="fas fa-chart-line"></i> Aplicar Lucro 5%
               </button>
-              <button onclick="applyPriceUpdate('ideal')" class="btn-success">
+              <button onclick="applyPriceUpdate('ideal')" class="btn-apply-ideal">
                 <i class="fas fa-star"></i> Aplicar Lucro 10%
               </button>
-              <button onclick="exportShopeeFile()" class="btn-primary ml-auto">
+              <button onclick="exportShopeeFile()" class="btn-export-shopee ml-auto">
                 <i class="fas fa-file-export"></i> Exportar Planilha
               </button>
             </div>
@@ -826,17 +501,17 @@
         </div>
         
         <div class="flex flex-wrap gap-4 mb-6">
-          <button onclick="exportarExcel()" class="btn-secondary">
+          <button onclick="exportarExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium">
             <i class="fas fa-file-excel"></i> Exportar Excel
           </button>
-          <button onclick="exportarPDF()" class="btn-danger">
+          <button onclick="exportarPDF()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-medium">
             <i class="fas fa-file-pdf"></i> Exportar PDF
           </button>
         </div>
         
         <div class="mb-6">
           <label class="block text-sm font-medium mb-2">Filtrar por Plataforma:</label>
-          <select id="filtroPlataforma" class="w-full md:w-1/3">
+          <select id="filtroPlataforma" class="border p-3 rounded-lg w-full md:w-1/3">
             <option value="Todas">Todas as Plataformas</option>
             <option value="SHOPEE">Shopee</option>
             <option value="MAGALU">Magalu</option>
@@ -845,31 +520,29 @@
           </select>
         </div>
         
-        <div id="listaProdutos" class="product-grid mt-6"></div>
+        <div id="listaProdutos" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
     </div>
 
-    <div id="historico" class="tab-content">
-      <div class="card p-6">
-        <h2 class="section-title">
-          <i class="fas fa-history"></i> Histórico de Alterações
-        </h2>
+    <div id="historico" class="tab-content p-4">
+      <div class="bg-white rounded-xl p-6 shadow">
+        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-history"></i> Histórico de Alterações</h2>
         
-        <div class="mb-6">
+        <div class="mb-4">
           <label class="block text-sm font-medium mb-2">Filtrar por:</label>
           <div class="flex flex-wrap gap-4">
-            <select id="filterHistoryType" class="flex-1 min-w-[200px]">
+            <select id="filterHistoryType" class="border p-2 rounded-lg">
               <option value="all">Todos os tipos</option>
               <option value="login">Logins</option>
               <option value="price_update">Atualizações de preço</option>
               <option value="product_edit">Edições de produto</option>
               <option value="backup">Backups</option>
             </select>
-            <select id="filterHistoryUser" class="flex-1 min-w-[200px]">
+            <select id="filterHistoryUser" class="border p-2 rounded-lg">
               <option value="all">Todos os usuários</option>
               <!-- Preenchido dinamicamente -->
             </select>
-            <input type="date" id="filterHistoryDate" class="flex-1 min-w-[200px]">
+            <input type="date" id="filterHistoryDate" class="border p-2 rounded-lg">
           </div>
         </div>
         
@@ -879,14 +552,12 @@
       </div>
     </div>
 
-    <div id="configuracoes" class="tab-content">
-      <div class="card p-6">
-        <h2 class="section-title">
-          <i class="fas fa-cog"></i> Configurações do Sistema
-        </h2>
+    <div id="configuracoes" class="tab-content p-4">
+      <div class="bg-white rounded-xl p-6 shadow">
+        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-cog"></i> Configurações do Sistema</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div class="card p-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-gray-50 p-5 rounded-xl">
             <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de API</h3>
             
             <div class="space-y-4">
@@ -895,13 +566,13 @@
                 <div class="space-y-3">
                   <div>
                     <label class="block text-sm font-medium mb-1">Client ID</label>
-                    <input type="text" id="mlClientId" class="w-full" value="">
+                    <input type="text" id="mlClientId" class="w-full p-2 border rounded" value="">
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-1">Client Secret</label>
-                    <input type="password" id="mlClientSecret" class="w-full" value="">
+                    <input type="password" id="mlClientSecret" class="w-full p-2 border rounded" value="">
                   </div>
-                  <button onclick="testMlConnection()" class="btn-outline">
+                  <button onclick="testMlConnection()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
                     Testar Conexão
                   </button>
                 </div>
@@ -912,13 +583,13 @@
                 <div class="space-y-3">
                   <div>
                     <label class="block text-sm font-medium mb-1">API Key</label>
-                    <input type="text" id="shopeeApiKey" class="w-full" value="">
+                    <input type="text" id="shopeeApiKey" class="w-full p-2 border rounded" value="">
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-1">Partner ID</label>
-                    <input type="text" id="shopeePartnerId" class="w-full" value="">
+                    <input type="text" id="shopeePartnerId" class="w-full p-2 border rounded" value="">
                   </div>
-                  <button onclick="testShopeeConnection()" class="btn-outline">
+                  <button onclick="testShopeeConnection()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
                     Testar Conexão
                   </button>
                 </div>
@@ -926,24 +597,24 @@
             </div>
             
             <div class="mt-6">
-              <button onclick="saveApiConfig()" class="btn-primary">
+              <button onclick="saveApiConfig()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
                 Salvar Configurações
               </button>
             </div>
           </div>
           
-          <div class="card p-5">
+          <div class="bg-gray-50 p-5 rounded-xl">
             <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de Backup</h3>
             
             <div class="space-y-4">
               <div class="flex items-center">
-                <input type="checkbox" id="autoBackup" class="mr-2 h-5 w-5" checked>
+                <input type="checkbox" id="autoBackup" class="mr-2" checked>
                 <label for="autoBackup">Backup automático diário</label>
               </div>
               
               <div>
                 <label class="block text-sm font-medium mb-1">Frequência de Backup</label>
-                <select id="backupFrequency" class="w-full">
+                <select id="backupFrequency" class="border p-2 rounded-lg w-full">
                   <option value="daily">Diário</option>
                   <option value="weekly">Semanal</option>
                   <option value="monthly">Mensal</option>
@@ -957,11 +628,11 @@
                 </div>
               </div>
               
-              <div class="flex gap-3 flex-wrap">
-                <button onclick="createBackup()" class="btn-primary">
+              <div class="flex gap-3">
+                <button onclick="createBackup()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
                   Criar Backup Agora
                 </button>
-                <button onclick="restoreBackup()" class="btn-outline">
+                <button onclick="restoreBackup()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
                   Restaurar Backup
                 </button>
               </div>
@@ -969,26 +640,26 @@
           </div>
         </div>
         
-        <div class="card p-5">
+        <div class="mt-6 bg-gray-50 p-5 rounded-xl">
           <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Gerenciamento de Usuários</h3>
           
-          <div class="overflow-x-auto rounded-lg border border-gray-200">
+          <div class="overflow-x-auto">
             <table class="w-full border-collapse">
               <thead>
-                <tr class="bg-gray-50">
-                  <th class="p-3 text-left text-sm font-medium text-gray-700">Nome</th>
-                  <th class="p-3 text-left text-sm font-medium text-gray-700">E-mail</th>
-                  <th class="p-3 text-left text-sm font-medium text-gray-700">Perfil</th>
-                  <th class="p-3 text-left text-sm font-medium text-gray-700">Ações</th>
+                <tr class="bg-gray-100">
+                  <th class="p-3 text-left">Nome</th>
+                  <th class="p-3 text-left">E-mail</th>
+                  <th class="p-3 text-left">Perfil</th>
+                  <th class="p-3 text-left">Ações</th>
                 </tr>
               </thead>
-              <tbody id="usersTableBody" class="divide-y divide-gray-200">
+              <tbody id="usersTableBody">
                 <!-- Preenchido dinamicamente -->
               </tbody>
             </table>
           </div>
           
-          <button onclick="openAddUserModal()" class="btn-primary mt-4">
+          <button onclick="openAddUserModal()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
             <i class="fas fa-plus mr-2"></i> Adicionar Usuário
           </button>
         </div>
@@ -998,38 +669,38 @@
 
   <!-- Modais -->
   <div id="loginModal" class="modal">
-    <div class="modal-content">
-      <span class="btn-close absolute top-4 right-4 text-2xl cursor-pointer" onclick="closeModal('loginModal')">&times;</span>
-      <h3 class="text-xl font-bold mb-6">Acesso ao Sistema</h3>
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="btn-close" onclick="closeModal('loginModal')">&times;</span>
+      <h3 class="text-xl font-bold mb-4">Acesso ao Sistema</h3>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium mb-1">E-mail</label>
-          <input type="email" id="loginEmail" class="w-full" placeholder="seu@email.com">
+          <input type="email" id="loginEmail" class="w-full p-2 border rounded">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Senha</label>
-          <input type="password" id="loginPassword" class="w-full" placeholder="••••••••">
+          <input type="password" id="loginPassword" class="w-full p-2 border rounded">
         </div>
-        <button onclick="login()" class="btn-primary w-full">
+        <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
           <i class="fas fa-sign-in-alt mr-2"></i> Entrar
         </button>
-        <div class="text-center pt-4">
-          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600 hover:underline">Esqueci minha senha</a>
+        <div class="text-center">
+          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600">Esqueci minha senha</a>
         </div>
       </div>
     </div>
   </div>
 
   <div id="recoverModal" class="modal">
-    <div class="modal-content">
-      <span class="btn-close absolute top-4 right-4 text-2xl cursor-pointer" onclick="closeModal('recoverModal')">&times;</span>
-      <h3 class="text-xl font-bold mb-6">Recuperar Senha</h3>
+    <div class="modal-content" style="max-width: 400px;">
+      <span class="btn-close" onclick="closeModal('recoverModal')">&times;</span>
+      <h3 class="text-xl font-bold mb-4">Recuperar Senha</h3>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium mb-1">E-mail cadastrado</label>
-          <input type="email" id="recoverEmail" class="w-full" placeholder="seu@email.com">
+          <input type="email" id="recoverEmail" class="w-full p-2 border rounded">
         </div>
-        <button onclick="sendRecovery()" class="btn-primary w-full">
+        <button onclick="sendRecovery()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
           Enviar Link de Recuperação
         </button>
       </div>
@@ -1037,31 +708,31 @@
   </div>
 
   <div id="addUserModal" class="modal">
-    <div class="modal-content">
-      <span class="btn-close absolute top-4 right-4 text-2xl cursor-pointer" onclick="closeModal('addUserModal')">&times;</span>
-      <h3 class="text-xl font-bold mb-6">Adicionar Novo Usuário</h3>
+    <div class="modal-content" style="max-width: 500px;">
+      <span class="btn-close" onclick="closeModal('addUserModal')">&times;</span>
+      <h3 class="text-xl font-bold mb-4">Adicionar Novo Usuário</h3>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium mb-1">Nome Completo</label>
-          <input type="text" id="newUserName" class="w-full" placeholder="Nome do usuário">
+          <input type="text" id="newUserName" class="w-full p-2 border rounded">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">E-mail</label>
-          <input type="email" id="newUserEmail" class="w-full" placeholder="email@exemplo.com">
+          <input type="email" id="newUserEmail" class="w-full p-2 border rounded">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Senha</label>
-          <input type="password" id="newUserPassword" class="w-full" placeholder="••••••••">
+          <input type="password" id="newUserPassword" class="w-full p-2 border rounded">
         </div>
         <div>
           <label class="block text-sm font-medium mb-1">Perfil</label>
-          <select id="newUserProfile" class="w-full">
+          <select id="newUserProfile" class="w-full p-2 border rounded">
             <option value="admin">Administrador</option>
             <option value="operador">Operador</option>
             <option value="visualizador">Visualizador</option>
           </select>
         </div>
-        <button onclick="addNewUser()" class="btn-primary w-full">
+        <button onclick="addNewUser()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">
           <i class="fas fa-save mr-2"></i> Salvar Usuário
         </button>
       </div>
@@ -1070,8 +741,8 @@
 
   <div id="detalhesModal" class="modal">
     <div class="modal-content">
-      <span class="btn-close absolute top-4 right-4 text-2xl cursor-pointer" onclick="fecharModal()">&times;</span>
-      <div id="modalContent" class="py-2"></div>
+      <span class="btn-close" onclick="fecharModal()">&times;</span>
+      <div id="modalContent"></div>
     </div>
   </div>
 
@@ -1223,10 +894,10 @@
             label: 'Margem Média (%)',
             data: [22, 18, 15, 20],
             backgroundColor: [
-              '#ef4444',
-              '#3b82f6',
-              '#22c55e',
-              '#8b5cf6'
+              '#FF6384',
+              '#36A2EB',
+              '#FFCE56',
+              '#4BC0C0'
             ]
           }]
         },
@@ -1249,11 +920,11 @@
           datasets: [{
             data: [35, 25, 20, 15, 5],
             backgroundColor: [
-              '#ef4444',
-              '#3b82f6',
-              '#f59e0b',
-              '#8b5cf6',
-              '#10b981'
+              '#FF6384',
+              '#36A2EB',
+              '#FFCE56',
+              '#4BC0C0',
+              '#9966FF'
             ]
           }]
         },
@@ -1272,18 +943,14 @@
             {
               label: 'Preço Mínimo',
               data: [89, 92, 95, 94, 96, 98],
-              borderColor: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderWidth: 2,
-              fill: true
+              borderColor: '#F44336',
+              fill: false
             },
             {
               label: 'Preço Ideal',
               data: [120, 122, 125, 124, 126, 128],
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              borderWidth: 2,
-              fill: true
+              borderColor: '#4CAF50',
+              fill: false
             }
           ]
         },
@@ -1318,7 +985,7 @@
           addHistoryEntry('login', `Usuário ${user.email} fez login`);
         })
         .catch((error) => {
-          showToast('Credenciais inválidas! ' + error.message, 'error');
+          alert('Credenciais inválidas! ' + error.message);
         });
     }
 
@@ -1428,7 +1095,7 @@
       const recent = filteredHistory.slice(0, 50);
       
       if (recent.length === 0) {
-        historyContainer.innerHTML = '<div class="text-center py-8 text-gray-500">Nenhum registro encontrado</div>';
+        historyContainer.innerHTML = '<div class="text-center py-4 text-gray-500">Nenhum registro encontrado</div>';
         return;
       }
       
@@ -1440,7 +1107,7 @@
             <div class="font-medium">${entry.description}</div>
             <div class="text-sm text-gray-500">${new Date(entry.timestamp).toLocaleString()}</div>
           </div>
-          <div class="text-sm text-gray-600 mt-1">Usuário: ${entry.user}</div>
+          <div class="text-sm text-gray-600">Usuário: ${entry.user}</div>
         `;
         historyContainer.appendChild(div);
       });
@@ -1453,10 +1120,10 @@
       const recent = sistema.historico.slice(0, 3);
       recent.forEach(entry => {
         const div = document.createElement('div');
-        div.className = 'text-sm bg-white p-3 rounded-lg shadow-sm';
+        div.className = 'text-sm';
         div.innerHTML = `
-          <div class="font-medium">${entry.description}</div>
-          <div class="text-xs text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleTimeString()}</div>
+          <div>${entry.description}</div>
+          <div class="text-xs text-gray-500">${new Date(entry.timestamp).toLocaleTimeString()}</div>
         `;
         updatesContainer.appendChild(div);
       });
@@ -1487,12 +1154,12 @@
       try {
         // Simulação de teste de conexão
         await new Promise(resolve => setTimeout(resolve, 1000));
-        showToast('Conexão com Mercado Livre testada com sucesso!', 'success');
+        alert('Conexão com Mercado Livre testada com sucesso!');
         sistema.config.apiConfig.ml.connected = true;
         updateApiStatusUI();
         addHistoryEntry('api_config', 'Teste de conexão com Mercado Livre realizado');
       } catch (error) {
-        showToast('Falha na conexão: ' + error.message, 'error');
+        alert('Falha na conexão: ' + error.message);
       }
     }
 
@@ -1500,12 +1167,12 @@
       try {
         // Simulação de teste de conexão
         await new Promise(resolve => setTimeout(resolve, 1000));
-        showToast('Conexão com Shopee testada com sucesso!', 'success');
+        alert('Conexão com Shopee testada com sucesso!');
         sistema.config.apiConfig.shopee.connected = true;
         updateApiStatusUI();
         addHistoryEntry('api_config', 'Teste de conexão com Shopee realizado');
       } catch (error) {
-        showToast('Falha na conexão: ' + error.message, 'error');
+        alert('Falha na conexão: ' + error.message);
       }
     }
 
@@ -1525,11 +1192,11 @@
       try {
         await saveSystem();
         updateApiStatusUI();
-        showToast('Configurações salvas com sucesso!', 'success');
+        alert('Configurações salvas com sucesso!');
         addHistoryEntry('api_config', 'Configurações de API atualizadas');
       } catch (error) {
         console.error("Erro ao salvar configurações:", error);
-        showToast('Erro ao salvar configurações!', 'error');
+        alert('Erro ao salvar configurações!');
       }
     }
 
@@ -1551,10 +1218,10 @@
         document.getElementById('lastBackupInfo').textContent = `Último backup: ${new Date().toLocaleString('pt-BR')}`;
         addHistoryEntry('backup', 'Backup do sistema realizado');
         
-        showToast('Backup criado com sucesso!', 'success');
+        alert('Backup criado com sucesso!');
       } catch (error) {
         console.error("Erro ao criar backup:", error);
-        showToast('Erro ao criar backup!', 'error');
+        alert('Erro ao criar backup!');
       }
     }
 
@@ -1562,7 +1229,7 @@
       try {
         const backupsSnapshot = await db.collection("backups").orderBy("timestamp", "desc").limit(1).get();
         if (backupsSnapshot.empty) {
-          showToast('Nenhum backup encontrado!', 'error');
+          alert('Nenhum backup encontrado!');
           return;
         }
         
@@ -1588,11 +1255,11 @@
           loadSystem();
           
           addHistoryEntry('backup', 'Sistema restaurado a partir de backup');
-          showToast('Backup restaurado com sucesso!', 'success');
+          alert('Backup restaurado com sucesso!');
         }
       } catch (error) {
         console.error("Erro ao restaurar backup:", error);
-        showToast('Erro ao restaurar backup!', 'error');
+        alert('Erro ao restaurar backup!');
       }
     }
 
@@ -1608,21 +1275,21 @@
       sistema.usuarios.forEach(user => {
         // Adiciona à tabela
         const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50';
+        row.className = 'border-b';
         row.innerHTML = `
           <td class="p-3">${user.nome || user.email}</td>
           <td class="p-3">${user.email}</td>
           <td class="p-3">
-            <span class="${user.perfil === 'admin' ? 'badge badge-info' : user.perfil === 'operador' ? 'badge badge-warning' : 'badge badge-success'}">
+            <span class="${user.perfil === 'admin' ? 'admin-badge' : user.perfil === 'operador' ? 'operator-badge' : 'viewer-badge'} profile-badge">
               ${user.perfil}
             </span>
           </td>
           <td class="p-3">
-            <button onclick="editUser('${user.id}')" class="btn-outline px-3 py-1 text-sm mr-2">
+            <button onclick="editUser('${user.id}')" class="btn-action btn-edit mr-2">
               <i class="fas fa-edit"></i>
             </button>
             ${user.email !== 'admin@empresa.com' ? `
-            <button onclick="deleteUser('${user.id}')" class="btn-danger px-3 py-1 text-sm">
+            <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete">
               <i class="fas fa-trash"></i>
             </button>
             ` : ''}
@@ -1653,12 +1320,12 @@
       const perfil = document.getElementById('newUserProfile').value;
       
       if (!nome || !email || !senha) {
-        showToast('Preencha todos os campos!', 'error');
+        alert('Preencha todos os campos!');
         return;
       }
       
       if (sistema.usuarios.some(u => u.email === email)) {
-        showToast('Já existe um usuário com este e-mail!', 'error');
+        alert('Já existe um usuário com este e-mail!');
         return;
       }
       
@@ -1685,10 +1352,10 @@
         loadUsers();
         closeModal('addUserModal');
         addHistoryEntry('user_add', `Usuário ${email} adicionado`);
-        showToast('Usuário adicionado com sucesso!', 'success');
+        alert('Usuário adicionado com sucesso!');
       } catch (error) {
         console.error("Erro ao adicionar usuário:", error);
-        showToast('Erro ao adicionar usuário: ' + error.message, 'error');
+        alert('Erro ao adicionar usuário: ' + error.message);
       }
     }
 
@@ -1744,10 +1411,10 @@
         loadUsers();
         closeModal('addUserModal');
         addHistoryEntry('user_edit', `Usuário ${sistema.usuarios[userIndex].email} atualizado`);
-        showToast('Usuário atualizado com sucesso!', 'success');
+        alert('Usuário atualizado com sucesso!');
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
-        showToast('Erro ao atualizar usuário!', 'error');
+        alert('Erro ao atualizar usuário!');
       }
     }
 
@@ -1756,7 +1423,7 @@
       if (!user) return;
       
       if (user.email === 'admin@empresa.com') {
-        showToast('Não é possível remover o usuário administrador principal!', 'error');
+        alert('Não é possível remover o usuário administrador principal!');
         return;
       }
       
@@ -1775,10 +1442,10 @@
         sistema.usuarios = sistema.usuarios.filter(u => u.id !== userId);
         loadUsers();
         addHistoryEntry('user_delete', `Usuário ${user.email} removido`);
-        showToast('Usuário removido com sucesso!', 'success');
+        alert('Usuário removido com sucesso!');
       } catch (error) {
         console.error("Erro ao remover usuário:", error);
-        showToast('Erro ao remover usuário!', 'error');
+        alert('Erro ao remover usuário!');
       }
     }
 
@@ -1789,7 +1456,7 @@
       const sku = document.getElementById("sku").value.trim();
       
       if (!produto || custo <= 0) {
-        showToast("Preencha o nome do produto e um custo válido!", 'error');
+        alert("Preencha o nome do produto e um custo válido!");
         return;
       }
 
@@ -1832,7 +1499,7 @@
 
       // Verificação de valores
       if (totalPercentual >= 100) {
-        showToast("As taxas percentuais não podem somar 100% ou mais!", 'error');
+        alert("As taxas percentuais não podem somar 100% ou mais!");
         return;
       }
 
@@ -1861,7 +1528,7 @@
     async function salvarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
       const user = auth.currentUser;
       if (!user) {
-        showToast("Usuário não autenticado!", 'error');
+        alert("Usuário não autenticado!");
         return;
       }
 
@@ -1886,19 +1553,28 @@
         sistema.produtos.unshift({ ...novoProduto, id: "temp" });
         atualizarLista();
         
+        // Mostrar feedback visual
+        const feedback = document.createElement('div');
+        feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        feedback.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Produto salvo com sucesso!`;
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+          feedback.remove();
+        }, 3000);
+        
         // Registrar no histórico
         addHistoryEntry('product_add', `Produto "${produto}" cadastrado para ${plataforma}`);
-        showToast('Produto salvo com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
-        showToast("Erro ao salvar produto!", 'error');
+        alert("Erro ao salvar produto!");
       }
     }
 
     async function atualizarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
       const user = auth.currentUser;
       if (!user) {
-        showToast("Usuário não autenticado!", 'error');
+        alert("Usuário não autenticado!");
         return;
       }
 
@@ -1932,13 +1608,22 @@
           };
           atualizarLista();
           
+          // Mostrar feedback visual
+          const feedback = document.createElement('div');
+          feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+          feedback.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Produto atualizado com sucesso!`;
+          document.body.appendChild(feedback);
+          
+          setTimeout(() => {
+            feedback.remove();
+          }, 3000);
+          
           // Registrar no histórico
           addHistoryEntry('product_edit', `Produto "${produto}" atualizado`);
-          showToast('Produto atualizado com sucesso!', 'success');
         }
       } catch (error) {
         console.error("Erro ao atualizar produto:", error);
-        showToast("Erro ao atualizar produto!", 'error');
+        alert("Erro ao atualizar produto!");
       }
     }
 
@@ -1990,34 +1675,32 @@
         }
         
         div.innerHTML = `
-          <div class="p-5">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-bold text-lg">${item.produto}</h3>
-                ${item.sku ? `<div class="text-sm text-gray-500 mt-1">SKU: ${item.sku}</div>` : ''}
-                <div class="mt-2">
-                  <span class="${platformClass} platform-tag">${platformName}</span>
-                </div>
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-lg">${item.produto}</h3>
+              ${item.sku ? `<div class="text-sm text-gray-500">SKU: ${item.sku}</div>` : ''}
+              <div class="mt-1">
+                <span class="${platformClass} platform-tag">${platformName}</span>
               </div>
-              <div class="text-right">
-                <div class="text-gray-500 text-sm">Preço mínimo</div>
-                <div class="product-price">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
-              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-gray-500 text-sm">Preço mínimo</div>
+              <div class="product-price text-green-600">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
             </div>
           </div>
           
-          <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between">
+          <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
             <div class="text-sm text-gray-500">
-              <i class="far fa-calendar-alt mr-1"></i> ${new Date(item.createdAt).toLocaleDateString('pt-BR')}
+              <i class="far fa-calendar-alt"></i> ${new Date(item.createdAt).toLocaleDateString('pt-BR')}
             </div>
             <div class="flex space-x-2">
-              <button onclick="verDetalhes('${item.id}')" class="btn-outline px-3 py-1 text-sm">
-                <i class="fas fa-eye"></i>
+              <button onclick="verDetalhes('${item.id}')" class="btn-action btn-view">
+                <i class="fas fa-eye"></i> Ver
               </button>
-              <button onclick="editarProduto('${item.id}')" class="btn-outline px-3 py-1 text-sm">
-                <i class="fas fa-edit"></i>
+              <button onclick="editarProduto('${item.id}')" class="btn-action btn-edit">
+                <i class="fas fa-edit"></i> Editar
               </button>
-              <button onclick="excluirProduto('${item.id}')" class="btn-danger px-3 py-1 text-sm">
+              <button onclick="excluirProduto('${item.id}')" class="btn-action btn-delete">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -2037,7 +1720,7 @@
       
       let html = `
         <h3 class="text-2xl font-bold mb-2">${produto.produto}</h3>
-        ${produto.sku ? `<div class="text-gray-600 mb-4">SKU: ${produto.sku}</div>` : ''}
+        ${produto.sku ? `<div class="text-gray-600 mb-2">SKU: ${produto.sku}</div>` : ''}
         <div class="flex items-center mb-6">
           <span class="${getPlatformClass(produto.plataforma)} platform-tag mr-3">${getPlatformName(produto.plataforma)}</span>
         </div>
@@ -2058,9 +1741,9 @@
             <div class="scenario-value">R$ ${produto.precoIdeal}</div>
           </div>
           
-          <div class="bg-blue-50 p-4 rounded-lg">
+          <div class="bg-gray-100 p-4 rounded-lg">
             <div class="font-semibold">Preço Mínimo</div>
-            <div class="text-xl font-bold text-blue-600">R$ ${produto.precoMinimo}</div>
+            <div class="text-xl font-bold text-green-600">R$ ${produto.precoMinimo}</div>
           </div>
         </div>
         
@@ -2100,7 +1783,7 @@
         </div>
         
         <div class="mt-8 text-right">
-          <button onclick="fecharModal()" class="btn-outline">
+          <button onclick="fecharModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-medium">
             Fechar
           </button>
         </div>
@@ -2184,12 +1867,21 @@
         sistema.produtos = sistema.produtos.filter(item => item.id !== id);
         atualizarLista();
         
+        // Mostrar feedback visual
+        const feedback = document.createElement('div');
+        feedback.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+        feedback.innerHTML = `<i class="fas fa-trash-alt mr-2"></i> Produto excluído com sucesso!`;
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+          feedback.remove();
+        }, 3000);
+        
         // Registrar no histórico
         addHistoryEntry('product_delete', `Produto excluído`);
-        showToast('Produto excluído com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao excluir produto:", error);
-        showToast("Erro ao excluir produto!", 'error');
+        alert("Erro ao excluir produto!");
       }
     }
 
@@ -2199,7 +1891,7 @@
 
     function exportarExcel() {
       if (sistema.produtos.length === 0) {
-        showToast("Nenhum produto para exportar!", 'error');
+        alert("Nenhum produto para exportar!");
         return;
       }
       
@@ -2265,12 +1957,11 @@
       document.body.removeChild(link);
       
       addHistoryEntry('export', 'Exportação para Excel realizada');
-      showToast('Exportação para Excel realizada!', 'success');
     }
 
     function exportarPDF() {
       if (sistema.produtos.length === 0) {
-        showToast("Nenhum produto para exportar!", 'error');
+        alert("Nenhum produto para exportar!");
         return;
       }
       
@@ -2325,7 +2016,7 @@
           valign: 'middle'
         },
         headStyles: {
-          fillColor: [26, 86, 219],
+          fillColor: [76, 175, 80],
           textColor: 255,
           fontStyle: 'bold'
         },
@@ -2339,7 +2030,6 @@
       doc.save(`precificacao_produtos_${new Date().toISOString().slice(0, 10)}.pdf`);
       
       addHistoryEntry('export', 'Exportação para PDF realizada');
-      showToast('Exportação para PDF realizada!', 'success');
     }
 
  
@@ -2348,7 +2038,7 @@
       const file = fileInput.files[0];
       
       if (!file) {
-        showToast('Selecione um arquivo primeiro!', 'error');
+        alert('Selecione um arquivo primeiro!');
         return;
       }
       
@@ -2364,7 +2054,7 @@
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
         
         if (jsonData.length < 2) {
-          showToast('Planilha vazia ou formato inválido!', 'error');
+          alert('Planilha vazia ou formato inválido!');
           return;
         }
         
@@ -2395,7 +2085,6 @@
         document.getElementById('importedShopeeProducts').style.display = 'block';
         
         addHistoryEntry('import', `${products.length} produtos importados da Shopee`);
-        showToast(`${products.length} produtos importados com sucesso!`, 'success');
       };
       
       reader.readAsArrayBuffer(file);
@@ -2410,14 +2099,14 @@
         
         // Mapear campos importantes para exibição
         row.innerHTML = `
-          <td class="p-3 text-sm">${product['ID do produto'] || ''}</td>
-          <td class="p-3 text-sm">${product['Nome do Produto. (Opcional)'] || ''}</td>
-          <td class="p-3 text-sm">${product['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
-          <td class="p-3 text-sm">${product['ID de variação'] || ''}</td>
-          <td class="p-3 text-sm">${product['Variação de nome. (Opcional)'] || ''}</td>
-          <td class="p-3 text-sm">${product['Nº de Ref. SKU. (Opcional)'] || ''}</td>
-          <td class="p-3 text-sm">${product['Preço original (opcional)'] || ''}</td>
-          <td class="p-3 text-sm font-bold">${product['Preço de desconto'] || ''}</td>
+          <td>${product['ID do produto'] || ''}</td>
+          <td>${product['Nome do Produto. (Opcional)'] || ''}</td>
+          <td>${product['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
+          <td>${product['ID de variação'] || ''}</td>
+          <td>${product['Variação de nome. (Opcional)'] || ''}</td>
+          <td>${product['Nº de Ref. SKU. (Opcional)'] || ''}</td>
+          <td>${product['Preço original (opcional)'] || ''}</td>
+          <td class="font-bold">${product['Preço de desconto'] || ''}</td>
         `;
         
         tableBody.appendChild(row);
@@ -2426,7 +2115,7 @@
 
     function applyPriceUpdate(type) {
       if (!sistema.importedShopeeData) {
-        showToast('Importe os dados da Shopee primeiro!', 'error');
+        alert('Importe os dados da Shopee primeiro!');
         return;
       }
       
@@ -2486,14 +2175,29 @@
       // Atualizar exibição
       displayImportedProducts(sistema.importedShopeeData);
       
+      // Feedback visual detalhado
+      const feedback = document.createElement('div');
+      feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+      feedback.innerHTML = `
+        <i class="fas fa-check-circle mr-2"></i> 
+        Operação concluída!<br>
+        Produtos atualizados: ${productsUpdated}<br>
+        Produtos não encontrados: ${productsNotFound}<br>
+        Produtos sem SKU: ${productsWithNoSku}
+      `;
+      document.body.appendChild(feedback);
+      
+      setTimeout(() => {
+        feedback.remove();
+      }, 5000);
+      
       // Registrar no histórico
       addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
-      showToast(`Atualização concluída! ${productsUpdated} preços atualizados, ${productsNotFound} não encontrados, ${productsWithNoSku} sem SKU.`, 'success');
     }
 
     function exportShopeeFile() {
       if (!sistema.importedShopeeData) {
-        showToast('Nenhum dado para exportar!', 'error');
+        alert('Nenhum dado para exportar!');
         return;
       }
       
@@ -2516,7 +2220,6 @@
       XLSX.writeFile(wb, `promocoes_shopee_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
       addHistoryEntry('export', 'Planilha Shopee exportada');
-      showToast('Planilha Shopee exportada com sucesso!', 'success');
     }
 
     // Funções auxiliares
@@ -2536,12 +2239,12 @@
     function sendRecovery() {
       const email = document.getElementById('recoverEmail').value;
       if (!email.includes('@')) {
-        showToast('E-mail inválido!', 'error');
+        alert('E-mail inválido!');
         return;
       }
       
       // Simulação de envio
-      showToast(`Link de recuperação enviado para ${email}`, 'success');
+      alert(`Link de recuperação enviado para ${email}`);
       closeModal('recoverModal');
       addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
     }
@@ -2613,30 +2316,6 @@
       document.getElementById('avgMargin').textContent = `${avgMargin}%`;
       document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
       document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-    }
-    
-    function showToast(message, type) {
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      toast.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-        ${message}
-      `;
-      
-      document.body.appendChild(toast);
-      
-      // Mostrar toast
-      setTimeout(() => {
-        toast.classList.add('show');
-      }, 100);
-      
-      // Esconder depois de 5 segundos
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 300);
-      }, 5000);
     }
 
     // Verificações periódicas
