@@ -710,13 +710,43 @@ window.verDetalhes = async function (id) {
     const variantes = variantesSnap.docs.map(doc => doc.data());
 
     // 🔍 Buscar o desempenho mais recente
-    const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
-    const desempenhoSnap = await getDocs(desempenhoRef);
-    let desempenho = {};
-    if (!desempenhoSnap.empty) {
-      const ordenado = desempenhoSnap.docs.sort((a, b) => b.id.localeCompare(a.id));
-      desempenho = ordenado[0].data();
-    }
+    // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
+const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
+const desempenhoSnap = await getDocs(desempenhoRef);
+let desempenho = {};
+
+if (!desempenhoSnap.empty) {
+  const hoje = new Date();
+  const diasValidos = [...Array(7)].map((_, i) => {
+    const d = new Date(hoje);
+    d.setDate(hoje.getDate() - i);
+    return d.toISOString().slice(0, 10);
+  });
+
+  const docsValidos = desempenhoSnap.docs.filter(doc => diasValidos.includes(doc.id));
+  const acumulado = { visualizacoes: 0, curtidas: 0, vendasPago: 0, unidadesPago: 0, conversaoPago: 0, taxaRejeicao: 0 };
+
+  docsValidos.forEach(d => {
+    const v = d.data();
+    acumulado.visualizacoes += Number(v.visualizacoes || 0);
+    acumulado.curtidas += Number(v.curtidas || 0);
+    acumulado.vendasPago += Number(v.vendasPago || 0);
+    acumulado.unidadesPago += Number(v.unidadesPago || 0);
+    acumulado.conversaoPago += Number(v.conversaoPago || 0);
+    acumulado.taxaRejeicao += Number(v.taxaRejeicao || 0);
+  });
+
+  const divisor = docsValidos.length || 1;
+  desempenho = {
+    visualizacoes: Math.round(acumulado.visualizacoes / divisor),
+    curtidas: Math.round(acumulado.curtidas / divisor),
+    vendasPago: (acumulado.vendasPago / divisor).toFixed(2),
+    unidadesPago: Math.round(acumulado.unidadesPago / divisor),
+    conversaoPago: (acumulado.conversaoPago / divisor).toFixed(2),
+    taxaRejeicao: (acumulado.taxaRejeicao / divisor).toFixed(2),
+  };
+}
+
 
     const container = document.getElementById("detalhesProduto");
 
