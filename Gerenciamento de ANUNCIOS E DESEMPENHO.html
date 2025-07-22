@@ -428,7 +428,7 @@
           break;
         case "vendas":
           v.preco = linha["Preço"];
-          v.estoque = linha["Estoque do Vendedor"];
+          v.estoque = linha["Estoque do vendedor"] ?? 0;
           v.gtin = linha["GTIN (EAN)"];
           v.skuVariante = linha["SKU"];
           v.nomeVariante = linha["Nome"];
