@@ -2179,8 +2179,7 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
       }
     }
 async function carregarRegistrosFaturamento() {
-  const ref = collection(db, "faturamento");
-  const snap = await getDocs(ref);
+  const snap = await db.collection("faturamento").get();
   const container = document.getElementById("listaFaturamento");
   container.innerHTML = "";
   snap.forEach(doc => {
