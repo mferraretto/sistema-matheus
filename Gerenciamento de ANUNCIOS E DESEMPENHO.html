@@ -596,8 +596,8 @@ window.salvarNoFirebase = async () => {
       });
     });
 
-    // Load products
-   window.carregarAnuncios = async function () {
+// Load products
+window.carregarAnuncios = async function () {
   const tbody = document.querySelector("#tabelaAnuncios tbody");
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
 
@@ -625,10 +625,19 @@ window.salvarNoFirebase = async () => {
       const snap = await getDocs(variantesRef);
       const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
 
+      // 🔄 Buscar desempenho mais recente da subcoleção
+      const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
+      const desempenhoSnap = await getDocs(desempenhoRef);
+      let desempenho = {};
+      if (!desempenhoSnap.empty) {
+        const ordenado = desempenhoSnap.docs.sort((a, b) => b.id.localeCompare(a.id));
+        desempenho = ordenado[0].data();
+      }
+
       for (const variante of variantes) {
         const preco = variante.preco || data.preco || 0;
         const estoque = parseInt(variante.estoque || data.estoque || 0);
-        const conversao = parseFloat(variante.conversaoPago || data.conversaoPago || 0);
+        const conversao = parseFloat(variante.conversaoPago || desempenho.conversaoPago || data.conversaoPago || 0);
 
         const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
         const estoqueStatus = estoque < 10 ? 'danger' : estoque < 30 ? 'warning' : 'success';
@@ -670,7 +679,8 @@ window.salvarNoFirebase = async () => {
   }
 };
 
-   window.verDetalhes = async function (id) {
+
+window.verDetalhes = async function (id) {
   try {
     const docRef = doc(db, "anuncios", id);
     const docSnap = await getDoc(docRef);
@@ -690,6 +700,15 @@ window.salvarNoFirebase = async () => {
     const variantesRef = collection(db, `anuncios/${id}/variantes`);
     const variantesSnap = await getDocs(variantesRef);
     const variantes = variantesSnap.docs.map(doc => doc.data());
+
+    // 🔍 Buscar o desempenho mais recente
+    const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
+    const desempenhoSnap = await getDocs(desempenhoRef);
+    let desempenho = {};
+    if (!desempenhoSnap.empty) {
+      const ordenado = desempenhoSnap.docs.sort((a, b) => b.id.localeCompare(a.id));
+      desempenho = ordenado[0].data();
+    }
 
     const container = document.getElementById("detalhesProduto");
 
@@ -751,7 +770,7 @@ window.salvarNoFirebase = async () => {
             </div>
             <div class="bg-gray-50 p-3 rounded">
               <div class="text-sm text-gray-500">Conversão</div>
-              <div class="text-lg font-bold">${data.conversaoPago || "0.00"}%</div>
+              <div class="text-lg font-bold">${desempenho.conversaoPago || data.conversaoPago || "0.00"}%</div>
             </div>
           </div>
         </div>
@@ -768,11 +787,11 @@ window.salvarNoFirebase = async () => {
         <div>
           <h5 class="font-bold mb-2"><i class="fas fa-chart-line mr-2"></i>Desempenho</h5>
           <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
-            <div><span class="font-medium">Visualizações:</span> ${data.visualizacoes || "0"}</div>
-            <div><span class="font-medium">Curtidas:</span> ${data.curtidas || "0"}</div>
-            <div><span class="font-medium">Vendas (Pago):</span> R$ ${data.vendasPago || "0.00"}</div>
-            <div><span class="font-medium">Unidades Vendidas:</span> ${data.unidadesPago || "0"}</div>
-            <div><span class="font-medium">Taxa de Rejeição:</span> ${data.taxaRejeicao || "0.00"}%</div>
+            <div><span class="font-medium">Visualizações:</span> ${desempenho.visualizacoes || data.visualizacoes || "0"}</div>
+            <div><span class="font-medium">Curtidas:</span> ${desempenho.curtidas || data.curtidas || "0"}</div>
+            <div><span class="font-medium">Vendas (Pago):</span> R$ ${desempenho.vendasPago || data.vendasPago || "0.00"}</div>
+            <div><span class="font-medium">Unidades Vendidas:</span> ${desempenho.unidadesPago || data.unidadesPago || "0"}</div>
+            <div><span class="font-medium">Taxa de Rejeição:</span> ${desempenho.taxaRejeicao || data.taxaRejeicao || "0.00"}%</div>
           </div>
         </div>
         
@@ -806,6 +825,7 @@ window.salvarNoFirebase = async () => {
     showNotification("❌ Erro ao carregar detalhes do produto", "error");
   }
 };
+
 
     // View history
     window.verHistorico = async function (id) {
