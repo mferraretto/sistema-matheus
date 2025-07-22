@@ -1262,7 +1262,9 @@ window.carregarEvolucao = async function () {
     document.addEventListener('DOMContentLoaded', () => {
       atualizarContador();
     });
-    let ordemAscendente = true;
+    
+let ordemAscendente = true;
+let ultimaColunaOrdenada = null;
 
 window.ordenarTabela = function (indiceColuna) {
   const tabela = document.getElementById("tabelaAnuncios");
