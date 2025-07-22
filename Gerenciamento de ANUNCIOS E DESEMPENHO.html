@@ -631,7 +631,7 @@ window.carregarAnuncios = async function () {
 
       // 🔄 Buscar últimos 7 dias da subcoleção desempenho
       const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
-      const desempenhoQuery = query(desempenhoRef, orderBy("dataReferencia", "desc"), limit(7));
+const desempenhoQuery = query(desempenhoRef, orderBy("__name__", "desc"), limit(7));
       const desempenhoSnap = await getDocs(desempenhoQuery);
 
 let acumulado = {
@@ -643,15 +643,18 @@ let acumulado = {
   taxaRejeicao: 0
 };
 let count = 0;
-
+function parseNumero(valor) {
+  if (!valor) return 0;
+  return parseFloat(valor.toString().replace(',', '.').replace('%', '')) || 0;
+}
 desempenhoSnap.forEach(doc => {
   const d = doc.data();
   acumulado.visualizacoes += Number(d.visualizacoes || 0);
   acumulado.curtidas += Number(d.curtidas || 0);
   acumulado.vendasPago += Number(d.vendasPago || 0);
   acumulado.unidadesPago += Number(d.unidadesPago || 0);
-  acumulado.conversaoPago += Number(d.conversaoPago || 0);
-  acumulado.taxaRejeicao += Number(d.taxaRejeicao || 0);
+  acumulado.conversaoPago += parseNumero(d.conversaoPago);
+  acumulado.taxaRejeicao += parseNumero(d.taxaRejeicao);
   count++;
 });
 
@@ -733,7 +736,6 @@ window.verDetalhes = async function (id) {
     const variantesSnap = await getDocs(variantesRef);
     const variantes = variantesSnap.docs.map(doc => doc.data());
 
-    // 🔍 Buscar o desempenho mais recente
     // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
 const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
 const desempenhoSnap = await getDocs(desempenhoRef);
@@ -756,8 +758,12 @@ if (!desempenhoSnap.empty) {
     acumulado.curtidas += Number(v.curtidas || 0);
     acumulado.vendasPago += Number(v.vendasPago || 0);
     acumulado.unidadesPago += Number(v.unidadesPago || 0);
-    acumulado.conversaoPago += Number(v.conversaoPago || 0);
-    acumulado.taxaRejeicao += Number(v.taxaRejeicao || 0);
+   const convStr = (v.conversaoPago || "0").toString().replace(',', '.').replace('%', '');
+acumulado.conversaoPago += parseFloat(convStr) || 0;
+
+const taxaStr = (v.taxaRejeicao || "0").toString().replace(',', '.').replace('%', '');
+acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
+
   });
 
   const divisor = docsValidos.length || 1;
