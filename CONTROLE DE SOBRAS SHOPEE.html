@@ -987,34 +987,29 @@
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
     // =============================================
-    async function consultarDeepSeek(prompt) {
-    const apiKey = "sk-2ada97f70b3b4ef89efc228801335b93";
-    const url = "https://api.deepseek.com/chat";
+  async function consultarDeepSeek(mensagemUser) {
+  try {
+    const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: "Você é um analista de sobras de produtos da Shopee." },
+          { role: "user", content: mensagemUser }
+        ]
+      })
+    });
 
-    try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: prompt }]
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Erro na API: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content;
-    } catch (error) {
-        console.error("Erro ao consultar DeepSeek:", error);
-        throw error;
-    }
+    const dados = await resposta.json();
+    return dados.choices?.[0]?.message?.content || "❌ Sem resposta da IA.";
+  } catch (error) {
+    console.error("Erro ao consultar DeepSeek:", error);
+    return "❌ Erro ao se comunicar com o servidor.";
+  }
 }
+
+
     function verificarConexao() {
       firebase.firestore().enableNetwork()
         .then(() => {
