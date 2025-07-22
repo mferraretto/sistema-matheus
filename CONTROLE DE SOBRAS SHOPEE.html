@@ -1121,9 +1121,9 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
           const produtosSnap = await produtosSnapQuery.get();
           produtosSnap.forEach((doc) => {
             const data = doc.data();
-            if (data.sku && data.precoMinimo !== undefined) {
+            if (data.sku && data.custo !== undefined) {
               metas[data.sku] = {
-                valor: parseFloat(data.precoMinimo),
+                valor: parseFloat(data.custo),
                 atualizadoEm: new Date()
               };
             }
