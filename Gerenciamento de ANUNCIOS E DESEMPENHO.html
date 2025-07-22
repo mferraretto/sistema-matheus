@@ -366,157 +366,153 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
     // Process spreadsheets
    window.processarPlanilha = function(file, tipo) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const workbook = XLSX.read(e.target.result, { type: "binary" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  const user = firebase.auth().currentUser;
+  if (!user) return alert("Você precisa estar logado.");
 
-if (tipo === "desempenho") {
-  const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
-  window.dataDesempenhoReferencia = dataReferencia; // salva globalmente para uso posterior
-}
+  const uid = user.uid;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const workbook = XLSX.read(e.target.result, { type: "binary" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-        for (const linha of dados) {
-          const id = linha["ID do Produto"] || linha["ID do Item"];
-          if (!id) continue;
-          if (!window.produtos[id]) window.produtos[id] = { id };
-
-          const p = window.produtos[id];
-
-
-          switch (tipo) {
-            case "desempenho":
-              p.dataReferencia = window.dataDesempenhoReferencia;
-              p.visitas = linha["Visitantes do Produto (Visita)"];
-              p.visualizacoes = linha["Visualizações da Página do Produto"];
-              p.cliquesBusca = linha["Cliques em buscas"];
-              p.curtidas = linha["Curtidas"];
-              p.saidas = linha["Visitantes que saíram da página"];
-              p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
-              p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
-              p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
-              p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
-              p.compradoresPedido = linha["Compradores (Pedido realizado)"];
-              p.unidadesPedido = linha["Unidades (Pedido realizado)"];
-              p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
-              p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
-              p.compradoresPago = linha["Compradores (Pedidos pago)"];
-              p.unidadesPago = linha["Unidades (Pedido pago)"];
-              p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
-              p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
-              break;
-            case "vendas":
-              p.preco = linha["Preço"];
-              p.estoque = linha["Estoque do Vendedor"];
-              p.gtin = linha["GTIN (EAN)"];
-              p.skuVariante = linha["SKU"];
-              p.nomeVariante = linha["Nome"];
-              p.varianteId = linha["Variante Identificador"];
-              break;
-
-            case "basica":
-              p.nome = linha["Nome do Produto"] || p.nome;
-              p.descricao = linha["Descrição do Produto"];
-              break;
-
-            case "frete":
-              p.peso = linha["Peso do Produto/kg"];
-              p.comprimento = linha["Comprimento"];
-              p.largura = linha["Largura"];
-              p.altura = linha["Altura"];
-              p.taxaFrete = linha["Taxa de frete"];
-              break;
-
-            case "midia":
-              p.categoria = linha["Categoria"];
-              p.imagemCapa = linha["Imagem de capa"];
-              p.tabelaMedidas = linha["Template da Tabela de Medidas"];
-              p.nomeVariacao = linha["Nome da Variação 1"];
-              p.opcoesVariacao = Object.keys(linha)
-                .filter(k => k.startsWith("Opção"))
-                .map(k => linha[k])
-                .filter(Boolean);
-              break;
-          }
-        }
-
-        alert(`✅ Planilha ${tipo.toUpperCase()} processada com sucesso!`);
-      };
-      reader.readAsBinaryString(file);
+    if (tipo === "desempenho") {
+      const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
+      window.dataDesempenhoReferencia = dataReferencia;
     }
 
+    for (const linha of dados) {
+      const id = linha["ID do Produto"] || linha["ID do Item"];
+      if (!id) continue;
+      if (!window.produtos[id]) window.produtos[id] = { id };
 
-    // Save to Firebase
+      const p = window.produtos[id];
+
+      switch (tipo) {
+        case "desempenho":
+          p.dataReferencia = window.dataDesempenhoReferencia;
+          p.visitas = linha["Visitantes do Produto (Visita)"];
+          p.visualizacoes = linha["Visualizações da Página do Produto"];
+          p.cliquesBusca = linha["Cliques em buscas"];
+          p.curtidas = linha["Curtidas"];
+          p.saidas = linha["Visitantes que saíram da página"];
+          p.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
+          p.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
+          p.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
+          p.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
+          p.compradoresPedido = linha["Compradores (Pedido realizado)"];
+          p.unidadesPedido = linha["Unidades (Pedido realizado)"];
+          p.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
+          p.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
+          p.compradoresPago = linha["Compradores (Pedidos pago)"];
+          p.unidadesPago = linha["Unidades (Pedido pago)"];
+          p.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
+          p.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
+          break;
+        case "vendas":
+          p.preco = linha["Preço"];
+          p.estoque = linha["Estoque do Vendedor"];
+          p.gtin = linha["GTIN (EAN)"];
+          p.skuVariante = linha["SKU"];
+          p.nomeVariante = linha["Nome"];
+          p.varianteId = linha["Variante Identificador"];
+          break;
+        case "basica":
+          p.nome = linha["Nome do Produto"] || p.nome;
+          p.descricao = linha["Descrição do Produto"];
+          break;
+        case "frete":
+          p.peso = linha["Peso do Produto/kg"];
+          p.comprimento = linha["Comprimento"];
+          p.largura = linha["Largura"];
+          p.altura = linha["Altura"];
+          p.taxaFrete = linha["Taxa de frete"];
+          break;
+        case "midia":
+          p.categoria = linha["Categoria"];
+          p.imagemCapa = linha["Imagem de capa"];
+          p.tabelaMedidas = linha["Template da Tabela de Medidas"];
+          p.nomeVariacao = linha["Nome da Variação 1"];
+          p.opcoesVariacao = Object.keys(linha)
+            .filter(k => k.startsWith("Opção"))
+            .map(k => linha[k])
+            .filter(Boolean);
+          break;
+      }
+    }
+
+    alert(`✅ Planilha ${tipo.toUpperCase()} processada com sucesso!`);
+  };
+  reader.readAsBinaryString(file);
+};
+
+// Save to Firebase
 window.salvarNoFirebase = async () => {
-      const total = Object.keys(window.produtos).length;
-      if (total === 0) {
-        showNotification("⚠️ Nenhum dado para salvar.", 'warning');
-        return;
-      }
+  const total = Object.keys(window.produtos).length;
+  if (total === 0) {
+    showNotification("⚠️ Nenhum dado para salvar.", 'warning');
+    return;
+  }
 
-      let atualizados = 0;
-      const loadingMsg = showNotification("⏳ Salvando dados no Firebase...", 'info', true);
+  let atualizados = 0;
+  const loadingMsg = showNotification("⏳ Salvando dados no Firebase...", 'info', true);
 
-      try {
-                const user = auth.currentUser;
-        for (const [id, novosParciais] of Object.entries(window.produtos)) {
-          const ref = doc(db, "anuncios", id);
-          const snapshot = await getDoc(ref);
+  try {
+    const user = auth.currentUser;
+    for (const [id, novosParciais] of Object.entries(window.produtos)) {
+      const ref = doc(db, "anuncios", id);
+      const snapshot = await getDoc(ref);
 
-          let dadosAntigos = {};
-          let dadosCompletos = { ...novosParciais };
-          let salvar = true;
-          let registrarHistorico = false;
+      let dadosAntigos = {};
+      let dadosCompletos = { ...novosParciais };
+      let salvar = true;
+      let registrarHistorico = false;
 
-          if (snapshot.exists()) {
-            dadosAntigos = snapshot.data();
-              if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && user.email !== ADMIN_EMAIL) {
-              continue;
-            }
-            dadosCompletos = { ...dadosAntigos, ...novosParciais };
-
-            // Check if something actually changed
-            if (objetosIguais(dadosAntigos, dadosCompletos)) {
-              salvar = false;
-            } else {
-              const camposAntigos = Object.keys(dadosAntigos);
-              registrarHistorico = camposAntigos.some(chave =>
-                !objetosIguais(dadosAntigos[chave], dadosCompletos[chave])
-              );
-            }
-          }
-
-          if (!salvar) continue;
-          dadosCompletos.uid = dadosCompletos.uid || user.uid;
-
-          await setDoc(ref, dadosCompletos);
-
-          if (registrarHistorico) {
-            await addDoc(collection(db, "atualizacoes"), {
-              id,
-              uid: dadosCompletos.uid,
-              dataHora: new Date().toISOString(),
-              dadosAntigos,
-              dadosNovos: dadosCompletos,
-            });
-          }
-
-          atualizados++;
+      if (snapshot.exists()) {
+        dadosAntigos = snapshot.data();
+        if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && user.email !== ADMIN_EMAIL) {
+          continue;
         }
+        dadosCompletos = { ...dadosAntigos, ...novosParciais };
 
-        // Clear products after saving
-        window.produtos = {};
-        atualizarContador();
-        
-        loadingMsg.remove();
-        showNotification(`✅ ${atualizados} anúncio(s) salvos/atualizados no Firebase!`, 'success');
-      } catch (error) {
-        console.error("Erro ao salvar no Firebase:", error);
-        loadingMsg.remove();
-        showNotification(`❌ Erro ao salvar: ${error.message}`, 'error');
+        if (objetosIguais(dadosAntigos, dadosCompletos)) {
+          salvar = false;
+        } else {
+          const camposAntigos = Object.keys(dadosAntigos);
+          registrarHistorico = camposAntigos.some(chave =>
+            !objetosIguais(dadosAntigos[chave], dadosCompletos[chave])
+          );
+        }
       }
-    };
+
+      if (!salvar) continue;
+      dadosCompletos.uid = dadosCompletos.uid || user.uid;
+
+      await setDoc(ref, dadosCompletos);
+
+      if (registrarHistorico) {
+        await addDoc(collection(db, "atualizacoes"), {
+          id,
+          uid: dadosCompletos.uid,
+          dataHora: new Date().toISOString(),
+          dadosAntigos,
+          dadosNovos: dadosCompletos,
+        });
+      }
+
+      atualizados++;
+    }
+
+    window.produtos = {};
+    atualizarContador();
+    loadingMsg.remove();
+    showNotification(`✅ ${atualizados} anúncio(s) salvos/atualizados no Firebase!`, 'success');
+  } catch (error) {
+    console.error("Erro ao salvar no Firebase:", error);
+    loadingMsg.remove();
+    showNotification(`❌ Erro ao salvar: ${error.message}`, 'error');
+  }
+};
 
     // Helper functions
     function objetosIguais(a, b) {
