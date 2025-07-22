@@ -751,7 +751,10 @@ if (!desempenhoSnap.empty) {
 
   const docsValidos = desempenhoSnap.docs.filter(doc => diasValidos.includes(doc.id));
   const acumulado = { visualizacoes: 0, curtidas: 0, vendasPago: 0, unidadesPago: 0, conversaoPago: 0, taxaRejeicao: 0 };
-
+function parseNumero(valor) {
+  if (!valor) return 0;
+  return parseFloat(valor.toString().replace(',', '.').replace('%', '')) || 0;
+}
   docsValidos.forEach(d => {
     const v = d.data();
     acumulado.visualizacoes += Number(v.visualizacoes || 0);
