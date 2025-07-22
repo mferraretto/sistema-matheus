@@ -1835,35 +1835,52 @@ Formato a resposta em tópicos curtos e diretos.`;
     // FUNÇÕES DE GRÁFICOS
     // =============================================
     
-    function atualizarGraficos() {
-      if (pedidosProcessados.length === 0) {
+function atualizarGraficos() {
+    // Elemento do cabeçalho
+    const chartHeader = document.querySelector('.chart-header');
+    
+    // Limpa o conteúdo anterior
+    chartHeader.innerHTML = '<div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>';
+    
+    // Verificação de dados
+    if (pedidosProcessados.length === 0) {
         document.querySelectorAll('.chart-container').forEach(container => {
-          container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
+            container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
         });
-        document.querySelector('.chart-header').innerHTML += `
+        
+        // Adiciona botão mesmo sem dados (opcional)
+        chartHeader.innerHTML += `
+            <button onclick="analisarTendenciasIA()" class="btn btn-outline" disabled>
+                <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+            </button>
+        `;
+        return;
+    }
+    
+    // Adiciona botão funcional quando há dados
+    chartHeader.innerHTML += `
         <button onclick="analisarTendenciasIA()" class="btn btn-outline">
             <i class="fas fa-chart-line"></i> Analisar Tendências com IA
         </button>
     `;
-}
-        return;
-      }
-      
-      const tipoFiltro = document.getElementById('filtroGrafico').value;
-      let dados = agruparPorSKU(pedidosProcessados);
-      
-      // Aplicar filtro
-      if (tipoFiltro === 'top10') {
+    
+    // Processamento dos dados
+    const tipoFiltro = document.getElementById('filtroGrafico').value;
+    let dados = agruparPorSKU(pedidosProcessados);
+    
+    // Aplicar filtro
+    if (tipoFiltro === 'top10') {
         dados.sort((a, b) => b.diferencaPercentual - a.diferencaPercentual);
         dados = dados.slice(0, 10);
-      } else if (tipoFiltro === 'bottom10') {
+    } else if (tipoFiltro === 'bottom10') {
         dados.sort((a, b) => a.diferencaPercentual - b.diferencaPercentual);
         dados = dados.slice(0, 10);
-      }
-      
-      criarGraficoBarras(dados);
-      criarGraficoPizza(dados);
     }
+    
+    // Criar gráficos
+    criarGraficoBarras(dados);
+    criarGraficoPizza(dados);
+}
 
     function agruparPorSKU(pedidos) {
       const agrupados = {};
