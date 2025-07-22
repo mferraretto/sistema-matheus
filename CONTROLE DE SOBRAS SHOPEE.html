@@ -633,7 +633,7 @@
     
     <!-- Barra de navegação por abas -->
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="trocarAba('importar')">
+      <button class="tab-btn active" onclick="trocarAba('ar')">
         <i class="fas fa-box-open"></i> Conferir Pedidos
       </button>
       <button class="tab-btn" onclick="trocarAba('metas')">
@@ -955,28 +955,31 @@
         document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
       });
       
-      // Configurações importantes para a conexão
-      db.settings({
-        experimentalForceLongPolling: true
-      });
-      
-      // Habilita persistência offline
-      firebase.firestore().enablePersistence()
-        .catch((err) => {
-          if (err.code == 'failed-precondition') {
-            console.warn("Persistência offline não suportada em múltiplas abas");
-          } else if (err.code == 'unimplemented') {
-            console.warn("Persistência offline não disponível no navegador");
-          }
-        });
-      
-      // Verifica conexão
-      verificarConexao();
-      
-    } catch (error) {
-      console.error("Erro ao inicializar Firebase:", error);
-      mostrarErroFirebase(error);
+     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getFirestore,
+  enableIndexedDbPersistence,
+  initializeFirestore
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+// Inicialização
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+
+// Para usar configurações avançadas (como forceLongPolling):
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true
+});
+
+// Persistência offline
+enableIndexedDbPersistence(db)
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn("❗ Persistência offline não suportada em múltiplas abas");
+    } else if (err.code === 'unimplemented') {
+      console.warn("❗ Persistência offline não disponível no navegador");
     }
+  });
+
 
    // Carregamento de dados acontece após autenticação
 
