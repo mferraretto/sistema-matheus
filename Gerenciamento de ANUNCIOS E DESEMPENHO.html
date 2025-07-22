@@ -452,12 +452,17 @@ function limparUndefined(obj) {
           break;
 
         case "frete":
-          v.peso = linha["Peso do Produto/kg"];
-          v.comprimento = linha["Comprimento"];
-          v.largura = linha["Largura"];
-          v.altura = linha["Altura"];
-          v.taxaFrete = linha["Taxa de frete"];
-          break;
+  p.peso = linha["Peso (kg)"] || linha["Peso do Produto/kg"];
+  p.comprimento = linha["Comprimento (cm)"] || linha["Comprimento"];
+  p.largura = linha["Largura (cm)"] || linha["Largura"];
+  p.altura = linha["Altura (cm)"] || linha["Altura"];
+  p.taxaFrete = parseFloat(
+    linha["Taxa de frete (R$)"] ||
+    linha["Taxa de frete"] ||
+    0
+  );
+  break;
+
 
         case "midia":
           p.categoria = linha["Categoria"];
