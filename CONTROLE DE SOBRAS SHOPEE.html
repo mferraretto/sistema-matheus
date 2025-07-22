@@ -1041,19 +1041,25 @@
       }
     }
     
-    function atualizarPrecoMinimo() {
-      const sku = document.getElementById('metaSku').value.trim();
-      const preco = produtos[sku];
-      const info = document.getElementById('precoMinimoInfo');
-      if (!info) return;
-      if (preco) {
-        info.textContent = `Preço Mínimo: R$ ${parseFloat(preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        info.style.color = '#06d6a0';
-      } else {
-        info.textContent = '';
-      }
-    }
+   function atualizarPrecoMinimo() {
+  const sku = document.getElementById('metaSku').value.trim();
+  const custo = produtos[sku]; // usa o campo `custo`
+  const info = document.getElementById('precoMinimoInfo');
+  const metaInput = document.getElementById('metaValor');
 
+  if (!info || !metaInput) return;
+
+  if (custo) {
+    const valorFormatado = parseFloat(custo).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    info.textContent = `Custo (usado como meta): R$ ${valorFormatado}`;
+    info.style.color = '#06d6a0';
+
+    metaInput.value = parseFloat(custo).toFixed(2); // preencher automaticamente o campo de meta
+  } else {
+    info.textContent = '';
+    metaInput.value = '';
+  }
+}
     // =============================================
     // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
     // =============================================
@@ -1090,7 +1096,7 @@
 produtos[data.sku] = data.custo;
           if (datalist) {
             const opt = document.createElement('option');
-            const preco = data.precoMinimo ? parseFloat(data.precoMinimo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
+const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
             opt.value = data.sku;
             opt.label = `${data.sku} - R$ ${preco}`;
             datalist.appendChild(opt);
