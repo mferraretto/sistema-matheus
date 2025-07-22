@@ -983,7 +983,34 @@
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
     // =============================================
-    
+    async function consultarDeepSeek(prompt) {
+    const apiKey = "sk-2ada97f70b3b4ef89efc228801335b93";
+    const url = "https://api.deepseek.com/chat";
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na API: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error("Erro ao consultar DeepSeek:", error);
+        throw error;
+    }
+}
     function verificarConexao() {
       firebase.firestore().enableNetwork()
         .then(() => {
@@ -1349,7 +1376,41 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         valorInput.focus();
         return;
       }
-      
+    if (!produtos[sku]) {
+    const usarIA = confirm("SKU não cadastrado. Deseja uma sugestão de meta via IA?");
+    
+    if (usarIA) {
+        try {
+            const categoria = prompt("Informe a categoria do produto:");
+            if (categoria === null) return;
+            
+            const custo = prompt("Informe o custo do produto:");
+            if (custo === null) return;
+            
+            const margem = prompt("Informe a margem esperada (%):");
+            if (margem === null) return;
+            
+            const concorrentes = prompt("Informe o preço médio dos concorrentes:");
+            if (concorrentes === null) return;
+
+            const promptText = `Sugira uma meta de sobra para: ${categoria} | Custo: R$${custo} | Margem: ${margem}% | Concorrentes: ${concorrentes}`;
+            
+            const resposta = await consultarDeepSeek(promptText);
+            const match = resposta.match(/R\$\s*([\d.,]+)/);
+            const valorSugerido = match ? parseFloat(match[1].replace('.', '').replace(',', '.')) : null;
+            
+            if (valorSugerido && !isNaN(valorSugerido)) {
+                valorInput.value = valorSugerido.toFixed(2);
+                mostrarSucesso(`Sugestão da IA: R$ ${valorSugerido.toFixed(2)}`);
+            } else {
+                mostrarErro("Não consegui extrair o valor. Resposta completa: " + resposta);
+            }
+        } catch (error) {
+            mostrarErro(`Erro na consulta: ${error.message}`);
+        }
+        return;
+    }
+    }
       try {
         toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
         
@@ -1677,13 +1738,70 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
           ${diferencaHTML}
         </div>
       `;
-      
+        document.getElementById('totalSobra').innerHTML += `
+        <div style="margin-top: 1.5rem;">
+            <button onclick="analisarSobrasComIA()" class="btn btn-primary" id="btnAnalisarIA">
+                <i class="fas fa-robot"></i> Analisar Sobras com IA
+            </button>
+        </div>
+    `;
+    
+    // Salvar dados para análise posterior
+    window.dadosParaAnalise = {
+        pedidos: pedidosProcessados,
+        resumo: {
+            totalSobra,
+            esperadoTotal,
+            media
+        }
+    };
+}
       // Atualizar gráficos se estiver na aba
       if (document.getElementById('graficos').classList.contains('active')) {
         atualizarGraficos();
       }
     }
+async function analisarSobrasComIA() {
+    const btn = document.getElementById('btnAnalisarIA');
+    const originalText = btn.innerHTML;
+    
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
+        btn.disabled = true;
 
+        // Preparar prompt com dados resumidos
+        const prompt = `Analise estes dados de sobras de estoque da Shopee:
+${JSON.stringify(window.dadosParaAnalise, null, 2)}
+
+Sugestões:
+1. Identifique os 3 SKUs com maior risco de excesso de estoque
+2. Sugira ajustes nas metas com base no histórico
+3. Alerta sobre produtos com desempenho consistentemente abaixo da meta
+4. Recomende ações para otimizar o estoque
+
+Formato a resposta em tópicos curtos e diretos.`;
+
+        const resposta = await consultarDeepSeek(prompt);
+        
+        // Exibir resultado
+        document.getElementById('totalSobra').innerHTML += `
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <i class="fas fa-robot"></i>
+                    <h3>Análise Preditiva de Estoque</h3>
+                </div>
+                <div style="padding: 1.5rem; background: #f8f9fa; border-radius: 0 0 12px 12px;">
+                    <pre style="white-space: pre-wrap;">${resposta}</pre>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        mostrarErro(`Erro na análise: ${error.message}`);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
     
     function filtrarPorSKU() {
       const filtro = document.getElementById("filtroSKU").value.toLowerCase();
@@ -1722,6 +1840,12 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         document.querySelectorAll('.chart-container').forEach(container => {
           container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
         });
+        document.querySelector('.chart-header').innerHTML += `
+        <button onclick="analisarTendenciasIA()" class="btn btn-outline">
+            <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+        </button>
+    `;
+}
         return;
       }
       
@@ -1763,7 +1887,12 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
       return Object.values(agrupados).map(item => {
         const diferenca = item.totalSobra - item.totalMeta;
         const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
-        
+          document.querySelector('.chart-header').innerHTML += `
+        <button onclick="analisarTendenciasIA()" class="btn btn-outline">
+            <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+        </button>
+    `;
+}
         return {
           ...item,
           diferenca,
@@ -1771,7 +1900,37 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         };
       });
     }
+async function analisarTendenciasIA() {
+    try {
+        const prompt = `Analise estes dados de desempenho de produtos:
+${JSON.stringify(pedidosProcessados.slice(0, 50), null, 2)}
 
+Identifique:
+1. Tendências sazonais
+2. Produtos com crescimento/declínio consistente
+3. Sugestões de ajuste de estoque
+4. Previsão para próxima semana
+
+Responda em tópicos curtos e diretos.`;
+
+        const resposta = await consultarDeepSeek(prompt);
+        
+        // Exibir resultado
+        document.querySelector('.chart-header').innerHTML += `
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Análise de Tendências</h3>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <pre style="white-space: pre-wrap;">${resposta}</pre>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        mostrarErro(`Erro na análise de tendências: ${error.message}`);
+    }
+}
     function criarGraficoBarras(dados) {
       const ctx = document.getElementById('graficoBarras').getContext('2d');
       
