@@ -368,6 +368,10 @@
       const count = Object.keys(window.produtos).length;
       document.getElementById('contador-produtos').textContent = `${count} produto${count !== 1 ? 's' : ''}`;
     }
+    
+function limparUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+}
 
     // Process spreadsheets
    window.processarPlanilha = function(file, tipo) {
@@ -510,7 +514,7 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-        await setDoc(ref, dadosCompletos);
+await setDoc(ref, limparUndefined(dadosCompletos));
 
         if (registrarHistorico) {
           await addDoc(collection(db, "atualizacoes"), {
@@ -533,9 +537,9 @@ window.salvarNoFirebase = async () => {
         if (variante.dataReferencia) {
           const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${variante.dataReferencia}`);
           const { dataReferencia, ...metricas } = variante;
-          await setDoc(desempenhoRef, metricas);
+await setDoc(desempenhoRef, limparUndefined(metricas));
         } else {
-          await setDoc(varianteRef, variante);
+await setDoc(varianteRef, limparUndefined(variante));
         }
       }
     }
