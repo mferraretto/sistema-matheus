@@ -645,6 +645,9 @@
       <button class="tab-btn" onclick="trocarAba('historico')">
         <i class="fas fa-history"></i> Histórico
       </button>
+      <button class="tab-btn" onclick="trocarAba('faturamento')">
+  <i class="fas fa-cash-register"></i> Faturamento Diário
+</button>
     </div>
 
     <!-- Aba de Importação/Conferência -->
@@ -1654,6 +1657,7 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
       }
     }
 
+    
     function filtrarPorSKU() {
       const filtro = document.getElementById("filtroSKU").value.toLowerCase();
       const tipo = document.getElementById("tipoFiltro").value;
@@ -1676,6 +1680,23 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         }
       });
     }
+<div id="faturamento" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-file-import"></i>
+      <h3>Importar Planilha de Vendas</h3>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="form-control" />
+      </div>
+      <button onclick="importarFaturamento()" class="btn btn-primary">
+        <i class="fas fa-upload"></i> Importar
+      </button>
+    </div>
+    <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
+  </div>
+</div>
 
     function limparFiltros() {
       document.getElementById("filtroSKU").value = "";
@@ -1865,6 +1886,81 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         }
       });
     }
+window.importarFaturamento = async function () {
+  const input = document.getElementById("inputFaturamento");
+  const file = input.files[0];
+  if (!file) return mostrarErro("Selecione um arquivo para importar.");
+
+  const reader = new FileReader();
+  reader.onload = async function (e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      let dataReferencia = prompt("Informe a data da planilha (formato YYYY-MM-DD):");
+      if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
+        return mostrarErro("Data inválida.");
+      }
+
+      const ref = db.collection("faturamento").doc(dataReferencia);
+      const doc = await ref.get();
+
+      let operacao = "salvar";
+      if (doc.exists) {
+        operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
+      }
+
+      let bruto = 0, taxas = 0;
+
+      rows.forEach((row) => {
+        const status = (row["Status do pedido"] || "").toLowerCase();
+        if (status.includes("cancelado") || status.includes("não pago")) return;
+
+        const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
+        const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
+        const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
+        const comissao = parseFloat(row["Taxa de comissão"]) || 0;
+        const servico = parseFloat(row["Taxa de serviço"]) || 0;
+
+        bruto += subtotal + reembolso;
+        taxas += cupom + comissao + servico;
+      });
+
+      const liquido = bruto - taxas;
+
+      if (operacao === "somar" && doc.exists) {
+        const anterior = doc.data();
+        bruto += anterior.valorBruto || 0;
+        taxas += anterior.taxasPlataforma || 0;
+      }
+
+      await ref.set({
+        valorBruto: bruto,
+        taxasPlataforma: taxas,
+        valorLiquido: liquido,
+        atualizadoEm: new Date(),
+        uid: usuarioLogado.uid
+      });
+
+      document.getElementById("resultadoFaturamento").innerHTML = `
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i>
+          Faturamento de <strong>${dataReferencia}</strong> registrado com sucesso.<br>
+          <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
+          <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
+          <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}
+        </div>
+      `;
+    } catch (err) {
+      mostrarErro("Erro ao importar: " + err.message);
+      console.error(err);
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+};
 
     // =============================================
     // FUNÇÕES DE EXPORTAÇÃO
