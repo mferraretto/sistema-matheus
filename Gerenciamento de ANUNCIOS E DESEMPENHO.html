@@ -391,8 +391,9 @@ function limparUndefined(obj) {
     }
 
     for (const linha of dados) {
-      const id = linha["ID do Produto"] || linha["ID do Item"];
-      const varianteId = linha["Variante Identificador"] || "unico";
+      const id = linha["ID do Produto"] || linha["ID do Item"] || linha["Id Produto"] || linha["Item ID"];
+const varianteId = linha["Variante Identificador"] || linha["ID da Variação"] || linha["SKU"] || linha["SKU da Variação"] || "unico";
+
 
       if (!id || !varianteId) continue;
 
@@ -430,13 +431,13 @@ function limparUndefined(obj) {
           v.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
           v.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
           break;
-        case "vendas":
-          v.preco = linha["Preço"];
-          v.estoque = linha["Estoque do vendedor"] ?? 0;
-          v.gtin = linha["GTIN (EAN)"];
-          v.skuVariante = linha["SKU"];
-          v.nomeVariante = linha["Nome"];
-          break;
+     case "vendas":
+  v.preco = parseFloat(linha["Preço"] || linha["preco"] || linha["Valor"] || linha["Valor da Variação"] || 0);
+  v.estoque = parseInt(linha["Estoque do vendedor"] || linha["Estoque"] || 0);
+  v.gtin = linha["GTIN (EAN)"] || linha["gtin"] || linha["Código EAN"];
+  v.skuVariante = linha["SKU"] || linha["sku"] || linha["Código da Variação"];
+  v.nomeVariante = linha["Nome"] || linha["Nome da Variação"] || linha["Variação"] || linha["Modelo"] || "";
+  break;
         case "basica":
           p.nome = linha["Nome do Produto"] || p.nome;
           p.descricao = linha["Descrição do Produto"];
