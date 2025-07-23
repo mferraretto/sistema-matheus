@@ -2314,26 +2314,31 @@ async function mostrarDetalhesFaturamento(dataRef) {
     detalhesEl.style.display = "none";
     return;
   }
-  detalhesEl.innerHTML = "🔄 Carregando...";
+
+  detalhesEl.innerHTML = `<div class="text-sm text-gray-500">🔄 Carregando...</div>`;
   detalhesEl.style.display = "block";
 
   const ref = db.collection("faturamento").doc(dataRef).collection("lojas");
   const snap = await ref.get();
+
   let html = "";
   snap.forEach(doc => {
     const d = doc.data();
-    html += `<div style="border-top:1px dashed #999;padding:2px">
-      <strong>${d.loja}:</strong> 
-      Bruto: R$ ${d.valorBruto?.toLocaleString('pt-BR')} | 
-      Líquido: R$ ${d.valorLiquido?.toLocaleString('pt-BR')} | 
-      Vendas: ${d.qtdVendas}
-    </div>`;
+    const loja = d.loja || "Desconhecida";
+    const bruto = d.valorBruto?.toLocaleString("pt-BR") || "0,00";
+    const liquido = d.valorLiquido?.toLocaleString("pt-BR") || "0,00";
+    const vendas = d.qtdVendas || 0;
+
+    html += `
+      <div class="mt-1 text-sm text-gray-800 border-t pt-1">
+        <strong>${loja}</strong>: Bruto R$ ${bruto} | Líquido R$ ${liquido} | Vendas: ${vendas}
+      </div>
+    `;
   });
+
   detalhesEl.innerHTML = html;
 }
-  document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]")
-    .addEventListener("click", carregarRegistrosFaturamento);
-    
+
     async function excluirFaturamento(data) {
   if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
   await db.collection("faturamento").doc(data).delete();
