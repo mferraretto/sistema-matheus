@@ -891,31 +891,31 @@
     </div>
     <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
      </div>
-  <!-- 📋 Aba de Registro de Faturamento -->
-<div id="registroFaturamento" class="tab-content">
-  <div class="card">
+  <div id="registroFaturamento" class="tab-content">
+</div>
+  </div>
+ <div class="card">
     <div class="card-header">
       <i class="fas fa-calendar-alt"></i>
       <h3>Registros de Faturamento Diário</h3>
-    </div>
-
-    <!-- Filtro por mês -->
-    <div class="mb-4 px-4">
-      <label for="filtroMes">📆 Filtrar por mês:</label>
-      <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
-    </div>
-
-    <!-- Botão de exportar -->
-    <div class="px-4">
-      <button onclick="exportarFaturamentoExcel()" class="btn btn-success mb-3">
-        📥 Exportar Excel
-      </button>
-    </div>
-
-    <!-- Lista dos cards de faturamento -->
-    <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
-  </div>
+       <div class="mb-4 px-4">
+  <label for="filtroMes">📆 Filtrar por mês:</label>
+  <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
 </div>
+
+<div class="px-4">
+  <button onclick="exportarFaturamentoExcel()" class="btn btn-success mb-3">
+    📥 Exportar Excel
+  </button>
+    </div>
+<div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
+</div>
+</div>
+ <div id="registroFaturamento" class="tab-content">
+  <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
+  
+</div>
+</div
 
 
 
