@@ -722,7 +722,12 @@
             <tbody></tbody>
           </table>
         </div>
-        
+        <div class="mt-4">
+  <button onclick="analisarSobrasComIA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+    🧠 Analisar Sobras com IA
+  </button>
+  <div id="resultadoIA" class="mt-4 bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap text-sm text-gray-800"></div>
+</div>
         <div id="totalSobra" style="margin-top: 1.5rem;"></div>
         
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
@@ -2221,6 +2226,47 @@ document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]").a
         console.error("Erro ao exportar JSON:", error);
       }
     }
+    async function analisarSobrasComIA() {
+  try {
+    const linhas = document.querySelectorAll("#tabelaSobras tbody tr");
+    let dados = [];
+
+    linhas.forEach(linha => {
+      const colunas = linha.querySelectorAll("td");
+      if (colunas.length >= 5) {
+        dados.push({
+          sku: colunas[0].innerText.trim(),
+          nome: colunas[1].innerText.trim(),
+          vendido: parseInt(colunas[2].innerText) || 0,
+          sobra: parseInt(colunas[3].innerText) || 0,
+          data: colunas[4].innerText.trim()
+        });
+      }
+    });
+
+    const prompt = `
+Você é um especialista em controle de estoque e sobras da Shopee.
+
+Receberá uma lista com SKUs, nomes, vendidos e sobras.
+
+Analise:
+🔹 1. Valide se a sobra registrada faz sentido
+🔹 2. Detecte padrões incomuns (ex: sobra alta sem venda)
+🔹 3. Gere resumo por SKU com observações
+🔹 4. Sugira ações (ex: revisar, repor, ignorar)
+
+Dados:
+${JSON.stringify(dados, null, 2)}
+`;
+
+    const resposta = await consultarDeepSeek(prompt);
+    document.getElementById("resultadoIA").innerText = resposta;
+  } catch (erro) {
+    console.error("Erro IA sobras:", erro);
+    document.getElementById("resultadoIA").innerText = "Erro ao analisar sobras com IA.";
+  }
+}
+
   </script>
 </body>
 </html>
