@@ -2609,7 +2609,7 @@ Gere um resumo inteligente com insights práticos.
   }
 }
 window.verDetalhesDia = async function (dataDoc) {
-  const ref = db.collection(`skusVendidos/${dataDoc}/lista`);
+  const ref = db.collection(`skusVendidos/${dataDoc}/lista`); // ✅ Correto para compat
   const snap = await ref.get();
 
   const agrupadoPorLoja = {};
