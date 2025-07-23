@@ -2154,7 +2154,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       const linhas = document.querySelectorAll("#resultado tbody tr");
       
       linhas.forEach(linha => {
-        .children[1].textContent.toLowerCase();
+        const sku = linha.children[1].textContent.toLowerCase();
 
         if (!filtro) {
           linha.style.display = "";
@@ -2467,20 +2467,17 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
   qtdVendas += anterior.qtdVendas || 0;
 }
       // Agrupar SKUs vendidos (Número de referência) e somar quantidades
-// Agrupar SKUs vendidos (Número de referência) e somar quantidades
-// Agrupar SKUs vendidos (Número de referência) e somar quantidades
 const skusVendidos = {};
 rows.forEach((row) => {
   const status = (row["Status do pedido"] || "").toLowerCase();
   if (status.includes("cancelado") || status.includes("não pago")) return;
 
-  const sku = row["Número de referência SKU"];
+const sku = row["Número de referência SKU"];
   if (!sku) return;
 
   if (!skusVendidos[sku]) skusVendidos[sku] = 0;
   skusVendidos[sku]++;
 });
-
 
 // Salvar os SKUs vendidos no Firestore em skusVendidos/{data}/lista/{sku}
 const refSku = db.collection("skusVendidos").doc(dataReferencia);
@@ -2844,7 +2841,6 @@ window.verDetalhesDia = async function (dataDoc) {
 
   const agrupadoPorLoja = {};
   let sobraEsperada = 0;
-  const skusIgnorados = []; // <== Novo
 
   for (const doc of snap.docs) {
     const { sku, total, loja } = doc.data();
@@ -2854,15 +2850,11 @@ window.verDetalhesDia = async function (dataDoc) {
     // 🔍 Buscar CUSTO do SKU na coleção "products"
     try {
       const produtosRef = db.collection("products");
-      const skuLimpo = sku.trim(); // <- remove espaços extras
-      const querySnap = await produtosRef.where("sku", "==", skuLimpo).limit(1).get();
+      const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
       if (!querySnap.empty) {
         const dados = querySnap.docs[0].data();
         const custo = Number(dados.custo || 0);
         sobraEsperada += (total || 0) * custo;
-        console.log(`SKU: ${sku} | Quantidade: ${total} | Custo: ${custo} | Parcial: R$ ${(total * custo).toFixed(2)}`);
-      } else {
-        skusIgnorados.push(sku); // <- Adiciona SKU que não foi achado
       }
     } catch (e) {
       console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
@@ -2894,13 +2886,6 @@ window.verDetalhesDia = async function (dataDoc) {
   html += `<hr><strong>📦 Sobra Esperada:</strong> R$ ${sobraEsperada.toFixed(2)}<br>`;
   html += `<strong>💰 Valor Líquido Real:</strong> R$ ${valorLiquido.toFixed(2)}<br>`;
 
-  // 🛑 SKUs ignorados (sem custo)
-  if (skusIgnorados.length > 0) {
-    html += `<br><div style="margin-top: 1rem; padding: 0.8rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
-      <strong>⚠️ SKUs sem custo encontrado:</strong><br>${skusIgnorados.join("<br>")}
-    </div>`;
-  }
-
   Swal.fire({
     title: 'Detalhamento por Loja',
     html: html,
@@ -2908,7 +2893,6 @@ window.verDetalhesDia = async function (dataDoc) {
     confirmButtonText: 'Fechar'
   });
 };
-
 
 
 
