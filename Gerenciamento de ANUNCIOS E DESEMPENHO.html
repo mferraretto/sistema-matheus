@@ -943,7 +943,16 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
 </button>
         <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
       </div>
+      <input type="hidden" id="nomeProduto">
+<input type="hidden" id="tituloProduto">
+<input type="hidden" id="categoriaProduto">
+<input type="hidden" id="beneficiosProduto">
+<input type="hidden" id="visitasProduto">
+<input type="hidden" id="cliquesProduto">
+<input type="hidden" id="vendasProduto">
+<input type="hidden" id="estoqueProduto">
     `;
+    
 
     document.getElementById("modalDetalhes").style.display = "flex";
   } catch (error) {
