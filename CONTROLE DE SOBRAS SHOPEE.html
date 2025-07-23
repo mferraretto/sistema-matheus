@@ -2610,17 +2610,41 @@ Gere um resumo inteligente com insights práticos.
   }
 }
 window.verDetalhesDia = async function (dataDoc) {
-  const ref = db.collection(`skusVendidos/${dataDoc}/lista`); // ✅ Correto para compat
+  const ref = db.collection(`skusVendidos/${dataDoc}/lista`);
   const snap = await ref.get();
 
   const agrupadoPorLoja = {};
+  let sobraEsperada = 0;
 
-  snap.forEach(doc => {
+  for (const doc of snap.docs) {
     const { sku, total, loja } = doc.data();
     if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
     agrupadoPorLoja[loja].push({ sku, total });
-  });
 
+    // 🔍 Buscar meta de sobra por SKU na coleção "products"
+    try {
+      const produtoSnap = await db.collection("products").doc(sku).get();
+      if (produtoSnap.exists) {
+        const meta = produtoSnap.data().meta || 0;
+        sobraEsperada += (total || 0) * meta;
+      }
+    } catch (e) {
+      console.warn(`Erro ao buscar meta do SKU ${sku}:`, e);
+    }
+  }
+
+  // 🔍 Buscar valor líquido do dia
+  let valorLiquido = 0;
+  try {
+    const fatSnap = await db.collection("faturamento").doc(dataDoc).get();
+    if (fatSnap.exists) {
+      valorLiquido = fatSnap.data().valorLiquido || 0;
+    }
+  } catch (e) {
+    console.warn("Erro ao buscar valor líquido:", e);
+  }
+
+  // 🧾 Montar HTML de exibição
   let html = `<strong>📅 Detalhes de ${dataDoc}</strong><br><br>`;
   for (const loja in agrupadoPorLoja) {
     html += `<strong>🏪 Loja: ${loja}</strong><br>`;
@@ -2630,6 +2654,9 @@ window.verDetalhesDia = async function (dataDoc) {
     html += `<br>`;
   }
 
+  html += `<hr><strong>📦 Sobra Esperada:</strong> R$ ${sobraEsperada.toFixed(2)}<br>`;
+  html += `<strong>💰 Valor Líquido Real:</strong> R$ ${valorLiquido.toFixed(2)}<br>`;
+
   Swal.fire({
     title: 'Detalhamento por Loja',
     html: html,
@@ -2637,6 +2664,7 @@ window.verDetalhesDia = async function (dataDoc) {
     confirmButtonText: 'Fechar'
   });
 };
+
 
     async function exportarFaturamentoExcel() {
   const snap = await db.collection("faturamento").get();
