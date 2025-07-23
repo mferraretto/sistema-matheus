@@ -2429,19 +2429,21 @@ window.importarFaturamento = async function () {
       if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
         return mostrarErro("Data inválida.");
       }
-  let loja = prompt("Informe o nome da loja:");
-if (!loja || loja.length < 2) {
-  return mostrarErro("Nome da loja inválido.");
-}
+
+      let loja = prompt("Informe o nome da loja:");
+      if (!loja || loja.length < 2) {
+        return mostrarErro("Nome da loja inválido.");
+      }
+
       const ref = db.collection("faturamento").doc(dataReferencia).collection("lojas").doc(loja);
-const doc = await ref.get();
-      
+      const doc = await ref.get();
+
       let operacao = "salvar";
       if (doc.exists) {
         operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
       }
 
-let bruto = 0, taxas = 0, qtdVendas = 0;
+      let bruto = 0, taxas = 0, qtdVendas = 0;
 
       rows.forEach((row) => {
         const status = (row["Status do pedido"] || "").toLowerCase();
@@ -2460,74 +2462,78 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
 
       const liquido = bruto - taxas;
 
-     if (operacao === "somar" && doc.exists) {
-  const anterior = doc.data();
-  bruto += anterior.valorBruto || 0;
-  taxas += anterior.taxasPlataforma || 0;
-  qtdVendas += anterior.qtdVendas || 0;
-}
-      // Agrupar SKUs vendidos (Número de referência) e somar quantidades
-const skusVendidos = {};
-rows.forEach((row) => {
-  const status = (row["Status do pedido"] || "").toLowerCase();
-  if (status.includes("cancelado") || status.includes("não pago")) return;
+      if (operacao === "somar" && doc.exists) {
+        const anterior = doc.data();
+        bruto += anterior.valorBruto || 0;
+        taxas += anterior.taxasPlataforma || 0;
+        qtdVendas += anterior.qtdVendas || 0;
+      }
 
-  const sku = row["Número de referência SKU"] || "";
-  if (!sku) return;
+      // ✅ Agrupar SKUs vendidos usando apenas a coluna exata
+      const skusVendidos = {};
+      rows.forEach((row) => {
+        const status = (row["Status do pedido"] || "").toLowerCase();
+        if (status.includes("cancelado") || status.includes("não pago")) return;
 
-  if (!skusVendidos[sku]) skusVendidos[sku] = 0;
-  skusVendidos[sku]++;
-});
+        const headers = Object.keys(row);
+        const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
 
-// Salvar os SKUs vendidos no Firestore em skusVendidos/{data}/lista/{sku}
-const refSku = db.collection("skusVendidos").doc(dataReferencia);
-await refSku.set({ data: dataReferencia }); // garante que o doc pai existe
+        const sku = headerSKU ? row[headerSKU] : null;
+        if (!sku) return;
 
-const batch = db.batch();
-for (const [sku, total] of Object.entries(skusVendidos)) {
-  const skuId = String(sku).replace(/[.#$/\[\]]/g, "_"); // <- garante ID válido
-  const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
-  batch.set(docRef, {
-    sku: sku,
-    total: total,
-    data: dataReferencia,
-    loja: loja,
-    uid: usuarioLogado.uid
-  });
-}
+        if (!skusVendidos[sku]) skusVendidos[sku] = 0;
+        skusVendidos[sku]++;
+      });
+
+      // Salvar SKUs vendidos
+      const refSku = db.collection("skusVendidos").doc(dataReferencia);
+      await refSku.set({ data: dataReferencia }); // garante doc pai
+
+      const batch = db.batch();
+      for (const [sku, total] of Object.entries(skusVendidos)) {
+        const skuId = String(sku).replace(/[.#$/\[\]]/g, "_"); // ID válido
+        const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
+        batch.set(docRef, {
+          sku: sku,
+          total: total,
+          data: dataReferencia,
+          loja: loja,
+          uid: usuarioLogado.uid
+        });
+      }
+
       console.log("SKUs a salvar:", skusVendidos);
-await batch.commit();
+      await batch.commit();
 
-   await ref.set({
-  valorBruto: bruto,
-  taxasPlataforma: taxas,
-  valorLiquido: liquido,
-  qtdVendas: qtdVendas,
-  loja: loja,
-  atualizadoEm: new Date(),
-  uid: usuarioLogado.uid
-});
+      await ref.set({
+        valorBruto: bruto,
+        taxasPlataforma: taxas,
+        valorLiquido: liquido,
+        qtdVendas: qtdVendas,
+        loja: loja,
+        atualizadoEm: new Date(),
+        uid: usuarioLogado.uid
+      });
 
-// Salvar também o resumo no documento pai do dia
-await db.collection("faturamento").doc(dataReferencia).set({
-  valorBruto: bruto,
-  valorLiquido: liquido,
-  taxasPlataforma: taxas,
-  vendas: qtdVendas,
-  atualizadoEm: new Date(),
-  uid: usuarioLogado.uid
-}, { merge: true });
-      
-document.getElementById("resultadoFaturamento").innerHTML = `
-  <div class="alert alert-success">
-    <i class="fas fa-check-circle"></i>
-    Faturamento de <strong>${dataReferencia}</strong> da loja <strong>${loja}</strong> registrado com sucesso.<br>
-    <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
-    <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
-    <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}<br>
-    <strong>Qtd. Vendas:</strong> ${qtdVendas}
-  </div>
-`;
+      await db.collection("faturamento").doc(dataReferencia).set({
+        valorBruto: bruto,
+        valorLiquido: liquido,
+        taxasPlataforma: taxas,
+        vendas: qtdVendas,
+        atualizadoEm: new Date(),
+        uid: usuarioLogado.uid
+      }, { merge: true });
+
+      document.getElementById("resultadoFaturamento").innerHTML = `
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i>
+          Faturamento de <strong>${dataReferencia}</strong> da loja <strong>${loja}</strong> registrado com sucesso.<br>
+          <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
+          <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
+          <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}<br>
+          <strong>Qtd. Vendas:</strong> ${qtdVendas}
+        </div>
+      `;
 
     } catch (err) {
       mostrarErro("Erro ao importar: " + err.message);
@@ -2537,6 +2543,7 @@ document.getElementById("resultadoFaturamento").innerHTML = `
 
   reader.readAsArrayBuffer(file);
 };
+
 
     // =============================================
     // FUNÇÕES DE EXPORTAÇÃO
