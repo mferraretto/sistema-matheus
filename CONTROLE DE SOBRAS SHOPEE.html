@@ -1792,16 +1792,52 @@ async function analisarSobrasComIA() {
         btn.disabled = true;
 
         // Preparar prompt com dados resumidos
-        const prompt = `Analise estes dados de sobras de estoque da Shopee:
+      const prompt = `### ANALISAR DESEMPENHO DE SKUs SHOPEE
+
+Abaixo estão os dados de performance de estoque da Shopee:
 ${JSON.stringify(window.dadosParaAnalise, null, 2)}
 
-Sugestões:
-1. Identifique os 3 SKUs com maior risco de excesso de estoque
-2. Sugira ajustes nas metas com base no histórico
-3. Alerta sobre produtos com desempenho consistentemente abaixo da meta
-4. Recomende ações para otimizar o estoque
+Quero que você atue como um analista profissional de vendas.
 
-Formato a resposta em tópicos curtos e diretos.`;
+**Objetivo:** Gerar um relatório claro, estruturado e com aparência profissional para orientar decisões de estoque e promoção.
+
+**Regras de resposta:**
+- Use **títulos e subtítulos claros** em Markdown.
+- Agrupe os SKUs em 3 seções: 
+  1. SKUs com Alta Performance
+  2. SKUs Próximos à Meta
+  3. SKUs com Baixa Performance
+- Dê **ações sugeridas** para cada grupo.
+- Crie um bloco final com **Resumo das Ações Recomendadas**.
+- Ao final, inclua a **data da análise** e um rodapé como "*Relatório gerado automaticamente por IA de Estoque Shopee*".
+
+**Exemplo de estilo desejado:**
+
+### 📈 Análise de Performance de SKUs - Shopee  
+**📅 Data:** [coloque data aqui]
+
+#### ✅ 1. SKUs com Alta Performance
+- SKU123: descrição...
+- Ações: ...
+
+#### 🟡 2. SKUs Próximos à Meta
+- SKU456: descrição...
+- Ações: ...
+
+#### 🔴 3. SKUs com Baixa Performance
+- SKU789: descrição...
+- Ações: ...
+
+#### 🧠 Resumo de Ações Prioritárias
+1. Ação 1...
+2. Ação 2...
+
+**Próxima revisão sugerida:** daqui a 7 dias
+
+---
+
+Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
+
 
         const resposta = await consultarDeepSeek(prompt);
         
