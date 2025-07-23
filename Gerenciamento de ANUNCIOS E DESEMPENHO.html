@@ -6,18 +6,53 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   
   <style>
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tabs button { padding: 10px 20px; border: none; background: #ccc; cursor: pointer; }
-    .tabs button.active { background: #4CAF50; color: white; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    :root {
+      --primary: #F45C00; /* Laranja Shopee */
+      --primary-dark: #d45100;
+      --base-dark: #1C2B36; /* Azul petróleo escuro */
+      --success: #4CAF50;
+      --error: #F44336;
+      --bg-light: #F5F7FA;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+    }
+    
+    .btn {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      border-radius: 9999px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .btn-secondary {
+      background-color: var(--base-dark);
+      color: white;
+    }
     
     .badge {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
+      padding: 4px 10px;
+      border-radius: 9999px;
       font-size: 12px;
       font-weight: 600;
       margin-left: 5px;
@@ -27,6 +62,231 @@
     .badge-warning { background: #fef9c3; color: #854d0e; }
     .badge-danger { background: #fee2e2; color: #b91c1c; }
     .badge-info { background: #dbeafe; color: #1e40af; }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 20px 24px;
+    }
+    
+    .card-body {
+      padding: 24px;
+    }
+    
+    .sidebar {
+      background-color: var(--base-dark);
+      color: white;
+      height: 100vh;
+      position: fixed;
+      width: 250px;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      transition: all 0.3s ease;
+      overflow-y: auto;
+    }
+    
+    .sidebar-logo {
+      padding: 24px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-menu {
+      padding: 16px 0;
+    }
+    
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      margin: 4px 0;
+      color: rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    .sidebar-link:hover, .sidebar-link.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .sidebar-link i {
+      margin-right: 12px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    .navbar {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      height: 70px;
+      position: fixed;
+      top: 0;
+      left: 250px;
+      right: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      justify-content: space-between;
+    }
+    
+    .main-content {
+      margin-top: 70px;
+      margin-left: 250px;
+      padding: 32px;
+    }
+    
+    .tab-button {
+      font-family: 'Poppins', sans-serif;
+      border-radius: 9999px;
+      padding: 10px 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .tab-button.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 6px rgba(244, 92, 0, 0.2);
+    }
+    
+    .tab-button:not(.active) {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+    
+    .tab-button:not(.active):hover {
+      background: #d1d5db;
+    }
+    
+    .table-container {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .table-header {
+      background: var(--base-dark);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .table-header th {
+      padding: 16px 24px;
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    .table-row {
+      transition: background 0.2s ease;
+    }
+    
+    .table-row:nth-child(even) {
+      background: #f9fafb;
+    }
+    
+    .table-row:hover {
+      background: #f3f4f6;
+    }
+    
+    .table-row td {
+      padding: 16px 24px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .skeleton {
+      animation: pulse 2s infinite;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      border-radius: 8px;
+    }
+    
+    @keyframes pulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .notification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      border-radius: 12px;
+      color: white;
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      z-index: 1000;
+      transform: translateX(150%);
+      animation: slideIn 0.3s forwards, fadeOut 0.3s forwards 4.7s;
+    }
+    
+    .notification.success {
+      background: var(--success);
+    }
+    
+    .notification.error {
+      background: var(--error);
+    }
+    
+    .notification.info {
+      background: var(--primary);
+    }
+    
+    .notification.warning {
+      background: #f59e0b;
+    }
+    
+    @keyframes slideIn {
+      to { transform: translateX(0); }
+    }
+    
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      background-color: var(--base-dark);
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px 12px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+      width: max-content;
+      max-width: 200px;
+      white-space: nowrap;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
     
     .modal {
       display: none;
@@ -43,12 +303,12 @@
     
     .modal-content {
       background: white;
-      border-radius: 8px;
-      padding: 20px;
+      border-radius: 16px;
+      padding: 24px;
       max-width: 90%;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
     
     .sugestao-item {
@@ -57,331 +317,331 @@
     
     .sugestao-item:hover {
       transform: translateY(-3px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
     }
     
-    /* Estilos aprimorados */
-    .header-gradient {
-      background: linear-gradient(135deg, #0f766e 0%, #047857 100%);
+    .grid-cols-import {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
     }
     
-    .nav-gradient {
-      background: linear-gradient(135deg, #0f766e 0%, #047857 100%);
-    }
-    
-    .card-import {
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      transition: all 0.3s ease;
-      border: 1px solid #e5e7eb;
-    }
-    
-    .card-import:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    }
-    
-    .tab-button {
-      transition: all 0.3s ease;
-      border-radius: 8px;
-      font-weight: 500;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .tab-button:hover:not(.active) {
-      transform: translateY(-2px);
-    }
-    
-    .section-header {
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e5e7eb;
-      margin-bottom: 20px;
-    }
-    
-    .data-card {
-      background: #f9fafb;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      padding: 16px;
-      transition: all 0.3s ease;
-    }
-    
-    .data-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    }
-    
-    .table-header {
-      background-color: #f3f4f6;
-    }
-    
-    .table-row:hover {
-      background-color: #f9fafb;
-    }
-    
-    .modal-header {
-      padding-bottom: 12px;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 16px;
-    }
-    
-    .suggestion-card {
-      border-radius: 10px;
+    .import-card {
+      background: white;
+      border-radius: 16px;
       overflow: hidden;
-      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       transition: all 0.3s ease;
     }
     
-    .suggestion-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    .import-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .import-card-header {
+      padding: 20px;
+    }
+    
+    .import-card-body {
+      padding: 0 20px 20px 20px;
     }
   </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 min-h-screen p-4">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header aprimorado -->
-    <header class="text-center mb-8 bg-white rounded-xl shadow-sm p-6">
-      <div class="inline-block p-3 bg-emerald-50 rounded-full mb-4">
-        <i class="fas fa-store text-3xl text-emerald-600"></i>
-      </div>
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">
-        Mentoria Ferraretto - Gerenciamento de Produtos
+<body class="bg-gray-100 text-gray-800">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h1 class="text-xl font-bold flex items-center">
+        <i class="fas fa-store mr-2 text-orange-400"></i>
+        <span>Mentoria Ferraretto</span>
       </h1>
-      <p class="text-gray-600 max-w-2xl mx-auto">Gerencie seus anúncios, importe dados e analise desempenho de forma eficiente e intuitiva</p>
-    </header>
+    </div>
     
-    <!-- Navegação aprimorada -->
-    <nav class="nav-gradient text-white p-4 flex flex-wrap justify-center space-x-4 mb-8 rounded-lg shadow">
-      <a href="index.html" class="hover:underline px-4 py-2 rounded-lg transition hover:bg-emerald-700">Início</a>
-      <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline px-4 py-2 rounded-lg transition hover:bg-emerald-700">Precificação</a>
-      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="bg-emerald-800 hover:bg-emerald-700 px-4 py-2 rounded-lg transition font-medium">Anúncios</a>
-      <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline px-4 py-2 rounded-lg transition hover:bg-emerald-700">Sobras</a>
-      <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline px-4 py-2 rounded-lg transition hover:bg-emerald-700">Custeio</a>
-    </nav>
-
-    <!-- Abas de navegação aprimoradas -->
-    <div class="flex flex-wrap gap-3 mb-6 justify-center bg-white p-3 rounded-xl shadow-sm">
-      <button class="tab-button active px-5 py-3 bg-emerald-600 text-white flex items-center" data-tab="cadastro">
-        <i class="fas fa-file-import mr-3"></i>Cadastro/Atualização
-      </button>
-      <button class="tab-button px-5 py-3 bg-gray-100 hover:bg-gray-200 flex items-center" data-tab="anuncios">
-        <i class="fas fa-list mr-3"></i>Anúncios Salvos
-      </button>
-      <button class="tab-button px-5 py-3 bg-gray-100 hover:bg-gray-200 flex items-center" data-tab="analise">
-        <i class="fas fa-chart-line mr-3"></i>Análise/Sugestão
-      </button>
-      <button class="tab-button px-5 py-3 bg-gray-100 hover:bg-gray-200 flex items-center" data-tab="evolucao">
-        <i class="fas fa-history mr-3"></i>Evolução
-      </button>
+    <div class="sidebar-menu">
+      <a href="index.html" class="sidebar-link">
+        <i class="fas fa-home"></i>
+        <span>Início</span>
+      </a>
+      <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">
+        <i class="fas fa-calculator"></i>
+        <span>🧮 Precificação</span>
+      </a>
+      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link active">
+        <i class="fas fa-bullhorn"></i>
+        <span>📣 Anúncios</span>
+      </a>
+      <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">
+        <i class="fas fa-boxes"></i>
+        <span>📦 Sobras</span>
+      </a>
+      <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="sidebar-link">
+        <i class="fas fa-tools"></i>
+        <span>🛠️ Custeio</span>
+      </a>
+      <a href="#" class="sidebar-link">
+        <i class="fas fa-users"></i>
+        <span>👥 Usuários</span>
+      </a>
     </div>
-
-    <!-- Cadastro/Atualização - Design aprimorado -->
-    <div id="cadastro" class="tab-content active bg-white p-6 rounded-xl shadow">
-      <div class="section-header">
-        <div class="flex items-center">
-          <div class="bg-emerald-100 p-3 rounded-lg mr-4">
-            <i class="fas fa-file-import text-2xl text-emerald-600"></i>
-          </div>
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800">Importar Dados de Produtos</h2>
-            <p class="text-gray-600 mt-1">
-              Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas.
-            </p>
-          </div>
+  </div>
+  
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="flex items-center">
+      <button class="mr-4 text-gray-600 hover:text-gray-900">
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+      <h2 class="text-lg font-bold">Gerenciamento de Anúncios</h2>
+    </div>
+    
+    <div class="flex items-center space-x-6">
+      <button class="tooltip relative">
+        <i class="fas fa-bell text-xl text-gray-600 hover:text-gray-900"></i>
+        <span class="tooltip-text">Notificações</span>
+      </button>
+      
+      <div class="flex items-center">
+        <div class="mr-3 text-right">
+          <div class="font-medium">Admin</div>
+          <div class="text-sm text-gray-600">admin@empresa.com</div>
         </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Card Básico -->
-        <div class="card-import">
-          <div class="flex items-start p-5">
-            <div class="bg-blue-100 p-3 rounded-lg mr-4">
-              <i class="fas fa-info-circle text-blue-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações Básicas</h3>
-              <p class="text-gray-600 text-sm mt-1">Nome, Descrição</p>
-            </div>
-          </div>
-          <div class="px-5 pb-5">
-            <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-          </div>
-        </div>
-
-        <!-- Card Vendas -->
-        <div class="card-import">
-          <div class="flex items-start p-5">
-            <div class="bg-green-100 p-3 rounded-lg mr-4">
-              <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Vendas</h3>
-              <p class="text-gray-600 text-sm mt-1">Preço, Estoque, SKU</p>
-            </div>
-          </div>
-          <div class="px-5 pb-5">
-            <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-100 file:text-green-700 hover:file:bg-green-200" />
-          </div>
-        </div>
-
-        <!-- Card Frete -->
-        <div class="card-import">
-          <div class="flex items-start p-5">
-            <div class="bg-yellow-100 p-3 rounded-lg mr-4">
-              <i class="fas fa-truck text-yellow-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Frete</h3>
-              <p class="text-gray-600 text-sm mt-1">Peso, Dimensões, Taxas</p>
-            </div>
-          </div>
-          <div class="px-5 pb-5">
-            <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-yellow-100 file:text-yellow-700 hover:file:bg-yellow-200" />
-          </div>
-        </div>
-
-        <!-- Card Mídia -->
-        <div class="card-import">
-          <div class="flex items-start p-5">
-            <div class="bg-purple-100 p-3 rounded-lg mr-4">
-              <i class="fas fa-image text-purple-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Informações de Mídia</h3>
-              <p class="text-gray-600 text-sm mt-1">Imagens, Templates, Variações</p>
-            </div>
-          </div>
-          <div class="px-5 pb-5">
-            <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
-          </div>
-        </div>
-
-        <!-- Card Desempenho -->
-        <div class="card-import md:col-span-2">
-          <div class="flex items-start p-5">
-            <div class="bg-red-100 p-3 rounded-lg mr-4">
-              <i class="fas fa-chart-bar text-red-600 text-xl"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
-              <p class="text-gray-600 text-sm mt-1">Métricas de visitas, conversão e vendas</p>
-            </div>
-          </div>
-          <div class="px-5 pb-5">
-            <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
-                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-red-100 file:text-red-700 hover:file:bg-red-200" />
-          </div>
+        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+          <i class="fas fa-user text-gray-600"></i>
         </div>
       </div>
       
-      <div class="mt-8 p-5 bg-emerald-50 rounded-xl border border-emerald-200">
-        <div class="flex items-center mb-3">
-          <i class="fas fa-database text-emerald-600 mr-3 text-lg"></i>
-          <div>
-            <span class="font-semibold">Dados para Salvar:</span>
-            <span id="contador-produtos" class="ml-2 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm">0 produtos</span>
-          </div>
-        </div>
-        <p class="text-sm text-gray-600 mb-4">Após importar as planilhas, clique abaixo para salvar no Firebase</p>
-        <button onclick="salvarNoFirebase()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg shadow flex items-center transition">
-          <i class="fas fa-save mr-3"></i>Salvar no Firebase
-        </button>
-      </div>
+      <button class="btn btn-secondary px-4 py-2">
+        <i class="fas fa-sign-out-alt mr-2"></i> Sair
+      </button>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Tabs Navigation -->
+    <div class="flex flex-wrap gap-3 mb-8">
+      <button class="tab-button active" data-tab="cadastro">
+        <i class="fas fa-file-import mr-2"></i>Cadastro/Atualização
+      </button>
+      <button class="tab-button" data-tab="anuncios">
+        <i class="fas fa-list mr-2"></i>Anúncios Salvos
+      </button>
+      <button class="tab-button" data-tab="analise">
+        <i class="fas fa-chart-line mr-2"></i>Análise/Sugestão
+      </button>
+      <button class="tab-button" data-tab="evolucao">
+        <i class="fas fa-history mr-2"></i>Evolução
+      </button>
     </div>
 
-    <!-- Anúncios Salvos - Design aprimorado -->
-    <div id="anuncios" class="tab-content bg-white p-6 rounded-xl shadow">
-      <div class="section-header">
-        <div class="flex items-center">
-          <div class="bg-blue-100 p-3 rounded-lg mr-4">
-            <i class="fas fa-list text-2xl text-blue-600"></i>
-          </div>
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800">Anúncios Salvos</h2>
-            <p class="text-gray-600 mt-1">Visualize e gerencie todos os anúncios importados</p>
+    <!-- Cadastro/Atualização -->
+    <div id="cadastro" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-file-import text-2xl text-orange-500 mr-3"></i>
+            <h2 class="text-2xl font-bold">Importar Dados de Produtos</h2>
           </div>
         </div>
-      </div>
-      
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <button onclick="carregarAnuncios()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow flex items-center transition">
-          <i class="fas fa-sync-alt mr-3"></i>Recarregar Anúncios
-        </button>
         
-        <div class="relative flex-grow max-w-md">
-          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <i class="fas fa-search text-gray-400"></i>
-          </div>
-          <input type="text" id="campoBusca" placeholder="Buscar por ID, Nome ou SKU..." 
-                 class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-        </div>
-      </div>
+        <div class="card-body">
+          <p class="text-gray-600 mb-6">
+            Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
+          </p>
+          
+          <div class="grid-cols-import">
+            <!-- Card Básico -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-blue-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações Básicas</h3>
+                    <p class="text-gray-600 text-sm">Nome, Descrição</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+            </div>
 
-      <div class="overflow-x-auto rounded-lg border border-gray-200 shadow">
-        <table id="tabelaAnuncios" class="min-w-full divide-y divide-gray-200">
-          <thead class="table-header">
-            <tr>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(0)">ID</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Imagem</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
-              <th class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Ações</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200"></tbody>
-        </table>
-      </div>
-      
-      <div class="mt-4 text-sm text-gray-500 flex items-center">
-        <i class="fas fa-info-circle mr-2 text-gray-400"></i>Clique em "Ver Detalhes" para mais informações do produto
+            <!-- Card Vendas -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-green-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Vendas</h3>
+                    <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+              </div>
+            </div>
+
+            <!-- Card Frete -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-yellow-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-truck text-yellow-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Frete</h3>
+                    <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
+              </div>
+            </div>
+
+            <!-- Card Mídia -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-purple-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-image text-purple-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Mídia</h3>
+                    <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+              </div>
+            </div>
+
+            <!-- Card Desempenho -->
+            <div class="import-card col-span-full">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-red-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-chart-bar text-red-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
+                    <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-database text-blue-500 mr-2"></i>
+              <span class="font-semibold">Dados para Salvar:</span>
+              <span id="contador-produtos" class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">0 produtos</span>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">Após importar as planilhas, clique abaixo para salvar no Firebase</p>
+            <button onclick="salvarNoFirebase()" class="btn btn-primary px-6 py-3 flex items-center">
+              <i class="fas fa-save mr-2"></i>Salvar no Firebase
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Análise/Sugestão - Design aprimorado -->
-    <div id="analise" class="tab-content bg-white p-6 rounded-xl shadow">
-      <div class="section-header">
-        <div class="flex items-center">
-          <div class="bg-purple-100 p-3 rounded-lg mr-4">
-            <i class="fas fa-chart-line text-2xl text-purple-600"></i>
+    <!-- Anúncios Salvos -->
+    <div id="anuncios" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-list text-2xl text-blue-600 mr-3"></i>
+            <h2 class="text-2xl font-bold">Anúncios Salvos</h2>
           </div>
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800">Análise e Sugestões de Otimização</h2>
-            <p class="text-gray-600 mt-1">Identifique oportunidades para melhorar o desempenho dos seus anúncios</p>
+        </div>
+        
+        <div class="card-body">
+          <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <button onclick="carregarAnuncios()" class="btn btn-primary px-4 py-2 flex items-center">
+              <i class="fas fa-sync-alt mr-2"></i>Recarregar Anúncios
+            </button>
+            
+            <div class="relative flex-grow max-w-md">
+              <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+              <input type="text" id="campoBusca" placeholder="Buscar por ID, Nome ou SKU..." 
+                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table id="tabelaAnuncios" class="w-full">
+              <thead class="table-header">
+                <tr>
+                  <th class="cursor-pointer" onclick="ordenarTabela(0)">ID</th>
+                  <th>Imagem</th>
+                  <th class="cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
+                  <th class="cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
+                  <th class="cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
+                  <th class="cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white"></tbody>
+            </table>
+          </div>
+          
+          <div class="mt-4 text-sm text-gray-500">
+            <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
           </div>
         </div>
       </div>
-      
-      <div class="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-6">
-        <div class="flex items-start">
-          <i class="fas fa-robot text-purple-500 text-xl mt-1 mr-4"></i>
-          <div>
-            <p class="font-medium text-purple-800">Sugestões baseadas em análise de:</p>
-            <ul class="list-disc pl-5 mt-3 text-gray-700 space-y-1">
-              <li>Taxa de conversão abaixo do esperado</li>
-              <li>Imagens de capa ausentes ou de baixa qualidade</li>
-              <li>Títulos incompletos ou pouco atrativos</li>
-              <li>Descrições com poucas informações</li>
-              <li>Estoque baixo ou esgotado</li>
-            </ul>
+    </div>
+
+    <!-- Análise/Sugestão -->
+    <div id="analise" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-chart-line text-2xl text-purple-600 mr-3"></i>
+            <h2 class="text-2xl font-bold">Análise e Sugestões de Otimização</h2>
           </div>
         </div>
+        
+        <div class="card-body">
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-robot text-purple-500 text-xl mt-1 mr-3"></i>
+              <div>
+                <p class="font-medium">Sugestões baseadas em análise de:</p>
+                <ul class="list-disc pl-5 mt-2 text-gray-700">
+                  <li>Taxa de conversão abaixo do esperado</li>
+                  <li>Imagens de capa ausentes ou de baixa qualidade</li>
+                  <li>Títulos incompletos ou pouco atrativos</li>
+                  <li>Descrições com poucas informações</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <button onclick="gerarSugestoes()" class="btn btn-primary px-5 py-3 flex items-center mb-6">
+            <i class="fas fa-bolt mr-2"></i>Gerar Sugestões de Otimização
+          </button>
+          <div id="sugestoesIA" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
       </div>
-      
-      <div class="flex justify-center mb-8">
-        <button onclick="gerarSugestoes()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow flex items-center transition">
-          <i class="fas fa-bolt mr-3"></i>Gerar Sugestões de Otimização
-        </button>
-      </div>
-      
-      <div id="sugestoesIA" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
     
       <!-- Campos invisíveis usados pela IA -->
       <input type="hidden" id="nomeProduto" value="">
@@ -394,76 +654,65 @@
       <input type="hidden" id="estoqueProduto" value="">
     </div>
 
-    <!-- Evolução - Design aprimorado -->
-    <div id="evolucao" class="tab-content bg-white p-6 rounded-xl shadow">
-      <div class="section-header">
-        <div class="flex items-center">
-          <div class="bg-yellow-100 p-3 rounded-lg mr-4">
-            <i class="fas fa-history text-2xl text-yellow-600"></i>
-          </div>
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800">Evolução dos Anúncios</h2>
-            <p class="text-gray-600 mt-1">Acompanhe o histórico de alterações e o desempenho ao longo do tempo</p>
+    <!-- Evolução -->
+    <div id="evolucao" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-history text-2xl text-yellow-600 mr-3"></i>
+            <h2 class="text-2xl font-bold">Evolução dos Anúncios</h2>
           </div>
         </div>
-      </div>
-      
-      <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-5 mb-6">
-        <div class="flex items-start">
-          <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1 mr-4"></i>
-          <div>
-            <p class="font-medium text-yellow-800">Acompanhe a evolução dos seus produtos:</p>
-            <ul class="list-disc pl-5 mt-3 text-gray-700 space-y-1">
-              <li>Histórico de alterações nos produtos</li>
-              <li>Evolução de visualizações e vendas</li>
-              <li>Comparação entre versões anteriores</li>
-              <li>Impacto das alterações no desempenho</li>
-            </ul>
+        
+        <div class="card-body">
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1 mr-3"></i>
+              <div>
+                <p class="font-medium">Acompanhe a evolução dos seus produtos:</p>
+                <ul class="list-disc pl-5 mt-2 text-gray-700">
+                  <li>Histórico de alterações nos produtos</li>
+                  <li>Evolução de visualizações e vendas</li>
+                  <li>Comparação entre versões anteriores</li>
+                  <li>Impacto das alterações no desempenho</li>
+                </ul>
+              </div>
+            </div>
           </div>
+          
+          <button onclick="carregarEvolucao()" class="btn btn-primary px-5 py-3 flex items-center mb-6">
+            <i class="fas fa-sync-alt mr-2"></i>Carregar Dados de Evolução
+          </button>
+          
+          <div id="conteudoEvolucao" class="space-y-4"></div>
         </div>
       </div>
-      
-      <div class="flex justify-center mb-8">
-        <button onclick="carregarEvolucao()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg shadow flex items-center transition">
-          <i class="fas fa-sync-alt mr-3"></i>Carregar Dados de Evolução
-        </button>
-      </div>
-      
-      <div id="conteudoEvolucao" class="space-y-6"></div>
     </div>
   </div>
 
-  <!-- Modal de Detalhes - Design aprimorado -->
+  <!-- Modal de Detalhes -->
   <div id="modalDetalhes" class="modal">
     <div class="modal-content w-full max-w-3xl">
-      <div class="modal-header">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-bold flex items-center">
-            <i class="fas fa-info-circle mr-3 text-blue-500"></i>Detalhes do Produto
-          </h3>
-          <button onclick="fecharModal('modalDetalhes')" class="text-gray-500 hover:text-gray-700 text-xl">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold"><i class="fas fa-info-circle mr-2 text-blue-500"></i>Detalhes do Produto</h3>
+        <button onclick="fecharModal('modalDetalhes')" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
-      <div id="detalhesProduto" class="space-y-5"></div>
+      <div id="detalhesProduto" class="space-y-4"></div>
     </div>
   </div>
 
-  <!-- Modal Histórico - Design aprimorado -->
+  <!-- Modal Histórico -->
   <div id="modalHistorico" class="modal">
     <div class="modal-content w-full max-w-3xl">
-      <div class="modal-header">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-bold flex items-center">
-            <i class="fas fa-history mr-3 text-purple-500"></i>Histórico de Alterações
-          </h3>
-          <button onclick="fecharModal('modalHistorico')" class="text-gray-500 hover:text-gray-700 text-xl">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold"><i class="fas fa-history mr-2 text-purple-500"></i>Histórico de Alterações</h3>
+        <button onclick="fecharModal('modalHistorico')" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
-      <div id="conteudoHistorico" class="p-2"></div>
+      <div id="conteudoHistorico"></div>
     </div>
   </div>
 
@@ -834,7 +1083,7 @@ window.carregarAnuncios = async function () {
       };
 
       const tr = document.createElement("tr");
-      tr.className = "table-row";
+      tr.className = "hover:bg-gray-50";
 
       let variacoesHTML = variantes.map(v => {
         const nome = v.nomeVariante || v.skuVariante || v.varianteId;
@@ -853,28 +1102,28 @@ window.carregarAnuncios = async function () {
       const conversaoStatus = conversao < 2 ? 'danger' : conversao < 5 ? 'warning' : 'success';
 
       tr.innerHTML = `
-        <td class="px-5 py-4 font-mono text-sm">${id}</td>
-        <td class="px-5 py-4">
+        <td class="px-4 py-3 font-mono text-sm">${id}</td>
+        <td class="px-4 py-3">
           ${data.imagemCapa ? `<img src="${data.imagemCapa}" class="w-16 h-16 object-contain rounded border">` : '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16"></div>'}
         </td>
-        <td class="px-5 py-4">
+        <td class="px-4 py-3">
           <div class="font-medium text-gray-900">${data.nome || "Sem nome"}</div>
           <div class="text-gray-500 text-sm">${data.categoria || "Sem categoria"}</div>
           <ul class="mt-2">${variacoesHTML}</ul>
         </td>
-        <td class="px-5 py-4">
+        <td class="px-4 py-3">
           <div class="font-semibold">R$ ${precoMedio}</div>
           <div class="text-gray-500 text-sm">Frete: R$ ${data.taxaFrete || "0.00"}</div>
         </td>
-        <td class="px-5 py-4">
+        <td class="px-4 py-3">
           <span class="badge badge-${estoqueStatus}">${estoqueTotal} un</span>
         </td>
-        <td class="px-5 py-4">
+        <td class="px-4 py-3">
           <span class="badge badge-${conversaoStatus}">${conversao}%</span>
         </td>
-        <td class="px-5 py-4 whitespace-nowrap">
-          <button onclick="verDetalhes('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm flex items-center">
-            <i class="fas fa-eye mr-1.5"></i>Ver Detalhes
+        <td class="px-4 py-3 whitespace-nowrap">
+          <button onclick="verDetalhes('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+            <i class="fas fa-eye mr-1"></i>Ver Detalhes
           </button>
         </td>
       `;
@@ -1008,19 +1257,19 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
           <div class="text-gray-600 mb-2">ID: ${data.id}</div>
           
           <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="data-card">
+            <div class="bg-gray-50 p-3 rounded">
               <div class="text-sm text-gray-500">Preço</div>
               <div class="text-lg font-bold">R$ ${data.preco ? parseFloat(data.preco).toFixed(2) : "0.00"}</div>
             </div>
-            <div class="data-card">
+            <div class="bg-gray-50 p-3 rounded">
               <div class="text-sm text-gray-500">Frete</div>
               <div class="text-lg font-bold">R$ ${data.taxaFrete || "0.00"}</div>
             </div>
-            <div class="data-card">
+            <div class="bg-gray-50 p-3 rounded">
               <div class="text-sm text-gray-500">Estoque</div>
               <div class="text-lg font-bold">${data.estoque || "0"} un</div>
             </div>
-            <div class="data-card">
+            <div class="bg-gray-50 p-3 rounded">
               <div class="text-sm text-gray-500">Conversão</div>
               <div class="text-lg font-bold">${desempenho.conversaoPago || data.conversaoPago || "0.00"}%</div>
             </div>
@@ -1038,7 +1287,7 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <h5 class="font-bold mb-2"><i class="fas fa-chart-line mr-2"></i>Desempenho</h5>
-          <div class="data-card text-sm space-y-2">
+          <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
             <div><span class="font-medium">Visualizações:</span> ${desempenho.visualizacoes || data.visualizacoes || "0"}</div>
             <div><span class="font-medium">Curtidas:</span> ${desempenho.curtidas || data.curtidas || "0"}</div>
             <div><span class="font-medium">Vendas (Pago):</span> R$ ${desempenho.vendasPago || data.vendasPago || "0.00"}</div>
@@ -1049,7 +1298,7 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
         
         <div>
           <h5 class="font-bold mb-2"><i class="fas fa-cube mr-2"></i>Especificações</h5>
-          <div class="data-card text-sm space-y-2">
+          <div class="bg-gray-50 p-4 rounded border text-sm space-y-2">
             <div><span class="font-medium">Peso:</span> ${data.peso || "0"} kg</div>
             <div><span class="font-medium">Dimensões:</span> ${data.comprimento || "0"} x ${data.largura || "0"} x ${data.altura || "0"} cm</div>
             <div><span class="font-medium">SKU:</span> ${data.skuVariante || ""}</div>
@@ -1061,32 +1310,32 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
 
       ${variantesHtml}
 
-      <div class="flex flex-wrap gap-3 justify-end mt-6">
-        <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded flex items-center">
+      <div class="flex justify-end space-x-2 mt-4">
+        <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
           <i class="fas fa-history mr-2"></i>Ver Histórico
         </button>
-        <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center">
+        <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
           Fechar
         </button>
-        <button onclick="gerarTextoAnuncioIA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center">
-          <i class="fas fa-brain mr-2"></i>Gerar Título/Descrição com IA
-        </button>
-        <button onclick="otimizarTituloAtual()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center">
-          <i class="fas fa-search mr-2"></i>Otimizar Título com IA
-        </button>
-        <button onclick="gerarDiagnosticoIA()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center">
-          <i class="fas fa-chart-line mr-2"></i>Diagnóstico de Baixo Desempenho
-        </button>
+            <button onclick="gerarTextoAnuncioIA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+    🧠 Gerar Título/Descrição com IA
+  </button>
+      <button onclick="otimizarTituloAtual()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+    🔍 Otimizar Título com IA
+  </button>
+      <button onclick="gerarDiagnosticoIA()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+  📉 Diagnóstico de Baixo Desempenho
+</button>
+        <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
       </div>
-      <div id="resultadoIA" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4 whitespace-pre-wrap"></div>
       <input type="hidden" id="nomeProduto">
-      <input type="hidden" id="tituloProduto">
-      <input type="hidden" id="categoriaProduto">
-      <input type="hidden" id="beneficiosProduto">
-      <input type="hidden" id="visitasProduto">
-      <input type="hidden" id="cliquesProduto">
-      <input type="hidden" id="vendasProduto">
-      <input type="hidden" id="estoqueProduto">
+<input type="hidden" id="tituloProduto">
+<input type="hidden" id="categoriaProduto">
+<input type="hidden" id="beneficiosProduto">
+<input type="hidden" id="visitasProduto">
+<input type="hidden" id="cliquesProduto">
+<input type="hidden" id="vendasProduto">
+<input type="hidden" id="estoqueProduto">
     `;
     
 
@@ -1213,55 +1462,52 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
           }
           
           if (problemas.length > 0) {
-            const corNivel = nivel === "alto" ? "bg-red-50 border-red-200" : 
-                             nivel === "médio" ? "bg-yellow-50 border-yellow-200" : "bg-blue-50 border-blue-200";
+            const corNivel = nivel === "alto" ? "bg-red-100 border-red-300" : 
+                             nivel === "médio" ? "bg-yellow-100 border-yellow-300" : "bg-blue-100 border-blue-300";
             
             const iconNivel = nivel === "alto" ? "fa-exclamation-triangle text-red-500" : 
                              nivel === "médio" ? "fa-exclamation-circle text-yellow-500" : "fa-info-circle text-blue-500";
             
             sugestoes.push(`
-              <div class="suggestion-card ${corNivel}">
-                <div class="p-5">
-                  <div class="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 class="font-bold text-lg">${nome}</h4>
-                      <div class="text-sm text-gray-600">ID: ${id}</div>
-                    </div>
-                    <i class="fas ${iconNivel} text-xl"></i>
+              <div class="sugestao-item border rounded-lg p-4 ${corNivel}">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 class="font-bold text-lg">${nome}</h4>
+                    <div class="text-sm text-gray-600">ID: ${id}</div>
                   </div>
-                  
-                  <div class="mb-4 flex justify-center">
-                    ${imagemCapa ? `<img src="${imagemCapa}" class="w-24 h-24 object-contain border rounded-lg mb-2">` : 
-                    '<div class="bg-gray-200 border-2 border-dashed rounded-xl w-24 h-24 flex items-center justify-center text-gray-500"><i class="fas fa-image"></i></div>'}
-                  </div>
-                  
-                  <div class="mb-4">
-                    <h5 class="font-medium mb-1">Problemas identificados:</h5>
-                    <ul class="list-disc pl-5 text-sm space-y-1">
-                      ${problemas.map(p => `<li>${p}</li>`).join('')}
-                    </ul>
-                  </div>
-                  
-                  <div class="text-sm">
-                    <h5 class="font-medium mb-1">Sugestões:</h5>
-                    <ul class="list-disc pl-5 space-y-1">
-                      ${problemas.includes("Imagem de capa ausente") ? '<li>Adicione uma imagem de capa atrativa</li>' : ''}
-                      ${problemas.includes("Título muito curto ou incompleto") ? '<li>Melhore o título com palavras-chave relevantes</li>' : ''}
-                      ${problemas.includes("Descrição muito curta") ? '<li>Amplie a descrição com detalhes do produto</li>' : ''}
-                      ${problemas.some(p => p.includes("Conversão")) ? '<li>Revise o preço e ofertas especiais</li>' : ''}
-                      <li>Verifique a qualidade das fotos</li>
-                      <li>Analise a concorrência</li>
-                    </ul>
-                  </div>
-                  
-                  <div class="mt-4 flex justify-end">
-                    <button onclick="copiarTitulo('${nome.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm mr-2 flex items-center">
-                      <i class="far fa-copy mr-1.5"></i>Copiar Título
-                    </button>
-                    <button onclick="verDetalhes('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded text-sm flex items-center">
-                      <i class="fas fa-eye mr-1.5"></i>Ver Detalhes
-                    </button>
-                  </div>
+                  <i class="fas ${iconNivel} text-xl"></i>
+                </div>
+                
+                <div class="mb-3">
+                  ${imagemCapa ? `<img src="${imagemCapa}" class="w-24 h-24 object-contain border rounded-lg mx-auto mb-2">` : ''}
+                </div>
+                
+                <div class="mb-3">
+                  <h5 class="font-medium mb-1">Problemas identificados:</h5>
+                  <ul class="list-disc pl-5 text-sm">
+                    ${problemas.map(p => `<li>${p}</li>`).join('')}
+                  </ul>
+                </div>
+                
+                <div class="text-sm">
+                  <h5 class="font-medium mb-1">Sugestões:</h5>
+                  <ul class="list-disc pl-5">
+                    ${problemas.includes("Imagem de capa ausente") ? '<li>Adicione uma imagem de capa atrativa</li>' : ''}
+                    ${problemas.includes("Título muito curto ou incompleto") ? '<li>Melhore o título com palavras-chave relevantes</li>' : ''}
+                    ${problemas.includes("Descrição muito curta") ? '<li>Amplie a descrição com detalhes do produto</li>' : ''}
+                    ${problemas.some(p => p.includes("Conversão")) ? '<li>Revise o preço e ofertas especiais</li>' : ''}
+                    <li>Verifique a qualidade das fotos</li>
+                    <li>Analise a concorrência</li>
+                  </ul>
+                </div>
+                
+                <div class="mt-3 flex justify-end">
+                  <button onclick="copiarTitulo('${nome.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm mr-2">
+                    <i class="far fa-copy mr-1"></i>Copiar Título
+                  </button>
+                  <button onclick="verDetalhes('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                    <i class="fas fa-eye mr-1"></i>Ver Detalhes
+                  </button>
                 </div>
               </div>
             `);
@@ -1270,10 +1516,10 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
 
         container.innerHTML = sugestoes.length ? 
           sugestoes.join('') : 
-          '<div class="text-center py-8 text-green-600 bg-green-50 rounded-xl"><i class="fas fa-check-circle mr-2"></i>Nenhuma sugestão no momento. Seus anúncios estão bem otimizados!</div>';
+          '<div class="text-center py-8 text-green-600"><i class="fas fa-check-circle mr-2"></i>Nenhuma sugestão no momento. Seus anúncios estão bem otimizados!</div>';
       } catch (error) {
         console.error("Erro ao gerar sugestões:", error);
-        container.innerHTML = '<div class="text-center py-8 text-red-500 bg-red-50 rounded-xl"><i class="fas fa-exclamation-triangle mr-2"></i>Erro ao gerar sugestões</div>';
+        container.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i>Erro ao gerar sugestões</div>';
       }
     }
 
@@ -1372,7 +1618,7 @@ window.carregarEvolucao = async function () {
             <h5 class="font-bold mb-2">📦 Variações</h5>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
               ${variantes.map(vari => `
-                <div class="data-card">
+                <div class="border rounded p-3 bg-gray-50">
                   <div><strong>Nome:</strong> ${vari.nomeVariante || "N/A"}</div>
                   <div><strong>SKU:</strong> ${vari.skuVariante || "N/A"}</div>
                   <div><strong>Estoque:</strong> ${vari.estoque || 0} un</div>
@@ -1386,27 +1632,27 @@ window.carregarEvolucao = async function () {
       }
 
       cards.push(`
-        <div class="bg-white border rounded-xl p-5 shadow-sm">
+        <div class="bg-white border rounded-lg p-4 shadow-sm">
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-bold">${nome}</h4>
               <div class="text-sm text-gray-600">ID: ${id}</div>
             </div>
-            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
               ${historico.length} alterações
             </span>
           </div>
         
-          <div class="grid grid-cols-3 gap-3 mb-4 text-center">
-            <div class="data-card">
+          <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+            <div class="bg-gray-50 p-2 rounded">
               <div class="text-xs text-gray-500">Visitas</div>
               <div class="font-bold">${visitas}</div>
             </div>
-            <div class="data-card">
+            <div class="bg-gray-50 p-2 rounded">
               <div class="text-xs text-gray-500">Vendas</div>
               <div class="font-bold">${vendas}</div>
             </div>
-            <div class="data-card">
+            <div class="bg-gray-50 p-2 rounded">
               <div class="text-xs text-gray-500">Conversão</div>
               <div class="font-bold">${conversao}%</div>
             </div>
@@ -1425,12 +1671,12 @@ window.carregarEvolucao = async function () {
     }
 
     container.innerHTML = cards.length ?
-      `<div class="grid grid-cols-1 md:grid-cols-2 gap-5">${cards.join('')}</div>` :
-      '<div class="text-center py-8 text-gray-500 bg-gray-50 rounded-xl">Nenhum dado de evolução encontrado</div>';
+      `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${cards.join('')}</div>` :
+      '<div class="text-center py-8 text-gray-500">Nenhum dado de evolução encontrado</div>';
 
   } catch (error) {
     console.error("Erro ao carregar evolução:", error);
-    container.innerHTML = '<div class="text-center py-8 text-red-500 bg-red-50 rounded-xl">Erro ao carregar dados de evolução</div>';
+    container.innerHTML = '<div class="text-center py-8 text-red-500">Erro ao carregar dados de evolução</div>';
   }
 };
 
