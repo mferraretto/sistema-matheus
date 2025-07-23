@@ -631,7 +631,7 @@
     </div>
     
     <!-- Barra de navegação por abas -->
-    <div class="tab-bar">
+    -bar">
 <button class="tab-btn active" onclick="trocarAba('importar')">
         <i class="fas fa-box-open"></i> Conferir Pedidos
       </button>
@@ -890,32 +890,22 @@
       </button>
     </div>
     <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
- <!-- ABA REGISTRO DE FATURAMENTO -->
-<div id="registroFaturamento" class="tab-content">
+    
+  </div>
+   <div id="registroFaturamento" class="tab-content">
+</div>
+  </div>
   <div class="card">
     <div class="card-header">
       <i class="fas fa-calendar-alt"></i>
       <h3>Registros de Faturamento Diário</h3>
     </div>
-
-    <!-- FILTRO DE MÊS -->
-    <div class="mb-4 p-3">
-      <label for="filtroMes">📆 Filtrar por mês:</label>
-      <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
-    </div>
-
-    <!-- BOTÃO EXPORTAR -->
-    <div class="px-3">
-      <button onclick="exportarFaturamentoExcel()" class="btn btn-success mb-3">
-        📥 Exportar Excel
-      </button>
-    </div>
-
-    <!-- LISTA DE CARDS DE REGISTROS -->
-    <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
-  </div>
+<div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
 </div>
-
+</div>
+ <div id="registroFaturamento" class="tab-content">
+  <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
+</div>
 
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
@@ -2263,16 +2253,7 @@ async function carregarRegistrosFaturamento() {
   const container = document.getElementById("listaFaturamento");
   container.innerHTML = "";
 
-  const filtroMes = document.getElementById("filtroMes").value;
-
   for (const docData of snap.docs) {
-    const [anoData, mesData] = docData.id.split("-");
-    
-    if (filtroMes) {
-      const [anoFiltro, mesFiltro] = filtroMes.split("-");
-      if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
-    }
-
     const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
     let bruto = 0, liquido = 0, qtd = 0;
 
@@ -2291,7 +2272,6 @@ async function carregarRegistrosFaturamento() {
       <div style="padding:4px;border-bottom:1px solid #ccc"><strong>LIQUIDO =</strong> R$ ${liquido.toLocaleString('pt-BR')}</div>
       <div style="padding:4px;border-bottom:1px solid #ccc"><strong>QTD.VENDAS =</strong> ${qtd}</div>
       <button onclick='mostrarDetalhesFaturamento("${docData.id}")' class="btn btn-sm btn-info mt-1">🔍 Mais Detalhes</button>
-      <button onclick='excluirFaturamento("${docData.id}")' class="ml-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">🗑 Excluir</button>
       <div id="detalhes-${docData.id}" style="display:none;margin-top:5px;"></div>
     `;
     container.appendChild(card);
@@ -2323,20 +2303,7 @@ async function mostrarDetalhesFaturamento(dataRef) {
 }
   document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]")
     .addEventListener("click", carregarRegistrosFaturamento);
-    async function excluirFaturamento(dataRef) {
-  if (!confirm(`Tem certeza que deseja excluir todos os dados de ${dataRef}?`)) return;
-
-  const lojasSnap = await db.collection(`faturamento/${dataRef}/lojas`).get();
-  const batch = db.batch();
-  lojasSnap.forEach(doc => {
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
-  await db.collection("faturamento").doc(dataRef).delete();
-  alert(`Registro de ${dataRef} excluído com sucesso.`);
-  carregarRegistrosFaturamento(); // recarrega a tela
-}
-
+    
     function exportarJSON() {
       if (pedidosProcessados.length === 0) {
         mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
@@ -2431,31 +2398,7 @@ Gere um resumo inteligente com insights práticos.
     console.error("Erro IA:", error);
   }
 }
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-async function exportarFaturamentoExcel() {
-  const snap = await db.collection("faturamento").get();
-  const dataExport = [];
 
-  for (const docData of snap.docs) {
-    const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
-    subSnap.forEach(sub => {
-      const d = sub.data();
-      dataExport.push({
-        Data: docData.id,
-        Loja: d.loja || "Desconhecida",
-        Bruto: d.valorBruto || 0,
-        Taxas: d.taxasPlataforma || 0,
-        Líquido: d.valorLiquido || 0,
-        Vendas: d.qtdVendas || 0
-      });
-    });
-  }
-
-  const ws = XLSX.utils.json_to_sheet(dataExport);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
-  XLSX.writeFile(wb, "faturamento.xlsx");
-}
   </script>
 </body>
 </html>
