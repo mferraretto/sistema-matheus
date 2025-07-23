@@ -2154,7 +2154,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       const linhas = document.querySelectorAll("#resultado tbody tr");
       
       linhas.forEach(linha => {
-        const sku = linha.children[1].textContent.toLowerCase();
+        .children[1].textContent.toLowerCase();
 
         if (!filtro) {
           linha.style.display = "";
@@ -2467,17 +2467,24 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
   qtdVendas += anterior.qtdVendas || 0;
 }
       // Agrupar SKUs vendidos (Número de referência) e somar quantidades
+// Agrupar SKUs vendidos (Número de referência) e somar quantidades
 const skusVendidos = {};
 rows.forEach((row) => {
   const status = (row["Status do pedido"] || "").toLowerCase();
   if (status.includes("cancelado") || status.includes("não pago")) return;
 
-const sku = row["Número de referência SKU"];
+  // ✅ Detecta a coluna correta com precisão
+  const headers = Object.keys(row);
+  const colunaSKU = headers.find(h => h.trim() === "Número de referência SKU");
+  if (!colunaSKU) return;
+
+  const sku = row[colunaSKU];
   if (!sku) return;
 
   if (!skusVendidos[sku]) skusVendidos[sku] = 0;
   skusVendidos[sku]++;
 });
+
 
 // Salvar os SKUs vendidos no Firestore em skusVendidos/{data}/lista/{sku}
 const refSku = db.collection("skusVendidos").doc(dataReferencia);
