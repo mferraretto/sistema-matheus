@@ -2621,30 +2621,33 @@ window.verDetalhesDia = async function (dataDoc) {
     if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
     agrupadoPorLoja[loja].push({ sku, total });
 
-    // 🔍 Buscar meta de sobra por SKU na coleção "products"
+    // 🔍 Buscar CUSTO do SKU na coleção "products"
     try {
-      const produtoSnap = await db.collection("products").doc(sku).get();
-      if (produtoSnap.exists) {
-        const meta = produtoSnap.data().meta || 0;
-        sobraEsperada += (total || 0) * meta;
+      const produtosRef = db.collection("products");
+      const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
+      if (!querySnap.empty) {
+        const dados = querySnap.docs[0].data();
+        const custo = Number(dados.custo || 0);
+        sobraEsperada += (total || 0) * custo;
       }
     } catch (e) {
-      console.warn(`Erro ao buscar meta do SKU ${sku}:`, e);
+      console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
     }
   }
 
-  // 🔍 Buscar valor líquido do dia
+  // 🔍 Somar valor líquido de todas as lojas do dia
   let valorLiquido = 0;
   try {
-    const fatSnap = await db.collection("faturamento").doc(dataDoc).get();
-    if (fatSnap.exists) {
-      valorLiquido = fatSnap.data().valorLiquido || 0;
-    }
+    const lojasSnap = await db.collection(`faturamento/${dataDoc}/lojas`).get();
+    lojasSnap.forEach(lojaDoc => {
+      const dados = lojaDoc.data();
+      valorLiquido += Number(dados.valorLiquido || 0);
+    });
   } catch (e) {
-    console.warn("Erro ao buscar valor líquido:", e);
+    console.warn("Erro ao buscar valor líquido por loja:", e);
   }
 
-  // 🧾 Montar HTML de exibição
+  // 🧾 Montar HTML
   let html = `<strong>📅 Detalhes de ${dataDoc}</strong><br><br>`;
   for (const loja in agrupadoPorLoja) {
     html += `<strong>🏪 Loja: ${loja}</strong><br>`;
@@ -2664,6 +2667,8 @@ window.verDetalhesDia = async function (dataDoc) {
     confirmButtonText: 'Fechar'
   });
 };
+
+
 
 
     async function exportarFaturamentoExcel() {
