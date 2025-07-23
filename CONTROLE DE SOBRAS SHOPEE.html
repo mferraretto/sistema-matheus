@@ -2245,7 +2245,7 @@ rows.forEach((row) => {
   const status = (row["Status do pedido"] || "").toLowerCase();
   if (status.includes("cancelado") || status.includes("não pago")) return;
 
-  const sku = row["Número de referência"];
+const sku = row["Número de referência SKU"];
   if (!sku) return;
 
   if (!skusVendidos[sku]) skusVendidos[sku] = 0;
@@ -2258,7 +2258,8 @@ await refSku.set({ data: dataReferencia }); // garante que o doc pai existe
 
 const batch = db.batch();
 for (const [sku, total] of Object.entries(skusVendidos)) {
-  const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(sku);
+  const skuId = String(sku).replace(/[.#$/\[\]]/g, "_"); // <- garante ID válido
+  const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
   batch.set(docRef, {
     sku: sku,
     total: total,
@@ -2267,6 +2268,7 @@ for (const [sku, total] of Object.entries(skusVendidos)) {
     uid: usuarioLogado.uid
   });
 }
+      console.log("SKUs a salvar:", skusVendidos);
 await batch.commit();
 
    await ref.set({
