@@ -2285,20 +2285,56 @@ async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", id
     });
 
     const card = document.createElement("div");
-    card.className = "bg-gray-100 rounded-lg shadow p-4 border border-gray-300";
-    card.innerHTML = `
-      <div class="text-center bg-gray-400 text-white font-bold py-1 rounded">${docData.id}</div>
-      <div class="mt-2 font-semibold text-blue-800">BRUTO = R$ ${bruto.toLocaleString('pt-BR')}</div>
-      <div class="text-green-800 font-semibold">LIQUIDO = R$ ${liquido.toLocaleString('pt-BR')}</div>
-      <div class="text-gray-700 font-medium">QTD.VENDAS = ${qtd}</div>
-      <div class="mt-3 flex justify-between items-center">
-        <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
-          class="text-sm text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">🔍 Mais Detalhes</button>
-        <button onclick='excluirFaturamento("${docData.id}")'
-          class="text-sm text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded">🗑 Excluir</button>
-      </div>
-      <div id="detalhes-${docData.id}" style="display:none;margin-top:8px;"></div>
-    `;
+    card.className = "bg-white rounded-2xl shadow-lg p-5 border border-gray-200 hover:shadow-xl transition";
+
+card.innerHTML = `
+  <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
+    <i class="fas fa-calendar-alt text-blue-600"></i>
+    <span class="font-semibold">${docData.id}</span>
+  </div>
+
+  <div class="text-2xl font-bold text-blue-800 mb-1">💰 Bruto: R$ ${bruto.toLocaleString('pt-BR')}</div>
+  <div class="text-xl font-semibold text-green-600 mb-1">🔻 Líquido: R$ ${liquido.toLocaleString('pt-BR')}</div>
+  <div class="text-base text-gray-600 mb-4">🛒 Vendas: ${qtd}</div>
+
+  <div class="flex justify-between items-center mt-4">
+    <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
+      class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-sm">
+      🔍 Ver Detalhes
+    </button>
+    <button onclick='excluirFaturamento("${docData.id}")'
+      class="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-sm">
+      🗑 Excluir
+    </button>
+  </div>
+
+  <div id="detalhes-${docData.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
+`;
+card.className = "bg-white rounded-2xl shadow-lg p-5 border border-gray-200 hover:shadow-xl transition";
+
+card.innerHTML = `
+  <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
+    <i class="fas fa-calendar-alt text-blue-600"></i>
+    <span class="font-semibold">${docData.id}</span>
+  </div>
+
+  <div class="text-2xl font-bold text-blue-800 mb-1">💰 Bruto: R$ ${bruto.toLocaleString('pt-BR')}</div>
+  <div class="text-xl font-semibold text-green-600 mb-1">🔻 Líquido: R$ ${liquido.toLocaleString('pt-BR')}</div>
+  <div class="text-base text-gray-600 mb-4">🛒 Vendas: ${qtd}</div>
+
+  <div class="flex justify-between items-center mt-4">
+    <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
+      class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-sm">
+      🔍 Ver Detalhes
+    </button>
+    <button onclick='excluirFaturamento("${docData.id}")'
+      class="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-sm">
+      🗑 Excluir
+    </button>
+  </div>
+
+  <div id="detalhes-${docData.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
+`;
 
     container.appendChild(card);
   }
