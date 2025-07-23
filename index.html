@@ -635,73 +635,43 @@
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="flex items-center space-x-3">
-          <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-            <i class="fas fa-rocket text-white"></i>
-          </div>
-          <span class="font-bold text-xl">Mentoria Ferraretto</span>
-        </div>
+ <aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="flex items-center space-x-3">
+      <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
+        <i class="fas fa-rocket text-white"></i>
       </div>
-      
-      <div class="sidebar-item active">
-        <i class="fas fa-home"></i>
-        <span>🏠 Dashboard</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-box"></i>
-        <span>📦 Produtos</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-chart-line"></i>
-        <span>📈 Desempenho</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-lightbulb"></i>
-        <span>💡 Sugestões com IA</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-cog"></i>
-        <span>⚙️ Configurações</span>
-      </div>
-    </aside>
-    
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Top Navbar -->
-      <nav class="top-navbar">
-        <div class="user-info">
-          <div class="user-avatar">MF</div>
-          <div class="user-name">Matheus Ferraretto</div>
-        </div>
-        
-        <div class="nav-actions">
-          <div class="tooltip nav-icon" id="darkModeToggle">
-            <i class="fas fa-moon"></i>
-            <span class="tooltiptext">Alternar modo escuro</span>
-          </div>
-          
-          <div class="tooltip nav-icon">
-            <i class="fas fa-bell"></i>
-            <span class="notification-badge">3</span>
-            <span class="tooltiptext">Notificações</span>
-          </div>
-          
-          <button class="btn-logout" id="logoutBtn">
-            <i class="fas fa-sign-out-alt"></i>
-            Sair
-          </button>
-        </div>
-      </nav>
-      
-      <!-- Dashboard Content -->
-      <div class="dashboard-title">
-        <h1>Sistemas de Gestão para sua Loja</h1>
-        <p>Ferramentas poderosas para otimizar seus negócios na Shopee</p>
-      </div>
+      <span class="font-bold text-xl">Mentoria Ferraretto</span>
+    </div>
+  </div>
+
+  <!-- Links atualizados -->
+  <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
+    <i class="fas fa-calculator"></i>
+    <span>📊 Precificação Inteligente</span>
+  </a>
+
+  <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
+    <i class="fas fa-bullhorn"></i>
+    <span>📢 Anúncios & IA</span>
+  </a>
+
+  <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
+    <i class="fas fa-coins"></i>
+    <span>📈 Faturamento e Vendas</span>
+  </a>
+
+  <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
+    <i class="fas fa-tools"></i>
+    <span>🛠️ Custeio e Produção</span>
+  </a>
+
+  <a href="painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
+    <i class="fas fa-user-cog"></i>
+    <span>👤 Painel de Usuários</span>
+  </a>
+</aside>
+
       
       <!-- Messages -->
       <div class="message message-success">
