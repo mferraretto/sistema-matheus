@@ -2231,7 +2231,7 @@ rows.forEach((row) => {
 const refSku = db.collection("skusVendidos").doc(dataReferencia);
 await refSku.set({ data: dataReferencia }); // garante que o doc pai existe
 
-const batch = writeBatch(db);
+const batch = db.batch();
 for (const [sku, total] of Object.entries(skusVendidos)) {
   const docRef = db.collection(`skusVendidos/${dataReferencia}/lista`).doc(sku);
   batch.set(docRef, {
