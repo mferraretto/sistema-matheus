@@ -2259,13 +2259,13 @@ document.getElementById("resultadoFaturamento").innerHTML = `
         console.error("Erro ao exportar CSV:", error);
       }
     }
-async function carregarRegistrosFaturamento(containerId = "listaFaturamento", filtroId = "filtroMes") {
+async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", idFiltroMes = "filtroMes") {
   const ref = db.collection("faturamento");
   const snap = await ref.get();
-  const container = document.getElementById(containerId);
+  const container = document.getElementById(idContainer);
   container.innerHTML = "";
 
-  const filtroMes = document.getElementById(filtroId)?.value;
+  const filtroMes = document.getElementById(idFiltroMes)?.value;
 
   for (const docData of snap.docs) {
     if (filtroMes) {
@@ -2286,13 +2286,11 @@ async function carregarRegistrosFaturamento(containerId = "listaFaturamento", fi
 
     const card = document.createElement("div");
     card.className = "bg-gray-100 rounded-lg shadow p-4 border border-gray-300";
-
     card.innerHTML = `
       <div class="text-center bg-gray-400 text-white font-bold py-1 rounded">${docData.id}</div>
       <div class="mt-2 font-semibold text-blue-800">BRUTO = R$ ${bruto.toLocaleString('pt-BR')}</div>
       <div class="text-green-800 font-semibold">LIQUIDO = R$ ${liquido.toLocaleString('pt-BR')}</div>
       <div class="text-gray-700 font-medium">QTD.VENDAS = ${qtd}</div>
-
       <div class="mt-3 flex justify-between items-center">
         <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
           class="text-sm text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">🔍 Mais Detalhes</button>
@@ -2305,6 +2303,7 @@ async function carregarRegistrosFaturamento(containerId = "listaFaturamento", fi
     container.appendChild(card);
   }
 }
+
 
 async function mostrarDetalhesFaturamento(dataRef) {
   const detalhesEl = document.getElementById("detalhes-" + dataRef);
