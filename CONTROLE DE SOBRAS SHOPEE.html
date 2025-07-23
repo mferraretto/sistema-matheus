@@ -1759,14 +1759,12 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
             media
         }
     };
-}
-    // Prepara os dados das sobras para enviar à IA
-const sobras = pedidosProcessados.map(p => {
+      const sobras = pedidosProcessados.map(p => {
   return {
     sku: p.sku,
     vendido: p.subtotal,
     sobra: p.sobra,
-    meta: p.meta, // <-- adicionado aqui
+    meta: p.meta,
     data: new Date().toLocaleDateString()
   };
 });
@@ -1774,12 +1772,16 @@ const sobras = pedidosProcessados.map(p => {
 document.getElementById("dadosSobrasIA").value = sobras.map(s => {
   return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Meta: R$ ${s.meta?.toFixed(2) || 0}, Data: ${s.data}`;
 }).join("\n");
+}
+
 
 
       // Atualizar gráficos se estiver na aba
       if (document.getElementById('graficos').classList.contains('active')) {
         atualizarGraficos();
       }
+
+
     
 async function analisarSobrasComIA() {
     const btn = document.getElementById('btnAnalisarIA');
