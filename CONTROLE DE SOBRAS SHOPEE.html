@@ -2235,8 +2235,7 @@ rows.forEach((row) => {
 const refSku = db.collection("skusVendidos").doc(dataReferencia);
 await refSku.set({ data: dataReferencia }); // garante que o doc pai existe
 
-import { writeBatch } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"; // se ainda não tiver feito
-
+const batch = db.batch();
       for (const [sku, total] of Object.entries(skusVendidos)) {
   const docRef = db.collection(`skusVendidos/${dataReferencia}/lista`).doc(sku);
   batch.set(docRef, {
