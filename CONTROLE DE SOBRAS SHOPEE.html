@@ -2431,7 +2431,31 @@ Gere um resumo inteligente com insights práticos.
     console.error("Erro IA:", error);
   }
 }
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+async function exportarFaturamentoExcel() {
+  const snap = await db.collection("faturamento").get();
+  const dataExport = [];
 
+  for (const docData of snap.docs) {
+    const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+    subSnap.forEach(sub => {
+      const d = sub.data();
+      dataExport.push({
+        Data: docData.id,
+        Loja: d.loja || "Desconhecida",
+        Bruto: d.valorBruto || 0,
+        Taxas: d.taxasPlataforma || 0,
+        Líquido: d.valorLiquido || 0,
+        Vendas: d.qtdVendas || 0
+      });
+    });
+  }
+
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
+  XLSX.writeFile(wb, "faturamento.xlsx");
+}
   </script>
 </body>
 </html>
