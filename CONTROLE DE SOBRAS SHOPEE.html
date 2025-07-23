@@ -173,18 +173,19 @@
     }
     
     /* Conteúdo das abas */
-    .tab-content {
-      display: none;
-      background: white;
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: var(--card-shadow);
-      animation: fadeIn 0.4s ease;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
+ .tab-content {
+  display: none;
+  background-color: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease;
+}
+
+/* Quando ativa */
+.tab-content.active {
+  display: block;
+}
     
     /* Cartões de informação */
     .card {
@@ -523,10 +524,6 @@
         font-size: 1.5rem;
       }
       
-      .tab-content {
-        padding: 1.5rem 1rem;
-      }
-    }
     
     @media (max-width: 768px) {
       .tab-bar {
@@ -889,27 +886,30 @@
         <i class="fas fa-upload"></i> Importar
       </button>
     </div>
-    <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
-     </div>
-</div>
+   <!-- 📋 Aba de Registro de Faturamento -->
+<div id="registroFaturamento" class="tab-content">
+  <div class="card">
     <div class="card-header">
       <i class="fas fa-calendar-alt"></i>
       <h3>Registros de Faturamento Diário</h3>
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
-  <div class="flex items-center gap-2">
-    <label for="filtroMes" class="font-medium">📆 Filtrar por mês:</label>
-    <input type="month" id="filtroMes" class="border border-gray-300 rounded px-2 py-1"
-      onchange="carregarRegistrosFaturamento()" />
+    </div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+      <div class="flex items-center gap-2">
+        <label for="filtroMes" class="font-medium">📆 Filtrar por mês:</label>
+        <input type="month" id="filtroMes" class="border border-gray-300 rounded px-2 py-1"
+          onchange="carregarRegistrosFaturamento()" />
+      </div>
+
+      <button onclick="exportarFaturamentoExcel()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+        📥 Exportar Excel
+      </button>
+    </div>
+
+    <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
   </div>
-
-  <button onclick="exportarFaturamentoExcel()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-    📥 Exportar Excel
-  </button>
 </div>
 
-<div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
-</div>
-</div>
  
 
 
