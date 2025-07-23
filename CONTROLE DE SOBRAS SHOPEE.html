@@ -1164,17 +1164,38 @@
     // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
     // =============================================
     
-    function trocarAba(id) {
-      document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      
-      document.getElementById(id).classList.add('active');
-      document.querySelector(`.tab-btn[onclick="trocarAba('${id}')"]`).classList.add('active');
-      
-      if (id === 'graficos') {
-        setTimeout(atualizarGraficos, 100);
-      }
-    }
+function trocarAba(id) {
+  // Remove a classe 'active' de todas as abas
+  document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
+  
+  // Remove a classe 'active' de todos os botões de aba
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+  // Ativa a aba correspondente, se existir
+  const abaSelecionada = document.getElementById(id);
+  if (abaSelecionada) {
+    abaSelecionada.classList.add('active');
+  } else {
+    console.warn(`❌ Aba com ID '${id}' não encontrada.`);
+    return;
+  }
+
+  // Ativa o botão correspondente
+  const botao = Array.from(document.querySelectorAll('.tab-btn'))
+    .find(btn => btn.getAttribute('onclick')?.includes(`trocarAba('${id}')`));
+  
+  if (botao) {
+    botao.classList.add('active');
+  } else {
+    console.warn(`❌ Botão com onclick trocarAba('${id}') não encontrado.`);
+  }
+
+  // Atualiza gráficos, se necessário
+  if (id === 'graficos') {
+    setTimeout(atualizarGraficos, 100);
+  }
+}
+
 
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE METAS
