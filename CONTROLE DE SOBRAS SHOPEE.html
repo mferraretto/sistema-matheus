@@ -2196,6 +2196,36 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
   taxas += anterior.taxasPlataforma || 0;
   qtdVendas += anterior.qtdVendas || 0;
 }
+      // Agrupar SKUs vendidos (Número de referência) e somar quantidades
+const skusVendidos = {};
+rows.forEach((row) => {
+  const status = (row["Status do pedido"] || "").toLowerCase();
+  if (status.includes("cancelado") || status.includes("não pago")) return;
+
+  const sku = row["Número de referência"];
+  if (!sku) return;
+
+  if (!skusVendidos[sku]) skusVendidos[sku] = 0;
+  skusVendidos[sku]++;
+});
+
+// Salvar os SKUs vendidos no Firestore em skusVendidos/{data}/lista/{sku}
+const refSku = db.collection("skusVendidos").doc(dataReferencia);
+await refSku.set({ data: dataReferencia }); // garante que o doc pai existe
+
+const batch = writeBatch(db);
+for (const [sku, total] of Object.entries(skusVendidos)) {
+  const docRef = db.collection(`skusVendidos/${dataReferencia}/lista`).doc(sku);
+  batch.set(docRef, {
+    sku: sku,
+    total: total,
+    data: dataReferencia,
+    loja: loja,
+    uid: usuarioLogado.uid
+  });
+}
+await batch.commit();
+
      await ref.set({
   valorBruto: bruto,
   taxasPlataforma: taxas,
