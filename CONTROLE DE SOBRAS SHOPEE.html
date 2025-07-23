@@ -898,16 +898,18 @@
     <div class="card-header">
       <i class="fas fa-calendar-alt"></i>
       <h3>Registros de Faturamento Diário</h3>
-       <div class="mb-4 px-4">
-  <label for="filtroMes">📆 Filtrar por mês:</label>
-  <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
-</div>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+  <div class="flex items-center gap-2">
+    <label for="filtroMes" class="font-medium">📆 Filtrar por mês:</label>
+    <input type="month" id="filtroMes" class="border border-gray-300 rounded px-2 py-1"
+      onchange="carregarRegistrosFaturamento()" />
+  </div>
 
-<div class="px-4">
-  <button onclick="exportarFaturamentoExcel()" class="btn btn-success mb-3">
+  <button onclick="exportarFaturamentoExcel()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
     📥 Exportar Excel
   </button>
-    </div>
+</div>
+
 <div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
 </div>
 </div>
@@ -2284,17 +2286,24 @@ async function carregarRegistrosFaturamento() {
       qtd += d.qtdVendas || 0;
     });
 
-    const card = document.createElement("div");
-    card.className = "bg-white border rounded p-2 text-sm shadow";
-    card.innerHTML = `
-      <div style="background:#ccc;font-weight:bold;text-align:center;padding:4px">${docData.id}</div>
-      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>BRUTO =</strong> R$ ${bruto.toLocaleString('pt-BR')}</div>
-      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>LIQUIDO =</strong> R$ ${liquido.toLocaleString('pt-BR')}</div>
-      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>QTD.VENDAS =</strong> ${qtd}</div>
-      <button onclick='mostrarDetalhesFaturamento("${docData.id}")' class="btn btn-sm btn-info mt-1">🔍 Mais Detalhes</button>
-      <button onclick='excluirFaturamento("${docData.id}")' class="ml-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">🗑 Excluir</button>
-      <div id="detalhes-${docData.id}" style="display:none;margin-top:5px;"></div>
-    `;
+  const card = document.createElement("div");
+card.className = "bg-gray-100 rounded-lg shadow p-4 border border-gray-300";
+
+card.innerHTML = `
+  <div class="text-center bg-gray-400 text-white font-bold py-1 rounded">${docData.id}</div>
+  <div class="mt-2 font-semibold text-blue-800">BRUTO = R$ ${bruto.toLocaleString('pt-BR')}</div>
+  <div class="text-green-800 font-semibold">LIQUIDO = R$ ${liquido.toLocaleString('pt-BR')}</div>
+  <div class="text-gray-700 font-medium">QTD.VENDAS = ${qtd}</div>
+
+  <div class="mt-3 flex justify-between items-center">
+    <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
+      class="text-sm text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">🔍 Mais Detalhes</button>
+    <button onclick='excluirFaturamento("${docData.id}")'
+      class="text-sm text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded">🗑 Excluir</button>
+  </div>
+  <div id="detalhes-${docData.id}" style="display:none;margin-top:8px;"></div>
+`;
+
     container.appendChild(card);
   }
 }
