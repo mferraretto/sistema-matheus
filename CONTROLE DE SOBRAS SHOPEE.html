@@ -1766,13 +1766,15 @@ const sobras = pedidosProcessados.map(p => {
     sku: p.sku,
     vendido: p.subtotal,
     sobra: p.sobra,
+    meta: p.meta, // <-- adicionado aqui
     data: new Date().toLocaleDateString()
   };
 });
 
 document.getElementById("dadosSobrasIA").value = sobras.map(s => {
-  return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Data: ${s.data}`;
+  return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Meta: R$ ${s.meta?.toFixed(2) || 0}, Data: ${s.data}`;
 }).join("\n");
+
 
       // Atualizar gráficos se estiver na aba
       if (document.getElementById('graficos').classList.contains('active')) {
