@@ -890,28 +890,32 @@
       </button>
     </div>
     <div id="resultadoFaturamento" style="margin-top: 1rem;"></div>
-    
-  </div>
-   <div id="registroFaturamento" class="tab-content">
-</div>
-  </div>
+ <!-- ABA REGISTRO DE FATURAMENTO -->
+<div id="registroFaturamento" class="tab-content">
   <div class="card">
     <div class="card-header">
       <i class="fas fa-calendar-alt"></i>
       <h3>Registros de Faturamento Diário</h3>
     </div>
-<div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
-</div>
-</div>
- <div id="registroFaturamento" class="tab-content">
-  <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
-     <div class="mb-4">
-    <label for="filtroMes">📆 Filtrar por mês:</label>
-    <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
-  </div>
-  <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
+    <!-- FILTRO DE MÊS -->
+    <div class="mb-4 p-3">
+      <label for="filtroMes">📆 Filtrar por mês:</label>
+      <input type="month" id="filtroMes" class="form-control" onchange="carregarRegistrosFaturamento()" />
+    </div>
+
+    <!-- BOTÃO EXPORTAR -->
+    <div class="px-3">
+      <button onclick="exportarFaturamentoExcel()" class="btn btn-success mb-3">
+        📥 Exportar Excel
+      </button>
+    </div>
+
+    <!-- LISTA DE CARDS DE REGISTROS -->
+    <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+  </div>
 </div>
+
 
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
