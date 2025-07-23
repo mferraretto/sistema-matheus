@@ -8,7 +8,7 @@
   <!-- Fontes do Google -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -34,20 +34,28 @@
 
   <style>
     :root {
-      --primary: #4361ee;
-      --primary-light: #edf2ff;
-      --primary-dark: #3a56d4;
+      --primary: #F45C00;
+      --primary-light: #ffefe6;
+      --primary-dark: #d44c00;
       --secondary: #64748b;
-      --success: #06d6a0;
-      --warning: #ffd166;
-      --danger: #ef476f;
-      --light: #f8fafc;
-      --dark: #0f172a;
+      --success: #4CAF50;
+      --warning: #FF9800;
+      --danger: #F44336;
+      --light: #f5f7fa;
+      --dark: #1C2B36;
       --gray: #94a3b8;
       --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       --transition: all 0.3s ease;
       --border-radius: 12px;
       --header-height: 70px;
+      --sidebar-width: 260px;
+    }
+    
+    /* Modo Escuro */
+    [data-theme="dark"] {
+      --dark: #f8fafc;
+      --light: #1C2B36;
+      --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
     
     * {
@@ -58,53 +66,107 @@
     
     body { 
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; 
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      background-color: var(--light);
       color: #334155;
       line-height: 1.6;
       min-height: 100vh;
+      transition: var(--transition);
     }
     
     /* Layout principal */
     .app-container {
       display: flex;
       min-height: 100vh;
+      padding-top: var(--header-height);
+    }
+    
+    /* Navbar superior */
+    .top-navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: var(--header-height);
+      background-color: var(--dark);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: white;
+    }
+    
+    .logo span {
+      color: var(--primary);
+    }
+    
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    
+    .nav-controls button {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+    
+    .nav-controls button:hover {
+      color: var(--primary);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
     }
     
     /* Barra lateral */
     .sidebar {
-      width: 260px;
-      background: linear-gradient(135deg, var(--primary) 0%, #3a56d4 100%);
+      width: var(--sidebar-width);
+      background-color: var(--dark);
       color: white;
       padding: 1.5rem 0;
       position: fixed;
-      height: 100vh;
+      height: calc(100vh - var(--header-height));
+      top: var(--header-height);
       z-index: 100;
       box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
-    }
-    
-    .logo-container {
-      padding: 0 1.5rem 1.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      margin-bottom: 1.5rem;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 1.4rem;
-      font-weight: 700;
-    }
-    
-    .logo i {
-      font-size: 1.8rem;
-      background: rgba(255, 255, 255, 0.15);
-      width: 46px;
-      height: 46px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow-y: auto;
+      transition: var(--transition);
     }
     
     .nav-links {
@@ -129,7 +191,7 @@
     .nav-links a:hover, 
     .nav-links a.active {
       color: white;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
     }
     
     .nav-links a i {
@@ -141,8 +203,9 @@
     /* Conteúdo principal */
     .main-content {
       flex: 1;
-      margin-left: 260px;
+      margin-left: var(--sidebar-width);
       padding: 1.5rem;
+      transition: var(--transition);
     }
     
     /* Cabeçalho do conteúdo */
@@ -155,6 +218,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     .page-title {
@@ -164,7 +228,7 @@
       font-size: 1.7rem;
       color: var(--dark);
       font-weight: 700;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Montserrat', sans-serif;
     }
     
     .page-title i {
@@ -194,6 +258,7 @@
       border-radius: var(--border-radius);
       padding: 0.75rem;
       box-shadow: var(--card-shadow);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
     
     .tab-btn {
@@ -215,7 +280,7 @@
     .tab-btn.active {
       background: var(--primary);
       color: white;
-      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+      box-shadow: 0 4px 10px rgba(244, 92, 0, 0.3);
     }
     
     .tab-btn i {
@@ -231,6 +296,7 @@
       box-shadow: var(--card-shadow);
       animation: fadeIn 0.3s ease;
       margin-bottom: 2rem;
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     /* Quando ativa */
@@ -264,6 +330,7 @@
       font-size: 1.2rem;
       padding-bottom: 0.75rem;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      font-family: 'Poppins', sans-serif;
     }
     
     .card-header i {
@@ -316,14 +383,14 @@
     }
     
     .alert-success {
-      background: rgba(6, 214, 160, 0.1);
-      color: #036b53;
+      background: rgba(76, 175, 80, 0.1);
+      color: #2e7d32;
       border-left: 4px solid var(--success);
     }
     
     .alert-danger {
-      background: rgba(239, 71, 111, 0.1);
-      color: #b91c43;
+      background: rgba(244, 67, 54, 0.1);
+      color: #c62828;
       border-left: 4px solid var(--danger);
     }
     
@@ -346,13 +413,13 @@
     .btn-primary {
       background: var(--primary);
       color: white;
-      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+      box-shadow: 0 4px 10px rgba(244, 92, 0, 0.3);
     }
     
     .btn-primary:hover {
       background: var(--primary-dark);
       transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+      box-shadow: 0 6px 15px rgba(244, 92, 0, 0.4);
     }
     
     .btn-outline {
@@ -362,7 +429,7 @@
     }
     
     .btn-outline:hover {
-      background: rgba(67, 97, 238, 0.05);
+      background: rgba(244, 92, 0, 0.05);
     }
     
     .btn-sm {
@@ -388,7 +455,7 @@
     .form-control:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+      box-shadow: 0 0 0 3px rgba(244, 92, 0, 0.15);
     }
     
     .form-row {
@@ -434,6 +501,7 @@
       border-collapse: separate;
       border-spacing: 0;
       min-width: 1000px;
+      font-family: 'Inter', sans-serif;
     }
     
     thead {
@@ -467,12 +535,16 @@
       background: white;
     }
     
+    tr:nth-child(even) td {
+      background-color: #f9fafb;
+    }
+    
     tr:last-child td {
       border-bottom: none;
     }
     
     tr:hover td {
-      background: #f8fafc;
+      background: var(--primary-light);
     }
     
     /* Badges */
@@ -485,22 +557,22 @@
     }
     
     .badge-success {
-      background: rgba(6, 214, 160, 0.15);
-      color: #036b53;
+      background: rgba(76, 175, 80, 0.15);
+      color: #2e7d32;
     }
     
     .badge-warning {
-      background: rgba(255, 209, 102, 0.15);
-      color: #8d6a00;
+      background: rgba(255, 152, 0, 0.15);
+      color: #e65100;
     }
     
     .badge-danger {
-      background: rgba(239, 71, 111, 0.15);
-      color: #b91c43;
+      background: rgba(244, 67, 54, 0.15);
+      color: #c62828;
     }
     
     .badge-info {
-      background: rgba(67, 97, 238, 0.15);
+      background: rgba(244, 92, 0, 0.15);
       color: var(--primary);
     }
     
@@ -588,6 +660,70 @@
       background: white;
     }
     
+    /* Tooltips */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: var(--dark);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .tooltip .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--dark) transparent transparent transparent;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: 4px;
+    }
+    
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .skeleton-text {
+      height: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .skeleton-text:last-child {
+      margin-bottom: 0;
+      width: 80%;
+    }
+    
     /* Animações */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -619,6 +755,8 @@
         height: auto;
         position: relative;
         padding: 1rem;
+        top: 0;
+        height: auto;
       }
       
       .main-content {
@@ -699,32 +837,60 @@
   </style>
 </head>
 <body>
+  <!-- Navbar superior -->
+  <div class="top-navbar">
+    <div class="logo-container">
+      <div class="logo">
+        <i class="fas fa-calculator"></i>
+        <span>Sobras <span>Shopee</span></span>
+      </div>
+    </div>
+    
+    <div class="nav-controls">
+      <button class="tooltip" onclick="toggleDarkMode()">
+        <i class="fas fa-moon"></i>
+        <span class="tooltip-text">Alternar modo escuro</span>
+      </button>
+      
+      <button class="tooltip">
+        <i class="fas fa-bell"></i>
+        <span class="tooltip-text">Notificações</span>
+      </button>
+      
+      <div class="user-info">
+        <div class="user-avatar">MF</div>
+        <span>Mentoria Ferraretto</span>
+        <button class="tooltip" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="tooltip-text">Sair do sistema</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-container">
     <!-- Barra lateral de navegação -->
     <nav class="sidebar">
-      <div class="logo-container">
-        <div class="logo">
-          <i class="fas fa-calculator"></i>
-          <span>Sobras Shopee</span>
-        </div>
-      </div>
-      
       <div class="nav-links">
         <a href="index.html">
           <i class="fas fa-home"></i>
-          <span>Início</span>
+          <span>🏠 Dashboard</span>
         </a>
         <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html">
           <i class="fas fa-bullhorn"></i>
-          <span>Anúncios</span>
+          <span>📦 Produtos</span>
         </a>
         <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="active">
           <i class="fas fa-check-circle"></i>
-          <span>Sobras</span>
+          <span>📈 Desempenho</span>
         </a>
         <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html">
           <i class="fas fa-dollar-sign"></i>
-          <span>Custeio</span>
+          <span>💡 Sugestões com IA</span>
+        </a>
+        <a href="#">
+          <i class="fas fa-cog"></i>
+          <span>⚙️ Configurações</span>
         </a>
       </div>
     </nav>
@@ -974,6 +1140,9 @@
         <div class="chart-container">
           <div class="chart-header">
             <div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>
+            <button onclick="analisarTendenciasIA()" class="btn btn-outline">
+              <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+            </button>
           </div>
           <canvas id="graficoBarras" height="300"></canvas>
         </div>
@@ -1492,10 +1661,10 @@
           </td>
           <td>${dataFormatada}</td>
           <td>
-            <button onclick="editarMeta(this, '${sku}')" class="btn btn-sm" style="background: rgba(67, 97, 238, 0.1); color: var(--primary);">
+            <button onclick="editarMeta(this, '${sku}')" class="btn btn-sm" style="background: rgba(244, 92, 0, 0.1); color: var(--primary);">
               <i class="fas fa-edit"></i>
             </button>
-            <button onclick="excluirMeta('${sku}', this)" class="btn btn-sm" style="background: rgba(239, 71, 111, 0.1); color: var(--danger);">
+            <button onclick="excluirMeta('${sku}', this)" class="btn btn-sm" style="background: rgba(244, 67, 54, 0.1); color: var(--danger);">
               <i class="fas fa-trash-alt"></i>
             </button>
           </td>
@@ -1907,7 +2076,7 @@
       if (esperadoTotal > 0) {
         const diferencaClass = diferencaTotal >= 0 ? 'success' : 'danger';
         diferencaHTML = `
-          <div style="margin-top: 1rem; padding: 1rem; background: rgba(6, 214, 160, 0.05); border-radius: 12px; border-left: 4px solid var(--${diferencaClass});">
+          <div style="margin-top: 1rem; padding: 1rem; background: rgba(76, 175, 80, 0.05); border-radius: 12px; border-left: 4px solid var(--${diferencaClass});">
             <h4>
               <span class="badge badge-${diferencaClass}">
                 Diferença Total: R$ ${Math.abs(diferencaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
@@ -1926,12 +2095,12 @@
             <h3>Resumo Financeiro</h3>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-            <div style="background: rgba(67, 97, 238, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+            <div style="background: rgba(244, 92, 0, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
               <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Sobra Total</h4>
               <h2>R$ ${totalSobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
             </div>
             
-            <div style="background: rgba(6, 214, 160, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--success);">
+            <div style="background: rgba(76, 175, 80, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--success);">
               <h4 style="color: var(--success); margin-bottom: 0.5rem;">Sobra Esperada</h4>
               <h2>R$ ${esperadoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
             </div>
@@ -2033,30 +2202,13 @@
       // Elemento do cabeçalho
       const chartHeader = document.querySelector('.chart-header');
       
-      // Limpa o conteúdo anterior
-      chartHeader.innerHTML = '<div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>';
-      
       // Verificação de dados
       if (pedidosProcessados.length === 0) {
         document.querySelectorAll('.chart-container').forEach(container => {
           container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
         });
-        
-        // Adiciona botão mesmo sem dados (opcional)
-        chartHeader.innerHTML += `
-          <button onclick="analisarTendenciasIA()" class="btn btn-outline" disabled>
-            <i class="fas fa-chart-line"></i> Analisar Tendências com IA
-          </button>
-        `;
         return;
       }
-      
-      // Adiciona botão funcional quando há dados
-      chartHeader.innerHTML += `
-        <button onclick="analisarTendenciasIA()" class="btn btn-outline">
-          <i class="fas fa-chart-line"></i> Analisar Tendências com IA
-        </button>
-      `;
       
       // Processamento dos dados
       const tipoFiltro = document.getElementById('filtroGrafico').value;
@@ -2110,7 +2262,7 @@
     async function analisarTendenciasIA() {
       try {
         const prompt = `Analise estes dados de desempenho de produtos:
-    ${JSON.stringify(pedidosProcessados.slice(0, 50), null, 2)}
+    ${JSON.stringify(pedidosProcessados.slice(0, 50), null, 2}
 
     Identifique:
     1. Tendências sazonais
@@ -2160,15 +2312,15 @@
             {
               label: 'Sobra Real (R$)',
               data: sobras,
-              backgroundColor: 'rgba(67, 97, 238, 0.7)',
-              borderColor: 'rgba(67, 97, 238, 1)',
+              backgroundColor: 'rgba(244, 92, 0, 0.7)',
+              borderColor: 'rgba(244, 92, 0, 1)',
               borderWidth: 1
             },
             {
               label: 'Meta Esperada (R$)',
               data: metas,
-              backgroundColor: 'rgba(6, 214, 160, 0.7)',
-              borderColor: 'rgba(6, 214, 160, 1)',
+              backgroundColor: 'rgba(76, 175, 80, 0.7)',
+              borderColor: 'rgba(76, 175, 80, 1)',
               borderWidth: 1
             }
           ]
@@ -2227,9 +2379,9 @@
       
       // Criar cores baseadas no desempenho
       const backgroundColors = diferencas.map(val => {
-        if (val >= 5) return 'rgba(6, 214, 160, 0.7)'; // Verde - acima
-        if (val <= -5) return 'rgba(239, 71, 111, 0.7)'; // Vermelho - abaixo
-        return 'rgba(255, 209, 102, 0.7)'; // Amarelo - dentro do esperado
+        if (val >= 5) return 'rgba(76, 175, 80, 0.7)'; // Verde - acima
+        if (val <= -5) return 'rgba(244, 67, 54, 0.7)'; // Vermelho - abaixo
+        return 'rgba(255, 152, 0, 0.7)'; // Amarelo - dentro do esperado
       });
       
       graficoPizza = new Chart(ctx, {
@@ -2664,11 +2816,42 @@
         confirmButtonText: 'Fechar'
       });
     };
+    
+    // =============================================
+    // FUNÇÕES ADICIONAIS DE INTERFACE
+    // =============================================
+    
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+    
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = 'index.html';
+      }).catch((error) => {
+        mostrarErro(`Erro ao fazer logout: ${error.message}`);
+      });
+    }
+    
+    function applyStoredTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    }
 
     // =============================================
     // INICIALIZAÇÃO
     // =============================================
     document.addEventListener('DOMContentLoaded', function() {
+      // Aplicar tema armazenado
+      applyStoredTheme();
+      
       // Inicializa a primeira aba
       trocarAba('importar');
     });
