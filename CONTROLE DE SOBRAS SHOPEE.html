@@ -647,6 +647,9 @@
      <button class="tab-btn" onclick="trocarAba('registroFaturamento'); carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')">
   📋 Registro de Faturamento
 </button>
+    <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
+  <i class="fas fa-boxes"></i> Controle de Vendas
+</button>  
     </div>
 
     <!-- Aba de Importação/Conferência -->
@@ -914,10 +917,25 @@
   </div>
 </div>
 
+<!-- 📦 Aba de Controle de Vendas -->
+<div id="controleVendas" class="tab-content">
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-boxes"></i>
+      <h3>Controle de Vendas por SKU</h3>
+    </div>
 
- 
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+      <div class="flex items-center gap-2">
+        <label for="filtroMesVendas" class="font-medium">📆 Filtrar por mês:</label>
+        <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-1"
+          onchange="carregarControleVendas()" />
+      </div>
+    </div>
 
-
+    <div id="listaControleVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+  </div>
+</div>
 
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
@@ -2503,6 +2521,44 @@ Gere um resumo inteligente com insights práticos.
     console.error("Erro IA:", error);
   }
 }
+     async function carregarControleVendas() {
+    const container = document.getElementById("listaControleVendas");
+    const filtroMes = document.getElementById("filtroMesVendas")?.value;
+    container.innerHTML = "🔄 Carregando...";
+
+    const ref = db.collection("controleVendas");
+    const snap = await ref.get();
+
+    container.innerHTML = "";
+
+    for (const doc of snap.docs) {
+      const dataDoc = doc.id; // YYYY-MM-DD
+      if (filtroMes) {
+        const [anoFiltro, mesFiltro] = filtroMes.split("-");
+        const [anoDoc, mesDoc] = dataDoc.split("-");
+        if (anoFiltro !== anoDoc || mesFiltro !== mesDoc) continue;
+      }
+
+      const dados = doc.data(); // { SKU1: 3, SKU2: 5, ... }
+
+      let htmlSKUs = "";
+      Object.entries(dados).forEach(([sku, qtd]) => {
+        htmlSKUs += `<div class="text-sm text-gray-700"><strong>${sku}</strong>: ${qtd} vendid${qtd > 1 ? 'os' : 'o'}</div>`;
+      });
+
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-lg shadow p-4 border border-gray-200";
+      card.innerHTML = `
+        <div class="text-center font-bold bg-blue-100 text-blue-800 py-2 rounded mb-2">${dataDoc}</div>
+        ${htmlSKUs}
+      `;
+      container.appendChild(card);
+    }
+
+    if (container.innerHTML === "") {
+      container.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
+    }
+  }
     async function exportarFaturamentoExcel() {
   const snap = await db.collection("faturamento").get();
   const dataExport = [];
