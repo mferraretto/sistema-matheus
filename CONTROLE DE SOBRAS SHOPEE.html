@@ -2489,21 +2489,26 @@ window.importarFaturamento = async function () {
       const refSku = db.collection("skusVendidos").doc(dataReferencia);
       await refSku.set({ data: dataReferencia }); // garante doc pai
 
-      const batch = db.batch();
-      for (const [sku, total] of Object.entries(skusVendidos)) {
-        const skuId = String(sku).replace(/[.#$/\[\]]/g, "_"); // ID válido
-        const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
-        batch.set(docRef, {
-          sku: sku,
-          total: total,
-          data: dataReferencia,
-          loja: loja,
-          uid: usuarioLogado.uid
-        });
-      }
+ for (const [sku, total] of Object.entries(skusVendidos)) {
+  const skuId = String(sku).replace(/[.#$/\[\]]/g, "_");
+  const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
+  const docSnap = await docRef.get();
 
-      console.log("SKUs a salvar:", skusVendidos);
-      await batch.commit();
+  let totalFinal = total;
+  if (docSnap.exists) {
+    const dadosAnteriores = docSnap.data();
+    totalFinal += dadosAnteriores.total || 0;
+  }
+
+  await docRef.set({
+    sku: sku,
+    total: totalFinal,
+    data: dataReferencia,
+    loja: loja,
+    uid: usuarioLogado.uid
+  });
+}
+
 
       await ref.set({
         valorBruto: bruto,
