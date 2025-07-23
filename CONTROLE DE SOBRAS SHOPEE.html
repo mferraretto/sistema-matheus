@@ -2472,9 +2472,8 @@ rows.forEach((row) => {
   const status = (row["Status do pedido"] || "").toLowerCase();
   if (status.includes("cancelado") || status.includes("não pago")) return;
 
-const sku = row['Número de referência SKU'] || '';
-const status = (row['Status do pedido'] || '').toLowerCase();
-if (!sku || status.includes('cancelado') || status.includes('não pago')) return;
+  const sku = row["Número de referência SKU"] || "";
+  if (!sku) return;
 
   if (!skusVendidos[sku]) skusVendidos[sku] = 0;
   skusVendidos[sku]++;
