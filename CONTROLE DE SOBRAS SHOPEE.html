@@ -631,7 +631,7 @@
     </div>
     
     <!-- Barra de navegação por abas -->
-    <div class="tab-bar">
+    -bar">
 <button class="tab-btn active" onclick="trocarAba('importar')">
         <i class="fas fa-box-open"></i> Conferir Pedidos
       </button>
@@ -903,7 +903,10 @@
 <div id="listaFaturamento" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; padding: 1rem;">
 </div>
 </div>
- 
+ <div id="registroFaturamento" class="tab-content">
+  <div id="listaFaturamento" class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4"></div>
+</div>
+
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
     <div class="status-dot"></div>
@@ -2144,10 +2147,13 @@ window.importarFaturamento = async function () {
       if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
         return mostrarErro("Data inválida.");
       }
-
-      const ref = db.collection("faturamento").doc(dataReferencia);
-      const doc = await ref.get();
-
+  let loja = prompt("Informe o nome da loja:");
+if (!loja || loja.length < 2) {
+  return mostrarErro("Nome da loja inválido.");
+}
+      const ref = db.collection("faturamento").doc(dataReferencia).collection("lojas").doc(loja);
+const doc = await ref.get();
+      
       let operacao = "salvar";
       if (doc.exists) {
         operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
@@ -2172,29 +2178,33 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
 
       const liquido = bruto - taxas;
 
-      if (operacao === "somar" && doc.exists) {
-        const anterior = doc.data();
-        bruto += anterior.valorBruto || 0;
-        taxas += anterior.taxasPlataforma || 0;
-      }
+     if (operacao === "somar" && doc.exists) {
+  const anterior = doc.data();
+  bruto += anterior.valorBruto || 0;
+  taxas += anterior.taxasPlataforma || 0;
+  qtdVendas += anterior.qtdVendas || 0;
+}
+     await ref.set({
+  valorBruto: bruto,
+  taxasPlataforma: taxas,
+  valorLiquido: liquido,
+  qtdVendas: qtdVendas,
+  loja: loja,
+  atualizadoEm: new Date(),
+  uid: usuarioLogado.uid
+});
 
-      await ref.set({
-        valorBruto: bruto,
-        taxasPlataforma: taxas,
-        valorLiquido: liquido,
-        atualizadoEm: new Date(),
-        uid: usuarioLogado.uid
-      });
+document.getElementById("resultadoFaturamento").innerHTML = `
+  <div class="alert alert-success">
+    <i class="fas fa-check-circle"></i>
+    Faturamento de <strong>${dataReferencia}</strong> da loja <strong>${loja}</strong> registrado com sucesso.<br>
+    <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
+    <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
+    <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}<br>
+    <strong>Qtd. Vendas:</strong> ${qtdVendas}
+  </div>
+`;
 
-      document.getElementById("resultadoFaturamento").innerHTML = `
-        <div class="alert alert-success">
-          <i class="fas fa-check-circle"></i>
-          Faturamento de <strong>${dataReferencia}</strong> registrado com sucesso.<br>
-          <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
-          <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
-          <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}
-        </div>
-      `;
     } catch (err) {
       mostrarErro("Erro ao importar: " + err.message);
       console.error(err);
@@ -2238,28 +2248,62 @@ let bruto = 0, taxas = 0, qtdVendas = 0;
       }
     }
 async function carregarRegistrosFaturamento() {
-  const snap = await db.collection("faturamento").get();
+  const ref = db.collection("faturamento");
+  const snap = await ref.get();
   const container = document.getElementById("listaFaturamento");
   container.innerHTML = "";
-  snap.forEach(doc => {
-    const d = doc.data();
-    const data = doc.id;
-    const bruto = d.valorBruto?.toFixed(2) || "-";
-    const liquido = d.valorLiquido?.toFixed(2) || "-";
-    const qtd = d.qtdVendas || 0;
+
+  for (const docData of snap.docs) {
+    const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+    let bruto = 0, liquido = 0, qtd = 0;
+
+    subSnap.forEach(sub => {
+      const d = sub.data();
+      bruto += d.valorBruto || 0;
+      liquido += d.valorLiquido || 0;
+      qtd += d.qtdVendas || 0;
+    });
+
     const card = document.createElement("div");
+    card.className = "bg-white border rounded p-2 text-sm shadow";
     card.innerHTML = `
-      <div style="border:1px solid black;text-align:center;font-weight:bold;background:#ddd;padding:5px">${data}</div>
-      <div style="border:1px solid black;padding:4px"><strong>BRUTO =</strong> R$ ${bruto}</div>
-      <div style="border:1px solid black;padding:4px"><strong>LIQUIDO =</strong> R$ ${liquido}</div>
-      <div style="border:1px solid black;padding:4px"><strong>QTD.VENDAS =</strong> ${qtd}</div>
+      <div style="background:#ccc;font-weight:bold;text-align:center;padding:4px">${docData.id}</div>
+      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>BRUTO =</strong> R$ ${bruto.toLocaleString('pt-BR')}</div>
+      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>LIQUIDO =</strong> R$ ${liquido.toLocaleString('pt-BR')}</div>
+      <div style="padding:4px;border-bottom:1px solid #ccc"><strong>QTD.VENDAS =</strong> ${qtd}</div>
+      <button onclick='mostrarDetalhesFaturamento("${docData.id}")' class="btn btn-sm btn-info mt-1">🔍 Mais Detalhes</button>
+      <div id="detalhes-${docData.id}" style="display:none;margin-top:5px;"></div>
     `;
-    card.className = "bg-white shadow rounded overflow-hidden";
     container.appendChild(card);
-  });
+  }
 }
 
-document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]").addEventListener("click", carregarRegistrosFaturamento);
+async function mostrarDetalhesFaturamento(dataRef) {
+  const detalhesEl = document.getElementById("detalhes-" + dataRef);
+  if (detalhesEl.style.display === "block") {
+    detalhesEl.style.display = "none";
+    return;
+  }
+  detalhesEl.innerHTML = "🔄 Carregando...";
+  detalhesEl.style.display = "block";
+
+  const ref = db.collection("faturamento").doc(dataRef).collection("lojas");
+  const snap = await ref.get();
+  let html = "";
+  snap.forEach(doc => {
+    const d = doc.data();
+    html += `<div style="border-top:1px dashed #999;padding:2px">
+      <strong>${d.loja}:</strong> 
+      Bruto: R$ ${d.valorBruto?.toLocaleString('pt-BR')} | 
+      Líquido: R$ ${d.valorLiquido?.toLocaleString('pt-BR')} | 
+      Vendas: ${d.qtdVendas}
+    </div>`;
+  });
+  detalhesEl.innerHTML = html;
+}
+  document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]")
+    .addEventListener("click", carregarRegistrosFaturamento);
+    
     function exportarJSON() {
       if (pedidosProcessados.length === 0) {
         mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
