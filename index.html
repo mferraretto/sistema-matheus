@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
     :root {
@@ -32,6 +33,8 @@
       --text-dark: #f7fafc;
       --text-light: #a0aec0;
       --border: #4a5568;
+      --success: #66BB6A;
+      --error: #EF5350;
     }
     
     * {
@@ -63,7 +66,7 @@
     
     /* Sidebar */
     .sidebar {
-      width: 250px;
+      width: 280px;
       background-color: var(--base);
       color: white;
       height: 100vh;
@@ -71,21 +74,24 @@
       z-index: 50;
       overflow-y: auto;
       transition: width 0.3s;
+      box-shadow: 3px 0 15px rgba(0,0,0,0.1);
     }
     
     .sidebar-logo {
-      padding: 20px 15px;
+      padding: 22px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       margin-bottom: 10px;
     }
     
     .sidebar-item {
-      padding: 14px 20px;
+      padding: 16px 22px;
       display: flex;
       align-items: center;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.3s ease;
       border-left: 4px solid transparent;
+      margin: 4px 12px;
+      border-radius: 8px;
     }
     
     .sidebar-item:hover {
@@ -95,6 +101,7 @@
     .sidebar-item.active {
       background-color: rgba(255,255,255,0.15);
       border-left-color: var(--primary);
+      box-shadow: inset 4px 0 0 var(--primary);
     }
     
     .sidebar-item i {
@@ -102,11 +109,22 @@
       margin-right: 15px;
       text-align: center;
       font-size: 18px;
+      color: rgba(255,255,255,0.7);
+    }
+    
+    .sidebar-item.active i {
+      color: var(--primary);
     }
     
     .sidebar-item span {
       font-family: 'Poppins', sans-serif;
       font-weight: 500;
+      color: rgba(255,255,255,0.85);
+    }
+    
+    .sidebar-item.active span {
+      color: white;
+      font-weight: 600;
     }
     
     /* Top Navbar */
@@ -117,13 +135,31 @@
       position: fixed;
       top: 0;
       right: 0;
-      left: 250px;
+      left: 280px;
       z-index: 40;
-      padding: 0 25px;
+      padding: 0 30px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       transition: left 0.3s;
+    }
+    
+    .top-navbar .logo-text {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--base);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .top-navbar .logo-text span {
+      color: var(--primary);
+    }
+    
+    .top-navbar .logo-text i {
+      font-size: 20px;
     }
     
     .user-info {
@@ -143,11 +179,13 @@
       color: white;
       font-weight: bold;
       font-size: 18px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
     .user-name {
       font-family: 'Poppins', sans-serif;
       font-weight: 500;
+      font-size: 16px;
     }
     
     .nav-actions {
@@ -166,10 +204,12 @@
       cursor: pointer;
       transition: background-color 0.2s;
       position: relative;
+      color: var(--text-light);
     }
     
     .nav-icon:hover {
       background-color: rgba(0,0,0,0.05);
+      color: var(--primary);
     }
     
     .notification-badge {
@@ -185,60 +225,70 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: bold;
     }
     
     .btn-logout {
       background-color: var(--base);
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 8px 18px;
       border-radius: 8px;
       cursor: pointer;
       font-family: 'Poppins', sans-serif;
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: background-color 0.2s;
+      transition: all 0.3s;
+      font-weight: 500;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
     .btn-logout:hover {
       background-color: #2a3b4a;
+      transform: translateY(-2px);
     }
     
     /* Main Content */
     .main-content {
       flex: 1;
-      margin-left: 250px;
-      padding: 90px 25px 25px;
+      margin-left: 280px;
+      padding: 90px 30px 30px;
       transition: margin-left 0.3s;
     }
     
     .dashboard-title {
-      margin-bottom: 25px;
+      margin-bottom: 30px;
     }
     
     .dashboard-title h1 {
-      font-size: 28px;
+      font-size: 32px;
       color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
     }
     
     .dashboard-title p {
       color: var(--text-light);
-      margin-top: 5px;
+      font-size: 17px;
+      max-width: 700px;
+      line-height: 1.6;
     }
     
     /* Cards Grid */
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 25px;
       margin-bottom: 40px;
     }
     
     .card {
       background-color: var(--bg-card);
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      border-radius: 14px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
       padding: 25px;
       transition: transform 0.3s, box-shadow 0.3s;
       border: 1px solid var(--border);
@@ -247,8 +297,8 @@
     }
     
     .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      transform: translateY(-7px);
+      box-shadow: 0 12px 25px rgba(0,0,0,0.1);
     }
     
     .card-header {
@@ -258,115 +308,293 @@
     }
     
     .card-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
+      width: 55px;
+      height: 55px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 15px;
-      font-size: 22px;
+      margin-right: 18px;
+      font-size: 24px;
+      background: linear-gradient(135deg, rgba(244,92,0,0.1), rgba(244,92,0,0.2));
+      color: var(--primary);
     }
     
     .card-title {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 600;
       color: var(--text-dark);
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      font-family: 'Montserrat', sans-serif;
     }
     
     .card-description {
       color: var(--text-light);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
     }
     
     .card-btn {
-      display: inline-block;
+      flex: 1;
       background-color: var(--primary);
       color: white;
-      padding: 10px 20px;
+      padding: 10px 15px;
       border-radius: 8px;
       text-decoration: none;
       font-family: 'Poppins', sans-serif;
       font-weight: 500;
-      transition: background-color 0.2s;
+      transition: all 0.3s;
       text-align: center;
       border: none;
       cursor: pointer;
-      width: 100%;
-      margin-top: 15px;
+      font-size: 15px;
+    }
+    
+    .card-btn.secondary {
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--border);
     }
     
     .card-btn:hover {
       background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(244,92,0,0.25);
+    }
+    
+    .card-btn.secondary:hover {
+      background-color: rgba(244,92,0,0.05);
+      box-shadow: none;
     }
     
     /* Features Section */
     .features-section {
       background-color: var(--bg-card);
       border-radius: 16px;
-      padding: 30px;
+      padding: 35px;
       border: 1px solid var(--border);
       margin-bottom: 40px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
     }
     
     .section-title {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
     }
     
     .section-title h2 {
-      font-size: 24px;
+      font-size: 28px;
       color: var(--text-dark);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .section-title p {
+      color: var(--text-light);
+      font-size: 16px;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.6;
     }
     
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 25px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
     }
     
     .feature-card {
       text-align: center;
-      padding: 25px 20px;
-      background-color: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      transition: transform 0.3s;
+      padding: 30px 25px;
+      background-color: var(--bg-card);
+      border-radius: 14px;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     
     .feature-card:hover {
       transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
     
     .feature-icon {
-      width: 70px;
-      height: 70px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      background-color: rgba(59, 130, 246, 0.1);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 28px;
+      margin: 0 auto 25px;
+      font-size: 32px;
       color: var(--accent);
     }
     
     .feature-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       color: var(--text-dark);
+      font-family: 'Montserrat', sans-serif;
     }
     
     .feature-description {
       color: var(--text-light);
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    
+    /* Charts Section */
+    .charts-section {
+      background-color: var(--bg-card);
+      border-radius: 16px;
+      padding: 35px;
+      border: 1px solid var(--border);
+      margin-bottom: 40px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    }
+    
+    .chart-container {
+      height: 350px;
+      margin-top: 25px;
+      position: relative;
+    }
+    
+    /* Table Styles */
+    .table-container {
+      background-color: var(--bg-card);
+      border-radius: 16px;
+      padding: 25px;
+      border: 1px solid var(--border);
+      margin-bottom: 40px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+      overflow: hidden;
+    }
+    
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .table-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-dark);
+      font-family: 'Montserrat', sans-serif;
+    }
+    
+    .table-filters {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .filter-input {
+      padding: 10px 15px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-card);
+      color: var(--text-dark);
+      min-width: 200px;
+    }
+    
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .data-table th {
+      background-color: rgba(244,92,0,0.05);
+      padding: 16px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-dark);
+      font-family: 'Poppins', sans-serif;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .data-table td {
+      padding: 14px 15px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-light);
+    }
+    
+    .data-table tr:nth-child(even) {
+      background-color: rgba(0,0,0,0.02);
+    }
+    
+    .dark-mode .data-table tr:nth-child(even) {
+      background-color: rgba(255,255,255,0.03);
+    }
+    
+    .data-table tr:hover {
+      background-color: rgba(244,92,0,0.03);
+    }
+    
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-block;
+    }
+    
+    .status-active {
+      background-color: rgba(76, 175, 80, 0.15);
+      color: var(--success);
+    }
+    
+    .status-inactive {
+      background-color: rgba(244, 67, 54, 0.15);
+      color: var(--error);
+    }
+    
+    .table-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--text-light);
+      background-color: transparent;
+      border: none;
+    }
+    
+    .action-btn:hover {
+      background-color: rgba(244,92,0,0.1);
+      color: var(--primary);
     }
     
     /* Footer */
@@ -375,6 +603,7 @@
       color: white;
       padding: 30px 25px;
       border-top: 1px solid rgba(255,255,255,0.1);
+      margin-top: 40px;
     }
     
     .footer-content {
@@ -427,6 +656,7 @@
     
     .social-icon:hover {
       background-color: var(--primary);
+      transform: translateY(-3px);
     }
     
     .footer-bottom {
@@ -515,20 +745,21 @@
     
     .tooltip .tooltiptext {
       visibility: hidden;
-      width: 120px;
+      width: 140px;
       background-color: var(--base);
       color: white;
       text-align: center;
       border-radius: 6px;
-      padding: 5px 0;
+      padding: 8px;
       position: absolute;
       z-index: 1;
       bottom: 125%;
       left: 50%;
-      margin-left: -60px;
+      margin-left: -70px;
       opacity: 0;
       transition: opacity 0.3s;
-      font-size: 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
     }
     
     .tooltip .tooltiptext::after {
@@ -566,13 +797,15 @@
     
     /* Success/Error Messages */
     .message {
-      padding: 12px 15px;
-      border-radius: 8px;
+      padding: 15px 20px;
+      border-radius: 10px;
       margin: 15px 0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       animation: slideIn 0.3s;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
     }
     
     .message-success {
@@ -590,7 +823,7 @@
     /* Responsive Adjustments */
     @media (max-width: 992px) {
       .sidebar {
-        width: 70px;
+        width: 80px;
       }
       
       .sidebar-item span {
@@ -602,11 +835,11 @@
       }
       
       .top-navbar {
-        left: 70px;
+        left: 80px;
       }
       
       .main-content {
-        margin-left: 70px;
+        margin-left: 80px;
       }
     }
     
@@ -631,80 +864,316 @@
       .features-grid {
         grid-template-columns: 1fr;
       }
+      
+      .table-filters {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .filter-input {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app-container">
 
- <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="flex items-center space-x-3">
-      <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-        <i class="fas fa-rocket text-white"></i>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="flex items-center space-x-3">
+          <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
+            <i class="fas fa-rocket text-white"></i>
+          </div>
+          <span class="font-bold text-xl">Mentoria Ferraretto</span>
+        </div>
       </div>
-      <span class="font-bold text-xl">Mentoria Ferraretto</span>
+
+      <a href="#" class="sidebar-item active">
+        <i class="fas fa-home"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-calculator"></i>
+        <span>Precificação</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-bullhorn"></i>
+        <span>Anúncios</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-chart-line"></i>
+        <span>Vendas & Faturamento</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-tools"></i>
+        <span>Custeio & Produção</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-users"></i>
+        <span>Clientes</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <span>Financeiro</span>
+      </a>
+
+      <a href="#" class="sidebar-item">
+        <i class="fas fa-cog"></i>
+        <span>Configurações</span>
+      </a>
+    </aside>
+
+    <!-- Top Navbar -->
+    <div class="top-navbar">
+      <div class="logo-text">
+        <i class="fas fa-rocket text-orange-500"></i>
+        <span>Mentoria <span class="text-orange-500">Ferraretto</span></span>
+      </div>
+      
+      <div class="user-info">
+        <div class="nav-actions">
+          <div class="nav-icon tooltip">
+            <i class="fas fa-bell"></i>
+            <div class="notification-badge">3</div>
+            <span class="tooltiptext">Notificações</span>
+          </div>
+          
+          <div class="nav-icon tooltip">
+            <i class="fas fa-moon" id="darkModeToggle"></i>
+            <span class="tooltiptext">Alternar Modo Escuro</span>
+          </div>
+          
+          <button class="btn-logout" id="logoutBtn">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <div class="user-avatar">MF</div>
+          <div class="user-name">Matheus Ferraretto</div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- Links atualizados -->
-  <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
-    <i class="fas fa-calculator"></i>
-    <span>📊 Precificação Inteligente</span>
-  </a>
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard Title -->
+      <div class="dashboard-title">
+        <h1><i class="fas fa-rocket text-orange-500"></i> Dashboard Premium</h1>
+        <p>Gerencie suas operações, monitore métricas e tome decisões estratégicas com base em dados precisos.</p>
+      </div>
 
-  <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
-    <i class="fas fa-bullhorn"></i>
-    <span>📢 Anúncios & IA</span>
-  </a>
-
-  <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
-    <i class="fas fa-coins"></i>
-    <span>📈 Faturamento e Vendas</span>
-  </a>
-
-  <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
-    <i class="fas fa-tools"></i>
-    <span>🛠️ Custeio e Produção</span>
-  </a>
-
-  <a href="painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="sidebar-item">
-    <i class="fas fa-user-cog"></i>
-    <span>👤 Painel de Usuários</span>
-  </a>
-</aside>
-
-    
       <!-- Messages -->
       <div class="message message-success">
         <i class="fas fa-check-circle"></i>
         <div>✅ Sistema de precificação atualizado com sucesso!</div>
       </div>
       
-    <!-- Apresentação da Marca -->
-<section class="bg-white rounded-xl shadow-md p-8 mb-12 max-w-4xl mx-auto mt-10 border border-gray-200">
-  <h2 class="text-3xl font-extrabold text-gray-800 mb-4">
-    🚀 Apresentação da Marca – Projeto Liberdade Shopee
-  </h2>
-  <p class="text-gray-600 text-lg leading-relaxed">
-    O <strong>Projeto Liberdade Shopee</strong> nasceu com um propósito claro: mostrar para trabalhadores CLT que é possível construir uma nova fonte de renda — real, segura e estratégica — através das vendas online.
-  </p>
-  <p class="text-gray-600 text-lg leading-relaxed mt-4">
-    Aqui, não vendemos ilusões. Compartilhamos experiências práticas, ferramentas inteligentes e estratégias validadas por quem já fez essa transição.
-    Nossa missão é libertar pessoas do salário limitado e do crachá obrigatório, mostrando que empreender na Shopee pode ser o primeiro passo para uma vida com mais autonomia, tempo e propósito.
-  </p>
-  <p class="text-gray-700 font-medium text-lg mt-6">
-    Se você sente que está trabalhando demais e ganhando de menos, o <strong>Projeto Liberdade Shopee</strong> é pra você.
-  </p>
-</section>
-
+      <!-- Cards Grid -->
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-calculator"></i>
+            </div>
+            <div>
+              <h3 class="card-title">Precificação Inteligente</h3>
+              <p class="card-description">Calcule automaticamente preços de venda com base em custos, concorrência e margem desejada.</p>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="card-btn">
+              <i class="fas fa-play mr-2"></i> Calcular
+            </button>
+            <button class="card-btn secondary">
+              <i class="fas fa-cog mr-2"></i> Configurar
+            </button>
+          </div>
         </div>
-     
+        
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+              <h3 class="card-title">Anúncios & IA</h3>
+              <p class="card-description">Otimize seus anúncios com inteligência artificial e acompanhe o desempenho em tempo real.</p>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="card-btn">
+              <i class="fas fa-chart-line mr-2"></i> Analisar
+            </button>
+            <button class="card-btn secondary">
+              <i class="fas fa-edit mr-2"></i> Editar
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-coins"></i>
+            </div>
+            <div>
+              <h3 class="card-title">Faturamento e Vendas</h3>
+              <p class="card-description">Acompanhe seu faturamento, lucratividade e tendências de vendas com relatórios detalhados.</p>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="card-btn">
+              <i class="fas fa-file-download mr-2"></i> Relatório
+            </button>
+            <button class="card-btn secondary">
+              <i class="fas fa-filter mr-2"></i> Filtrar
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Charts Section -->
+      <div class="charts-section">
+        <div class="section-title">
+          <h2><i class="fas fa-chart-bar text-orange-500"></i> Desempenho das Vendas</h2>
+          <p>Visualize o desempenho das suas vendas nos últimos 30 dias</p>
+        </div>
+        <div class="chart-container">
+          <canvas id="salesChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Products Table -->
+      <div class="table-container">
+        <div class="table-header">
+          <h3 class="table-title"><i class="fas fa-boxes mr-2 text-orange-500"></i> Produtos em Destaque</h3>
+          <div class="table-filters">
+            <input type="text" class="filter-input" placeholder="Filtrar por nome...">
+            <input type="text" class="filter-input" placeholder="Filtrar por SKU...">
+            <select class="filter-input">
+              <option value="">Todos status</option>
+              <option value="active">Ativo</option>
+              <option value="inactive">Inativo</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>SKU</th>
+                <th>Preço</th>
+                <th>Vendas (30d)</th>
+                <th>Estoque</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Smartwatch X200 Pro</td>
+                <td>SW-X200-BLK</td>
+                <td>R$ 249,90</td>
+                <td>142</td>
+                <td>87</td>
+                <td><span class="status-badge status-active">Ativo</span></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn tooltip">
+                      <i class="fas fa-edit"></i>
+                      <span class="tooltiptext">Editar</span>
+                    </button>
+                    <button class="action-btn tooltip">
+                      <i class="fas fa-chart-line"></i>
+                      <span class="tooltiptext">Analisar</span>
+                    </button>
+                    <button class="action-btn tooltip">
+                      <i class="fas fa-trash"></i>
+                      <span class="tooltiptext">Excluir</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Fone Bluetooth TWS</td>
+                <td>FB-TWS-WHT</td>
+                <td>R$ 119,90</td>
+                <td>89</td>
+                <td>42</td>
+                <td><span class="status-badge status-active">Ativo</span></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
+                    <button class="action-btn"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Carregador Portátil 20.000mAh</td>
+                <td>CP-20K-BLK</td>
+                <td>R$ 89,90</td>
+                <td>56</td>
+                <td>12</td>
+                <td><span class="status-badge status-inactive">Inativo</span></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
+                    <button class="action-btn"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Suporte para Celular Veicular</td>
+                <td>SC-VEIC-BLK</td>
+                <td>R$ 39,90</td>
+                <td>203</td>
+                <td>64</td>
+                <td><span class="status-badge status-active">Ativo</span></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
+                    <button class="action-btn"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>Cabo USB-C 2m</td>
+                <td>CAB-USBC-2M</td>
+                <td>R$ 19,90</td>
+                <td>310</td>
+                <td>143</td>
+                <td><span class="status-badge status-active">Ativo</span></td>
+                <td>
+                  <div class="table-actions">
+                    <button class="action-btn"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
+                    <button class="action-btn"><i class="fas fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <!-- Features Section -->
       <div class="features-section">
         <div class="section-title">
-          <h2><i class="fas fa-medal text-yellow-500"></i> Vantagens Exclusivas</h2>
+          <h2><i class="fas fa-medal text-orange-500"></i> Vantagens Exclusivas</h2>
+          <p>Recursos premium que fazem a diferença no seu negócio</p>
         </div>
         
         <div class="features-grid">
@@ -734,34 +1203,35 @@
         </div>
       </div>
       
-   <!-- Footer -->
-<footer class="footer bg-[#1C2B36] text-white py-10 mt-20">
-  <div class="max-w-6xl mx-auto px-6">
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-      <div class="flex items-center space-x-4 mb-6 md:mb-0">
-        <div class="bg-[#F45C00] w-12 h-12 rounded-xl flex items-center justify-center">
-          <i class="fas fa-rocket text-white text-xl"></i>
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="max-w-6xl mx-auto px-6">
+          <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <div class="flex items-center space-x-4 mb-6 md:mb-0">
+              <div class="bg-[#F45C00] w-12 h-12 rounded-xl flex items-center justify-center">
+                <i class="fas fa-rocket text-white text-xl"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-xl">Mentoria Ferraretto</h3>
+                <p class="text-gray-400 text-sm mt-1">Soluções inteligentes para otimizar seus negócios</p>
+              </div>
+            </div>
+            
+            <div class="flex space-x-5">
+              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-instagram"></i></a>
+              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
+          
+          <div class="border-t border-gray-600 pt-4 text-center text-gray-400 text-sm">
+            <p>&copy; 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
+          </div>
         </div>
-        <div>
-          <h3 class="font-bold text-xl">Mentoria Ferraretto</h3>
-          <p class="text-gray-400 text-sm mt-1">Soluções inteligentes para otimizar seus negócios</p>
-        </div>
-      </div>
-      
-      <div class="flex space-x-5">
-        <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-instagram"></i></a>
-        <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-facebook-f"></i></a>
-        <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-twitter"></i></a>
-        <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-youtube"></i></a>
-      </div>
-    </div>
-    
-    <div class="border-t border-gray-600 pt-4 text-center text-gray-400 text-sm">
-      <p>&copy; 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
+      </footer>
     </div>
   </div>
-</footer>
-
 
   <!-- Modais de Login -->
   <div id="loginModal" class="modal">
@@ -839,7 +1309,7 @@
       </div>
     </div>
   </div>
-</div>
+  
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
@@ -969,6 +1439,58 @@
     }
     
     checkLogin();
+    
+    // Initialize charts
+    const salesChart = new Chart(
+      document.getElementById('salesChart'),
+      {
+        type: 'bar',
+        data: {
+          labels: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30'],
+          datasets: [
+            {
+              label: 'Vendas (R$)',
+              data: [3500, 4200, 3800, 5100, 4700, 5900],
+              backgroundColor: 'rgba(244, 92, 0, 0.7)',
+              borderRadius: 6,
+            },
+            {
+              label: 'Lucro (R$)',
+              data: [1200, 1500, 1400, 1900, 1700, 2200],
+              backgroundColor: 'rgba(59, 130, 246, 0.7)',
+              borderRadius: 6,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: {
+                  family: 'Poppins'
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      }
+    );
   </script>
 </body>
 </html>
