@@ -2609,8 +2609,8 @@ Gere um resumo inteligente com insights práticos.
   }
 }
 window.verDetalhesDia = async function (dataDoc) {
-  const ref = collection(db, `skusVendidos/${dataDoc}/lista`);
-  const snap = await getDocs(ref);
+  const ref = db.collection(`skusVendidos/${dataDoc}/lista`);
+  const snap = await ref.get();
 
   const agrupadoPorLoja = {};
 
