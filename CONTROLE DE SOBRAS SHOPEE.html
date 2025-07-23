@@ -723,10 +723,16 @@
           </table>
         </div>
         <div class="mt-4">
-  <button onclick="analisarSobrasComIA()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-    🧠 Analisar Sobras com IA
-  </button>
-  <div id="resultadoIA" class="mt-4 bg-gray-100 border border-gray-300 rounded p-4 whitespace-pre-wrap text-sm text-gray-800"></div>
+  <!-- Botão -->
+<button onclick="analisarSobrasIA()" class="bg-pink-500 text-white px-4 py-2 rounded mt-4">
+  🤖 Analisar Sobras com IA
+</button>
+
+<!-- Campo escondido com os dados -->
+<input type="hidden" id="dadosSobrasIA">
+
+<!-- Área onde aparecerá a resposta da IA -->
+<div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
 </div>
         <div id="totalSobra" style="margin-top: 1.5rem;"></div>
         
@@ -1754,6 +1760,20 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         }
     };
 }
+    // Prepara os dados das sobras para enviar à IA
+const sobras = pedidosProcessados.map(p => {
+  return {
+    sku: p.sku,
+    vendido: p.subtotal,
+    sobra: p.sobra,
+    data: new Date().toLocaleDateString()
+  };
+});
+
+document.getElementById("dadosSobrasIA").value = sobras.map(s => {
+  return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Data: ${s.data}`;
+}).join("\n");
+
       // Atualizar gráficos se estiver na aba
       if (document.getElementById('graficos').classList.contains('active')) {
         atualizarGraficos();
@@ -2262,6 +2282,34 @@ ${JSON.stringify(dados, null, 2)}
   } catch (erro) {
     console.error("Erro IA sobras:", erro);
     document.getElementById("resultadoIA").innerText = "Erro ao analisar sobras com IA.";
+  }
+}
+async function analisarSobrasIA() {
+  const prompt = `
+Sou um sistema de controle de sobras da Shopee. Com base nos dados abaixo, analise se os SKUs estão performando bem, identifique padrões incomuns e sugira ações como promoções, reposição ou atenção especial.
+
+Dados:
+${document.getElementById("dadosSobrasIA").value}
+
+Gere um resumo inteligente com insights práticos.
+`;
+
+  document.getElementById("resultadoIA").innerHTML = "⌛ Analisando com IA...";
+  
+  try {
+    const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pergunta: prompt })
+    });
+
+    const data = await resposta.json();
+    const output = data.choices?.[0]?.message?.content || data.resposta || "⚠️ Resposta não recebida.";
+
+    document.getElementById("resultadoIA").innerHTML = output;
+  } catch (error) {
+    document.getElementById("resultadoIA").innerHTML = "❌ Erro ao consultar IA: " + error.message;
+    console.error("Erro IA:", error);
   }
 }
 
