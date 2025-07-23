@@ -2586,8 +2586,9 @@ Gere um resumo inteligente com insights práticos.
       const { sku, total, loja } = docSKU.data();
       totalDia += total || 0;
       htmlSKUs += `
-        <div class="text-sm text-gray-700">
-          <strong>${sku || docSKU.id}</strong> (${loja || "-"}) — ${total || 0} unid.
+      <div class="text-sm text-gray-700 flex justify-between items-center">
+          <span><strong>${sku || docSKU.id}</strong> (${loja || "-"}) — ${total || 0} unid.</span>
+          <button onclick="verDetalhesSKU('${dataDoc}', '${sku}')" class="text-xs text-blue-600 underline ml-2">Ver mais</button>
         </div>`;
     });
 
