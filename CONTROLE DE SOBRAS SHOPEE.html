@@ -2265,7 +2265,15 @@ async function carregarRegistrosFaturamento() {
   const container = document.getElementById("listaFaturamento");
   container.innerHTML = "";
 
+  const filtroMes = document.getElementById("filtroMes")?.value;
+
   for (const docData of snap.docs) {
+    if (filtroMes) {
+      const [anoFiltro, mesFiltro] = filtroMes.split("-");
+      const [anoData, mesData] = docData.id.split("-");
+      if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
+    }
+
     const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
     let bruto = 0, liquido = 0, qtd = 0;
 
@@ -2284,6 +2292,7 @@ async function carregarRegistrosFaturamento() {
       <div style="padding:4px;border-bottom:1px solid #ccc"><strong>LIQUIDO =</strong> R$ ${liquido.toLocaleString('pt-BR')}</div>
       <div style="padding:4px;border-bottom:1px solid #ccc"><strong>QTD.VENDAS =</strong> ${qtd}</div>
       <button onclick='mostrarDetalhesFaturamento("${docData.id}")' class="btn btn-sm btn-info mt-1">🔍 Mais Detalhes</button>
+      <button onclick='excluirFaturamento("${docData.id}")' class="ml-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">🗑 Excluir</button>
       <div id="detalhes-${docData.id}" style="display:none;margin-top:5px;"></div>
     `;
     container.appendChild(card);
@@ -2316,6 +2325,13 @@ async function mostrarDetalhesFaturamento(dataRef) {
   document.querySelector("button[onclick=\"trocarAba('registroFaturamento')\"]")
     .addEventListener("click", carregarRegistrosFaturamento);
     
+    async function excluirFaturamento(data) {
+  if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
+  await db.collection("faturamento").doc(data).delete();
+  showNotification("Registro excluído com sucesso.", "success");
+  carregarRegistrosFaturamento();
+}
+
     function exportarJSON() {
       if (pedidosProcessados.length === 0) {
         mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
@@ -2410,6 +2426,37 @@ Gere um resumo inteligente com insights práticos.
     console.error("Erro IA:", error);
   }
 }
+    async function exportarFaturamentoExcel() {
+  const snap = await db.collection("faturamento").get();
+  const dataExport = [];
+
+  for (const docData of snap.docs) {
+    const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+    subSnap.forEach(sub => {
+      const d = sub.data();
+      dataExport.push({
+        Data: docData.id,
+        Loja: d.loja || "Desconhecida",
+        Bruto: d.valorBruto || 0,
+        Taxas: d.taxasPlataforma || 0,
+        Líquido: d.valorLiquido || 0,
+        Vendas: d.qtdVendas || 0
+      });
+    });
+  }
+
+  if (dataExport.length === 0) {
+    alert("Nenhum dado de faturamento encontrado.");
+    return;
+  }
+
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
+  XLSX.writeFile(wb, "faturamento.xlsx");
+}
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   </script>
 </body>
