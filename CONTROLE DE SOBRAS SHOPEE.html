@@ -232,6 +232,51 @@
       color: #b91c43;
       border-left: 4px solid var(--danger);
     }
+    /* 🔥 NOVO ESTILO PARA OS CARDS DE FATURAMENTO E VENDAS */
+.card-metric-novo {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  border-left: 5px solid var(--primary);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+}
+
+.card-metric-novo:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.card-metric-novo h4 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+  color: var(--dark);
+}
+
+.card-metric-novo .valor-principal {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.card-metric-novo .info-secundaria {
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+  color: var(--secondary);
+}
+
+.card-metric-novo .card-botoes {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
     
     /* Botões */
     .btn {
@@ -1573,20 +1618,22 @@ const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { mini
         }
         
         div.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <strong>${item.sku}</strong>
-                ${acaoTexto}
-              </div>
-              <div>${valorTexto}</div>
-              <div class="history-date">Por: ${item.usuario}</div>
-            </div>
-            <div class="history-date">
-              ${item.data.toLocaleDateString('pt-BR')} ${item.data.toLocaleTimeString('pt-BR')}
-            </div>
-          </div>
-        `;
+  <div class="flex justify-between items-start flex-wrap gap-4 p-4 rounded-lg shadow transition hover:shadow-xl border border-gray-200 bg-white">
+    <div>
+      <div class="flex items-center gap-2 mb-2">
+        <strong class="text-blue-800">${item.sku}</strong>
+        ${acaoTexto}
+      </div>
+      <div class="text-sm text-gray-600">${valorTexto}</div>
+      <div class="text-sm text-gray-500 mt-1">👤 Por: ${item.usuario}</div>
+    </div>
+    <div class="text-sm text-gray-500 text-right">
+      <i class="fas fa-clock"></i>
+      ${item.data.toLocaleDateString('pt-BR')}<br>${item.data.toLocaleTimeString('pt-BR')}
+    </div>
+  </div>
+`;
+
         
         lista.appendChild(div);
       });
