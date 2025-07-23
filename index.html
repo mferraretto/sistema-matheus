@@ -6,35 +6,16 @@
   <title>Mentoria Ferraretto - Sistema Premium</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --primary: #F45C00;
-      --primary-hover: #e05500;
-      --base: #1C2B36;
-      --success: #4CAF50;
-      --error: #F44336;
-      --bg-light: #F5F7FA;
-      --bg-card: #ffffff;
-      --text-dark: #1a202c;
-      --text-light: #718096;
-      --border: #e2e8f0;
-      --accent: #3B82F6;
-    }
-    
-    .dark-mode {
-      --primary: #FF6A13;
-      --primary-hover: #ff7d35;
-      --base: #0d1b24;
-      --bg-light: #1a202c;
-      --bg-card: #2d3748;
-      --text-dark: #f7fafc;
-      --text-light: #a0aec0;
-      --border: #4a5568;
-      --success: #66BB6A;
-      --error: #EF5350;
+      --primary: #3B82F6;
+      --secondary: #8B5CF6;
+      --accent: #10B981;
+      --dark: #1E293B;
+      --light: #F8FAFC;
+      --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     }
     
     * {
@@ -44,683 +25,136 @@
     }
     
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-light);
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      background-attachment: fixed;
       min-height: 100vh;
-      color: var(--text-dark);
-      transition: background-color 0.3s, color 0.3s;
-    }
-    
-    h1, h2, h3, h4 {
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    button, .btn {
-      font-family: 'Poppins', sans-serif;
-    }
-    
-    .app-container {
-      display: flex;
-      min-height: 100vh;
-    }
-    
-    /* Sidebar */
-    .sidebar {
-      width: 280px;
-      background-color: var(--base);
-      color: white;
-      height: 100vh;
-      position: fixed;
-      z-index: 50;
-      overflow-y: auto;
-      transition: width 0.3s;
-      box-shadow: 3px 0 15px rgba(0,0,0,0.1);
-    }
-    
-    .sidebar-logo {
-      padding: 22px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      margin-bottom: 10px;
-    }
-    
-    .sidebar-item {
-      padding: 16px 22px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-left: 4px solid transparent;
-      margin: 4px 12px;
-      border-radius: 8px;
-    }
-    
-    .sidebar-item:hover {
-      background-color: rgba(255,255,255,0.1);
-    }
-    
-    .sidebar-item.active {
-      background-color: rgba(255,255,255,0.15);
-      border-left-color: var(--primary);
-      box-shadow: inset 4px 0 0 var(--primary);
-    }
-    
-    .sidebar-item i {
-      width: 24px;
-      margin-right: 15px;
-      text-align: center;
-      font-size: 18px;
-      color: rgba(255,255,255,0.7);
-    }
-    
-    .sidebar-item.active i {
-      color: var(--primary);
-    }
-    
-    .sidebar-item span {
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      color: rgba(255,255,255,0.85);
-    }
-    
-    .sidebar-item.active span {
-      color: white;
-      font-weight: 600;
-    }
-    
-    /* Top Navbar */
-    .top-navbar {
-      height: 70px;
-      background-color: var(--bg-card);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      position: fixed;
-      top: 0;
-      right: 0;
-      left: 280px;
-      z-index: 40;
-      padding: 0 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: left 0.3s;
-    }
-    
-    .top-navbar .logo-text {
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 700;
-      font-size: 22px;
-      color: var(--base);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .top-navbar .logo-text span {
-      color: var(--primary);
-    }
-    
-    .top-navbar .logo-text i {
-      font-size: 20px;
-    }
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .user-avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 18px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .user-name {
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      font-size: 16px;
-    }
-    
-    .nav-actions {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-    
-    .nav-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      position: relative;
-      color: var(--text-light);
-    }
-    
-    .nav-icon:hover {
-      background-color: rgba(0,0,0,0.05);
-      color: var(--primary);
-    }
-    
-    .notification-badge {
-      position: absolute;
-      top: 0;
-      right: 0;
-      background-color: var(--primary);
-      color: white;
-      font-size: 10px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-    }
-    
-    .btn-logout {
-      background-color: var(--base);
-      color: white;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s;
-      font-weight: 500;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .btn-logout:hover {
-      background-color: #2a3b4a;
-      transform: translateY(-2px);
-    }
-    
-    /* Main Content */
-    .main-content {
-      flex: 1;
-      margin-left: 280px;
-      padding: 90px 30px 30px;
-      transition: margin-left 0.3s;
-    }
-    
-    .dashboard-title {
-      margin-bottom: 30px;
-    }
-    
-    .dashboard-title h1 {
-      font-size: 32px;
-      color: var(--text-dark);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    
-    .dashboard-title p {
-      color: var(--text-light);
-      font-size: 17px;
-      max-width: 700px;
-      line-height: 1.6;
-    }
-    
-    /* Cards Grid */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 25px;
-      margin-bottom: 40px;
+      overflow-x: hidden;
+      color: #334155;
     }
     
     .card {
-      background-color: var(--bg-card);
-      border-radius: 14px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-      padding: 25px;
-      transition: transform 0.3s, box-shadow 0.3s;
-      border: 1px solid var(--border);
+      @apply bg-white p-7 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl;
+      background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+      border: 1px solid rgba(226, 232, 240, 0.7);
       position: relative;
       overflow: hidden;
+      transform: translateY(0);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
     .card:hover {
-      transform: translateY(-7px);
-      box-shadow: 0 12px 25px rgba(0,0,0,0.1);
-    }
-    
-    .card-header {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 20px;
-    }
-    
-    .card-icon {
-      width: 55px;
-      height: 55px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 18px;
-      font-size: 24px;
-      background: linear-gradient(135deg, rgba(244,92,0,0.1), rgba(244,92,0,0.2));
-      color: var(--primary);
-    }
-    
-    .card-title {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-dark);
-      margin-bottom: 8px;
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .card-description {
-      color: var(--text-light);
-      font-size: 15px;
-      line-height: 1.6;
-    }
-    
-    .card-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-    }
-    
-    .card-btn {
-      flex: 1;
-      background-color: var(--primary);
-      color: white;
-      padding: 10px 15px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      transition: all 0.3s;
-      text-align: center;
-      border: none;
-      cursor: pointer;
-      font-size: 15px;
-    }
-    
-    .card-btn.secondary {
-      background-color: transparent;
-      color: var(--primary);
-      border: 1px solid var(--border);
-    }
-    
-    .card-btn:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(244,92,0,0.25);
-    }
-    
-    .card-btn.secondary:hover {
-      background-color: rgba(244,92,0,0.05);
-      box-shadow: none;
-    }
-    
-    /* Features Section */
-    .features-section {
-      background-color: var(--bg-card);
-      border-radius: 16px;
-      padding: 35px;
-      border: 1px solid var(--border);
-      margin-bottom: 40px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-    }
-    
-    .section-title {
-      text-align: center;
-      margin-bottom: 35px;
-    }
-    
-    .section-title h2 {
-      font-size: 28px;
-      color: var(--text-dark);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-    
-    .section-title p {
-      color: var(--text-light);
-      font-size: 16px;
-      max-width: 700px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-    
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 30px;
-    }
-    
-    .feature-card {
-      text-align: center;
-      padding: 30px 25px;
-      background-color: var(--bg-card);
-      border-radius: 14px;
-      transition: all 0.3s;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-    
-    .feature-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
     
-    .feature-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 25px;
-      font-size: 32px;
-      color: var(--accent);
-    }
-    
-    .feature-title {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 15px;
-      color: var(--text-dark);
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .feature-description {
-      color: var(--text-light);
-      font-size: 15px;
-      line-height: 1.6;
-    }
-    
-    /* Charts Section */
-    .charts-section {
-      background-color: var(--bg-card);
-      border-radius: 16px;
-      padding: 35px;
-      border: 1px solid var(--border);
-      margin-bottom: 40px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-    }
-    
-    .chart-container {
-      height: 350px;
-      margin-top: 25px;
-      position: relative;
-    }
-    
-    /* Table Styles */
-    .table-container {
-      background-color: var(--bg-card);
-      border-radius: 16px;
-      padding: 25px;
-      border: 1px solid var(--border);
-      margin-bottom: 40px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-      overflow: hidden;
-    }
-    
-    .table-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .table-title {
-      font-size: 22px;
-      font-weight: 600;
-      color: var(--text-dark);
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .table-filters {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .filter-input {
-      padding: 10px 15px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-card);
-      color: var(--text-dark);
-      min-width: 200px;
-    }
-    
-    .filter-input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    
-    .table-wrapper {
-      overflow-x: auto;
-    }
-    
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: 'Inter', sans-serif;
-    }
-    
-    .data-table th {
-      background-color: rgba(244,92,0,0.05);
-      padding: 16px 15px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-dark);
-      font-family: 'Poppins', sans-serif;
-      position: sticky;
+    .card::before {
+      content: '';
+      position: absolute;
       top: 0;
-      z-index: 10;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
     
-    .data-table td {
-      padding: 14px 15px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-light);
+    .card:hover::before {
+      opacity: 1;
     }
     
-    .data-table tr:nth-child(even) {
-      background-color: rgba(0,0,0,0.02);
-    }
-    
-    .dark-mode .data-table tr:nth-child(even) {
-      background-color: rgba(255,255,255,0.03);
-    }
-    
-    .data-table tr:hover {
-      background-color: rgba(244,92,0,0.03);
-    }
-    
-    .status-badge {
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      display: inline-block;
-    }
-    
-    .status-active {
-      background-color: rgba(76, 175, 80, 0.15);
-      color: var(--success);
-    }
-    
-    .status-inactive {
-      background-color: rgba(244, 67, 54, 0.15);
-      color: var(--error);
-    }
-    
-    .table-actions {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .action-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      color: var(--text-light);
-      background-color: transparent;
-      border: none;
-    }
-    
-    .action-btn:hover {
-      background-color: rgba(244,92,0,0.1);
-      color: var(--primary);
-    }
-    
-    /* Footer */
-    .footer {
-      background-color: var(--base);
-      color: white;
-      padding: 30px 25px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      margin-top: 40px;
-    }
-    
-    .footer-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 30px;
-    }
-    
-    .footer-top {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 30px;
-    }
-    
-    .footer-brand {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    
-    .footer-logo {
-      width: 50px;
-      height: 50px;
-      background-color: var(--primary);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-    
-    .footer-social {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .social-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s;
-    }
-    
-    .social-icon:hover {
-      background-color: var(--primary);
-      transform: translateY(-3px);
-    }
-    
-    .footer-bottom {
-      text-align: center;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.7);
-      font-size: 14px;
-    }
-    
-    /* Modal Styles */
     .modal { 
       display: none; 
       position: fixed; 
-      z-index: 1000; 
+      z-index: 100; 
       left: 0; 
       top: 0; 
       width: 100%; 
       height: 100%; 
       background-color: rgba(0,0,0,0.6); 
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
       animation: fadeIn 0.3s ease;
     }
     
     .modal-content { 
-      background-color: var(--bg-card); 
+      background: linear-gradient(to bottom, #ffffff, #f8fafc); 
       margin: 5% auto; 
       padding: 30px; 
-      border-radius: 16px; 
+      border-radius: 18px; 
       width: 90%; 
       max-width: 500px; 
       max-height: 90vh; 
       overflow-y: auto; 
-      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-      border: 1px solid var(--border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(226, 232, 240, 0.8);
       animation: slideIn 0.4s ease;
-      position: relative;
     }
     
     .btn-close { 
-      position: absolute;
-      top: 20px;
-      right: 20px;
+      float: right; 
       font-size: 24px; 
       font-weight: bold; 
       cursor: pointer; 
-      color: var(--text-light);
+      color: #94a3b8; 
       transition: color 0.2s ease;
     }
     
     .btn-close:hover { 
-      color: var(--text-dark);
+      color: #475569; 
     }
     
     .btn {
-      transition: all 0.3s;
+      @apply transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98];
       box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     
     .btn:active {
       box-shadow: 0 2px 3px -1px rgba(0,0,0,0.1);
     }
     
-    /* Animations */
+    .nav-link {
+      @apply relative px-4 py-2.5 rounded-lg transition-colors duration-300 font-medium;
+      color: #E2E8F0;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 10%;
+      width: 80%;
+      height: 3px;
+      background: var(--primary);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.3s ease;
+      border-radius: 2px;
+    }
+    
+    .nav-link:hover::after {
+      transform: scaleX(1);
+    }
+    
+    .hero-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      z-index: -1;
+      opacity: 0.7;
+    }
+    
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -729,7 +163,7 @@
     @keyframes slideIn {
       from { 
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-30px);
       }
       to { 
         opacity: 1;
@@ -737,541 +171,371 @@
       }
     }
     
-    /* Tooltip */
-    .tooltip {
-      position: relative;
-      display: inline-block;
+    .pulse {
+      animation: pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
     }
     
-    .tooltip .tooltiptext {
-      visibility: hidden;
-      width: 140px;
-      background-color: var(--base);
-      color: white;
-      text-align: center;
-      border-radius: 6px;
-      padding: 8px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      margin-left: -70px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1); }
     }
     
-    .tooltip .tooltiptext::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: var(--base) transparent transparent transparent;
+    .nav-container {
+      background: linear-gradient(135deg, var(--dark) 0%, #0F172A 100%);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
     
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
+    .hero-title {
+      font-size: 3.5rem;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
     }
     
-    /* Skeleton Loading */
-    .skeleton {
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 4px;
+    .feature-card {
+      transition: all 0.3s ease;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
     }
     
-    .dark-mode .skeleton {
-      background: linear-gradient(90deg, #2d3748 25%, #4a5568 50%, #2d3748 75%);
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
     }
     
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    
-    /* Success/Error Messages */
-    .message {
-      padding: 15px 20px;
-      border-radius: 10px;
-      margin: 15px 0;
+    .feature-icon {
+      width: 70px;
+      height: 70px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      animation: slideIn 0.3s;
-      font-family: 'Poppins', sans-serif;
-      font-size: 15px;
+      justify-content: center;
+      border-radius: 18px;
+      margin-bottom: 20px;
+      font-size: 28px;
     }
     
-    .message-success {
-      background-color: rgba(76, 175, 80, 0.15);
-      border: 1px solid rgba(76, 175, 80, 0.3);
-      color: var(--success);
+    footer {
+      background: linear-gradient(135deg, var(--dark) 0%, #0F172A 100%);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
     }
     
-    .message-error {
-      background-color: rgba(244, 67, 54, 0.15);
-      border: 1px solid rgba(244, 67, 54, 0.3);
-      color: var(--error);
+    .social-icon {
+      transition: all 0.3s ease;
     }
     
-    /* Responsive Adjustments */
-    @media (max-width: 992px) {
-      .sidebar {
-        width: 80px;
-      }
-      
-      .sidebar-item span {
-        display: none;
-      }
-      
-      .sidebar-item i {
-        margin-right: 0;
-      }
-      
-      .top-navbar {
-        left: 80px;
-      }
-      
-      .main-content {
-        margin-left: 80px;
-      }
+    .social-icon:hover {
+      transform: translateY(-5px);
     }
     
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 0;
-        overflow: hidden;
-      }
-      
-      .top-navbar {
-        left: 0;
-      }
-      
-      .main-content {
-        margin-left: 0;
-      }
-      
-      .cards-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .table-filters {
-        flex-direction: column;
-        width: 100%;
-      }
-      
-      .filter-input {
-        width: 100%;
-      }
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-right: 20px;
+    }
+    
+    .section-title {
+      position: relative;
+      display: inline-block;
+      padding-bottom: 10px;
+    }
+    
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--gradient);
+      border-radius: 2px;
+    }
+    
+    .user-badge {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3B82F6;
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-weight: 500;
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-icon {
+      width: 90px;
+      height: 90px;
+      border-radius: 24px;
+      background: var(--gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+      color: white;
+    }
+    
+    input {
+      transition: all 0.3s ease;
+      border: 1px solid #CBD5E1;
+      border-radius: 12px;
+      padding: 14px 20px 14px 48px;
+      font-size: 16px;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
   </style>
 </head>
-<body>
-  <div class="app-container">
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="flex items-center space-x-3">
-          <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-            <i class="fas fa-rocket text-white"></i>
-          </div>
-          <span class="font-bold text-xl">Mentoria Ferraretto</span>
-        </div>
+<body class="min-h-screen flex flex-col items-center justify-start pt-24 p-6 pb-16 relative">
+  <!-- Background pattern -->
+  <div class="hero-pattern"></div>
+  
+  <!-- Navigation Bar -->
+  <nav class="fixed top-0 left-0 w-full nav-container text-white py-3 px-6 flex flex-wrap items-center justify-between z-50">
+    <div class="flex items-center space-x-3">
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center">
+        <i class="fas fa-rocket text-white text-xl"></i>
       </div>
-
-      <a href="#" class="sidebar-item active">
-        <i class="fas fa-home"></i>
-        <span>Dashboard</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-calculator"></i>
-        <span>Precificação</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-bullhorn"></i>
-        <span>Anúncios</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-chart-line"></i>
-        <span>Vendas & Faturamento</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-tools"></i>
-        <span>Custeio & Produção</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-users"></i>
-        <span>Clientes</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-file-invoice-dollar"></i>
-        <span>Financeiro</span>
-      </a>
-
-      <a href="#" class="sidebar-item">
-        <i class="fas fa-cog"></i>
-        <span>Configurações</span>
-      </a>
-    </aside>
-
-    <!-- Top Navbar -->
-    <div class="top-navbar">
-      <div class="logo-text">
-        <i class="fas fa-rocket text-orange-500"></i>
-        <span>Mentoria <span class="text-orange-500">Ferraretto</span></span>
-      </div>
-      
-      <div class="user-info">
-        <div class="nav-actions">
-          <div class="nav-icon tooltip">
-            <i class="fas fa-bell"></i>
-            <div class="notification-badge">3</div>
-            <span class="tooltiptext">Notificações</span>
-          </div>
-          
-          <div class="nav-icon tooltip">
-            <i class="fas fa-moon" id="darkModeToggle"></i>
-            <span class="tooltiptext">Alternar Modo Escuro</span>
-          </div>
-          
-          <button class="btn-logout" id="logoutBtn">
-            <i class="fas fa-sign-out-alt"></i> Sair
-          </button>
-        </div>
-        
-        <div class="flex items-center gap-3">
-          <div class="user-avatar">MF</div>
-          <div class="user-name">Matheus Ferraretto</div>
-        </div>
-      </div>
+      <span class="font-bold text-2xl">Mentoria Ferraretto</span>
     </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-      <!-- Dashboard Title -->
-      <div class="dashboard-title">
-        <h1><i class="fas fa-rocket text-orange-500"></i> Dashboard Premium</h1>
-        <p>Gerencie suas operações, monitore métricas e tome decisões estratégicas com base em dados precisos.</p>
-      </div>
-
-      <!-- Messages -->
-      <div class="message message-success">
-        <i class="fas fa-check-circle"></i>
-        <div>✅ Sistema de precificação atualizado com sucesso!</div>
-      </div>
+    
+    <div class="flex items-center space-x-1 md:space-x-4 mt-4 md:mt-0">
+      <a href="index.html" class="nav-link font-medium bg-blue-500/10">Início</a>
+      <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-blue-500/10">Precificação</a>
+      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-blue-500/10">Anúncios</a>
+      <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-blue-500/10">Sobras</a>
+      <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-blue-500/10">Custeio</a>
+      <a href="painel-usuarios.html" onclick="return requireLogin(event)" class="nav-link font-medium hover:bg-blue-500/10">Usuários</a>
+    </div>
+    
+    <div class="flex items-center space-x-4">
+      <span id="currentUser" class="user-badge hidden"></span>
+      <button id="loginBtn" class="btn">
+        <i class="fas fa-sign-in-alt mr-2"></i>Entrar
+      </button>
+      <button id="logoutBtn" class="btn bg-gradient-to-r from-red-500 to-red-600 hidden">
+        <i class="fas fa-sign-out-alt mr-2"></i>Sair
+      </button>
+    </div>
+  </nav>
+  
+  <!-- Hero Section -->
+  <div class="max-w-6xl w-full text-center mb-16 relative z-10 px-4">
+    <div class="mb-10">
+      <span class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-full mb-6 font-medium">
+        <i class="fas fa-star mr-2"></i>Sistema Premium
+      </span>
       
-      <!-- Cards Grid -->
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon">
-              <i class="fas fa-calculator"></i>
-            </div>
-            <div>
-              <h3 class="card-title">Precificação Inteligente</h3>
-              <p class="card-description">Calcule automaticamente preços de venda com base em custos, concorrência e margem desejada.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="card-btn">
-              <i class="fas fa-play mr-2"></i> Calcular
-            </button>
-            <button class="card-btn secondary">
-              <i class="fas fa-cog mr-2"></i> Configurar
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon">
-              <i class="fas fa-bullhorn"></i>
-            </div>
-            <div>
-              <h3 class="card-title">Anúncios & IA</h3>
-              <p class="card-description">Otimize seus anúncios com inteligência artificial e acompanhe o desempenho em tempo real.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="card-btn">
-              <i class="fas fa-chart-line mr-2"></i> Analisar
-            </button>
-            <button class="card-btn secondary">
-              <i class="fas fa-edit mr-2"></i> Editar
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon">
-              <i class="fas fa-coins"></i>
-            </div>
-            <div>
-              <h3 class="card-title">Faturamento e Vendas</h3>
-              <p class="card-description">Acompanhe seu faturamento, lucratividade e tendências de vendas com relatórios detalhados.</p>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="card-btn">
-              <i class="fas fa-file-download mr-2"></i> Relatório
-            </button>
-            <button class="card-btn secondary">
-              <i class="fas fa-filter mr-2"></i> Filtrar
-            </button>
-          </div>
-        </div>
-      </div>
+      <h1 class="hero-title font-bold text-gray-800 mb-5">
+        <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">Soluções de Gestão</span> para sua Loja
+      </h1>
+      <p class="text-gray-600 max-w-2xl mx-auto text-xl mb-10">
+        Ferramentas avançadas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho integrados.
+      </p>
       
-      <!-- Charts Section -->
-      <div class="charts-section">
-        <div class="section-title">
-          <h2><i class="fas fa-chart-bar text-orange-500"></i> Desempenho das Vendas</h2>
-          <p>Visualize o desempenho das suas vendas nos últimos 30 dias</p>
-        </div>
-        <div class="chart-container">
-          <canvas id="salesChart"></canvas>
+      <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-1 rounded-full inline-block mb-12 pulse">
+        <div class="bg-white rounded-full px-8 py-3">
+          <span class="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
+            <i class="fas fa-chart-line mr-2"></i>Maximize Seus Lucros
+          </span>
         </div>
       </div>
-      
-      <!-- Products Table -->
-      <div class="table-container">
-        <div class="table-header">
-          <h3 class="table-title"><i class="fas fa-boxes mr-2 text-orange-500"></i> Produtos em Destaque</h3>
-          <div class="table-filters">
-            <input type="text" class="filter-input" placeholder="Filtrar por nome...">
-            <input type="text" class="filter-input" placeholder="Filtrar por SKU...">
-            <select class="filter-input">
-              <option value="">Todos status</option>
-              <option value="active">Ativo</option>
-              <option value="inactive">Inativo</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>SKU</th>
-                <th>Preço</th>
-                <th>Vendas (30d)</th>
-                <th>Estoque</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Smartwatch X200 Pro</td>
-                <td>SW-X200-BLK</td>
-                <td>R$ 249,90</td>
-                <td>142</td>
-                <td>87</td>
-                <td><span class="status-badge status-active">Ativo</span></td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn tooltip">
-                      <i class="fas fa-edit"></i>
-                      <span class="tooltiptext">Editar</span>
-                    </button>
-                    <button class="action-btn tooltip">
-                      <i class="fas fa-chart-line"></i>
-                      <span class="tooltiptext">Analisar</span>
-                    </button>
-                    <button class="action-btn tooltip">
-                      <i class="fas fa-trash"></i>
-                      <span class="tooltiptext">Excluir</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>Fone Bluetooth TWS</td>
-                <td>FB-TWS-WHT</td>
-                <td>R$ 119,90</td>
-                <td>89</td>
-                <td>42</td>
-                <td><span class="status-badge status-active">Ativo</span></td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
-                    <button class="action-btn"><i class="fas fa-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>Carregador Portátil 20.000mAh</td>
-                <td>CP-20K-BLK</td>
-                <td>R$ 89,90</td>
-                <td>56</td>
-                <td>12</td>
-                <td><span class="status-badge status-inactive">Inativo</span></td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
-                    <button class="action-btn"><i class="fas fa-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>Suporte para Celular Veicular</td>
-                <td>SC-VEIC-BLK</td>
-                <td>R$ 39,90</td>
-                <td>203</td>
-                <td>64</td>
-                <td><span class="status-badge status-active">Ativo</span></td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
-                    <button class="action-btn"><i class="fas fa-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>Cabo USB-C 2m</td>
-                <td>CAB-USBC-2M</td>
-                <td>R$ 19,90</td>
-                <td>310</td>
-                <td>143</td>
-                <td><span class="status-badge status-active">Ativo</span></td>
-                <td>
-                  <div class="table-actions">
-                    <button class="action-btn"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn"><i class="fas fa-chart-line"></i></button>
-                    <button class="action-btn"><i class="fas fa-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Features Section -->
-      <div class="features-section">
-        <div class="section-title">
-          <h2><i class="fas fa-medal text-orange-500"></i> Vantagens Exclusivas</h2>
-          <p>Recursos premium que fazem a diferença no seu negócio</p>
-        </div>
-        
-        <div class="features-grid">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-bolt"></i>
-            </div>
-            <h3 class="feature-title">Otimização de Tempo</h3>
-            <p class="feature-description">Automatize processos manuais e economize horas de trabalho por dia.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <h3 class="feature-title">Tomada de Decisão</h3>
-            <p class="feature-description">Dados precisos para decisões estratégicas baseadas em informações reais.</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="fas fa-lock"></i>
-            </div>
-            <h3 class="feature-title">Segurança de Dados</h3>
-            <p class="feature-description">Seus dados protegidos com tecnologia de criptografia avançada.</p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Footer -->
-      <footer class="footer">
-        <div class="max-w-6xl mx-auto px-6">
-          <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-            <div class="flex items-center space-x-4 mb-6 md:mb-0">
-              <div class="bg-[#F45C00] w-12 h-12 rounded-xl flex items-center justify-center">
-                <i class="fas fa-rocket text-white text-xl"></i>
-              </div>
-              <div>
-                <h3 class="font-bold text-xl">Mentoria Ferraretto</h3>
-                <p class="text-gray-400 text-sm mt-1">Soluções inteligentes para otimizar seus negócios</p>
-              </div>
-            </div>
-            
-            <div class="flex space-x-5">
-              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-instagram"></i></a>
-              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-facebook-f"></i></a>
-              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-twitter"></i></a>
-              <a href="#" class="text-white hover:text-orange-400 transition"><i class="fab fa-youtube"></i></a>
-            </div>
-          </div>
-          
-          <div class="border-t border-gray-600 pt-4 text-center text-gray-400 text-sm">
-            <p>&copy; 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   </div>
+  
+  <!-- Cards Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl w-full mb-16 px-4">
+    <div class="card">
+      <div class="flex items-start mb-5">
+        <div class="card-icon bg-blue-100 text-blue-600">
+          <i class="fas fa-calculator"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">📊 Sistema de Precificação Shopee</h2>
+          <p class="text-gray-600 mb-5">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
+          <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block w-full text-center bg-gradient-to-r from-green-500 to-green-600">
+            Acessar Sistema <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-start mb-5">
+        <div class="card-icon bg-purple-100 text-purple-600">
+          <i class="fas fa-bullhorn"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">🗂️ Gerenciamento de Anúncios</h2>
+          <p class="text-gray-600 mb-5">Gerencie produtos, importe dados e analise desempenho com IA.</p>
+          <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block w-full text-center">
+            Acessar Sistema <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-start mb-5">
+        <div class="card-icon bg-yellow-100 text-yellow-600">
+          <i class="fas fa-box-open"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">📦 Controle de Sobras Shopee</h2>
+          <p class="text-gray-600 mb-5">Importe relatórios e controle sobras com gráficos e metas por SKU.</p>
+          <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block w-full text-center bg-gradient-to-r from-purple-500 to-purple-600">
+            Acessar Sistema <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-start mb-5">
+        <div class="card-icon bg-red-100 text-red-600">
+          <i class="fas fa-industry"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">🛠️ Custeio de Produção</h2>
+          <p class="text-gray-600 mb-5">Calcule custos de produção por peça, incluindo MDF e mão de obra.</p>
+          <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block w-full text-center bg-gradient-to-r from-yellow-500 to-yellow-600">
+            Acessar Sistema <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card col-span-1 md:col-span-2">
+      <div class="flex items-start mb-5">
+        <div class="card-icon bg-gray-100 text-gray-600">
+          <i class="fas fa-users"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">👤 Gerenciamento de Usuários</h2>
+          <p class="text-gray-600 mb-5">Cadastre e defina permissões de acesso por perfil (ADM ou Cliente).</p>
+          <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn inline-block w-full text-center bg-gradient-to-r from-gray-500 to-gray-600">
+            Acessar Painel <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="max-w-6xl w-full rounded-2xl p-8 mb-16 border border-blue-100 bg-gradient-to-br from-white to-blue-50 px-4">
+    <h2 class="text-3xl font-bold text-center text-gray-800 mb-14 section-title">
+      <i class="fas fa-medal text-yellow-500 mr-2"></i>Vantagens Exclusivas
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="feature-card text-center p-8 rounded-xl bg-white">
+        <div class="feature-icon bg-blue-100 text-blue-600 mx-auto">
+          <i class="fas fa-bolt"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">Otimização de Tempo</h3>
+        <p class="text-gray-600">Automatize processos manuais e economize horas de trabalho por dia.</p>
+      </div>
+      
+      <div class="feature-card text-center p-8 rounded-xl bg-white">
+        <div class="feature-icon bg-purple-100 text-purple-600 mx-auto">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">Tomada de Decisão</h3>
+        <p class="text-gray-600">Dados precisos para decisões estratégicas baseadas em informações reais.</p>
+      </div>
+      
+      <div class="feature-card text-center p-8 rounded-xl bg-white">
+        <div class="feature-icon bg-green-100 text-green-600 mx-auto">
+          <i class="fas fa-lock"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">Segurança de Dados</h3>
+        <p class="text-gray-600">Seus dados protegidos com tecnologia de criptografia avançada.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full py-12 px-6 mt-auto">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-8 md:mb-0">
+          <div class="flex items-center space-x-3 mb-5">
+            <div class="bg-gradient-to-r from-blue-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center">
+              <i class="fas fa-rocket text-white text-xl"></i>
+            </div>
+            <span class="font-bold text-2xl">Mentoria Ferraretto</span>
+          </div>
+          <p class="text-gray-400 max-w-md text-lg">Soluções inteligentes para otimizar seus negócios na Shopee e maximizar seus lucros.</p>
+        </div>
+        
+        <div class="flex space-x-5">
+          <a href="#" class="social-icon w-12 h-12 rounded-full bg-gray-700 hover:bg-gradient-to-r from-pink-600 to-purple-600 flex items-center justify-center">
+            <i class="fab fa-instagram text-xl"></i>
+          </a>
+          <a href="#" class="social-icon w-12 h-12 rounded-full bg-gray-700 hover:bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
+            <i class="fab fa-facebook-f text-xl"></i>
+          </a>
+          <a href="#" class="social-icon w-12 h-12 rounded-full bg-gray-700 hover:bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
+            <i class="fab fa-twitter text-xl"></i>
+          </a>
+          <a href="#" class="social-icon w-12 h-12 rounded-full bg-gray-700 hover:bg-gradient-to-r from-red-600 to-red-800 flex items-center justify-center">
+            <i class="fab fa-youtube text-xl"></i>
+          </a>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
+        <p class="text-lg">&copy; 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
 
   <!-- Modais de Login -->
   <div id="loginModal" class="modal">
     <div class="modal-content">
       <span class="btn-close" onclick="closeModal('loginModal')">&times;</span>
       
-      <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-lock text-white text-3xl"></i>
+      <div class="text-center mb-7">
+        <div class="modal-icon">
+          <i class="fas fa-lock"></i>
         </div>
         <h3 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h3>
-        <p class="text-gray-600 mt-2">Insira suas credenciais para acessar as ferramentas</p>
+        <p class="text-gray-600 mt-3">Insira suas credenciais para acessar as ferramentas</p>
       </div>
       
       <div class="space-y-6">
         <div>
           <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-envelope text-gray-400"></i>
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fas fa-envelope text-gray-400 text-lg"></i>
             </div>
-            <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="seu@email.com">
+            <input type="email" id="loginEmail" class="w-full" placeholder="seu@email.com">
           </div>
         </div>
         
         <div>
           <label class="block text-sm font-medium mb-2 text-gray-700">Senha</label>
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-lock text-gray-400"></i>
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fas fa-lock text-gray-400 text-lg"></i>
             </div>
-            <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••">
+            <input type="password" id="loginPassword" class="w-full" placeholder="••••••••">
           </div>
         </div>
         
-        <button onclick="login()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
+        <button onclick="login()" class="btn w-full mt-4 py-4 text-lg">
           <i class="fas fa-sign-in-alt mr-2"></i> Entrar
         </button>
         
-        <div class="text-center pt-4">
+        <div class="text-center pt-5">
           <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
             Esqueci minha senha
           </a>
@@ -1284,32 +548,32 @@
     <div class="modal-content">
       <span class="btn-close" onclick="closeModal('recoverModal')">&times;</span>
       
-      <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-key text-white text-3xl"></i>
+      <div class="text-center mb-7">
+        <div class="modal-icon">
+          <i class="fas fa-key"></i>
         </div>
         <h3 class="text-2xl font-bold text-gray-800">Recuperar Senha</h3>
-        <p class="text-gray-600 mt-2">Insira seu e-mail para receber as instruções de recuperação</p>
+        <p class="text-gray-600 mt-3">Insira seu e-mail para receber as instruções de recuperação</p>
       </div>
       
       <div class="space-y-6">
         <div>
           <label class="block text-sm font-medium mb-2 text-gray-700">E-mail cadastrado</label>
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i class="fas fa-envelope text-gray-400"></i>
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fas fa-envelope text-gray-400 text-lg"></i>
             </div>
-            <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="seu@email.com">
+            <input type="email" id="recoverEmail" class="w-full" placeholder="seu@email.com">
           </div>
         </div>
         
-        <button onclick="sendRecovery()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
+        <button onclick="sendRecovery()" class="btn w-full mt-4 py-4 text-lg">
           <i class="fas fa-paper-plane mr-2"></i> Enviar Link de Recuperação
         </button>
       </div>
     </div>
   </div>
-  
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
@@ -1369,23 +633,17 @@
     };
 
     function showUserArea(user) {
-      const avatar = document.querySelector('.user-avatar');
-      const name = document.querySelector('.user-name');
-      
-      if (user && user.email) {
-        // Extract initials for avatar
-        const initials = user.email.substring(0, 2).toUpperCase();
-        avatar.textContent = initials;
-        
-        // Set username (use email if name not available)
-        name.textContent = user.displayName || user.email.split('@')[0];
-      }
+      document.getElementById('currentUser').textContent = user.email;
+      document.getElementById('currentUser').classList.remove('hidden');
+      document.getElementById('loginBtn').classList.add('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
     }
 
     function hideUserArea() {
-      // Reset user info
-      document.querySelector('.user-avatar').textContent = 'MF';
-      document.querySelector('.user-name').textContent = 'Visitante';
+      document.getElementById('currentUser').textContent = '';
+      document.getElementById('currentUser').classList.add('hidden');
+      document.getElementById('loginBtn').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.add('hidden');
     }
 
     window.requireLogin = (event) => {
@@ -1407,31 +665,7 @@
       });
     }
 
-    // Dark mode toggle
-    document.getElementById('darkModeToggle').addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      const icon = document.querySelector('#darkModeToggle i');
-      
-      if (document.body.classList.contains('dark-mode')) {
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-      } else {
-        icon.classList.remove('fa-sun');
-        icon.classList.add('fa-moon');
-      }
-    });
-
-    // Sidebar item activation
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-      item.addEventListener('click', function() {
-        document.querySelectorAll('.sidebar-item').forEach(el => {
-          el.classList.remove('active');
-        });
-        this.classList.add('active');
-      });
-    });
-
-    // Initialize
+    document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
     if (window.location.search.includes('login=1')) {
@@ -1439,58 +673,6 @@
     }
     
     checkLogin();
-    
-    // Initialize charts
-    const salesChart = new Chart(
-      document.getElementById('salesChart'),
-      {
-        type: 'bar',
-        data: {
-          labels: ['1-5', '6-10', '11-15', '16-20', '21-25', '26-30'],
-          datasets: [
-            {
-              label: 'Vendas (R$)',
-              data: [3500, 4200, 3800, 5100, 4700, 5900],
-              backgroundColor: 'rgba(244, 92, 0, 0.7)',
-              borderRadius: 6,
-            },
-            {
-              label: 'Lucro (R$)',
-              data: [1200, 1500, 1400, 1900, 1700, 2200],
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              borderRadius: 6,
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: {
-                font: {
-                  family: 'Poppins'
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              }
-            }
-          }
-        }
-      }
-    );
   </script>
 </body>
 </html>
