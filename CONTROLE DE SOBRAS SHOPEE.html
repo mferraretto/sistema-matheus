@@ -2269,7 +2269,7 @@ const batch = db.batch();
 }
 await batch.commit();
 
-     await ref.set({
+   await ref.set({
   valorBruto: bruto,
   taxasPlataforma: taxas,
   valorLiquido: liquido,
@@ -2279,6 +2279,16 @@ await batch.commit();
   uid: usuarioLogado.uid
 });
 
+// Salvar também o resumo no documento pai do dia
+await db.collection("faturamento").doc(dataReferencia).set({
+  valorBruto: bruto,
+  valorLiquido: liquido,
+  taxasPlataforma: taxas,
+  vendas: qtdVendas,
+  atualizadoEm: new Date(),
+  uid: usuarioLogado.uid
+}, { merge: true });
+      
 document.getElementById("resultadoFaturamento").innerHTML = `
   <div class="alert alert-success">
     <i class="fas fa-check-circle"></i>
