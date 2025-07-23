@@ -1311,60 +1311,68 @@ window.ordenarTabela = function (indiceColuna) {
   tbody.innerHTML = "";
   linhas.forEach(linha => tbody.appendChild(linha));
 };
-  async function consultarDeepSeek(pergunta) {
-    try {
-      const response = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta })
-      });
-      return await response.json();
-    } catch (error) {
-      console.error("Erro ao consultar DeepSeek:", error);
-      return { erro: true, mensagem: error.message };
-    }
+>
+// 🔁 Consulta a IA (DeepSeek)
+async function consultarDeepSeek(prompt) {
+  try {
+    const response = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pergunta: prompt })
+    });
+
+    const data = await response.json();
+    return data?.choices?.[0]?.message?.content || "⚠️ Sem resposta da IA.";
+  } catch (err) {
+    console.error("Erro ao consultar IA:", err);
+    return "❌ Erro ao consultar IA";
   }
+}
 
-  async function gerarTextoAnuncioIA() {
-    const nome = document.getElementById('nomeProduto')?.value || "Produto";
-    const categoria = document.getElementById('categoriaProduto')?.value || "Categoria";
-    const beneficios = document.getElementById('beneficiosProduto')?.value || "";
+// 🔠 Gera título + descrição com IA
+window.gerarTextoAnuncioIA = async function () {
+  const nome = document.getElementById("nomeProduto").value;
+  const categoria = document.getElementById("categoriaProduto").value;
+  const beneficios = document.getElementById("beneficiosProduto").value;
 
-    const pergunta = `Crie um título e descrição de anúncio Shopee atrativos para o seguinte produto:
-    Nome: ${nome}
-    Categoria: ${categoria}
-    Benefícios: ${beneficios}`;
+  const prompt = `Gere um título e uma descrição atrativa para Shopee com base no seguinte produto: 
+Nome: ${nome}
+Categoria: ${categoria}
+Benefícios: ${beneficios}`;
 
-    const resposta = await consultarDeepSeek(pergunta);
-    document.getElementById("resultadoIA").innerText = resposta.choices?.[0]?.message?.content || "Erro na resposta.";
-  }
+  const resposta = await consultarDeepSeek(prompt);
+  document.getElementById("resultadoIA").innerText = resposta;
+}
 
-  async function otimizarTituloAtual() {
-    const titulo = document.getElementById('tituloProduto')?.value || '';
-    const pergunta = `Otimize esse título da Shopee para melhorar SEO e atratividade:
-    "${titulo}"`;
+// 🔍 Otimiza o título atual com IA
+window.otimizarTituloAtual = async function () {
+  const titulo = document.getElementById("tituloProduto").value;
+  const prompt = `Otimize esse título para Shopee com foco em cliques e conversão: "${titulo}".`;
 
-    const resposta = await consultarDeepSeek(pergunta);
-    document.getElementById("resultadoIA").innerText = resposta.choices?.[0]?.message?.content || "Erro na sugestão.";
-  }
-     async function gerarDiagnosticoIA() {
-    const nome = document.getElementById('nomeProduto')?.value || '';
-    const visitas = parseInt(document.getElementById('visitasProduto')?.value) || 0;
-    const cliques = parseInt(document.getElementById('cliquesProduto')?.value) || 0;
-    const vendas = parseInt(document.getElementById('vendasProduto')?.value) || 0;
-    const estoque = parseInt(document.getElementById('estoqueProduto')?.value) || 0;
+  const resposta = await consultarDeepSeek(prompt);
+  document.getElementById("resultadoIA").innerText = resposta;
+}
 
-    const pergunta = `Analise o desempenho do produto "${nome}" na Shopee com os seguintes dados:
-- Visitas: ${visitas}
-- Cliques: ${cliques}
-- Vendas: ${vendas}
-- Estoque: ${estoque}
+// 📉 Diagnóstico de baixo desempenho
+window.gerarDiagnosticoIA = async function () {
+  const nome = document.getElementById("nomeProduto").value;
+  const visitas = document.getElementById("visitasProduto").value;
+  const cliques = document.getElementById("cliquesProduto").value;
+  const vendas = document.getElementById("vendasProduto").value;
+  const estoque = document.getElementById("estoqueProduto").value;
 
-Diga se o desempenho está abaixo do esperado e quais pontos devem ser melhorados. Responda como um consultor de performance para e-commerce.`;
+  const prompt = `
+Produto: ${nome}
+Visitas: ${visitas}
+Cliques: ${cliques}
+Vendas: ${vendas}
+Estoque: ${estoque}
 
-    const resposta = await consultarDeepSeek(pergunta);
-    document.getElementById("resultadoIA").innerText = resposta.choices?.[0]?.message?.content || "Erro na análise.";
-  }
+Analise o desempenho e diga por que esse anúncio pode estar performando abaixo do esperado, e o que pode ser otimizado.`;
+
+  const resposta = await consultarDeepSeek(prompt);
+  document.getElementById("resultadoIA").innerText = resposta;
+}
   </script>
 </body>
 </html>
