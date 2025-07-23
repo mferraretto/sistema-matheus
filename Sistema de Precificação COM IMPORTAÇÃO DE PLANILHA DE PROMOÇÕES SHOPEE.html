@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MENTORIA FERRARETTO</title>
+  <title>MENTORIA FERRARETTO - Sistema de Precificação</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,204 +18,655 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
   <style>
-    /* Estilos permanecem os mesmos do código anterior */
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tabs button { padding: 10px 20px; border: none; background: #e2e8f0; cursor: pointer; transition: all 0.3s; border-radius: 6px; }
-    .tabs button:hover { background: #cbd5e0; }
-    .tabs button.active { background: #4CAF50; color: white; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .grid-cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.3s; }
-    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
-    input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e0; border-radius: 8px; background: #fff; }
-    input:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2); }
-    button.calc-btn { background-color: #4CAF50; color: white; padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: background 0.3s; }
-    button.calc-btn:hover { background-color: #3d8b40; }
-    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: #fff; margin: 5% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .btn-action { padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 5px; border: none; font-weight: 500; transition: all 0.2s; }
-    .btn-action i { margin-right: 5px; }
-    .btn-edit { background-color: #FFC107; color: #333; }
-    .btn-edit:hover { background-color: #e0a800; }
-    .btn-delete { background-color: #F44336; color: white; }
-    .btn-delete:hover { background-color: #d32f2f; }
-    .btn-view { background-color: #2196F3; color: white; }
-    .btn-view:hover { background-color: #0b7dda; }
-    .btn-close { float: right; font-size: 24px; font-weight: bold; cursor: pointer; color: #777; }
-    .btn-close:hover { color: #333; }
-    .product-card { background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); padding: 20px; transition: all 0.3s; }
-    .product-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
-    .platform-tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .platform-ml { background: #ffe0e0; color: #c62828; }
-    .platform-shopee { background: #e3f2fd; color: #1565c0; }
-    .platform-magalu { background: #e8f5e9; color: #2e7d32; }
-    .platform-shein { background: #f3e5f5; color: #6a1b9a; }
-    .product-price { font-size: 1.5rem; font-weight: 700; }
-    .header { background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px; }
-    .input-group { margin-bottom: 15px; }
-    .input-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #334155; }
-    .scenario-card { background: white; border-radius: 8px; padding: 15px; margin-top: 10px; border-left: 4px solid; }
-    .scenario-ideal { border-left-color: #4CAF50; background-color: #f0fdf4; }
-    .scenario-medium { border-left-color: #FFC107; background-color: #fffbeb; }
-    .scenario-promo { border-left-color: #F44336; background-color: #fef2f2; }
-    .scenario-title { font-weight: 600; margin-bottom: 5px; }
-    .scenario-value { font-size: 1.2rem; font-weight: 700; }
-    .import-export-section { background: #f0fdf4; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #d1fae5; }
-    .price-update-options { display: flex; gap: 10px; margin-top: 15px; }
-    .price-update-options button { padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; border: none; }
-    .btn-apply-promo { background-color: #F44336; color: white; }
-    .btn-apply-medium { background-color: #FFC107; color: #333; }
-    .btn-apply-ideal { background-color: #4CAF50; color: white; }
-    .btn-export-shopee { background-color: #2196F3; color: white; }
-    .imported-products-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .imported-products-table th, .imported-products-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
-    .imported-products-table th { background-color: #f8fafc; font-weight: 600; }
-    .imported-products-table tr:nth-child(even) { background-color: #f8fafc; }
-    .dashboard-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .profile-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-left: 8px; }
-    .admin-badge { background: #ffebee; color: #c62828; }
-    .operator-badge { background: #e3f2fd; color: #1565c0; }
-    .viewer-badge { background: #e8f5e9; color: #2e7d32; }
-    .history-item { border-left: 3px solid #4CAF50; padding-left: 10px; margin-bottom: 8px; }
-    .api-status { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-    .api-connected { background: #4CAF50; }
-    .api-disconnected { background: #F44336; }
+    :root {
+      --primary: #4A6CF7;
+      --primary-dark: #3A5AE7;
+      --secondary: #6A75FF;
+      --accent: #FF6B6B;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --light: #F8FAFF;
+      --dark: #1E293B;
+      --text: #334155;
+      --text-light: #64748B;
+      --border: #E2E8F0;
+      --card-bg: #FFFFFF;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f8faff 0%, #edf2ff 100%);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    
+    /* Header e navegação */
+    .app-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      box-shadow: 0 4px 20px rgba(74, 108, 247, 0.25);
+    }
+    
+    .nav-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    .nav-link {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .nav-link:hover {
+      color: white !important;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: white;
+      transition: width 0.3s ease;
+    }
+    
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    
+    /* Abas */
+    .tabs-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 8px;
+      margin-bottom: 24px;
+    }
+    
+    .tab-button {
+      padding: 12px 24px;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-light);
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tab-button:hover {
+      background: #f1f5f9;
+      color: var(--primary);
+    }
+    
+    .tab-button.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 8px rgba(74, 108, 247, 0.3);
+    }
+    
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Cards e seções */
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .card-body {
+      padding: 20px 24px;
+    }
+    
+    .dashboard-card {
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      background: var(--card-bg);
+      transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Botões */
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border-radius: 12px;
+      font-weight: 600;
+      padding: 12px 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(74, 108, 247, 0.3);
+    }
+    
+    .btn-secondary {
+      background: #EFF4FF;
+      color: var(--primary);
+      border-radius: 12px;
+      font-weight: 600;
+      padding: 12px 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: #E0EAFF;
+      transform: translateY(-2px);
+    }
+    
+    /* Inputs e formulários */
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: white;
+      transition: all 0.3s ease;
+      font-size: 15px;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
+    }
+    
+    /* Cenários de preço */
+    .scenario-card {
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+      border-left: 4px solid;
+    }
+    
+    .scenario-ideal {
+      border-left-color: var(--success);
+      background-color: #ECFDF5;
+    }
+    
+    .scenario-medium {
+      border-left-color: var(--warning);
+      background-color: #FFFBEB;
+    }
+    
+    .scenario-promo {
+      border-left-color: var(--danger);
+      background-color: #FEF2F2;
+    }
+    
+    .scenario-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    
+    .scenario-value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    /* Plataformas */
+    .platform-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .platform-ml {
+      background: #FFE0E0;
+      color: #C62828;
+    }
+    
+    .platform-shopee {
+      background: #E3F2FD;
+      color: #1565C0;
+    }
+    
+    .platform-magalu {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    
+    .platform-shein {
+      background: #F3E5F5;
+      color: #6A1B9A;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      animation: fadeInModal 0.3s ease;
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      animation: slideIn 0.4s ease;
+    }
+    
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Tabelas */
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    th {
+      background: #F8FAFC;
+      font-weight: 600;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    tr:hover {
+      background: #F8FAFC;
+    }
+    
+    /* Cards de produtos */
+    .product-card {
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .product-price {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    /* Status API */
+    .api-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    
+    .api-connected {
+      background: var(--success);
+    }
+    
+    .api-disconnected {
+      background: var(--danger);
+    }
+    
+    /* Responsividade */
     @media (max-width: 768px) {
-      .grid-cols-2 { grid-template-columns: 1fr; }
-      .modal-content { width: 95%; margin: 10px auto; }
-      .price-update-options { flex-wrap: wrap; }
+      .tabs-container {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 8px;
+      }
+      
+      .grid-cols-2 {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        width: 95%;
+        margin: 10px auto;
+        padding: 20px;
+      }
+      
+      .price-update-options {
+        flex-wrap: wrap;
+      }
+    }
+    
+    /* Animações */
+    .fade-in {
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(74, 108, 247, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(74, 108, 247, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(74, 108, 247, 0); }
+    }
+    
+    /* Melhorias específicas */
+    .price-display {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+      padding: 20px 0;
+      background: #F8FAFF;
+      border-radius: 12px;
+      margin: 16px 0;
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: var(--dark);
+      position: relative;
+      padding-bottom: 12px;
+    }
+    
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px;
+    }
+    
+    .kpi-card {
+      text-align: center;
+      padding: 20px;
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 10px 0;
+    }
+    
+    .kpi-label {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .platform-card {
+      border-top: 4px solid;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .platform-card.ml { border-top-color: #FF6B6B; }
+    .platform-card.shopee { border-top-color: #4A6CF7; }
+    .platform-card.magalu { border-top-color: #10B981; }
+    .platform-card.shein { border-top-color: #8B5CF6; }
+    
+    .platform-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: currentColor;
+      opacity: 0.1;
     }
   </style>
 </head>
 <body class="bg-gray-50">
   <!-- Barra de navegação superior -->
-  <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
-    <div class="flex items-center">
-      <i class="fas fa-calculator text-2xl mr-3"></i>
-      <h1 class="text-xl font-bold">MENTORIA FERRARETTO</h1>
+  <header class="app-header text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center">
+        <div class="bg-white p-2 rounded-xl mr-3">
+          <i class="fas fa-calculator text-2xl text-blue-600"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold">MENTORIA FERRARETTO</h1>
+          <p class="text-sm opacity-80">Sistema de Precificação Inteligente</p>
+        </div>
+      </div>
+      <div id="userArea" class="flex items-center">
+        <span id="currentUser" class="mr-4 hidden bg-white/20 px-3 py-1 rounded-full text-sm"></span>
+        <button id="loginBtn" class="btn-secondary">
+          <i class="fas fa-sign-in-alt mr-2"></i> Login
+        </button>
+        <button id="logoutBtn" class="btn-secondary hidden">
+          <i class="fas fa-sign-out-alt mr-2"></i> Sair
+        </button>
+      </div>
     </div>
-    <div id="userArea" class="flex items-center">
-      <span id="currentUser" class="mr-4 hidden"></span>
-      <button id="loginBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-        <i class="fas fa-sign-in-alt mr-2"></i> Login
-      </button>
-      <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hidden">
-        <i class="fas fa-sign-out-alt mr-2"></i> Sair
-      </button>
+  </header>
+  
+  <nav class="nav-container py-3">
+    <div class="container mx-auto flex flex-wrap justify-center space-x-6">
+      <a href="index.html" class="nav-link text-white opacity-80 hover:opacity-100">Início</a>
+      <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="nav-link text-white font-semibold">Precificação</a>
+      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="nav-link text-white opacity-80 hover:opacity-100">Anúncios</a>
+      <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="nav-link text-white opacity-80 hover:opacity-100">Sobras</a>
+      <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="nav-link text-white opacity-80 hover:opacity-100">Custeio</a>
     </div>
-  </div>
- <nav class="bg-gray-700 text-white p-4 flex flex-wrap justify-center space-x-4 mb-6 rounded">
-    <a href="index.html" class="hover:underline">Início</a>
-    <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="hover:underline">Precificação</a>
-    <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="hover:underline">Anúncios</a>
-    <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="hover:underline">Sobras</a>
-    <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="hover:underline">Custeio</a>
   </nav>
-  <div class="container mx-auto p-4">
+  
+  <main class="container mx-auto p-4 pb-12">
     <!-- Abas principais -->
-    <div class="tabs">
-      <button class="tab-button active" data-tab="dashboard">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </button>
-      <button class="tab-button" data-tab="precificacao">
-        <i class="fas fa-calculator"></i> Precificação
-      </button>
-      <button class="tab-button" data-tab="produtos">
-        <i class="fas fa-box"></i> Produtos
-      </button>
-      <button class="tab-button" data-tab="historico" id="historyTab">
-        <i class="fas fa-history"></i> Histórico
-      </button>
-      <button class="tab-button" data-tab="configuracoes" id="configTab">
-        <i class="fas fa-cog"></i> Configurações
-      </button>
+    <div class="tabs-container">
+      <div class="tabs flex">
+        <button class="tab-button active" data-tab="dashboard">
+          <i class="fas fa-tachometer-alt"></i> Dashboard
+        </button>
+        <button class="tab-button" data-tab="precificacao">
+          <i class="fas fa-calculator"></i> Precificação
+        </button>
+        <button class="tab-button" data-tab="produtos">
+          <i class="fas fa-box"></i> Produtos
+        </button>
+        <button class="tab-button" data-tab="historico" id="historyTab">
+          <i class="fas fa-history"></i> Histórico
+        </button>
+        <button class="tab-button" data-tab="configuracoes" id="configTab">
+          <i class="fas fa-cog"></i> Configurações
+        </button>
+      </div>
     </div>
 
     <!-- Conteúdo das abas -->
-    <div id="dashboard" class="tab-content active">
+    <div id="dashboard" class="tab-content active fade-in">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="dashboard-card">
-          <h3 class="text-gray-500 text-sm">Produtos Cadastrados</h3>
-          <p id="totalProducts" class="text-2xl font-bold">0</p>
+        <div class="kpi-card">
+          <i class="fas fa-box text-blue-500 text-2xl mb-2"></i>
+          <div class="kpi-value" id="totalProducts">0</div>
+          <div class="kpi-label">Produtos Cadastrados</div>
         </div>
-        <div class="dashboard-card">
-          <h3 class="text-gray-500 text-sm">Margem Média</h3>
-          <p id="avgMargin" class="text-2xl font-bold">0%</p>
+        <div class="kpi-card">
+          <i class="fas fa-chart-line text-green-500 text-2xl mb-2"></i>
+          <div class="kpi-value" id="avgMargin">0%</div>
+          <div class="kpi-label">Margem Média</div>
         </div>
-        <div class="dashboard-card">
-          <h3 class="text-gray-500 text-sm">Conexões Ativas</h3>
-          <p id="activeConnections" class="text-2xl font-bold">0/3</p>
+        <div class="kpi-card">
+          <i class="fas fa-plug text-purple-500 text-2xl mb-2"></i>
+          <div class="kpi-value" id="activeConnections">0/3</div>
+          <div class="kpi-label">Conexões Ativas</div>
         </div>
-        <div class="dashboard-card">
-          <h3 class="text-gray-500 text-sm">Última Atualização</h3>
-          <p id="lastUpdate" class="text-2xl font-bold">-</p>
+        <div class="kpi-card">
+          <i class="fas fa-sync-alt text-yellow-500 text-2xl mb-2"></i>
+          <div class="kpi-value" id="lastUpdate">-</div>
+          <div class="kpi-label">Última Atualização</div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="dashboard-card">
-          <h3 class="font-bold text-lg mb-4">Margem por Plataforma</h3>
-          <canvas id="marginChart" height="200"></canvas>
-        </div>
-        <div class="dashboard-card">
-          <h3 class="font-bold text-lg mb-4">Produtos Mais Rentáveis</h3>
-          <canvas id="topProductsChart" height="200"></canvas>
-        </div>
-        <div class="dashboard-card">
-          <h3 class="font-bold text-lg mb-4">Status de Conexão</h3>
-          <div class="space-y-3">
-            <div class="flex items-center">
-              <span class="api-status api-connected"></span>
-              <span>Mercado Livre: <span class="font-semibold">Conectado</span></span>
-            </div>
-            <div class="flex items-center">
-              <span class="api-status api-connected"></span>
-              <span>Shopee: <span class="font-semibold">Conectado</span></span>
-            </div>
-            <div class="flex items-center">
-              <span class="api-status api-disconnected"></span>
-              <span>Magalu: <span class="font-semibold">Desconectado</span></span>
-            </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold text-lg">Margem por Plataforma</h3>
           </div>
-          <div class="mt-6">
-            <h4 class="font-semibold mb-2">Últimas Atualizações</h4>
-            <div id="recentUpdates" class="space-y-2">
-              <!-- Preenchido dinamicamente -->
+          <div class="card-body">
+            <canvas id="marginChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold text-lg">Produtos Mais Rentáveis</h3>
+          </div>
+          <div class="card-body">
+            <canvas id="topProductsChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3 class="font-bold text-lg">Status de Conexão</h3>
+          </div>
+          <div class="card-body">
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <span class="api-status api-connected"></span>
+                <span>Mercado Livre: <span class="font-semibold">Conectado</span></span>
+              </div>
+              <div class="flex items-center">
+                <span class="api-status api-connected"></span>
+                <span>Shopee: <span class="font-semibold">Conectado</span></span>
+              </div>
+              <div class="flex items-center">
+                <span class="api-status api-disconnected"></span>
+                <span>Magalu: <span class="font-semibold">Desconectado</span></span>
+              </div>
+            </div>
+            <div class="mt-6">
+              <h4 class="font-semibold mb-2">Últimas Atualizações</h4>
+              <div id="recentUpdates" class="space-y-2">
+                <!-- Preenchido dinamicamente -->
+              </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div class="dashboard-card mb-6">
-        <h3 class="font-bold text-lg mb-4">Histórico de Preços</h3>
-        <canvas id="priceHistoryChart" height="300"></canvas>
+      <div class="card mb-6">
+        <div class="card-header">
+          <h3 class="font-bold text-lg">Histórico de Preços</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="priceHistoryChart" height="300"></canvas>
+        </div>
       </div>
     </div>
 
     <div id="precificacao" class="tab-content">
-      <div class="bg-white rounded-xl p-6 shadow mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="input-group">
-            <label for="produto">Nome do Produto</label>
-            <input id="produto" placeholder="Ex: Tênis Esportivo" class="p-3 border rounded-lg">
-          </div>
-          <div class="input-group">
-            <label for="sku">Código SKU</label>
-            <input id="sku" placeholder="Ex: TN-ESPORT-001" class="p-3 border rounded-lg">
-          </div>
-          <div class="input-group">
-            <label for="custo">Custo do Produto (R$)</label>
-            <input id="custo" placeholder="Ex: 89,90" type="number" step="0.01" class="p-3 border rounded-lg">
+      <div class="card mb-6">
+        <div class="card-header">
+          <h3 class="font-bold text-lg">Informações do Produto</h3>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="input-group">
+              <label for="produto">Nome do Produto</label>
+              <input id="produto" placeholder="Ex: Tênis Esportivo" class="p-3 border rounded-lg">
+            </div>
+            <div class="input-group">
+              <label for="sku">Código SKU</label>
+              <input id="sku" placeholder="Ex: TN-ESPORT-001" class="p-3 border rounded-lg">
+            </div>
+            <div class="input-group">
+              <label for="custo">Custo do Produto (R$)</label>
+              <input id="custo" placeholder="Ex: 89,90" type="number" step="0.01" class="p-3 border rounded-lg">
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="grid-cols-2 mt-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         <!-- Mercado Livre -->
-        <div class="card">
-          <h2 class="text-xl font-bold mb-4 text-red-600"><i class="fas fa-store"></i> Mercado Livre</h2>
-          <div id="mlCampos">
+        <div class="card platform-card ml">
+          <div class="card-header">
+            <h2 class="text-xl font-bold flex items-center">
+              <i class="fas fa-store mr-2 text-red-500"></i> Mercado Livre
+            </h2>
+          </div>
+          <div class="card-body" id="mlCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
@@ -247,10 +698,10 @@
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_ml" disabled class="p-3 bg-gray-100 font-bold text-lg">
+              <div class="price-display" id="preco_ml">R$ 0,00</div>
             </div>
             
-             <div class="scenario-card scenario-promo">
+            <div class="scenario-card scenario-promo">
               <div class="scenario-title">Sem Lucro (0%)</div>
               <div class="scenario-value" id="preco_ml_promo">R$ 0,00</div>
             </div>
@@ -264,16 +715,21 @@
               <div class="scenario-title">Lucro 10%</div>
               <div class="scenario-value" id="preco_ml_ideal">R$ 0,00</div>
             </div>
+            
+            <button class="btn-primary w-full mt-4" onclick="calcular('ml')">
+              <i class="fas fa-save mr-2"></i> Calcular e Salvar
+            </button>
           </div>
-          <button class="calc-btn w-full mt-4" onclick="calcular('ml')">
-            <i class="fas fa-save"></i> Calcular e Salvar
-          </button>
         </div>
 
         <!-- Shopee -->
-        <div class="card">
-          <h2 class="text-xl font-bold mb-4 text-blue-600"><i class="fas fa-store"></i> Shopee</h2>
-          <div id="shopeeCampos">
+        <div class="card platform-card shopee">
+          <div class="card-header">
+            <h2 class="text-xl font-bold flex items-center">
+              <i class="fas fa-store mr-2 text-blue-500"></i> Shopee
+            </h2>
+          </div>
+          <div class="card-body" id="shopeeCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
@@ -305,10 +761,10 @@
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_shopee" disabled class="p-3 bg-gray-100 font-bold text-lg">
+              <div class="price-display" id="preco_shopee">R$ 0,00</div>
             </div>
             
-             <div class="scenario-card scenario-promo">
+            <div class="scenario-card scenario-promo">
               <div class="scenario-title">Sem Lucro (0%)</div>
               <div class="scenario-value" id="preco_shopee_promo">R$ 0,00</div>
             </div>
@@ -322,16 +778,21 @@
               <div class="scenario-title">Lucro 10%</div>
               <div class="scenario-value" id="preco_shopee_ideal">R$ 0,00</div>
             </div>
+            
+            <button class="btn-primary w-full mt-4" onclick="calcular('shopee')">
+              <i class="fas fa-save mr-2"></i> Calcular e Salvar
+            </button>
           </div>
-          <button class="calc-btn w-full mt-4" onclick="calcular('shopee')">
-            <i class="fas fa-save"></i> Calcular e Salvar
-          </button>
         </div>
 
         <!-- Magalu -->
-        <div class="card">
-          <h2 class="text-xl font-bold mb-4 text-green-600"><i class="fas fa-store"></i> Magalu</h2>
-          <div id="magaluCampos">
+        <div class="card platform-card magalu">
+          <div class="card-header">
+            <h2 class="text-xl font-bold flex items-center">
+              <i class="fas fa-store mr-2 text-green-500"></i> Magalu
+            </h2>
+          </div>
+          <div class="card-body" id="magaluCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
@@ -364,7 +825,7 @@
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_magalu" disabled class="p-3 bg-gray-100 font-bold text-lg">
+              <div class="price-display" id="preco_magalu">R$ 0,00</div>
             </div>
             
            <div class="scenario-card scenario-promo">
@@ -373,7 +834,7 @@
             </div>
             
             <div class="scenario-card scenario-medium">
-<div class="scenario-title">Lucro 5%</div>
+              <div class="scenario-title">Lucro 5%</div>
               <div class="scenario-value" id="preco_magalu_medio">R$ 0,00</div>
             </div>
             
@@ -381,16 +842,21 @@
               <div class="scenario-title">Lucro 10%</div>
               <div class="scenario-value" id="preco_magalu_ideal">R$ 0,00</div>
             </div>
+            
+            <button class="btn-primary w-full mt-4" onclick="calcular('magalu')">
+              <i class="fas fa-save mr-2"></i> Calcular e Salvar
+            </button>
           </div>
-          <button class="calc-btn w-full mt-4" onclick="calcular('magalu')">
-            <i class="fas fa-save"></i> Calcular e Salvar
-          </button>
         </div>
 
         <!-- SHEIN -->
-        <div class="card">
-          <h2 class="text-xl font-bold mb-4 text-purple-600"><i class="fas fa-store"></i> SHEIN</h2>
-          <div id="sheinCampos">
+        <div class="card platform-card shein">
+          <div class="card-header">
+            <h2 class="text-xl font-bold flex items-center">
+              <i class="fas fa-store mr-2 text-purple-500"></i> SHEIN
+            </h2>
+          </div>
+          <div class="card-body" id="sheinCampos">
             <div class="input-group">
               <label>Taxas da Plataforma (%)</label>
               <div class="flex gap-2">
@@ -421,7 +887,7 @@
             
             <div class="input-group mt-4">
               <label>Preço Mínimo (R$)</label>
-              <input id="preco_shein" disabled class="p-3 bg-gray-100 font-bold text-lg">
+              <div class="price-display" id="preco_shein">R$ 0,00</div>
             </div>
             
             <div class="scenario-card scenario-promo">
@@ -438,234 +904,244 @@
               <div class="scenario-title">Lucro 10%</div>
               <div class="scenario-value" id="preco_shein_ideal">R$ 0,00</div>
             </div>
+            
+            <button class="btn-primary w-full mt-4" onclick="calcular('shein')">
+              <i class="fas fa-save mr-2"></i> Calcular e Salvar
+            </button>
           </div>
-          <button class="calc-btn w-full mt-4" onclick="calcular('shein')">
-            <i class="fas fa-save"></i> Calcular e Salvar
-          </button>
         </div>
       </div>
     </div>
 
-    <div id="produtos" class="tab-content p-4">
-      <div class="bg-white rounded-xl p-6 shadow mb-6">
-        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-boxes"></i> Produtos Salvos</h2>
-        
-        <div class="import-export-section">
-          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import"></i> Importar/Exportar Promoções Shopee</h3>
-          
-          <div class="flex flex-wrap gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
-              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg">
+    <div id="produtos" class="tab-content">
+      <div class="card mb-6">
+        <div class="card-header">
+          <h2 class="text-2xl font-bold"><i class="fas fa-boxes mr-2"></i> Produtos Salvos</h2>
+        </div>
+        <div class="card-body">
+          <div class="bg-blue-50 rounded-xl p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import mr-2"></i> Importar/Exportar Promoções Shopee</h3>
+            
+            <div class="flex flex-wrap gap-4 items-center">
+              <div class="flex-1">
+                <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
+                <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+              </div>
+              <button onclick="importShopeeFile()" class="btn-primary">
+                <i class="fas fa-upload mr-2"></i> Importar
+              </button>
             </div>
-            <button onclick="importShopeeFile()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium h-10 mt-auto">
-              <i class="fas fa-upload"></i> Importar
+            
+            <div id="importedShopeeProducts" class="mt-4" style="display: none;">
+              <h4 class="font-semibold mb-2">Produtos importados:</h4>
+              <div class="overflow-x-auto">
+                <table class="imported-products-table">
+                  <thead>
+                    <tr>
+                      <th>ID Produto</th>
+                      <th>Nome</th>
+                      <th>Parent SKU</th>
+                      <th>ID Variação</th>
+                      <th>Variação</th>
+                      <th>SKU</th>
+                      <th>Preço Original</th>
+                      <th>Preço Desconto</th>
+                    </tr>
+                  </thead>
+                  <tbody id="importedProductsTableBody"></tbody>
+                </table>
+              </div>
+              
+              <div class="flex flex-wrap gap-3 mt-4">
+                <button onclick="applyPriceUpdate('promo')" class="btn-primary bg-red-500 hover:bg-red-600">
+                  <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
+                </button>
+                <button onclick="applyPriceUpdate('medium')" class="btn-primary bg-yellow-500 hover:bg-yellow-600">
+                  <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
+                </button>
+                <button onclick="applyPriceUpdate('ideal')" class="btn-primary bg-green-500 hover:bg-green-600">
+                  <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
+                </button>
+                <button onclick="exportShopeeFile()" class="btn-primary bg-blue-500 hover:bg-blue-600 ml-auto">
+                  <i class="fas fa-file-export mr-2"></i> Exportar Planilha
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-4 mb-6">
+            <button onclick="exportarExcel()" class="btn-primary bg-green-600 hover:bg-green-700">
+              <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+            </button>
+            <button onclick="exportarPDF()" class="btn-primary bg-red-600 hover:bg-red-700">
+              <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
             </button>
           </div>
           
-          <div id="importedShopeeProducts" class="mt-4" style="display: none;">
-            <h4 class="font-semibold mb-2">Produtos importados:</h4>
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2">Filtrar por Plataforma:</label>
+            <select id="filtroPlataforma" class="border p-3 rounded-lg w-full md:w-1/3">
+              <option value="Todas">Todas as Plataformas</option>
+              <option value="SHOPEE">Shopee</option>
+              <option value="MAGALU">Magalu</option>
+              <option value="ML">Mercado Livre</option>
+              <option value="SHEIN">SHEIN</option>
+            </select>
+          </div>
+          
+          <div id="listaProdutos" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="historico" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-2xl font-bold"><i class="fas fa-history mr-2"></i> Histórico de Alterações</h2>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Filtrar por:</label>
+            <div class="flex flex-wrap gap-4">
+              <select id="filterHistoryType" class="border p-2 rounded-lg">
+                <option value="all">Todos os tipos</option>
+                <option value="login">Logins</option>
+                <option value="price_update">Atualizações de preço</option>
+                <option value="product_edit">Edições de produto</option>
+                <option value="backup">Backups</option>
+              </select>
+              <select id="filterHistoryUser" class="border p-2 rounded-lg">
+                <option value="all">Todos os usuários</option>
+                <!-- Preenchido dinamicamente -->
+              </select>
+              <input type="date" id="filterHistoryDate" class="border p-2 rounded-lg">
+            </div>
+          </div>
+          
+          <div id="historyList" class="space-y-4">
+            <!-- Preenchido dinamicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="configuracoes" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="text-2xl font-bold"><i class="fas fa-cog mr-2"></i> Configurações do Sistema</h2>
+        </div>
+        <div class="card-body">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 p-5 rounded-xl">
+              <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de API</h3>
+              
+              <div class="space-y-4">
+                <div>
+                  <h4 class="font-medium mb-2">Mercado Livre</h4>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Client ID</label>
+                      <input type="text" id="mlClientId" class="w-full p-2 border rounded" value="">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Client Secret</label>
+                      <input type="password" id="mlClientSecret" class="w-full p-2 border rounded" value="">
+                    </div>
+                    <button onclick="testMlConnection()" class="btn-secondary">
+                      Testar Conexão
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 class="font-medium mb-2">Shopee</h4>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium mb-1">API Key</label>
+                      <input type="text" id="shopeeApiKey" class="w-full p-2 border rounded" value="">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium mb-1">Partner ID</label>
+                      <input type="text" id="shopeePartnerId" class="w-full p-2 border rounded" value="">
+                    </div>
+                    <button onclick="testShopeeConnection()" class="btn-secondary">
+                      Testar Conexão
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-6">
+                <button onclick="saveApiConfig()" class="btn-primary bg-green-600 hover:bg-green-700">
+                  Salvar Configurações
+                </button>
+              </div>
+            </div>
+            
+            <div class="bg-gray-50 p-5 rounded-xl">
+              <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de Backup</h3>
+              
+              <div class="space-y-4">
+                <div class="flex items-center">
+                  <input type="checkbox" id="autoBackup" class="mr-2 h-5 w-5" checked>
+                  <label for="autoBackup">Backup automático diário</label>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-1">Frequência de Backup</label>
+                  <select id="backupFrequency" class="border p-2 rounded-lg w-full">
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-medium mb-1">Último Backup</label>
+                  <div class="bg-gray-100 p-3 rounded-lg">
+                    <div id="lastBackupInfo" class="text-sm">Nenhum backup realizado ainda</div>
+                  </div>
+                </div>
+                
+                <div class="flex gap-3">
+                  <button onclick="createBackup()" class="btn-primary">
+                    Criar Backup Agora
+                  </button>
+                  <button onclick="restoreBackup()" class="btn-secondary">
+                    Restaurar Backup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-6 bg-gray-50 p-5 rounded-xl">
+            <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Gerenciamento de Usuários</h3>
+            
             <div class="overflow-x-auto">
-              <table class="imported-products-table">
+              <table class="w-full border-collapse">
                 <thead>
-                  <tr>
-                    <th>ID Produto</th>
-                    <th>Nome</th>
-                    <th>Parent SKU</th>
-                    <th>ID Variação</th>
-                    <th>Variação</th>
-                    <th>SKU</th>
-                    <th>Preço Original</th>
-                    <th>Preço Desconto</th>
+                  <tr class="bg-gray-100">
+                    <th class="p-3 text-left">Nome</th>
+                    <th class="p-3 text-left">E-mail</th>
+                    <th class="p-3 text-left">Perfil</th>
+                    <th class="p-3 text-left">Ações</th>
                   </tr>
                 </thead>
-                <tbody id="importedProductsTableBody"></tbody>
+                <tbody id="usersTableBody">
+                  <!-- Preenchido dinamicamente -->
+                </tbody>
               </table>
             </div>
             
-            <div class="price-update-options">
-              <button onclick="applyPriceUpdate('promo')" class="btn-apply-promo">
-                <i class="fas fa-tag"></i> Aplicar Sem Lucro (0%)
-              </button>
-              <button onclick="applyPriceUpdate('medium')" class="btn-apply-medium">
-                <i class="fas fa-chart-line"></i> Aplicar Lucro 5%
-              </button>
-              <button onclick="applyPriceUpdate('ideal')" class="btn-apply-ideal">
-                <i class="fas fa-star"></i> Aplicar Lucro 10%
-              </button>
-              <button onclick="exportShopeeFile()" class="btn-export-shopee ml-auto">
-                <i class="fas fa-file-export"></i> Exportar Planilha
-              </button>
-            </div>
+            <button onclick="openAddUserModal()" class="btn-primary bg-green-600 hover:bg-green-700 mt-4">
+              <i class="fas fa-plus mr-2"></i> Adicionar Usuário
+            </button>
           </div>
-        </div>
-        
-        <div class="flex flex-wrap gap-4 mb-6">
-          <button onclick="exportarExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-medium">
-            <i class="fas fa-file-excel"></i> Exportar Excel
-          </button>
-          <button onclick="exportarPDF()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-medium">
-            <i class="fas fa-file-pdf"></i> Exportar PDF
-          </button>
-        </div>
-        
-        <div class="mb-6">
-          <label class="block text-sm font-medium mb-2">Filtrar por Plataforma:</label>
-          <select id="filtroPlataforma" class="border p-3 rounded-lg w-full md:w-1/3">
-            <option value="Todas">Todas as Plataformas</option>
-            <option value="SHOPEE">Shopee</option>
-            <option value="MAGALU">Magalu</option>
-            <option value="ML">Mercado Livre</option>
-            <option value="SHEIN">SHEIN</option>
-          </select>
-        </div>
-        
-        <div id="listaProdutos" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
-      </div>
-    </div>
-
-    <div id="historico" class="tab-content p-4">
-      <div class="bg-white rounded-xl p-6 shadow">
-        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-history"></i> Histórico de Alterações</h2>
-        
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Filtrar por:</label>
-          <div class="flex flex-wrap gap-4">
-            <select id="filterHistoryType" class="border p-2 rounded-lg">
-              <option value="all">Todos os tipos</option>
-              <option value="login">Logins</option>
-              <option value="price_update">Atualizações de preço</option>
-              <option value="product_edit">Edições de produto</option>
-              <option value="backup">Backups</option>
-            </select>
-            <select id="filterHistoryUser" class="border p-2 rounded-lg">
-              <option value="all">Todos os usuários</option>
-              <!-- Preenchido dinamicamente -->
-            </select>
-            <input type="date" id="filterHistoryDate" class="border p-2 rounded-lg">
-          </div>
-        </div>
-        
-        <div id="historyList" class="space-y-4">
-          <!-- Preenchido dinamicamente -->
         </div>
       </div>
     </div>
-
-    <div id="configuracoes" class="tab-content p-4">
-      <div class="bg-white rounded-xl p-6 shadow">
-        <h2 class="text-2xl font-bold mb-6"><i class="fas fa-cog"></i> Configurações do Sistema</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-gray-50 p-5 rounded-xl">
-            <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de API</h3>
-            
-            <div class="space-y-4">
-              <div>
-                <h4 class="font-medium mb-2">Mercado Livre</h4>
-                <div class="space-y-3">
-                  <div>
-                    <label class="block text-sm font-medium mb-1">Client ID</label>
-                    <input type="text" id="mlClientId" class="w-full p-2 border rounded" value="">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium mb-1">Client Secret</label>
-                    <input type="password" id="mlClientSecret" class="w-full p-2 border rounded" value="">
-                  </div>
-                  <button onclick="testMlConnection()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-                    Testar Conexão
-                  </button>
-                </div>
-              </div>
-              
-              <div>
-                <h4 class="font-medium mb-2">Shopee</h4>
-                <div class="space-y-3">
-                  <div>
-                    <label class="block text-sm font-medium mb-1">API Key</label>
-                    <input type="text" id="shopeeApiKey" class="w-full p-2 border rounded" value="">
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium mb-1">Partner ID</label>
-                    <input type="text" id="shopeePartnerId" class="w-full p-2 border rounded" value="">
-                  </div>
-                  <button onclick="testShopeeConnection()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-                    Testar Conexão
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="mt-6">
-              <button onclick="saveApiConfig()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-                Salvar Configurações
-              </button>
-            </div>
-          </div>
-          
-          <div class="bg-gray-50 p-5 rounded-xl">
-            <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Configurações de Backup</h3>
-            
-            <div class="space-y-4">
-              <div class="flex items-center">
-                <input type="checkbox" id="autoBackup" class="mr-2" checked>
-                <label for="autoBackup">Backup automático diário</label>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium mb-1">Frequência de Backup</label>
-                <select id="backupFrequency" class="border p-2 rounded-lg w-full">
-                  <option value="daily">Diário</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="monthly">Mensal</option>
-                </select>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium mb-1">Último Backup</label>
-                <div class="bg-gray-100 p-3 rounded-lg">
-                  <div id="lastBackupInfo" class="text-sm">Nenhum backup realizado ainda</div>
-                </div>
-              </div>
-              
-              <div class="flex gap-3">
-                <button onclick="createBackup()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-                  Criar Backup Agora
-                </button>
-                <button onclick="restoreBackup()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
-                  Restaurar Backup
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="mt-6 bg-gray-50 p-5 rounded-xl">
-          <h3 class="font-semibold text-lg mb-4 pb-2 border-b">Gerenciamento de Usuários</h3>
-          
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-              <thead>
-                <tr class="bg-gray-100">
-                  <th class="p-3 text-left">Nome</th>
-                  <th class="p-3 text-left">E-mail</th>
-                  <th class="p-3 text-left">Perfil</th>
-                  <th class="p-3 text-left">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <!-- Preenchido dinamicamente -->
-              </tbody>
-            </table>
-          </div>
-          
-          <button onclick="openAddUserModal()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-            <i class="fas fa-plus mr-2"></i> Adicionar Usuário
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <!-- Modais -->
   <div id="loginModal" class="modal">
@@ -681,11 +1157,11 @@
           <label class="block text-sm font-medium mb-1">Senha</label>
           <input type="password" id="loginPassword" class="w-full p-2 border rounded">
         </div>
-        <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+        <button onclick="login()" class="btn-primary w-full">
           <i class="fas fa-sign-in-alt mr-2"></i> Entrar
         </button>
         <div class="text-center">
-          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600">Esqueci minha senha</a>
+          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600 hover:underline">Esqueci minha senha</a>
         </div>
       </div>
     </div>
@@ -700,7 +1176,7 @@
           <label class="block text-sm font-medium mb-1">E-mail cadastrado</label>
           <input type="email" id="recoverEmail" class="w-full p-2 border rounded">
         </div>
-        <button onclick="sendRecovery()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+        <button onclick="sendRecovery()" class="btn-primary w-full">
           Enviar Link de Recuperação
         </button>
       </div>
@@ -732,7 +1208,7 @@
             <option value="visualizador">Visualizador</option>
           </select>
         </div>
-        <button onclick="addNewUser()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">
+        <button onclick="addNewUser()" class="btn-primary w-full">
           <i class="fas fa-save mr-2"></i> Salvar Usuário
         </button>
       </div>
@@ -1505,7 +1981,7 @@
 
       // Calcular preço mínimo (sem lucro)
       const precoMinimo = ((custo + totalFixo) / (1 - totalPercentual / 100)).toFixed(2);
-      document.getElementById(`preco_${plataforma}`).value = precoMinimo;
+      document.getElementById(`preco_${plataforma}`).textContent = `R$ ${precoMinimo}`;
       
       // Calcular cenários de lucro
        const precoPromo = precoMinimo; // 0% de lucro
@@ -1675,32 +2151,34 @@
         }
         
         div.innerHTML = `
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="font-bold text-lg">${item.produto}</h3>
-              ${item.sku ? `<div class="text-sm text-gray-500">SKU: ${item.sku}</div>` : ''}
-              <div class="mt-1">
-                <span class="${platformClass} platform-tag">${platformName}</span>
+          <div class="p-5">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg">${item.produto}</h3>
+                ${item.sku ? `<div class="text-sm text-gray-500 mt-1">SKU: ${item.sku}</div>` : ''}
+                <div class="mt-2">
+                  <span class="${platformClass} platform-tag">${platformName}</span>
+                </div>
               </div>
-            </div>
-            <div class="text-right">
-              <div class="text-gray-500 text-sm">Preço mínimo</div>
-              <div class="product-price text-green-600">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
+              <div class="text-right">
+                <div class="text-gray-500 text-sm">Preço mínimo</div>
+                <div class="product-price">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
+              </div>
             </div>
           </div>
           
-          <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+          <div class="bg-gray-50 p-4 flex justify-between">
             <div class="text-sm text-gray-500">
               <i class="far fa-calendar-alt"></i> ${new Date(item.createdAt).toLocaleDateString('pt-BR')}
             </div>
             <div class="flex space-x-2">
-              <button onclick="verDetalhes('${item.id}')" class="btn-action btn-view">
-                <i class="fas fa-eye"></i> Ver
+              <button onclick="verDetalhes('${item.id}')" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-eye"></i>
               </button>
-              <button onclick="editarProduto('${item.id}')" class="btn-action btn-edit">
-                <i class="fas fa-edit"></i> Editar
+              <button onclick="editarProduto('${item.id}')" class="text-yellow-600 hover:text-yellow-800">
+                <i class="fas fa-edit"></i>
               </button>
-              <button onclick="excluirProduto('${item.id}')" class="btn-action btn-delete">
+              <button onclick="excluirProduto('${item.id}')" class="text-red-600 hover:text-red-800">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
