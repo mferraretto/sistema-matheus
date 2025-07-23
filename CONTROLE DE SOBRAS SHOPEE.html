@@ -2857,6 +2857,7 @@ window.verDetalhesDia = async function (dataDoc) {
         const dados = querySnap.docs[0].data();
         const custo = Number(dados.custo || 0);
         sobraEsperada += (total || 0) * custo;
+        console.log(`SKU: ${sku} | Quantidade: ${total} | Custo: ${custo} | Parcial: R$ ${(total * custo).toFixed(2)}`);
       } else {
         skusIgnorados.push(sku); // <- Adiciona SKU que não foi achado
       }
