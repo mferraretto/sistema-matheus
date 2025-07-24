@@ -1,0 +1,125 @@
+  <div id="cadastro" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-file-import text-2xl text-orange-500 mr-3"></i>
+            <h2 class="text-2xl font-bold">Importar Dados de Produtos</h2>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <p class="text-gray-600 mb-6">
+            Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
+          </p>
+          
+          <div class="grid-cols-import">
+            <!-- Card Básico -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-blue-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações Básicas</h3>
+                    <p class="text-gray-600 text-sm">Nome, Descrição</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+            </div>
+
+            <!-- Card Vendas -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-green-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Vendas</h3>
+                    <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+              </div>
+            </div>
+
+            <!-- Card Frete -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-yellow-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-truck text-yellow-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Frete</h3>
+                    <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
+              </div>
+            </div>
+
+            <!-- Card Mídia -->
+            <div class="import-card">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-purple-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-image text-purple-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Informações de Mídia</h3>
+                    <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+              </div>
+            </div>
+
+            <!-- Card Desempenho -->
+            <div class="import-card col-span-full">
+              <div class="import-card-header">
+                <div class="flex items-start">
+                  <div class="bg-red-100 p-3 rounded-full mr-3">
+                    <i class="fas fa-chart-bar text-red-600 text-xl"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
+                    <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
+                  </div>
+                </div>
+              </div>
+              <div class="import-card-body">
+                <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-database text-blue-500 mr-2"></i>
+              <span class="font-semibold">Dados para Salvar:</span>
+              <span id="contador-produtos" class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">0 produtos</span>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">Após importar as planilhas, clique abaixo para salvar no Firebase</p>
+            <button onclick="salvarNoFirebase()" class="btn btn-primary px-6 py-3 flex items-center">
+              <i class="fas fa-save mr-2"></i>Salvar no Firebase
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
