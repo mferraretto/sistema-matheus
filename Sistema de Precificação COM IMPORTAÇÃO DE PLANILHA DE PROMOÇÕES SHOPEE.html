@@ -2841,75 +2841,82 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.appendChild(row);
       });
     }
+function applyPriceUpdate(type) {
+  if (!sistema.importedShopeeData) {
+    showToast('Importe os dados da Shopee primeiro!', 'warning');
+    return;
+  }
 
-    function applyPriceUpdate(type) {
-      if (!sistema.importedShopeeData) {
-        showToast('Importe os dados da Shopee primeiro!', 'warning');
-        return;
-      }
-      
-      // Obter todos os produtos do sistema
-      const systemProducts = sistema.produtos;
-      let productsWithNoSku = 0;
-      let productsNotFound = 0;
-      let productsUpdated = 0;
-      
-      // Percorrer produtos importados
-      for (const importedProduct of sistema.importedShopeeData) {
-        // Determinar o SKU a ser buscado (primeiro tenta SKU, depois Parent SKU)
-        const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ? 
-                   String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
-        
-        const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ? 
-                         String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
-        
-        const searchSku = sku || parentSku;
-        
-        if (!searchSku) {
-          console.log('Produto sem SKU identificável:', importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
-          productsWithNoSku++;
-          continue;
-        }
-        
-        // Buscar produto correspondente no sistema (comparação exata de strings)
-        const systemProduct = systemProducts.find(p => {
-          const systemSku = p.sku ? String(p.sku).trim() : '';
-          return systemSku === searchSku;
-        });
-        
-        if (!systemProduct) {
-          console.log('Produto não encontrado no sistema:', searchSku, importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
-          productsNotFound++;
-          continue;
-        }
-        
-        // Aplicar preço conforme o tipo selecionado, formatando com 2 casas decimais
-        let priceToApply = 0;
-        switch(type) {
-          case 'promo':
-            priceToApply = parseFloat(systemProduct.precoPromo).toFixed(2);
-            break;
-          case 'medium':
-            priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
-            break;
-          case 'ideal':
-            priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
-            break;
-        }
-        
-        importedProduct['Preço de desconto'] = priceToApply;
-        productsUpdated++;
-      }
-      
-      // Atualizar exibição
-      displayImportedProducts(sistema.importedShopeeData);
-      
-      // Feedback visual detalhado
-      showToast(`Atualizados ${productsUpdated} preços! Não encontrados: ${productsNotFound}, Sem SKU: ${productsWithNoSku}`, 'success');
-      
-      // Registrar no histórico
-      addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
+  const systemProducts = sistema.produtos;
+  let productsWithNoSku = 0;
+  let productsNotFound = 0;
+  let productsUpdated = 0;
+  const skusNaoEncontrados = [];
+
+  for (const importedProduct of sistema.importedShopeeData) {
+    const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ? 
+                String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
+    const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ? 
+                      String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
+
+    const searchSku = sku || parentSku;
+
+    if (!searchSku) {
+      console.log('Produto sem SKU identificável:', importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
+      productsWithNoSku++;
+      continue;
     }
+
+    const systemProduct = systemProducts.find(p => {
+      const systemSku = p.sku ? String(p.sku).trim() : '';
+      return systemSku === searchSku;
+    });
+
+    if (!systemProduct) {
+      console.log('Produto não encontrado no sistema:', searchSku, importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
+      productsNotFound++;
+      skusNaoEncontrados.push(searchSku);
+      continue;
+    }
+
+    let priceToApply = 0;
+    switch(type) {
+      case 'promo':
+        priceToApply = parseFloat(systemProduct.precoPromo).toFixed(2);
+        break;
+      case 'medium':
+        priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
+        break;
+      case 'ideal':
+        priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
+        break;
+    }
+
+    importedProduct['Preço de desconto'] = priceToApply;
+    productsUpdated++;
+  }
+
+  displayImportedProducts(sistema.importedShopeeData);
+
+  // 🟢 Toast com resumo
+  showToast(`✅ Atualizados ${productsUpdated} preços! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
+
+  // 🟡 Detalhe SKUs não encontrados
+  if (skusNaoEncontrados.length > 0) {
+    const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
+    document.getElementById('toastContainer').innerHTML += `
+      <div class="toast toast-warning">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+          <strong>${skusNaoEncontrados.length} SKUs não encontrados:</strong>
+          <ul class="text-sm mt-1 list-disc pl-4 max-h-40 overflow-y-auto">${lista}</ul>
+        </div>
+      </div>
+    `;
+  }
+
+  addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
+}
 
     function exportShopeeFile() {
       if (!sistema.importedShopeeData) {
