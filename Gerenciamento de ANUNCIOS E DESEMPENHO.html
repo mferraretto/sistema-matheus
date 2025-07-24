@@ -536,257 +536,14 @@ body.dark .submenu a {
     </div>
 
     <!-- Cadastro/Atualização -->
-    <div id="cadastro" class="tab-content active">
-      <div class="card">
-        <div class="card-header">
-          <div class="flex items-center">
-            <i class="fas fa-file-import text-2xl text-orange-500 mr-3"></i>
-            <h2 class="text-2xl font-bold">Importar Dados de Produtos</h2>
-          </div>
-        </div>
-        
-        <div class="card-body">
-          <p class="text-gray-600 mb-6">
-            Selecione os tipos de planilha para importar dados de produtos. Cada tipo preenche informações específicas do produto.
-          </p>
-          
-          <div class="grid-cols-import">
-            <!-- Card Básico -->
-            <div class="import-card">
-              <div class="import-card-header">
-                <div class="flex items-start">
-                  <div class="bg-blue-100 p-3 rounded-full mr-3">
-                    <i class="fas fa-info-circle text-blue-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <h3 class="font-bold text-lg">Informações Básicas</h3>
-                    <p class="text-gray-600 text-sm">Nome, Descrição</p>
-                  </div>
-                </div>
-              </div>
-              <div class="import-card-body">
-                <input type="file" onchange="processarPlanilha(this.files[0], 'basica')" 
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-              </div>
-            </div>
+    <div id="cadastro" class="tab-content active" data-url="tabs/gerenciamento/cadastro.html"></div>
 
-            <!-- Card Vendas -->
-            <div class="import-card">
-              <div class="import-card-header">
-                <div class="flex items-start">
-                  <div class="bg-green-100 p-3 rounded-full mr-3">
-                    <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <h3 class="font-bold text-lg">Informações de Vendas</h3>
-                    <p class="text-gray-600 text-sm">Preço, Estoque, SKU</p>
-                  </div>
-                </div>
-              </div>
-              <div class="import-card-body">
-                <input type="file" onchange="processarPlanilha(this.files[0], 'vendas')" 
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
-              </div>
-            </div>
-
-            <!-- Card Frete -->
-            <div class="import-card">
-              <div class="import-card-header">
-                <div class="flex items-start">
-                  <div class="bg-yellow-100 p-3 rounded-full mr-3">
-                    <i class="fas fa-truck text-yellow-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <h3 class="font-bold text-lg">Informações de Frete</h3>
-                    <p class="text-gray-600 text-sm">Peso, Dimensões, Taxas</p>
-                  </div>
-                </div>
-              </div>
-              <div class="import-card-body">
-                <input type="file" onchange="processarPlanilha(this.files[0], 'frete')" 
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100" />
-              </div>
-            </div>
-
-            <!-- Card Mídia -->
-            <div class="import-card">
-              <div class="import-card-header">
-                <div class="flex items-start">
-                  <div class="bg-purple-100 p-3 rounded-full mr-3">
-                    <i class="fas fa-image text-purple-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <h3 class="font-bold text-lg">Informações de Mídia</h3>
-                    <p class="text-gray-600 text-sm">Imagens, Templates, Variações</p>
-                  </div>
-                </div>
-              </div>
-              <div class="import-card-body">
-                <input type="file" onchange="processarPlanilha(this.files[0], 'midia')" 
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
-              </div>
-            </div>
-
-            <!-- Card Desempenho -->
-            <div class="import-card col-span-full">
-              <div class="import-card-header">
-                <div class="flex items-start">
-                  <div class="bg-red-100 p-3 rounded-full mr-3">
-                    <i class="fas fa-chart-bar text-red-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <h3 class="font-bold text-lg">Planilha de Desempenho</h3>
-                    <p class="text-gray-600 text-sm">Métricas de visitas, conversão e vendas</p>
-                  </div>
-                </div>
-              </div>
-              <div class="import-card-body">
-                <input type="file" onchange="processarPlanilha(this.files[0], 'desempenho')" 
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
-              </div>
-            </div>
-          </div>
-          
-          <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div class="flex items-center mb-2">
-              <i class="fas fa-database text-blue-500 mr-2"></i>
-              <span class="font-semibold">Dados para Salvar:</span>
-              <span id="contador-produtos" class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">0 produtos</span>
-            </div>
-            <p class="text-sm text-gray-600 mb-3">Após importar as planilhas, clique abaixo para salvar no Firebase</p>
-            <button onclick="salvarNoFirebase()" class="btn btn-primary px-6 py-3 flex items-center">
-              <i class="fas fa-save mr-2"></i>Salvar no Firebase
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Anúncios Salvos -->
-    <div id="anuncios" class="tab-content">
-      <div class="card">
-        <div class="card-header">
-          <div class="flex items-center">
-            <i class="fas fa-list text-2xl text-blue-600 mr-3"></i>
-            <h2 class="text-2xl font-bold">Anúncios Salvos</h2>
-          </div>
-        </div>
-        
-        <div class="card-body">
-          <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <button onclick="carregarAnuncios()" class="btn btn-primary px-4 py-2 flex items-center">
-              <i class="fas fa-sync-alt mr-2"></i>Recarregar Anúncios
-            </button>
-            
-            <div class="relative flex-grow max-w-md">
-              <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-              <input type="text" id="campoBusca" placeholder="Buscar por ID, Nome ou SKU..." 
-                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-            </div>
-          </div>
+      <div id="anuncios" class="tab-content" data-url="tabs/gerenciamento/anuncios.html"></div>
+    <div id="analise" class="tab-content" data-url="tabs/gerenciamento/analise.html"></div>
+    <div id="evolucao" class="tab-content" data-url="tabs/gerenciamento/evolucao.html"></div>
 
-          <div class="table-container">
-            <table id="tabelaAnuncios" class="w-full">
-              <thead class="table-header">
-                <tr>
-                  <th class="cursor-pointer" onclick="ordenarTabela(0)">ID</th>
-                  <th>Imagem</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white"></tbody>
-            </table>
-          </div>
-          
-          <div class="mt-4 text-sm text-gray-500">
-            <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Análise/Sugestão -->
-    <div id="analise" class="tab-content">
-      <div class="card">
-        <div class="card-header">
-          <div class="flex items-center">
-            <i class="fas fa-chart-line text-2xl text-purple-600 mr-3"></i>
-            <h2 class="text-2xl font-bold">Análise e Sugestões de Otimização</h2>
-          </div>
-        </div>
-        
-        <div class="card-body">
-          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-            <div class="flex items-start">
-              <i class="fas fa-robot text-purple-500 text-xl mt-1 mr-3"></i>
-              <div>
-                <p class="font-medium">Sugestões baseadas em análise de:</p>
-                <ul class="list-disc pl-5 mt-2 text-gray-700">
-                  <li>Taxa de conversão abaixo do esperado</li>
-                  <li>Imagens de capa ausentes ou de baixa qualidade</li>
-                  <li>Títulos incompletos ou pouco atrativos</li>
-                  <li>Descrições com poucas informações</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <button onclick="gerarSugestoes()" class="btn btn-primary px-5 py-3 flex items-center mb-6">
-            <i class="fas fa-bolt mr-2"></i>Gerar Sugestões de Otimização
-          </button>
-          <div id="sugestoesIA" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
-      </div>
-    
-      <!-- Campos invisíveis usados pela IA -->
-      <input type="hidden" id="nomeProduto" value="">
-      <input type="hidden" id="categoriaProduto" value="">
-      <input type="hidden" id="beneficiosProduto" value="">
-      <input type="hidden" id="tituloProduto" value="">
-      <input type="hidden" id="visitasProduto" value="">
-      <input type="hidden" id="cliquesProduto" value="">
-      <input type="hidden" id="vendasProduto" value="">
-      <input type="hidden" id="estoqueProduto" value="">
-    </div>
-
-    <!-- Evolução -->
-    <div id="evolucao" class="tab-content">
-      <div class="card">
-        <div class="card-header">
-          <div class="flex items-center">
-            <i class="fas fa-history text-2xl text-yellow-600 mr-3"></i>
-            <h2 class="text-2xl font-bold">Evolução dos Anúncios</h2>
-          </div>
-        </div>
-        
-        <div class="card-body">
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div class="flex items-start">
-              <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1 mr-3"></i>
-              <div>
-                <p class="font-medium">Acompanhe a evolução dos seus produtos:</p>
-                <ul class="list-disc pl-5 mt-2 text-gray-700">
-                  <li>Histórico de alterações nos produtos</li>
-                  <li>Evolução de visualizações e vendas</li>
-                  <li>Comparação entre versões anteriores</li>
-                  <li>Impacto das alterações no desempenho</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <button onclick="carregarEvolucao()" class="btn btn-primary px-5 py-3 flex items-center mb-6">
-            <i class="fas fa-sync-alt mr-2"></i>Carregar Dados de Evolução
-          </button>
-          
-          <div id="conteudoEvolucao" class="space-y-4"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Modal de Detalhes -->
@@ -1899,6 +1656,19 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
   });
 </script>
 <script src="shared.js"></script>
-
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    loadTabs({
+      cadastro: 'tabs/gerenciamento/cadastro.html',
+      anuncios: 'tabs/gerenciamento/anuncios.html',
+      analise: 'tabs/gerenciamento/analise.html',
+      evolucao: 'tabs/gerenciamento/evolucao.html'
+    }).then(function() {
+      document.querySelectorAll('.tab-content').forEach(function(t) { t.style.display = 'none'; });
+      var ativa = document.querySelector('.tab-button.active');
+      if (ativa) document.getElementById(ativa.getAttribute('data-tab')).style.display = 'block';
+    });
+  });
+</script>
 </body>
 </html>
