@@ -2972,5 +2972,14 @@
       }
     }, 300000); // 5 minutos
   </script>
+  <script>
+  function toggleMenu(id) {
+    const menu = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    menu.classList.toggle('hidden');
+    icon.classList.toggle('rotate-180');
+  }
+</script>
+
 </body>
 </html>
