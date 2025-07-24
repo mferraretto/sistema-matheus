@@ -184,12 +184,14 @@ body.dark .submenu a:hover {
     }
 
     /* Main Content */
-    .main-content {
-      margin-top: 70px;
-      margin-left: 260px;
-      padding: 25px;
-      min-height: calc(100vh - 70px);
-    }
+   .main-content {
+  margin-top: 70px;
+  margin-left: var(--sidebar-width);
+  padding: 25px;
+  min-height: calc(100vh - 70px);
+  position: relative;
+  z-index: 1;
+}
 
     /* Cards */
     .card {
