@@ -1578,7 +1578,27 @@
         }
       });
     }
+function showUserArea(user) {
+  document.getElementById('currentUser').textContent = user.email;
 
+  // Atualizar avatar com iniciais
+  const nameParts = user.email.split('@')[0].split('.');
+  const initials = nameParts.map(part => part[0]).join('').toUpperCase();
+  document.querySelector('.user-avatar').textContent = initials;
+
+  // Verifica permissões
+  checkPermissions(user);
+
+  // Evita erro se elementos não existem
+  const configTab = document.getElementById('configTab');
+  const historyTab = document.getElementById('historyTab');
+
+  if (configTab) configTab.classList.remove('hidden');
+  if (historyTab) historyTab.classList.remove('hidden');
+
+  // Carrega dados do sistema
+  loadSystem();
+}
     // Funções de autenticação
     function checkLogin() {
       auth.onAuthStateChanged(user => {
