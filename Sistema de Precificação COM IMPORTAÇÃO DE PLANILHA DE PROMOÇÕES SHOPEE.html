@@ -184,14 +184,12 @@ body.dark .submenu a:hover {
     }
 
     /* Main Content */
-   .main-content {
-  margin-top: 70px;
-  margin-left: var(--sidebar-width);
-  padding: 25px;
-  min-height: calc(100vh - 70px);
-  position: relative;
-  z-index: 1;
-}
+    .main-content {
+      margin-top: 70px;
+      margin-left: 260px;
+      padding: 25px;
+      min-height: calc(100vh - 70px);
+    }
 
     /* Cards */
     .card {
@@ -816,10 +814,10 @@ body.dark .submenu a:hover {
     
     <!-- Abas principais -->
     <div class="tabs">
-      <button class="tab-button" data-tab="dashboard">
+      <button class="tab-button active" data-tab="dashboard">
         <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
       </button>
-      <button class="tab-button active" data-tab="precificacao">
+      <button class="tab-button" data-tab="precificacao">
         <i class="fas fa-calculator mr-2"></i> Precificação
       </button>
       <button class="tab-button" data-tab="produtos">
@@ -828,16 +826,13 @@ body.dark .submenu a:hover {
       <button class="tab-button" data-tab="historico" id="historyTab">
         <i class="fas fa-history mr-2"></i> Histórico
       </button>
-      <button class="tab-button" data-tab="importExport">
-    <i class="fas fa-file-import mr-2"></i> Planilhas & Exportação
-  </button>
       <button class="tab-button" data-tab="configuracoes" id="configTab">
         <i class="fas fa-cog mr-2"></i> Configurações
       </button>
     </div>
 
     <!-- Conteúdo das abas -->
-    <div id="dashboard" class="tab-content">
+    <div id="dashboard" class="tab-content active">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="dashboard-card">
           <h3 class="text-gray-500 text-sm">Produtos Cadastrados</h3>
@@ -897,7 +892,7 @@ body.dark .submenu a:hover {
       </div>
     </div>
 
-    <div id="precificacao" class="tab-content active">
+    <div id="precificacao" class="tab-content">
       <div class="card mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="input-group">
@@ -1154,9 +1149,54 @@ body.dark .submenu a:hover {
       <div class="card mb-6">
         <h2 class="text-2xl font-bold mb-6"><i class="fas fa-boxes mr-2"></i> Produtos Salvos</h2>
         
-      
+        <div class="bg-gray-50 p-5 rounded-xl mb-6">
+          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import mr-2"></i> Importar/Exportar Promoções Shopee</h3>
           
-
+          <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
+              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+            </div>
+            <button onclick="importShopeeFile()" class="btn-primary">
+              <i class="fas fa-upload mr-2"></i> Importar
+            </button>
+          </div>
+          
+          <div id="importedShopeeProducts" class="mt-4" style="display: none;">
+            <h4 class="font-semibold mb-2">Produtos importados:</h4>
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>ID Produto</th>
+                    <th>Nome</th>
+                    <th>Parent SKU</th>
+                    <th>ID Variação</th>
+                    <th>Variação</th>
+                    <th>SKU</th>
+                    <th>Preço Original</th>
+                    <th>Preço Desconto</th>
+                  </tr>
+                </thead>
+                <tbody id="importedProductsTableBody"></tbody>
+              </table>
+            </div>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+              <button onclick="applyPriceUpdate('promo')" class="btn-danger">
+                <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
+              </button>
+              <button onclick="applyPriceUpdate('medium')" class="btn-warning">
+                <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
+              </button>
+              <button onclick="applyPriceUpdate('ideal')" class="btn-success">
+                <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
+              </button>
+              <button onclick="exportShopeeFile()" class="btn-primary ml-auto">
+                <i class="fas fa-file-export mr-2"></i> Exportar Planilha
+              </button>
+            </div>
+          </div>
         </div>
         
         <div class="flex flex-wrap gap-4 mb-6">
@@ -1181,7 +1221,7 @@ body.dark .submenu a:hover {
         
         <div id="listaProdutos" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
-  
+    </div>
 
     <div id="historico" class="tab-content p-4">
       <div class="card">
@@ -1210,67 +1250,7 @@ body.dark .submenu a:hover {
         </div>
       </div>
     </div>
-<!-- Nova aba: Planilhas & Exportação -->
-<div id="importExport" class="tab-content p-4">
-  <div class="card mb-6">
-    <h2 class="text-2xl font-bold mb-4">
-      <i class="fas fa-file-import mr-2"></i> Planilhas & Exportação
-    </h2>
-    <div class="bg-gray-50 p-5 rounded-xl mb-6">
-          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import mr-2"></i> Importar/Exportar Promoções Shopee</h3>
-          
-          <div class="flex flex-wrap gap-4 items-end">
-            <div class="flex-1">
-              <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
-              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
-            </div>
-            <button onclick="importShopeeFile()" class="btn-primary">
-              <i class="fas fa-upload mr-2"></i> Importar
-            </button>
-          </div>
 
-  </div>
-
-  <!-- Fora do card para evitar quebra de layout -->
- <div id="importedShopeeProducts" class="mt-4" style="display: none;">
-            <h4 class="font-semibold mb-2">Produtos importados:</h4>
-            <div class="overflow-x-auto">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>ID Produto</th>
-                    <th>Nome</th>
-                    <th>Parent SKU</th>
-                    <th>ID Variação</th>
-                    <th>Variação</th>
-                    <th>SKU</th>
-                    <th>Preço Original</th>
-                    <th>Preço Desconto</th>
-                  </tr>
-                </thead>
-                <tbody id="importedProductsTableBody"></tbody>
-              </table>
-            </div>
-
-    <div class="flex flex-wrap gap-3 mt-4">
-              <button onclick="applyPriceUpdate('promo')" class="btn-danger">
-                <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
-              </button>
-              <button onclick="applyPriceUpdate('medium')" class="btn-warning">
-                <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
-              </button>
-              <button onclick="applyPriceUpdate('ideal')" class="btn-success">
-                <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
-              </button>
-              <button onclick="exportShopeeFile()" class="btn-primary ml-auto">
-                <i class="fas fa-file-export mr-2"></i> Exportar Planilha
-              </button>
-            </div>
-
-  </div>
-</div>
-
-  </div>
     <div id="configuracoes" class="tab-content p-4">
       <div class="card">
         <h2 class="text-2xl font-bold mb-6"><i class="fas fa-cog mr-2"></i> Configurações do Sistema</h2>
