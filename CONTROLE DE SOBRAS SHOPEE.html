@@ -61,17 +61,39 @@
     }
     
     /* Sidebar */
-    .sidebar {
-      width: var(--sidebar-width);
-      background: var(--secondary);
-      color: white;
-      position: fixed;
-      height: 100vh;
-      z-index: 100;
-      transition: var(--transition);
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      overflow-y: auto;
-    }
+    .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pl-8 {
+  padding-left: 2rem;
+}
+
+.space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Estilo base para modo escuro */
+body.dark {
+  background-color: #1C2B36;
+  color: white;
+}
+
     
     .logo-container {
       padding: 1.5rem 1.5rem 1rem;
@@ -3248,10 +3270,12 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
 
 <!-- Script: Menu retrátil e modo escuro -->
 <script>
-  // Menu retrátil
+  // Submenu retrátil
   function toggleMenu(menuId) {
-    const el = document.getElementById(menuId);
-    el.classList.toggle('hidden');
+    const submenu = document.getElementById(menuId);
+    if (submenu) {
+      submenu.classList.toggle('hidden');
+    }
   }
 
   // Modo Escuro
@@ -3274,6 +3298,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
     }
   });
 </script>
+
 
 <!-- Outras bibliotecas (como XLSX) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
