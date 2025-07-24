@@ -916,10 +916,14 @@ body.dark .submenu a:hover {
             <label class="block text-sm font-medium mb-2">Planilha de Produtos (.xlsx)</label>
             <input type="file" id="pricingFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
           </div>
+            <button onclick="downloadPricingTemplate()" class="btn-outline" title="Baixe um modelo de planilha para importação">
+            <i class="fas fa-download mr-2"></i> Baixar Modelo
+          </button>
           <button onclick="importPricingFile()" class="btn-primary">
             <i class="fas fa-upload mr-2"></i> Importar
           </button>
         </div>
+          <p class="text-xs text-gray-500 mt-2">Use o modelo para garantir que os cabeçalhos estejam corretos.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -2771,7 +2775,20 @@ document.addEventListener('DOMContentLoaded', () => {
       addHistoryEntry('export', 'Exportação para PDF realizada');
       showToast('Exportação para PDF realizada com sucesso!', 'success');
     }
-
+function downloadPricingTemplate() {
+      const headers = [
+        'Produto', 'SKU', 'Plataforma', 'Custo (R$)',
+        'Taxas da Plataforma (%)', 'Custo Fixo Plataforma (R$)',
+        'Frete (R$)', 'Taxa de Transação (%)',
+        'Taxa de Transferência (%)', 'Taxa de Antecipação (%)',
+        'Custos Variáveis (R$)', 'Imposto (%)',
+        'Comissão do Vendedor (%)'
+      ];
+      const ws = XLSX.utils.aoa_to_sheet([headers]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
+      XLSX.writeFile(wb, 'modelo_precificacao.xlsx');
+    }
   function importPricingFile() {
       const fileInput = document.getElementById('pricingFileInput');
       const file = fileInput.files[0];
