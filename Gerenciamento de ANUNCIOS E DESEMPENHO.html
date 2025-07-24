@@ -1778,5 +1778,34 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
   document.getElementById("resultadoIA").innerText = resposta;
 }
   </script>
+  <script>
+  // Oculta todas as abas e mostra apenas a selecionada
+  document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const abaSelecionada = button.getAttribute("data-tab");
+
+      // Remover classe 'active' de todos os botões
+      document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+
+      // Esconder todas as abas
+      document.querySelectorAll(".tab-content").forEach(tab => tab.style.display = "none");
+
+      // Ativar o botão atual
+      button.classList.add("active");
+
+      // Mostrar a aba selecionada
+      const tabAtiva = document.getElementById(abaSelecionada);
+      if (tabAtiva) tabAtiva.style.display = "block";
+    });
+  });
+
+  // Mostrar apenas a aba ativa inicial ao carregar
+  window.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".tab-content").forEach(tab => tab.style.display = "none");
+    const ativa = document.querySelector(".tab-button.active")?.getAttribute("data-tab");
+    if (ativa) document.getElementById(ativa).style.display = "block";
+  });
+</script>
+
 </body>
 </html>
