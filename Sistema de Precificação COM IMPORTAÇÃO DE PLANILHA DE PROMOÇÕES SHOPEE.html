@@ -1228,37 +1228,37 @@ body.dark .submenu a:hover {
               <i class="fas fa-upload mr-2"></i> Importar
             </button>
           </div>
-<div id="importedShopeeProducts" class="mt-4 hidden">
+<div id="importedShopeeProducts" class="mt-4" style="display: none;">
   <h4 class="font-semibold mb-2">Produtos importados:</h4>
   <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+    <table class="table">
+      <thead>
         <tr>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">ID Produto</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Nome</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Parent SKU</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">ID Variação</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Variação</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">SKU</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Preço Original</th>
-          <th class="px-4 py-2 text-left text-sm font-medium text-gray-700">Preço Desconto</th>
+          <th>ID Produto</th>
+          <th>Nome</th>
+          <th>Parent SKU</th>
+          <th>ID Variação</th>
+          <th>Variação</th>
+          <th>SKU</th>
+          <th>Preço Original</th>
+          <th>Preço Desconto</th>
         </tr>
       </thead>
-      <tbody id="importedProductsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+      <tbody id="importedProductsTableBody"></tbody>
     </table>
   </div>
 
   <div class="flex flex-wrap gap-3 mt-4">
-    <button onclick="applyPriceUpdate('promo')" class="btn btn-danger">
+    <button onclick="applyPriceUpdate('promo')" class="btn-danger">
       <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
     </button>
-    <button onclick="applyPriceUpdate('medium')" class="btn btn-warning">
+    <button onclick="applyPriceUpdate('medium')" class="btn-warning">
       <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
     </button>
-    <button onclick="applyPriceUpdate('ideal')" class="btn btn-success">
+    <button onclick="applyPriceUpdate('ideal')" class="btn-success">
       <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
     </button>
-    <button onclick="exportShopeeFile()" class="btn btn-primary ml-auto">
+    <button onclick="exportShopeeFile()" class="btn-primary ml-auto">
       <i class="fas fa-file-export mr-2"></i> Exportar Planilha
     </button>
   </div>
