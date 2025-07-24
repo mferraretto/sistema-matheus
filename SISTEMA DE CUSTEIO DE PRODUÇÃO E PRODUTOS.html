@@ -569,10 +569,10 @@
     
     <ul class="sidebar-menu">
       <li><a href="index.html"><i>🏠</i> <span>Início</span></a></li>
-      <li><a href="#" onclick="showTab('precificacao'); return false;"><i>🧮</i> <span>Precificação Shopee</span></a></li>
+      <li><a href='tabs/precificacao.html'><i>🧮</i> <span>Precificação Shopee</span></a></li>
       <li><a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html"><i>📣</i> <span>Anúncios</span></a></li>
       <li><a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html"><i>📦</i> <span>Sobras Shopee</span></a></li>
-      <li><a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="active"><i>🛠️</i> <span>Custeio de Produção</span></a></li>
+      <li><a href="tabs/mdf.html" class="active"><i>🛠️</i> <span>Custeio de Produção</span></a></li>
       <li><a href="#"><i>👥</i> <span>Usuários</span></a></li>
     </ul>
   </div>
@@ -594,13 +594,13 @@
       <h1>🛠 Mentoria Ferraretto Cálculo de Produção</h1>
 
       <div class="tab-buttons">
-        <button onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
-        <button onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
-        <button onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
-        <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
-        <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
-        <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
-        <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
+        <button onclick="window.location.href='tabs/mdf.html'"><span class="info-icon">🪵</span> Custo MDF</button>
+        <button onclick="window.location.href='tabs/mao.html'"><span class="info-icon">👷</span> Mão de Obra</button>
+        <button onclick="window.location.href='tabs/embalagem.html'"><span class="info-icon">📦</span> Embalagem</button>
+        <button onclick="window.location.href='tabs/cadastroChapas.html'"><span class="info-icon">📋</span> Chapas MDF</button>
+        <button onclick="window.location.href='tabs/custosIndiretos.html'"><span class="info-icon">🏭</span> Custos Indiretos</button>
+        <button onclick="window.location.href='tabs/resumoFinal.html'"><span class="info-icon">📊</span> Resumo Final</button>
+        <button onclick="window.location.href='tabs/precificacao.html'"><span class="info-icon">💲</span> Precificação</button>
       </div>
 
       <div id="mdf" class="tab active">
@@ -1039,16 +1039,7 @@
 
   <script>
     // Funções principais do sistema
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      
-      // Salva a aba ativa
-      localStorage.setItem('activeTab', id);
-      window.location.hash = id;
-    }
-    
-    // Toggle para menu mobile
+ 
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('active');
@@ -1448,15 +1439,14 @@
     
     // Inicialização do sistema
     window.onload = () => {
-      const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-      const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
-      showTab(activeTab);
+     
       
       const campos = document.querySelectorAll('#custosIndiretos .indireto');
       campos.forEach(campo => {
         campo.addEventListener('input', salvarCustosIndiretos);
       });
     };
-  </script>
+ </script>
+<script src="custeio.js"></script>
 </body>
 </html>
