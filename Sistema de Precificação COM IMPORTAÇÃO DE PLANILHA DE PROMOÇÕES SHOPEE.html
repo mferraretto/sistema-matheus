@@ -1502,6 +1502,8 @@
 
     function setupCharts() {
       // Gráfico de margens
+       const marginCanvas = document.getElementById('marginChart');
+  if (!marginCanvas) return; // Impede erro se o gráfico não existe
       const marginCtx = document.getElementById('marginChart').getContext('2d');
       new Chart(marginCtx, {
         type: 'bar',
