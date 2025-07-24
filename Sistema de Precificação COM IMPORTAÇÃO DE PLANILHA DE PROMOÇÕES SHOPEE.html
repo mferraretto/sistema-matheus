@@ -826,6 +826,9 @@ body.dark .submenu a:hover {
       <button class="tab-button" data-tab="historico" id="historyTab">
         <i class="fas fa-history mr-2"></i> Histórico
       </button>
+      <button class="tab-button" data-tab="importExport">
+    <i class="fas fa-file-import mr-2"></i> Planilhas & Exportação
+  </button>
       <button class="tab-button" data-tab="configuracoes" id="configTab">
         <i class="fas fa-cog mr-2"></i> Configurações
       </button>
@@ -1250,6 +1253,38 @@ body.dark .submenu a:hover {
         </div>
       </div>
     </div>
+<!-- Nova aba: Planilhas & Exportação -->
+<div id="importExport" class="tab-content p-4">
+  <div class="card mb-6">
+    <h2 class="text-2xl font-bold mb-4">
+      <i class="fas fa-file-import mr-2"></i> Planilhas & Exportação
+    </h2>
+    <ul class="list-disc ml-6 space-y-2 text-gray-700">
+      <li>
+        <strong>Importação de planilhas Shopee</strong><br>
+        Faz leitura de arquivo XLSX, converte em JSON e exibe os dados importados em tabela interativa. Registra no histórico quantos produtos foram importados.
+      </li>
+      <li>
+        <strong>Aplicação de preços em lote</strong><br>
+        Após importar, o usuário pode aplicar:
+        <ul class="list-inside list-decimal">
+          <li>Preço sem lucro (0%)</li>
+          <li>Lucro 5%</li>
+          <li>Lucro 10%</li>
+        </ul>
+        nos campos de “Preço de desconto” da planilha, com feedback de quantos foram atualizados, não encontrados ou sem SKU.
+      </li>
+      <li>
+        <strong>Exportação de dados</strong><br>
+        <ul class="list-inside list-decimal">
+          <li>Exportar planilha Shopee (XLSX) mantendo a estrutura original.</li>
+          <li>Exportar Excel (CSV) de todos os produtos listados, com cabeçalhos detalhados de custos e taxas.</li>
+          <li>Exportar PDF com relatório de precificação (tabela formatada via jsPDF + autoTable).</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
 
     <div id="configuracoes" class="tab-content p-4">
       <div class="card">
