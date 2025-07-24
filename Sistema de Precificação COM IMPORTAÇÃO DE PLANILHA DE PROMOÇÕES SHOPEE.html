@@ -22,17 +22,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #F45C00;
-      --primary-hover: #e15400;
-      --brand: #1C2B36;
-      --success: #4CAF50;
-      --error: #F44336;
-      --bg: #F5F7FA;
-      --card: #FFFFFF;
-      --text: #333333;
-      --text-light: #6B7280;
-      --border: #E5E7EB;
-    }
+  --primary: #F45C00;
+  --primary-hover: #e15400;
+  --brand: #1C2B36;
+  --success: #4CAF50;
+  --error: #F44336;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text: #333333;
+  --text-light: #6B7280;
+  --border: #E5E7EB;
+
+  /* 👇 Adicione esta linha */
+  --sidebar-width: 250px;
+}
 
     .dark-mode {
       --bg: #1E293B;
@@ -124,20 +127,20 @@ body.dark .submenu a:hover {
 
 
     /* Navbar */
-    .navbar {
-      height: 70px;
-      background: var(--card);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      position: fixed;
-      top: 0;
-      left: 260px;
-      right: 0;
-      z-index: 99;
-      display: flex;
-      align-items: center;
-      padding: 0 25px;
-      justify-content: space-between;
-    }
+   .navbar {
+  height: 70px;
+  background: var(--card);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width); /* ✅ valor dinâmico e correto */
+  right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  padding: 0 25px;
+  justify-content: space-between;
+}
 
     .navbar-right {
       display: flex;
@@ -650,36 +653,43 @@ body.dark .submenu a:hover {
     }
 
    
-      .navbar {
-        left: 70px;
-      }
-      .main-content {
-        margin-left: 70px;
-      }
-    }
+   /* Desktop padrão */
+.navbar {
+  left: var(--sidebar-width);
+}
+.main-content {
+  margin-left: var(--sidebar-width);
+}
 
-    @media (max-width: 768px) {
-      .grid-cols-2 {
-        grid-template-columns: 1fr;
-      }
-      .modal-content {
-        width: 95%;
-        margin: 10px auto;
-      }
-      .navbar {
-        left: 0;
-      }
-      .main-content {
-        margin-left: 0;
-      }
-      .sidebar {
-        transform: translateX(-100%);
-        z-index: 101;
-      }
-      .sidebar.active {
-        transform: translateX(0);
-      }
-    }
+/* Responsivo para tablets e celulares */
+@media (max-width: 768px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px auto;
+  }
+
+  .navbar {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 101;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
+
   </style>
 </head>
 <body class="bg-gray-50">
