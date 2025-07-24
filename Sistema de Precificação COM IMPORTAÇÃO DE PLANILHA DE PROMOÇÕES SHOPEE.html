@@ -1216,31 +1216,56 @@ body.dark .submenu a:hover {
     </h2>
     <ul class="list-disc ml-6 space-y-2 text-gray-700">
       <li>
-        <strong>Importação de planilhas Shopee</strong><br>
-        Faz leitura de arquivo XLSX, converte em JSON e exibe os dados importados em tabela interativa. Registra no histórico quantos produtos foram importados.
-      </li>
-      <li>
-        <strong>Aplicação de preços em lote</strong><br>
-        Após importar, o usuário pode aplicar:
-        <ul class="list-inside list-decimal">
-          <li>Preço sem lucro (0%)</li>
-          <li>Lucro 5%</li>
-          <li>Lucro 10%</li>
-        </ul>
-        nos campos de “Preço de desconto” da planilha, com feedback de quantos foram atualizados, não encontrados ou sem SKU.
-      </li>
-      <li>
-        <strong>Exportação de dados</strong><br>
-        <ul class="list-inside list-decimal">
-          <li>Exportar planilha Shopee (XLSX) mantendo a estrutura original.</li>
-          <li>Exportar Excel (CSV) de todos os produtos listados, com cabeçalhos detalhados de custos e taxas.</li>
-          <li>Exportar PDF com relatório de precificação (tabela formatada via jsPDF + autoTable).</li>
-        </ul>
-      </li>
-    </ul>
-  </div>
+      <div class="bg-gray-50 p-5 rounded-xl mb-6">
+          <h3 class="text-xl font-bold mb-4"><i class="fas fa-file-import mr-2"></i> Importar/Exportar Promoções Shopee</h3>
+          
+          <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-2">Importar Planilha Shopee:</label>
+              <input type="file" id="shopeeFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+            </div>
+            <button onclick="importShopeeFile()" class="btn-primary">
+              <i class="fas fa-upload mr-2"></i> Importar
+            </button>
+          </div>
+ <div id="importedShopeeProducts" class="mt-4" style="display: none;">
+            <h4 class="font-semibold mb-2">Produtos importados:</h4>
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>ID Produto</th>
+                    <th>Nome</th>
+                    <th>Parent SKU</th>
+                    <th>ID Variação</th>
+                    <th>Variação</th>
+                    <th>SKU</th>
+                    <th>Preço Original</th>
+                    <th>Preço Desconto</th>
+                  </tr>
+                </thead>
+                <tbody id="importedProductsTableBody"></tbody>
+              </table>
+            </div>
+            
+            <div class="flex flex-wrap gap-3 mt-4">
+              <button onclick="applyPriceUpdate('promo')" class="btn-danger">
+                <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
+              </button>
+              <button onclick="applyPriceUpdate('medium')" class="btn-warning">
+                <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
+              </button>
+              <button onclick="applyPriceUpdate('ideal')" class="btn-success">
+                <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
+              </button>
+              <button onclick="exportShopeeFile()" class="btn-primary ml-auto">
+                <i class="fas fa-file-export mr-2"></i> Exportar Planilha
+              </button>
+            </div>
+          </div>
 </div>
-
+</div>
+</div>
     <div id="configuracoes" class="tab-content p-4">
       <div class="card">
         <h2 class="text-2xl font-bold mb-6"><i class="fas fa-cog mr-2"></i> Configurações do Sistema</h2>
