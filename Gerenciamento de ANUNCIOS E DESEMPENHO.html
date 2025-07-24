@@ -86,48 +86,118 @@
     }
     
     .sidebar {
-      background-color: var(--base-dark);
-      color: white;
-      height: 100vh;
-      position: fixed;
-      width: 250px;
-      top: 0;
-      left: 0;
-      z-index: 100;
-      transition: all 0.3s ease;
-      overflow-y: auto;
-    }
-    
-    .sidebar-logo {
-      padding: 24px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .sidebar-menu {
-      padding: 16px 0;
-    }
-    
-    .sidebar-link {
-      display: flex;
-      align-items: center;
-      padding: 12px 20px;
-      margin: 4px 0;
-      color: rgba(255, 255, 255, 0.8);
-      transition: all 0.3s ease;
-      border-radius: 8px;
-      font-weight: 500;
-    }
-    
-    .sidebar-link:hover, .sidebar-link.active {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-    }
-    
-    .sidebar-link i {
-      margin-right: 12px;
-      width: 24px;
-      text-align: center;
-    }
+  background-color: var(--secondary);
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 99;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.submenu a {
+  color: #ccc;
+  padding-left: 2rem;
+  font-size: 0.9rem;
+  display: block;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+}
+
+.submenu a:hover {
+  color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hidden {
+  display: none;
+}
+
+body.dark {
+  background-color: #1C2B36;
+  color: white;
+}
+
+body.dark .sidebar-link,
+body.dark .submenu a {
+  color: #ddd;
+}
+.sidebar {
+  background-color: var(--secondary);
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 99;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.submenu a {
+  color: #ccc;
+  padding-left: 2rem;
+  font-size: 0.9rem;
+  display: block;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+}
+
+.submenu a:hover {
+  color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.hidden {
+  display: none;
+}
+
+body.dark {
+  background-color: #1C2B36;
+  color: white;
+}
+
+body.dark .sidebar-link,
+body.dark .submenu a {
+  color: #ddd;
+}
+
     
     .navbar {
       background: white;
@@ -352,40 +422,69 @@
 <body class="bg-gray-100 text-gray-800">
   <!-- Sidebar -->
   <div class="sidebar">
-    <div class="sidebar-logo">
-      <h1 class="text-xl font-bold flex items-center">
-        <i class="fas fa-store mr-2 text-orange-400"></i>
-        <span>Mentoria Ferraretto</span>
-      </h1>
-    </div>
-    
-    <div class="sidebar-menu">
-      <a href="index.html" class="sidebar-link">
-        <i class="fas fa-home"></i>
-        <span>Início</span>
-      </a>
-      <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">
-        <i class="fas fa-calculator"></i>
-        <span>🧮 Precificação</span>
-      </a>
-      <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link active">
-        <i class="fas fa-bullhorn"></i>
-        <span>📣 Anúncios</span>
-      </a>
-      <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">
-        <i class="fas fa-boxes"></i>
-        <span>📦 Sobras</span>
-      </a>
-      <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" class="sidebar-link">
-        <i class="fas fa-tools"></i>
-        <span>🛠️ Custeio</span>
-      </a>
-      <a href="#" class="sidebar-link">
-        <i class="fas fa-users"></i>
-        <span>👥 Usuários</span>
-      </a>
+  <div class="sidebar-logo">
+    <div class="flex items-center">
+      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+        <i class="fas fa-rocket text-gray-900"></i>
+      </div>
+      <span class="font-bold text-xl">Mentoria Ferraretto</span>
     </div>
   </div>
+
+  <div class="py-5">
+    <!-- Início -->
+    <a href="https://mferraretto.github.io/sistema-matheus/" class="sidebar-link">
+      <i class="fas fa-home"></i>
+      <span class="link-text">Início</span>
+    </a>
+
+    <!-- Vendas -->
+    <button onclick="toggleMenu('menuVendas')" class="sidebar-link">
+      <i class="fas fa-shopping-cart"></i>
+      <span class="link-text">📦 Vendas</span>
+    </button>
+    <div id="menuVendas" class="submenu hidden">
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Sobras Shopee</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Faturamento Diário</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Acompanhamento</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Controle</a>
+    </div>
+
+    <!-- Precificação -->
+    <button onclick="toggleMenu('menuPrecificacao')" class="sidebar-link">
+      <i class="fas fa-tags"></i>
+      <span class="link-text">🧮 Precificação</span>
+    </button>
+    <div id="menuPrecificacao" class="submenu hidden">
+      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html" class="sidebar-link">Precificação</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/SISTEMA%20DE%20CUSTEIO%20DE%20PRODU%C3%87%C3%83O%20E%20PRODUTOS.html#mdf" class="sidebar-link">Custeio de Produção</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html" class="sidebar-link">Lista Preços</a>
+    </div>
+
+    <!-- Anúncios -->
+    <button onclick="toggleMenu('menuAnuncios')" class="sidebar-link">
+      <i class="fas fa-bullhorn"></i>
+      <span class="link-text">📣 Anúncios</span>
+    </button>
+    <div id="menuAnuncios" class="submenu hidden">
+      <a href="#" class="sidebar-link">Cadastro/Atualização</a>
+      <a href="#" class="sidebar-link">Anúncios</a>
+      <a href="#" class="sidebar-link">Análise</a>
+      <a href="#" class="sidebar-link">Evolução</a>
+    </div>
+
+    <!-- Modo Escuro -->
+    <div class="flex items-center justify-between px-5 mt-6">
+      <span class="text-sm text-gray-300">Modo Escuro</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="darkModeToggle" class="sr-only peer">
+        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-orange-500 transition"></div>
+        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition peer-checked:translate-x-full"></div>
+      </label>
+    </div>
+  </div>
+</div>
+
   
   <!-- Navbar -->
   <div class="navbar">
@@ -1804,6 +1903,31 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     document.querySelectorAll(".tab-content").forEach(tab => tab.style.display = "none");
     const ativa = document.querySelector(".tab-button.active")?.getAttribute("data-tab");
     if (ativa) document.getElementById(ativa).style.display = "block";
+  });
+</script>
+<script>
+  function toggleMenu(menuId) {
+    const el = document.getElementById(menuId);
+    el.classList.toggle('hidden');
+  }
+
+  const toggle = document.getElementById('darkModeToggle');
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.body.classList.add('dark');
+    toggle.checked = true;
+  }
+
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      document.body.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   });
 </script>
 
