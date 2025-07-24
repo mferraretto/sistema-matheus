@@ -101,26 +101,59 @@
   top: 0;
   z-index: 99;
 }
+/* Botões principais do menu lateral */
+.sidebar button.sidebar-link {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  color: white;
+  font-size: 0.95rem;
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
 
-/* Submenus visuais */
+.sidebar button.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+/* Submenu bonito */
+.submenu {
+  padding-left: 1rem;
+  background-color: transparent;
+}
+
 .submenu a {
-  color: #ccc;
-  padding-left: 2rem;
-  font-size: 0.9rem;
   display: block;
-  padding: 0.4rem 1rem;
-  border-radius: 4px;
+  color: #ccc;
+  font-size: 0.9rem;
+  padding: 0.4rem 1.5rem;
+  border-left: 2px solid transparent;
+  transition: all 0.3s;
 }
 
 .submenu a:hover {
   color: var(--primary);
   background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: var(--primary);
+}
+/* Estilo base para modo escuro */
+body.dark .sidebar,
+body.dark .submenu {
+  background-color: var(--secondary);
 }
 
-/* Estilo base para modo escuro */
-body.dark {
-  background-color: #1C2B36;
-  color: white;
+body.dark .sidebar-link,
+body.dark .submenu a {
+  color: #eee;
+}
+
+body.dark .sidebar-link:hover,
+body.dark .submenu a:hover {
+  color: var(--primary);
 }
 
     
