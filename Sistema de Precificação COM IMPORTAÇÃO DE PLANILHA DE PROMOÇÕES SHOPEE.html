@@ -909,6 +909,18 @@ body.dark .submenu a:hover {
           </div>
         </div>
       </div>
+<div class="card mb-6">
+        <h3 class="font-bold text-lg mb-4"><i class="fas fa-file-import mr-2"></i> Importar Produtos</h3>
+        <div class="flex flex-wrap gap-4 items-end">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-2">Planilha de Produtos (.xlsx)</label>
+            <input type="file" id="pricingFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+          </div>
+          <button onclick="importPricingFile()" class="btn-primary">
+            <i class="fas fa-upload mr-2"></i> Importar
+          </button>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
         <!-- Mercado Livre -->
@@ -2760,7 +2772,82 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Exportação para PDF realizada com sucesso!', 'success');
     }
 
- 
+  function importPricingFile() {
+      const fileInput = document.getElementById('pricingFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        showToast('Selecione um arquivo primeiro!', 'warning');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        if (jsonData.length < 2) {
+          showToast('Planilha vazia ou formato inválido!', 'warning');
+          return;
+        }
+
+        const headers = jsonData[0];
+        let imported = 0;
+
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row.length === 0) continue;
+
+          const product = {};
+          for (let j = 0; j < headers.length; j++) {
+            product[headers[j]] = row[j];
+          }
+
+          const nome = product['Produto'] || product['produto'] || product['Nome do Produto'] || '';
+          const sku = product['SKU'] || product['sku'] || '';
+          const plataforma = (product['Plataforma'] || product['plataforma'] || '').toUpperCase();
+          const custo = parseFloat(product['Custo'] || product['Custo do Produto'] || product['Custo (R$)'] || 0);
+
+          if (!nome || !plataforma) continue;
+
+          const taxas = {
+            'Taxas da Plataforma (%)': parseFloat(product['Taxas da Plataforma (%)'] || product['Taxa da Plataforma'] || 0),
+            'Custo Fixo Plataforma (R$)': parseFloat(product['Custo Fixo Plataforma (R$)'] || product['Custo Fixo'] || 0),
+            'Frete (R$)': parseFloat(product['Frete (R$)'] || 0),
+            'Taxa de Transação (%)': parseFloat(product['Taxa de Transação (%)'] || 0),
+            'Taxa de Transferência (%)': parseFloat(product['Taxa de Transferência (%)'] || 0),
+            'Taxa de Antecipação (%)': parseFloat(product['Taxa de Antecipação (%)'] || 0),
+            'Custos Variáveis (R$)': parseFloat(product['Custos Variáveis (R$)'] || 0),
+            'Imposto (%)': parseFloat(product['Imposto (%)'] || 0),
+            'Comissão do Vendedor (%)': parseFloat(product['Comissão do Vendedor (%)'] || 0)
+          };
+
+          const totals = Object.entries(taxas).reduce((acc, [key, val]) => {
+            if (key.includes('(%)')) acc.percent += val || 0;
+            else acc.fix += val || 0;
+            return acc;
+          }, { percent: 0, fix: 0 });
+
+          if (totals.percent >= 100) continue;
+
+          const precoMinimo = ((custo + totals.fix) / (1 - totals.percent / 100)).toFixed(2);
+          const precoPromo = precoMinimo;
+          const precoMedio = (precoMinimo * 1.05).toFixed(2);
+          const precoIdeal = (precoMinimo * 1.10).toFixed(2);
+
+          salvarProduto(nome, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas);
+          imported++;
+        }
+
+        addHistoryEntry('import', `${imported} produtos importados para precificação`);
+        showToast(`${imported} produtos importados!`, 'success');
+        fileInput.value = '';
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
     function importShopeeFile() {
       const fileInput = document.getElementById('shopeeFileInput');
       const file = fileInput.files[0];
