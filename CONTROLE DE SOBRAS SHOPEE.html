@@ -87,6 +87,35 @@
 .hidden {
   display: none;
 }
+/* Sidebar container */
+.sidebar {
+  background-color: var(--secondary); /* Azul petróleo escuro */
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 99;
+}
+
+/* Submenus visuais */
+.submenu a {
+  color: #ccc;
+  padding-left: 2rem;
+  font-size: 0.9rem;
+  display: block;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+}
+
+.submenu a:hover {
+  color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
 
 /* Estilo base para modo escuro */
 body.dark {
