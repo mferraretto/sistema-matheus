@@ -1756,5 +1756,31 @@ body.dark .submenu a {
       document.getElementById('user-initial').textContent = userInitial;
     };
   </script>
+  <script>
+  function toggleMenu(menuId) {
+    const el = document.getElementById(menuId);
+    el.classList.toggle('hidden');
+  }
+
+  const toggle = document.getElementById('darkModeToggle');
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.body.classList.add('dark');
+    toggle.checked = true;
+  }
+
+  toggle.addEventListener('change', () => {
+    if (toggle.checked) {
+      document.body.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  });
+</script>
+
 </body>
 </html>
