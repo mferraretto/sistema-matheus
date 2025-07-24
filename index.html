@@ -812,19 +812,12 @@ body.dark .sidebar-link.active {
       </div>
     </div>
   </div>
+  <script src="firebase-config.js"></script>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
     
-    const firebaseConfig = {
-      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-      authDomain: "matheus-35023.firebaseapp.com",
-      projectId: "matheus-35023",
-      storageBucket: "matheus-35023.appspot.com",
-      messagingSenderId: "1011113149395",
-      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526"
-    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
