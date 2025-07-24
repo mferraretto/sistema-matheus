@@ -1,0 +1,44 @@
+     <div id="graficos" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-chart-bar"></i>
+            <h3>Gráficos de Desempenho</h3>
+          </div>
+          <p>Visualize gráficos comparativos entre o desempenho real e as metas estabelecidas.</p>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-sliders-h"></i>
+            <h3>Configurações do Gráfico</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <select id="filtroGrafico" class="form-control">
+                <option value="top10">Top 10 SKUs com maior diferença</option>
+                <option value="bottom10">Top 10 SKUs com menor diferença</option>
+                <option value="all">Todos os SKUs</option>
+              </select>
+            </div>
+            <button onclick="atualizarGraficos()" class="btn btn-primary">
+              <i class="fas fa-sync-alt"></i> Atualizar Gráficos
+            </button>
+          </div>
+        </div>
+        
+        <div class="chart-container">
+          <div class="chart-header">
+            <div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>
+          </div>
+          <canvas id="graficoBarras" height="300"></canvas>
+        </div>
+        
+        <div class="chart-container">
+          <div class="chart-header">
+            <div class="chart-title">Desempenho vs Meta por SKU (%)</div>
+          </div>
+          <canvas id="graficoPizza" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- Aba de Histórico -->
