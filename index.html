@@ -10,11 +10,11 @@
   
   <style>
     :root {
-      --primary: #F45C00;
-      --base: #1C2B36;
-      --success: #4CAF50;
-      --error: #F44336;
-      --bg-light: #F5F7FA;
+      --color-primary: #F45C00;
+      --color-base: #1C2B36;
+      --color-success: #4CAF50;
+      --color-error: #F44336;
+      --color-bg: #F5F7FA;
     }
     
     * {
@@ -23,25 +23,39 @@
     
     body {
       font-family: 'Inter', sans-serif;
-      background-color: var(--bg-light);
+      background-color: var(--color-bg);
       min-height: 100vh;
       overflow-x: hidden;
       color: #333;
+      transition: background-color 0.3s ease;
     }
     
-    h1, h2, h3, h4, h5, h6 {
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .btn, button {
-      font-family: 'Poppins', sans-serif;
+    body.dark-mode {
+      --color-bg: #121212;
+      --color-base: #0d1a24;
+      color: #e0e0e0;
+      background-color: var(--color-bg);
     }
     
     .card {
-      @apply bg-white rounded-xl shadow-md transition-all duration-300 hover:shadow-lg;
-      border: 1px solid rgba(226, 232, 240, 0.7);
+      background-color: white;
+      padding: 1.75rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.7);
+    }
+    
+    .dark-mode .card {
+      background-color: #1e1e1e;
+      border-color: #333;
+    }
+    
+    .card:hover {
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      transform: translateY(-3px);
     }
     
     .modal { 
@@ -71,6 +85,11 @@
       animation: slideIn 0.4s ease;
     }
     
+    .dark-mode .modal-content {
+      background: #1e1e1e;
+      border-color: #333;
+    }
+    
     .btn-close { 
       float: right; 
       font-size: 24px; 
@@ -85,13 +104,14 @@
     }
     
     .btn {
-      @apply transition-all duration-300;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      font-family: 'Poppins', sans-serif;
       font-weight: 500;
     }
     
     .btn-primary {
-      background-color: var(--primary);
+      background-color: var(--color-primary);
       color: white;
       border-radius: 9999px;
       padding: 0.5rem 1.5rem;
@@ -99,26 +119,327 @@
     
     .btn-primary:hover {
       background-color: #e05500;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 8px -1px rgba(244, 92, 0, 0.3);
+      transform: scale(1.02);
     }
     
     .btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px -1px rgba(244, 92, 0, 0.3);
+      transform: scale(0.98);
     }
     
-    .nav-link {
-      @apply relative px-4 py-3 rounded-lg transition-colors duration-300 flex items-center;
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      background-color: var(--color-base);
+      color: white;
+      padding: 1rem 0;
+      z-index: 40;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
     }
     
-    .nav-link.active {
-      background-color: rgba(244, 92, 0, 0.1);
-      color: var(--primary);
+    .dark-mode .sidebar {
+      background-color: #0d1a24;
     }
     
-    .nav-link:hover {
-      background-color: rgba(244, 92, 0, 0.1);
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      margin: 0.25rem 0.75rem;
+      border-radius: 0.5rem;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .sidebar-item:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+    
+    .sidebar-item.active {
+      background-color: var(--color-primary);
+    }
+    
+    .sidebar-item i {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+      width: 24px;
+      text-align: center;
+    }
+    
+    .main-content {
+      margin-left: 250px;
+      padding-top: 70px;
+      width: calc(100% - 250px);
+      min-height: 100vh;
+      transition: margin-left 0.3s ease;
+    }
+    
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 250px;
+      right: 0;
+      height: 70px;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 30;
+      transition: left 0.3s ease;
+    }
+    
+    .dark-mode .topbar {
+      background-color: #1e1e1e;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .dark-mode .user-avatar {
+      background-color: #e05500;
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--color-error);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    
+    .notification-icon {
+      position: relative;
+      cursor: pointer;
+      margin-right: 1rem;
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: var(--color-base);
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .skeleton {
+      animation: skeleton-loading 1.5s linear infinite alternate;
+      border-radius: 0.25rem;
+    }
+    
+    @keyframes skeleton-loading {
+      0% { background-color: #e0e0e0; }
+      100% { background-color: #f0f0f0; }
+    }
+    
+    .dark-mode .skeleton {
+      animation: skeleton-loading-dark 1.5s linear infinite alternate;
+    }
+    
+    @keyframes skeleton-loading-dark {
+      0% { background-color: #2d2d2d; }
+      100% { background-color: #3d3d3d; }
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th {
+      background-color: var(--color-base);
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .dark-mode th {
+      background-color: #0d1a24;
+    }
+    
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .dark-mode th, .dark-mode td {
+      border-bottom: 1px solid #333;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    
+    .dark-mode tr:nth-child(even) {
+      background-color: #1a1a1a;
+    }
+    
+    .dark-mode tr:hover {
+      background-color: #2a2a2a;
+    }
+    
+    .success-message {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: var(--color-success);
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--color-success);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .error-message {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: var(--color-error);
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--color-error);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .dark-mode .success-message {
+      background-color: rgba(76, 175, 80, 0.15);
+    }
+    
+    .dark-mode .error-message {
+      background-color: rgba(244, 67, 54, 0.15);
+    }
+    
+    .dark-mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      margin-left: 1rem;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--color-primary);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+        width: 100%;
+      }
+      
+      .topbar {
+        left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
     }
     
     @keyframes fadeIn {
@@ -147,277 +468,389 @@
       100% { transform: scale(1); }
     }
     
-    .skeleton {
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200% 100%;
-      animation: skeleton-loading 1.5s infinite;
-      border-radius: 4px;
-    }
-    
-    @keyframes skeleton-loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-    
-    .notification-dot {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 10px;
-      height: 10px;
-      background-color: var(--error);
-      border-radius: 50%;
-      border: 2px solid white;
-    }
-    
-    .dark-mode {
-      background-color: #1a202c;
-      color: #e2e8f0;
-    }
-    
-    .dark-mode .card {
-      background-color: #2d3748;
-      border-color: #4a5568;
-    }
-    
-    .dark-mode .modal-content {
-      background-color: #2d3748;
-      color: #e2e8f0;
+    h1, h2, h3, h4 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
     }
   </style>
 </head>
-<body class="min-h-screen flex">
+<body class="min-h-screen flex flex-col">
   <!-- Sidebar -->
-  <aside class="w-64 bg-base text-white fixed h-full z-40 transition-all duration-300 shadow-xl">
-    <div class="p-5">
-      <div class="flex items-center space-x-3 mb-8">
-        <div class="bg-primary w-10 h-10 rounded-lg flex items-center justify-center">
-          <i class="fas fa-rocket text-white"></i>
-        </div>
-        <span class="font-bold text-xl">Mentoria Ferraretto</span>
+  <div class="sidebar">
+    <div class="flex items-center space-x-3 p-4 mb-4">
+      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center">
+        <i class="fas fa-rocket text-blue-600"></i>
       </div>
-      
-      <nav class="mt-8">
-        <a href="index.html" class="nav-link active">
-          <i class="fas fa-home mr-3"></i>
-          <span>Página Inicial</span>
-        </a>
-        <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link">
-          <i class="fas fa-calculator mr-3"></i>
-          <span>🧮 Precificação Shopee</span>
-        </a>
-        <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="nav-link">
-          <i class="fas fa-bullhorn mr-3"></i>
-          <span>📣 Gerenciar Anúncios</span>
-        </a>
-        <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" class="nav-link">
-          <i class="fas fa-box-open mr-3"></i>
-          <span>📦 Controle de Sobras</span>
-        </a>
-        <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" class="nav-link">
-          <i class="fas fa-industry mr-3"></i>
-          <span>🛠️ Custeio de Produção</span>
-        </a>
-        <a href="painel-usuarios.html" onclick="return requireLogin(event)" class="nav-link">
-          <i class="fas fa-users mr-3"></i>
-          <span>👥 Gerenciar Usuários</span>
-        </a>
-      </nav>
-      
-      <div class="mt-auto absolute bottom-0 left-0 w-full p-5">
-        <div class="flex items-center justify-between">
-          <button id="darkModeToggle" class="text-gray-400 hover:text-white transition-colors">
-            <i class="fas fa-moon"></i>
-          </button>
-          <div class="text-xs text-gray-400">v2.0.0</div>
-        </div>
+      <span class="font-bold text-xl">Mentoria Ferraretto</span>
+    </div>
+    
+    <div class="mb-6">
+      <div class="sidebar-item active">
+        <i class="fas fa-home"></i>
+        <span>Painel Principal</span>
+      </div>
+      <div class="sidebar-item">
+        <i class="fas fa-calculator"></i>
+        <span>🧮 Precificação Shopee</span>
+      </div>
+      <div class="sidebar-item">
+        <i class="fas fa-bullhorn"></i>
+        <span>📣 Gerenciamento de Anúncios</span>
+      </div>
+      <div class="sidebar-item">
+        <i class="fas fa-box-open"></i>
+        <span>📦 Controle de Sobras</span>
+      </div>
+      <div class="sidebar-item">
+        <i class="fas fa-industry"></i>
+        <span>🛠️ Custeio de Produção</span>
+      </div>
+      <div class="sidebar-item">
+        <i class="fas fa-users"></i>
+        <span>👥 Gerenciamento de Usuários</span>
       </div>
     </div>
-  </aside>
+    
+    <div class="mt-auto px-4 pb-4">
+      <div class="dark-mode-toggle">
+        <i class="fas fa-moon"></i>
+        <label class="toggle-switch">
+          <input type="checkbox" id="darkModeToggle">
+          <span class="slider"></span>
+        </label>
+        <i class="fas fa-sun"></i>
+      </div>
+    </div>
+  </div>
   
   <!-- Main Content -->
-  <div class="flex-1 ml-64">
-    <!-- Top Navigation Bar -->
-    <nav class="bg-white shadow-sm fixed w-full z-30 flex items-center justify-between px-6 py-3">
+  <div class="main-content">
+    <!-- Topbar -->
+    <div class="topbar">
       <div class="flex items-center">
-        <button id="sidebarToggle" class="mr-4 text-gray-700 hover:text-primary">
+        <button class="menu-toggle mr-4 text-gray-600 md:hidden">
           <i class="fas fa-bars text-xl"></i>
         </button>
-        <h2 class="text-lg font-medium text-gray-800">Dashboard</h2>
+        <h2 class="text-xl font-bold">Painel Principal</h2>
       </div>
       
-      <div class="flex items-center space-x-5">
-        <div class="relative">
-          <button id="notificationBtn" class="text-gray-600 hover:text-primary relative">
-            <i class="far fa-bell text-xl"></i>
-            <span class="notification-dot"></span>
-          </button>
+      <div class="flex items-center">
+        <div class="notification-icon tooltip">
+          <i class="fas fa-bell text-xl"></i>
+          <span class="tooltip-text">Notificações</span>
+          <div class="notification-badge">3</div>
         </div>
         
-        <div class="flex items-center space-x-3">
-          <div class="relative">
-            <div id="currentUser" class="hidden bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium text-sm">
-              user@example.com
-            </div>
+        <div class="user-info">
+          <div class="user-avatar">
+            <span>MF</span>
           </div>
-          
-          <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-            <i class="fas fa-user"></i>
+          <div>
+            <span id="currentUser" class="font-medium">admin@mentoria.com</span>
           </div>
-          
-          <div class="flex flex-col items-end">
-            <span id="username" class="font-medium text-gray-800">Usuário</span>
-            <span class="text-xs text-gray-500">Administrador</span>
-          </div>
-          
-          <button id="loginBtn" class="btn-primary">
-            <i class="fas fa-sign-in-alt mr-2"></i>Entrar
-          </button>
-          <button id="logoutBtn" class="btn-primary bg-gray-600 hover:bg-gray-700 hidden">
-            <i class="fas fa-sign-out-alt mr-2"></i>Sair
-          </button>
         </div>
+        
+        <button id="logoutBtn" class="btn btn-primary ml-4">
+          <i class="fas fa-sign-out-alt mr-2"></i>Sair
+        </button>
       </div>
-    </nav>
+    </div>
     
-    <!-- Main Content Area -->
-    <main class="pt-16 p-6 min-h-screen">
+    <!-- Content -->
+    <div class="p-6">
+      <!-- Messages -->
+      <div class="success-message">
+        <i class="fas fa-check-circle"></i>
+        <span>Produto salvo com sucesso</span>
+      </div>
+      
+      <div class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
+        <span>Erro ao importar planilha</span>
+      </div>
+      
       <!-- Hero Section -->
-      <div class="max-w-6xl mx-auto text-center mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 mt-8">
-          <span class="text-primary">Sistemas de Gestão</span> para sua Loja
+      <div class="max-w-6xl w-full text-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+          <span class="text-orange-600">Sistemas de Gestão</span> para sua Loja
         </h1>
-        <p class="text-gray-600 max-w-2xl mx-auto text-lg mb-8">
+        <p class="text-gray-600 max-w-2xl mx-auto mb-8 dark:text-gray-300">
           Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
         </p>
-        
-        <div class="bg-gradient-to-r from-primary to-orange-600 p-1 rounded-full inline-block mb-12 pulse">
-          <div class="bg-white rounded-full px-8 py-3">
-            <span class="font-bold text-primary">
-              <i class="fas fa-star mr-2"></i>Ferramentas Premium
-            </span>
-          </div>
-        </div>
       </div>
       
       <!-- Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto mb-16">
-        <div class="card p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full mb-10">
+        <div class="card">
           <div class="flex items-start mb-4">
-            <div class="bg-blue-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
-              <i class="fas fa-calculator text-blue-600 text-2xl"></i>
+            <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-calculator text-blue-600 text-xl"></i>
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-gray-800 mb-1">📊 Sistema de Precificação Shopee</h2>
-              <p class="text-gray-600">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
+              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">📊 Sistema de Precificação Shopee</h2>
+              <p class="text-gray-600 dark:text-gray-400">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
             </div>
           </div>
-          <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block mt-4">
-            Acessar Sistema
+          <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
+            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
           </a>
         </div>
 
-        <div class="card p-6">
+        <div class="card">
           <div class="flex items-start mb-4">
-            <div class="bg-purple-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
-              <i class="fas fa-bullhorn text-purple-600 text-2xl"></i>
+            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-bullhorn text-purple-600 text-xl"></i>
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-gray-800 mb-1">🗂️ Gerenciamento de Anúncios</h2>
-              <p class="text-gray-600">Gerencie produtos, importe dados e analise desempenho com IA.</p>
+              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">🗂️ Gerenciamento de Anúncios</h2>
+              <p class="text-gray-600 dark:text-gray-400">Gerencie produtos, importe dados e analise desempenho com IA.</p>
             </div>
           </div>
-          <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block mt-4">
-            Acessar Sistema
+          <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
+            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
           </a>
         </div>
 
-        <div class="card p-6">
+        <div class="card">
           <div class="flex items-start mb-4">
-            <div class="bg-yellow-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
-              <i class="fas fa-box-open text-yellow-600 text-2xl"></i>
+            <div class="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-box-open text-yellow-600 text-xl"></i>
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-gray-800 mb-1">📦 Controle de Sobras Shopee</h2>
-              <p class="text-gray-600">Importe relatórios e controle sobras com gráficos e metas por SKU.</p>
+              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">📦 Controle de Sobras Shopee</h2>
+              <p class="text-gray-600 dark:text-gray-400">Importe relatórios e controle sobras com gráficos e metas por SKU.</p>
             </div>
           </div>
-          <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block mt-4">
-            Acessar Sistema
+          <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
+            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
           </a>
         </div>
 
-        <div class="card p-6">
+        <div class="card">
           <div class="flex items-start mb-4">
-            <div class="bg-red-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
-              <i class="fas fa-industry text-red-600 text-2xl"></i>
+            <div class="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
+              <i class="fas fa-industry text-red-600 text-xl"></i>
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-gray-800 mb-1">🛠️ Custeio de Produção</h2>
-              <p class="text-gray-600">Calcule custos de produção por peça, incluindo MDF e mão de obra.</p>
+              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">🛠️ Custeio de Produção</h2>
+              <p class="text-gray-600 dark:text-gray-400">Calcule custos de produção por peça, incluindo MDF e mão de obra.</p>
             </div>
           </div>
-          <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block mt-4">
-            Acessar Sistema
-          </a>
-        </div>
-        
-        <div class="card p-6">
-          <div class="flex items-start mb-4">
-            <div class="bg-gray-100 w-14 h-14 rounded-xl flex items-center justify-center mr-4">
-              <i class="fas fa-users text-gray-600 text-2xl"></i>
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold text-gray-800 mb-1">👤 Gerenciamento de Usuários</h2>
-              <p class="text-gray-600">Cadastre e defina permissões de acesso por perfil (ADM ou Cliente).</p>
-            </div>
-          </div>
-          <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block mt-4">
-            Acessar Painel
+          <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
+            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
           </a>
         </div>
       </div>
       
+      <div class="card max-w-6xl mb-10">
+        <div class="flex items-start mb-4">
+          <div class="bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
+            <i class="fas fa-users text-gray-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">👤 Gerenciamento de Usuários</h2>
+            <p class="text-gray-600 dark:text-gray-400">Cadastre e defina permissões de acesso por perfil (ADM ou Cliente).</p>
+          </div>
+        </div>
+        <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
+          <i class="fas fa-external-link-alt mr-2"></i>Acessar Painel
+        </a>
+      </div>
+      
       <!-- Features Section -->
-      <div class="max-w-6xl mx-auto bg-white rounded-2xl p-8 mb-16 border border-gray-200">
-        <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">
-          <i class="fas fa-medal text-primary mr-2"></i>Vantagens Exclusivas
+      <div class="max-w-6xl w-full bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8 mb-10 border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8 dark:text-white">
+          <i class="fas fa-medal text-yellow-500 mr-2"></i>Vantagens Exclusivas
         </h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div class="text-center p-6 rounded-xl bg-gray-50">
-            <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-bolt text-blue-600 text-2xl"></i>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
+            <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 dark:bg-blue-900/30">
+              <i class="fas fa-bolt text-blue-600 text-xl dark:text-blue-400"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Otimização de Tempo</h3>
-            <p class="text-gray-600">Automatize processos manuais e economize horas de trabalho por dia.</p>
+            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Otimização de Tempo</h3>
+            <p class="text-gray-600 dark:text-gray-400">Automatize processos manuais e economize horas de trabalho por dia.</p>
           </div>
           
-          <div class="text-center p-6 rounded-xl bg-gray-50">
-            <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-chart-line text-purple-600 text-2xl"></i>
+          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
+            <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4 dark:bg-purple-900/30">
+              <i class="fas fa-chart-line text-purple-600 text-xl dark:text-purple-400"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Tomada de Decisão</h3>
-            <p class="text-gray-600">Dados precisos para decisões estratégicas baseadas em informações reais.</p>
+            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Tomada de Decisão</h3>
+            <p class="text-gray-600 dark:text-gray-400">Dados precisos para decisões estratégicas baseadas em informações reais.</p>
           </div>
           
-          <div class="text-center p-6 rounded-xl bg-gray-50">
-            <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-lock text-green-600 text-2xl"></i>
+          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
+            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 dark:bg-green-900/30">
+              <i class="fas fa-lock text-green-600 text-xl dark:text-green-400"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Segurança de Dados</h3>
-            <p class="text-gray-600">Seus dados protegidos com tecnologia de criptografia avançada.</p>
+            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Segurança de Dados</h3>
+            <p class="text-gray-600 dark:text-gray-400">Seus dados protegidos com tecnologia de criptografia avançada.</p>
           </div>
         </div>
       </div>
-
+      
+      <!-- Charts Section -->
+      <div class="max-w-6xl w-full mb-10">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 dark:text-white">Desempenho Geral</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="card">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">Vendas por Categoria</h3>
+            <div class="h-64 flex items-center justify-center">
+              <div class="text-center">
+                <div class="skeleton w-full h-48 mb-2"></div>
+                <p class="text-gray-500 dark:text-gray-400">Gráfico de vendas por categoria</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">Visitas vs Cliques</h3>
+            <div class="h-64 flex items-center justify-center">
+              <div class="text-center">
+                <div class="skeleton w-full h-48 mb-2"></div>
+                <p class="text-gray-500 dark:text-gray-400">Comparativo de visitas e cliques</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Products Table -->
+      <div class="max-w-6xl w-full mb-10">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Produtos em Destaque</h2>
+          <div class="flex gap-2">
+            <input type="text" placeholder="Filtrar por nome" class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <input type="text" placeholder="Filtrar por SKU" class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <select class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option>Todos os status</option>
+              <option>Ativo</option>
+              <option>Inativo</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>SKU</th>
+                  <th>Categoria</th>
+                  <th>Status</th>
+                  <th>Vendas (30d)</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Camiseta Premium</td>
+                  <td>CT-001</td>
+                  <td>Vestuário</td>
+                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
+                  <td>124</td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button class="text-blue-500 hover:text-blue-700 tooltip">
+                        <i class="fas fa-edit"></i>
+                        <span class="tooltip-text">Editar</span>
+                      </button>
+                      <button class="text-green-500 hover:text-green-700 tooltip">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="tooltip-text">Analisar</span>
+                      </button>
+                      <button class="text-red-500 hover:text-red-700 tooltip">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="tooltip-text">Excluir</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Caneca Personalizada</td>
+                  <td>CN-205</td>
+                  <td>Casa</td>
+                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
+                  <td>89</td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button class="text-blue-500 hover:text-blue-700 tooltip">
+                        <i class="fas fa-edit"></i>
+                        <span class="tooltip-text">Editar</span>
+                      </button>
+                      <button class="text-green-500 hover:text-green-700 tooltip">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="tooltip-text">Analisar</span>
+                      </button>
+                      <button class="text-red-500 hover:text-red-700 tooltip">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="tooltip-text">Excluir</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Fone Bluetooth</td>
+                  <td>FB-112</td>
+                  <td>Eletrônicos</td>
+                  <td><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs dark:bg-yellow-900/30 dark:text-yellow-400">Pausado</span></td>
+                  <td>42</td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button class="text-blue-500 hover:text-blue-700 tooltip">
+                        <i class="fas fa-edit"></i>
+                        <span class="tooltip-text">Editar</span>
+                      </button>
+                      <button class="text-green-500 hover:text-green-700 tooltip">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="tooltip-text">Analisar</span>
+                      </button>
+                      <button class="text-red-500 hover:text-red-700 tooltip">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="tooltip-text">Excluir</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Kit Maquiagem</td>
+                  <td>MK-301</td>
+                  <td>Beleza</td>
+                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
+                  <td>156</td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button class="text-blue-500 hover:text-blue-700 tooltip">
+                        <i class="fas fa-edit"></i>
+                        <span class="tooltip-text">Editar</span>
+                      </button>
+                      <button class="text-green-500 hover:text-green-700 tooltip">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="tooltip-text">Analisar</span>
+                      </button>
+                      <button class="text-red-500 hover:text-red-700 tooltip">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="tooltip-text">Excluir</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
       <!-- Footer -->
-      <footer class="w-full bg-base text-white py-8 px-6 mt-auto">
+      <footer class="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 px-6">
         <div class="max-w-6xl mx-auto">
           <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-6 md:mb-0">
               <div class="flex items-center space-x-3 mb-4">
-                <div class="bg-primary w-10 h-10 rounded-lg flex items-center justify-center">
+                <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
                   <i class="fas fa-rocket text-white"></i>
                 </div>
                 <span class="font-bold text-xl">Mentoria Ferraretto</span>
@@ -426,7 +859,7 @@
             </div>
             
             <div class="flex space-x-4">
-              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-primary flex items-center justify-center transition-colors">
+              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-blue-500 flex items-center justify-center transition-colors">
                 <i class="fab fa-instagram"></i>
               </a>
               <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-blue-700 flex items-center justify-center transition-colors">
@@ -446,7 +879,7 @@
           </div>
         </div>
       </footer>
-    </main>
+    </div>
   </div>
 
   <!-- Modais de Login -->
@@ -455,40 +888,40 @@
       <span class="btn-close" onclick="closeModal('loginModal')">&times;</span>
       
       <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-primary to-orange-600 flex items-center justify-center mx-auto mb-4">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
           <i class="fas fa-lock text-white text-3xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h3>
-        <p class="text-gray-600 mt-2">Insira suas credenciais para acessar as ferramentas</p>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Acesso ao Sistema</h3>
+        <p class="text-gray-600 mt-2 dark:text-gray-400">Insira suas credenciais para acessar as ferramentas</p>
       </div>
       
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">E-mail</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-envelope text-gray-400"></i>
             </div>
-            <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="seu@email.com">
+            <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="seu@email.com">
           </div>
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700">Senha</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Senha</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-lock text-gray-400"></i>
             </div>
-            <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="••••••••">
+            <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="••••••••">
           </div>
         </div>
         
-        <button onclick="login()" class="btn-primary w-full py-3.5 text-lg">
+        <button onclick="login()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
           <i class="fas fa-sign-in-alt mr-2"></i> Entrar
         </button>
         
         <div class="text-center pt-4">
-          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-primary hover:text-orange-700 font-medium">
+          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600 hover:text-blue-800 font-medium dark:text-blue-400">
             Esqueci minha senha
           </a>
         </div>
@@ -501,25 +934,25 @@
       <span class="btn-close" onclick="closeModal('recoverModal')">&times;</span>
       
       <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-primary to-orange-600 flex items-center justify-center mx-auto mb-4">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
           <i class="fas fa-key text-white text-3xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-800">Recuperar Senha</h3>
-        <p class="text-gray-600 mt-2">Insira seu e-mail para receber as instruções de recuperação</p>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Recuperar Senha</h3>
+        <p class="text-gray-600 mt-2 dark:text-gray-400">Insira seu e-mail para receber as instruções de recuperação</p>
       </div>
       
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700">E-mail cadastrado</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">E-mail cadastrado</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-envelope text-gray-400"></i>
             </div>
-            <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="seu@email.com">
+            <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="seu@email.com">
           </div>
         </div>
         
-        <button onclick="sendRecovery()" class="btn-primary w-full py-3.5 text-lg">
+        <button onclick="sendRecovery()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
           <i class="fas fa-paper-plane mr-2"></i> Enviar Link de Recuperação
         </button>
       </div>
@@ -586,21 +1019,16 @@
 
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
-      document.getElementById('currentUser').classList.remove('hidden');
-      document.getElementById('loginBtn').classList.add('hidden');
-      document.getElementById('logoutBtn').classList.remove('hidden');
       
-      // Atualizar nome de usuário na navbar
-      const username = user.email.split('@')[0];
-      document.getElementById('username').textContent = username.charAt(0).toUpperCase() + username.slice(1);
+      // Create user avatar initials
+      const nameParts = user.email.split('@')[0].split('.');
+      const initials = nameParts.map(part => part.charAt(0).join('').toUpperCase();
+      document.querySelector('.user-avatar').innerHTML = `<span>${initials}</span>`;
     }
 
     function hideUserArea() {
       document.getElementById('currentUser').textContent = '';
-      document.getElementById('currentUser').classList.add('hidden');
-      document.getElementById('loginBtn').classList.remove('hidden');
-      document.getElementById('logoutBtn').classList.add('hidden');
-      document.getElementById('username').textContent = 'Usuário';
+      document.querySelector('.user-avatar').innerHTML = '<span>MF</span>';
     }
 
     window.requireLogin = (event) => {
@@ -622,32 +1050,31 @@
       });
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
+    // Dark mode toggle
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    darkModeToggle.addEventListener('change', () => {
+      document.body.classList.toggle('dark-mode');
+      // Save preference to localStorage
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    });
+    
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+      darkModeToggle.checked = true;
+    }
+    
+    // Mobile menu toggle
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+      document.querySelector('.sidebar').classList.toggle('active');
+    });
+    
+    // Initialize
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
     if (window.location.search.includes('login=1')) {
       openModal('loginModal');
     }
-    
-    // Toggle sidebar em dispositivos móveis
-    document.getElementById('sidebarToggle').addEventListener('click', function() {
-      const sidebar = document.querySelector('aside');
-      sidebar.classList.toggle('-translate-x-full');
-    });
-    
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('click', function() {
-      document.body.classList.toggle('dark-mode');
-      const icon = this.querySelector('i');
-      if (document.body.classList.contains('dark-mode')) {
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-      } else {
-        icon.classList.remove('fa-sun');
-        icon.classList.add('fa-moon');
-      }
-    });
     
     checkLogin();
   </script>
