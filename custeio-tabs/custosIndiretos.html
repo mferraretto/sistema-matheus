@@ -1,0 +1,133 @@
+<div id="custosIndiretos" class="tab">
+        <div class="card">
+          <h2>🏭 Custos Indiretos Mensais</h2>
+          
+          <div class="alert alert-warning">
+            <strong>Importante:</strong> Preencha os valores mensais de cada custo indireto. 
+            Esses valores serão usados para calcular o custo indireto unitário de cada peça.
+          </div>
+          
+          <div class="flex-container">
+            <div class="flex-item">
+              <h3>1. Estrutura e Instalações</h3>
+              <div class="cilindro-linha">
+                <label>Aluguel:</label>
+                <input type="number" class="indireto" id="aluguel" name="aluguel" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>IPTU e taxas:</label>
+                <input type="number" class="indireto" id="iptu" name="iptu" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Condomínio:</label>
+                <input type="number" class="indireto" id="condominio" name="condominio" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Seguro patrimonial:</label>
+                <input type="number" class="indireto" id="seguro" name="seguro" min="0" step="0.01">
+              </div>
+              
+              <h3>2. Utilidades e Manutenção</h3>
+              <div class="cilindro-linha">
+                <label>Energia elétrica:</label>
+                <input type="number" class="indireto" id="energia" name="energia" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Água e esgoto:</label>
+                <input type="number" class="indireto" id="agua" name="agua" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Manutenção de máquinas:</label>
+                <input type="number" class="indireto" id="manutencao" name="manutencao" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Gás:</label>
+                <input type="number" class="indireto" id="gas" name="gas" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Depreciação de máquinas:</label>
+                <input type="number" class="indireto" id="depreciacao" name="depreciacao" min="0" step="0.01">
+              </div>
+            </div>
+            
+            <div class="flex-item">
+              <h3>3. Logística e Armazenamento</h3>
+              <div class="cilindro-linha">
+                <label>Transporte interno:</label>
+                <input type="number" class="indireto" id="transporteInterno" name="transporteInterno" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Depósito/Estoque:</label>
+                <input type="number" class="indireto" id="deposito" name="deposito" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Empacotamento geral:</label>
+                <input type="number" class="indireto" id="empacotamentoGeral" name="empacotamentoGeral" min="0" step="0.01">
+              </div>
+              
+              <h3>4. Custos Administrativos</h3>
+              <div class="cilindro-linha">
+                <label>Sistema de gestão:</label>
+                <input type="number" class="indireto" id="erp" name="erp" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Contabilidade:</label>
+                <input type="number" class="indireto" id="contabilidade" name="contabilidade" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Licenças e alvarás:</label>
+                <input type="number" class="indireto" id="licencas" name="licencas" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Internet, telefone, papel:</label>
+                <input type="number" class="indireto" id="internet" name="internet" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Softwares:</label>
+                <input type="number" class="indireto" id="softwares" name="softwares" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Equipe adm/financeiro:</label>
+                <input type="number" class="indireto" id="admin" name="admin" min="0" step="0.01">
+              </div>
+              
+              <h3>5. Limpeza e Segurança</h3>
+              <div class="cilindro-linha">
+                <label>Produtos de limpeza:</label>
+                <input type="number" class="indireto" id="limpeza" name="limpeza" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>EPIs e uniformes:</label>
+                <input type="number" class="indireto" id="epis" name="epis" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Brigadista/Segurança:</label>
+                <input type="number" class="indireto" id="seguranca" name="seguranca" min="0" step="0.01">
+              </div>
+              
+              <h3>6. Marketing e Vendas</h3>
+              <div class="cilindro-linha">
+                <label>Fotos, vídeos e edição:</label>
+                <input type="number" class="indireto" id="midia" name="midia" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Marketing pago (Ads):</label>
+                <input type="number" class="indireto" id="ads" name="ads" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Ferramentas de atendimento:</label>
+                <input type="number" class="indireto" id="ferramentas" name="ferramentas" min="0" step="0.01">
+              </div>
+              <div class="cilindro-linha">
+                <label>Comissão de vendedores:</label>
+                <input type="number" class="indireto" id="comissao" name="comissao" min="0" step="0.01">
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="calcularCustosIndiretos()">Calcular Custos Indiretos</button>
+          <div class="result" id="resultadoIndiretos">
+            <p>Preencha os custos acima e clique em calcular para ver o resultado.</p>
+          </div>
+        </div>
+      </div>
