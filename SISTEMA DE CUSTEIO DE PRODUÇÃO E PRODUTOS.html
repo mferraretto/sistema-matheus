@@ -603,433 +603,21 @@
         <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
       </div>
 
-      <div id="mdf" class="tab active">
-        <div class="card">
-          <h2>🪵 Custo de MDF por Trio de Cilindros</h2>
-          <div class="alert alert-warning">
-            <strong>Nota:</strong> Para cada peça, preencha as medidas e selecione o tipo de chapa. 
-            Certifique-se de cadastrar as chapas na aba correspondente antes de selecionar.
-          </div>
 
-          <div class="flex-container">
-            <div class="flex-item">
-              <div class="summary-box">
-                <h4>🔹 Peça 1</h4>
-                <div class="cilindro-linha">
-                  <label>Altura (cm):</label>
-                  <input type="number" id="alturaP1" value="80" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Diâmetro (cm):</label>
-                  <input type="number" id="diametroP1" value="50" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Chapa:</label>
-                  <select id="chapaP1" class="chapaSelect"></select>
-                </div>
-              </div>
+      <div id="mdf" class="tab active"></div>
 
-              <div class="summary-box">
-                <h4>🔹 Peça 2</h4>
-                <div class="cilindro-linha">
-                  <label>Altura (cm):</label>
-                  <input type="number" id="alturaP2" value="60" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Diâmetro (cm):</label>
-                  <input type="number" id="diametroP2" value="40" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Chapa:</label>
-                  <select id="chapaP2" class="chapaSelect"></select>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex-item">
-              <div class="summary-box">
-                <h4>🔹 Peça 3</h4>
-                <div class="cilindro-linha">
-                  <label>Altura (cm):</label>
-                  <input type="number" id="alturaP3" value="40" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Diâmetro (cm):</label>
-                  <input type="number" id="diametroP3" value="30" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Chapa:</label>
-                  <select id="chapaP3" class="chapaSelect"></select>
-                </div>
-              </div>
+      <div id="mao" class="tab"></div>
 
-              <div class="summary-box">
-                <h4>🔹 Peça 4</h4>
-                <div class="cilindro-linha">
-                  <label>Altura (cm):</label>
-                  <input type="number" id="alturaP4" value="30" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Diâmetro (cm):</label>
-                  <input type="number" id="diametroP4" value="25" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Chapa:</label>
-                  <select id="chapaP4" class="chapaSelect"></select>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <button class="btn-primary" onclick="calcularMDF()">Calcular Custo MDF</button>
-          <div class="result" id="resultadoMDF">
-            <p>Preencha os dados das peças e clique em calcular para ver o resultado.</p>
-          </div>
-        </div>
-      </div>
-
-      <div id="mao" class="tab">
-        <div class="card">
-          <h2>👷 Cálculo de Mão de Obra</h2>
-          
-          <div class="summary-box">
-            <h3>Informações necessárias</h3>
-            <div class="cilindro-linha">
-              <label>Mão de Obra Direta por Peça (R$):</label>
-              <input type="number" id="maoDireta" value="4" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Mão de Obra Indireta Mensal (R$):</label>
-              <input type="number" id="maoIndireta" value="11000" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Peças Produzidas no Mês:</label>
-              <input type="number" id="quantidadeMes" value="8000" min="0">
-            </div>
-          </div>
-
-          <button class="btn-primary" onclick="calcularMaoObra()">Calcular Mão de Obra</button>
-          <div class="result" id="resultadoMaoObra">
-            <p>Preencha os dados acima e clique em calcular para ver o resultado.</p>
-          </div>
-        </div>
-      </div>
-
-      <div id="embalagem" class="tab">
-        <div class="card">
-          <h2>📦 Cálculo de Custo de Embalagem Individual</h2>
-          
-          <div class="summary-box">
-            <h3>Componentes de Embalagem</h3>
-            <div class="cilindro-linha">
-              <label>Caixa (R$):</label>
-              <input type="number" id="caixa" value="2" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Plástico Bolha (R$):</label>
-              <input type="number" id="plastico" value="1.5" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Saco (R$):</label>
-              <input type="number" id="saco" value="0.5" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Etiqueta (R$):</label>
-              <input type="number" id="etiqueta" value="0.3" min="0" step="0.01">
-            </div>
-            <div class="cilindro-linha">
-              <label>Outros (R$):</label>
-              <input type="number" id="outros" value="0" min="0" step="0.01">
-            </div>
-          </div>
-
-          <button class="btn-primary" onclick="calcularEmbalagem()">Calcular Embalagem</button>
-          <div class="result" id="resultadoEmbalagem">
-            <p>Preencha os custos dos componentes acima e clique em calcular para ver o resultado.</p>
-          </div>
-        </div>
-      </div>
+      <div id="embalagem" class="tab"></div>
       
-      <div id="cadastroChapas" class="tab">
-        <div class="card">
-          <h2>📋 Cadastro de Chapas de MDF</h2>
-          
-          <div class="alert alert-success">
-            <strong>Instruções:</strong> Preencha os dados da chapa abaixo e clique em "Salvar Chapa". 
-            As chapas cadastradas aparecerão na tabela e estarão disponíveis para seleção na aba de Custo MDF.
-          </div>
-          
-          <div class="summary-box">
-            <h3>Dados da Chapa</h3>
-            <div class="cilindro-linha">
-              <label>Comprimento (cm):</label>
-              <input type="number" id="comprimentoChapa" min="0" placeholder="Ex: 275">
-            </div>
-            <div class="cilindro-linha">
-              <label>Largura (cm):</label>
-              <input type="number" id="larguraChapaCadastro" min="0" placeholder="Ex: 183">
-            </div>
-            <div class="cilindro-linha">
-              <label>Espessura (mm):</label>
-              <input type="number" id="espessuraChapa" min="0" placeholder="Ex: 15">
-            </div>
-            <div class="cilindro-linha">
-              <label>Tipo:</label>
-              <input type="text" id="tipoChapa" placeholder="Ex: Cru, BP Branco">
-            </div>
-            <div class="cilindro-linha">
-              <label>Preço (R$):</label>
-              <input type="number" id="precoChapaCadastro" min="0" step="0.01" placeholder="Ex: 420.00">
-            </div>
-          </div>
+      <div id="cadastroChapas" class="tab"></div>
 
-          <button class="btn-primary" onclick="salvarChapa()">Salvar Chapa</button>
-
-          <h3>📦 Chapas Cadastradas:</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Comprimento (cm)</th>
-                <th>Largura (cm)</th>
-                <th>Espessura (mm)</th>
-                <th>Tipo</th>
-                <th>Preço (R$)</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaChapas">
-              <tr>
-                <td colspan="6" style="text-align:center;">Nenhuma chapa cadastrada ainda</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div id="custosIndiretos" class="tab">
-        <div class="card">
-          <h2>🏭 Custos Indiretos Mensais</h2>
-          
-          <div class="alert alert-warning">
-            <strong>Importante:</strong> Preencha os valores mensais de cada custo indireto. 
-            Esses valores serão usados para calcular o custo indireto unitário de cada peça.
-          </div>
-          
-          <div class="flex-container">
-            <div class="flex-item">
-              <h3>1. Estrutura e Instalações</h3>
-              <div class="cilindro-linha">
-                <label>Aluguel:</label>
-                <input type="number" class="indireto" id="aluguel" name="aluguel" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>IPTU e taxas:</label>
-                <input type="number" class="indireto" id="iptu" name="iptu" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Condomínio:</label>
-                <input type="number" class="indireto" id="condominio" name="condominio" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Seguro patrimonial:</label>
-                <input type="number" class="indireto" id="seguro" name="seguro" min="0" step="0.01">
-              </div>
-              
-              <h3>2. Utilidades e Manutenção</h3>
-              <div class="cilindro-linha">
-                <label>Energia elétrica:</label>
-                <input type="number" class="indireto" id="energia" name="energia" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Água e esgoto:</label>
-                <input type="number" class="indireto" id="agua" name="agua" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Manutenção de máquinas:</label>
-                <input type="number" class="indireto" id="manutencao" name="manutencao" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Gás:</label>
-                <input type="number" class="indireto" id="gas" name="gas" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Depreciação de máquinas:</label>
-                <input type="number" class="indireto" id="depreciacao" name="depreciacao" min="0" step="0.01">
-              </div>
-            </div>
-            
-            <div class="flex-item">
-              <h3>3. Logística e Armazenamento</h3>
-              <div class="cilindro-linha">
-                <label>Transporte interno:</label>
-                <input type="number" class="indireto" id="transporteInterno" name="transporteInterno" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Depósito/Estoque:</label>
-                <input type="number" class="indireto" id="deposito" name="deposito" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Empacotamento geral:</label>
-                <input type="number" class="indireto" id="empacotamentoGeral" name="empacotamentoGeral" min="0" step="0.01">
-              </div>
-              
-              <h3>4. Custos Administrativos</h3>
-              <div class="cilindro-linha">
-                <label>Sistema de gestão:</label>
-                <input type="number" class="indireto" id="erp" name="erp" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Contabilidade:</label>
-                <input type="number" class="indireto" id="contabilidade" name="contabilidade" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Licenças e alvarás:</label>
-                <input type="number" class="indireto" id="licencas" name="licencas" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Internet, telefone, papel:</label>
-                <input type="number" class="indireto" id="internet" name="internet" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Softwares:</label>
-                <input type="number" class="indireto" id="softwares" name="softwares" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Equipe adm/financeiro:</label>
-                <input type="number" class="indireto" id="admin" name="admin" min="0" step="0.01">
-              </div>
-              
-              <h3>5. Limpeza e Segurança</h3>
-              <div class="cilindro-linha">
-                <label>Produtos de limpeza:</label>
-                <input type="number" class="indireto" id="limpeza" name="limpeza" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>EPIs e uniformes:</label>
-                <input type="number" class="indireto" id="epis" name="epis" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Brigadista/Segurança:</label>
-                <input type="number" class="indireto" id="seguranca" name="seguranca" min="0" step="0.01">
-              </div>
-              
-              <h3>6. Marketing e Vendas</h3>
-              <div class="cilindro-linha">
-                <label>Fotos, vídeos e edição:</label>
-                <input type="number" class="indireto" id="midia" name="midia" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Marketing pago (Ads):</label>
-                <input type="number" class="indireto" id="ads" name="ads" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Ferramentas de atendimento:</label>
-                <input type="number" class="indireto" id="ferramentas" name="ferramentas" min="0" step="0.01">
-              </div>
-              <div class="cilindro-linha">
-                <label>Comissão de vendedores:</label>
-                <input type="number" class="indireto" id="comissao" name="comissao" min="0" step="0.01">
-              </div>
-            </div>
-          </div>
-
-          <button class="btn-primary" onclick="calcularCustosIndiretos()">Calcular Custos Indiretos</button>
-          <div class="result" id="resultadoIndiretos">
-            <p>Preencha os custos acima e clique em calcular para ver o resultado.</p>
-          </div>
-        </div>
-      </div>
+      <div id="custosIndiretos" class="tab"></div>
       
-      <div id="resumoFinal" class="tab">
-        <div class="card">
-          <h2>📊 Resumo Final do Produto</h2>
-          
-          <div class="alert alert-success">
-            <strong>Instruções:</strong> Os valores de custos serão preenchidos automaticamente conforme você calcula nas outras abas. 
-            Você pode ajustar manualmente se necessário. Preencha também a quantidade produzida e estimada de vendas.
-          </div>
-          
-          <div class="flex-container">
-            <div class="flex-item">
-              <div class="summary-box">
-                <h3>Dados de Custo</h3>
-                <div class="cilindro-linha">
-                  <label>Custo MDF (R$):</label>
-                  <input type="number" id="custoMDF" min="0" step="0.01">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Custo Mão de Obra (R$):</label>
-                  <input type="number" id="custoMao" min="0" step="0.01">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Custo Embalagem (R$):</label>
-                  <input type="number" id="custoEmbalagem" min="0" step="0.01">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Custo Indireto Total Mensal (R$):</label>
-                  <input type="number" id="custoIndiretoMensal" min="0" step="0.01">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Qtd Produzida no Mês:</label>
-                  <input type="number" id="qtdMensal" min="0">
-                </div>
-                <div class="cilindro-linha">
-                  <label>Qtd Estimada de Vendas:</label>
-                  <input type="number" id="qtdVendida" min="0">
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex-item">
-              <div class="summary-box">
-                <h3>Identificação do Produto</h3>
-                <div class="cilindro-linha">
-                  <label><strong>📦 Nome do Produto:</strong></label>
-                  <input type="text" id="nomeProduto" placeholder="Ex: Trio Cilindros Festa">
-                </div>
-                <div class="cilindro-linha">
-                  <label><strong>🔢 Código / SKU:</strong></label>
-                  <input type="text" id="codigoProduto" placeholder="Ex: KIT-CIL-PMG-001">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="btn-group">
-            <button class="btn-primary" onclick="calcularResumoFinal()">Calcular Resumo</button>
-            <button class="btn-secondary" onclick="calcularResumoFinal(); exportarResumoPDF()">📄 Exportar PDF</button>
-            <button class="btn-primary" onclick="salvarResumo()">💾 Salvar Resumo</button>
-          </div>
-          
-          <div class="resumo-container" id="resumoContainer">
-            <div id="resultadoResumo">
-              <p>Preencha os dados acima e clique em "Calcular Resumo" para ver os resultados.</p>
-            </div>
-          </div>
-          
-          <div id="resumoPDFContent" style="height: auto; visibility: hidden; position: absolute; left: -9999px;"></div>
-          <h3>🗂 Cálculos Salvos</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>SKU</th>
-                <th>Data</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaCalculos">
-              <tr>
-                <td colspan="4" style="text-align:center;">Nenhum cálculo salvo</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div id="resumoFinal" class="tab"></div>
       
-      <div id="precificacao" class="tab">
-        <iframe src="Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html" style="width:100%;height:90vh;border:none;"></iframe>
-      </div>
+      <div id="precificacao" class="tab"></div>
+
     </div>
     
     <div class="footer">
@@ -1446,17 +1034,26 @@
       });
     }
     
-    // Inicialização do sistema
-    window.onload = () => {
-      const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-      const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
-      showTab(activeTab);
-      
-      const campos = document.querySelectorAll('#custosIndiretos .indireto');
-      campos.forEach(campo => {
-        campo.addEventListener('input', salvarCustosIndiretos);
+  // Inicialização com carregamento dinâmico das abas
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
+      Promise.all(
+        tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
+          document.getElementById(t).innerHTML = h;
+        }))
+      ).then(() => {
+        const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+        const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
+        showTab(activeTab);
+        const campos = document.querySelectorAll('#custosIndiretos .indireto');
+        campos.forEach(campo => {
+          campo.addEventListener('input', salvarCustosIndiretos);
+        });
+        listarChapas().then(preencherSelectChapas);
+        carregarCustosIndiretos();
+        listarCalculos();
       });
-    };
+        });
   </script>
 </body>
 </html>
