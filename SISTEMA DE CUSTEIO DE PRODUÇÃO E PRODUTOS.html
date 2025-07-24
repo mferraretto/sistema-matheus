@@ -14,7 +14,7 @@
     :root {
       --primary: #F45C00; /* Laranja Shopee */
       --primary-dark: #d45100;
-  --secondary: #1C2B36;
+      --secondary: #1C2B36; /* Azul petróleo */
       --accent: #F44336; /* Vermelho erro */
       --success: #4CAF50; /* Verde sucesso */
       --warning: #FF9800;
@@ -124,76 +124,46 @@
       background-color: rgba(255,255,255,0.1);
     }
     
-:root {
-  --primary: #F45C00;
-  --secondary: #1C2B36;
-  --light: #F5F7FA;
-  --success: #4CAF50;
-  --danger: #F44336;
-}
-
-.sidebar {
-  background-color: var(--secondary);
-  width: 250px;
-  min-height: 100vh;
-  color: white;
-  position: fixed;
-  left: 0;
-  top: 0;
-  padding-top: 1rem;
-  z-index: 50;
-}
-
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0.8rem 1.5rem;
-  color: white;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: background 0.3s ease;
-}
-
-.sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.submenu {
-  padding-left: 1rem;
-}
-
-.submenu a {
-  display: block;
-  color: #ccc;
-  font-size: 0.9rem;
-  padding: 0.4rem 1.5rem;
-  border-left: 2px solid transparent;
-  transition: all 0.3s;
-}
-
-.submenu a:hover {
-  color: var(--primary);
-  background-color: rgba(255, 255, 255, 0.05);
-  border-left-color: var(--primary);
-}
-
-body.dark .sidebar,
-body.dark .submenu {
-  background-color: var(--secondary);
-}
-
-body.dark .sidebar-link,
-body.dark .submenu a {
-  color: #eee;
-}
-
-body.dark .sidebar-link:hover,
-body.dark .submenu a:hover {
-  color: var(--primary);
-}
-
-
+    /* Sidebar */
+    .sidebar {
+      background-color: var(--secondary);
+      color: white;
+      padding: 25px 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      z-index: 50;
+    }
+    
+    .sidebar ul {
+      list-style: none;
+    }
+    
+    .sidebar li {
+      padding: 0 20px;
+    }
+    
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+    }
+    
+    .sidebar a:hover, .sidebar a.active {
+      background-color: rgba(255,255,255,0.1);
+      color: white;
+    }
+    
+    .sidebar span {
+      font-size: 1.2rem;
+    }
+    
     /* Main Content */
     .main-content {
       padding: 30px;
@@ -536,6 +506,10 @@ body.dark .submenu a:hover {
         grid-template-columns: 1fr;
       }
       
+      .sidebar {
+        display: none;
+      }
+    }
     
     @media (max-width: 768px) {
       .main-content {
@@ -700,71 +674,16 @@ body.dark .submenu a:hover {
     </div>
   </nav>
   
- <!-- Sidebar -->
-<div class="sidebar">
-  <div class="sidebar-logo">
-    <div class="flex items-center">
-      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
-        <i class="fas fa-rocket text-gray-900"></i>
-      </div>
-      <span class="font-bold text-xl">Mentoria Ferraretto</span>
-    </div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <ul>
+      <li><a href="#"><span>🏠</span> Dashboard</a></li>
+      <li><a href="#" class="active"><span>📦</span> Produtos</a></li>
+      <li><a href="#"><span>📈</span> Desempenho</a></li>
+      <li><a href="#"><span>💡</span> Sugestões com IA</a></li>
+      <li><a href="#"><span>⚙️</span> Configurações</a></li>
+    </ul>
   </div>
-
-  <div class="py-5">
-    <!-- Início -->
-    <a href="https://mferraretto.github.io/sistema-matheus/" class="sidebar-link">
-      <i class="fas fa-home"></i>
-      <span class="link-text">Início</span>
-    </a>
-
-    <!-- Vendas -->
-    <button onclick="toggleMenu('menuVendas')" class="sidebar-link">
-      <i class="fas fa-shopping-cart"></i>
-      <span class="link-text">📦 Vendas</span>
-    </button>
-    <div id="menuVendas" class="submenu hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Sobras Shopee</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Faturamento Diário</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Acompanhamento</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Controle</a>
-    </div>
-
-    <!-- Precificação -->
-    <button onclick="toggleMenu('menuPrecificacao')" class="sidebar-link">
-      <i class="fas fa-tags"></i>
-      <span class="link-text">🧮 Precificação</span>
-    </button>
-    <div id="menuPrecificacao" class="submenu hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">Precificação</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html#mdf" class="sidebar-link">Custeio de Produção</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">Lista Preços</a>
-    </div>
-
-    <!-- Anúncios -->
-    <button onclick="toggleMenu('menuAnuncios')" class="sidebar-link">
-      <i class="fas fa-bullhorn"></i>
-      <span class="link-text">📣 Anúncios</span>
-    </button>
-    <div id="menuAnuncios" class="submenu hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Cadastro/Atualização</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Anúncios</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Análise</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Evolução</a>
-    </div>
-
-    <!-- Modo Escuro -->
-    <div class="flex items-center justify-between px-5 mt-6">
-      <span class="text-sm text-gray-300">Modo Escuro</span>
-      <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="darkModeToggle" class="sr-only peer">
-        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-orange-500 transition"></div>
-        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition peer-checked:translate-x-full"></div>
-      </label>
-    </div>
-  </div>
-</div>
-
   
   <!-- Main Content -->
   <div class="main-content">
@@ -1764,33 +1683,5 @@ body.dark .submenu a:hover {
       document.getElementById('user-initial').textContent = userInitial;
     };
   </script>
-<script>
-  function toggleMenu(menuId) {
-    const el = document.getElementById(menuId);
-    el.classList.toggle('hidden');
-  }
-
-  const toggle = document.getElementById('darkModeToggle');
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-    document.body.classList.add('dark');
-    if (toggle) toggle.checked = true;
-  }
-
-  if (toggle) {
-    toggle.addEventListener('change', () => {
-      if (toggle.checked) {
-        document.body.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        document.body.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
-    });
-  }
-</script>
-
 </body>
 </html>
