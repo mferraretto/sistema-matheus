@@ -62,54 +62,66 @@
     }
 
     /* Sidebar */
-    .sidebar {
-      width: 260px;
-      background: var(--brand);
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      overflow-y: auto;
-      z-index: 100;
-      transition: all 0.3s;
-    }
+   .sidebar {
+  background-color: #1C2B36;
+  width: 250px;
+  min-height: 100vh;
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding-top: 1rem;
+  z-index: 50;
+}
 
-    .sidebar-logo {
-      padding: 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1.5rem;
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: background 0.3s ease;
+}
 
-    .sidebar-menu {
-      padding: 15px 0;
-    }
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
 
-    .menu-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 20px;
-      color: rgba(255,255,255,0.7);
-      text-decoration: none;
-      transition: all 0.2s;
-      border-left: 3px solid transparent;
-    }
+.submenu {
+  padding-left: 1rem;
+}
 
-    .menu-item:hover {
-      background: rgba(255,255,255,0.05);
-      color: white;
-    }
+.submenu a {
+  display: block;
+  color: #ccc;
+  font-size: 0.9rem;
+  padding: 0.4rem 1.5rem;
+  border-left: 2px solid transparent;
+  transition: all 0.3s;
+}
 
-    .menu-item.active {
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border-left: 3px solid var(--primary);
-    }
+.submenu a:hover {
+  color: #F45C00;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: #F45C00;
+}
 
-    .menu-icon {
-      width: 24px;
-      text-align: center;
-      margin-right: 12px;
-      font-size: 18px;
-    }
+body.dark .sidebar {
+  background-color: #1C2B36;
+}
+
+body.dark .sidebar-link,
+body.dark .submenu a {
+  color: #eee;
+}
+
+body.dark .sidebar-link:hover,
+body.dark .submenu a:hover {
+  color: #F45C00;
+}
+
 
     /* Navbar */
     .navbar {
@@ -637,14 +649,7 @@
       transform: translateX(26px);
     }
 
-    /* Responsive */
-    @media (max-width: 992px) {
-      .sidebar {
-        width: 70px;
-      }
-      .sidebar .menu-text {
-        display: none;
-      }
+   
       .navbar {
         left: 70px;
       }
@@ -679,47 +684,69 @@
 </head>
 <body class="bg-gray-50">
   <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-logo">
-      <h1 class="text-white text-xl font-bold flex items-center gap-2">
-        <i class="fas fa-calculator"></i>
-        <span>MENTORIA FERRARETTO</span>
-      </h1>
-    </div>
-    
-    <div class="sidebar-menu">
-      <a href="#" class="menu-item active">
-        <div class="menu-icon">🧮</div>
-        <span class="menu-text">Sistema de Precificação Shopee</span>
-      </a>
-      <a href="#" class="menu-item">
-        <div class="menu-icon">📣</div>
-        <span class="menu-text">Gerenciamento de Anúncios</span>
-      </a>
-      <a href="#" class="menu-item">
-        <div class="menu-icon">📦</div>
-        <span class="menu-text">Controle de Sobras Shopee</span>
-      </a>
-      <a href="#" class="menu-item">
-        <div class="menu-icon">🛠️</div>
-        <span class="menu-text">Custeio de Produção</span>
-      </a>
-      <a href="#" class="menu-item">
-        <div class="menu-icon">👥</div>
-        <span class="menu-text">Gerenciamento de Usuários</span>
-      </a>
-    </div>
-    
-    <div class="px-5 py-4 mt-auto">
-      <div class="flex items-center justify-between">
-        <span class="text-gray-400 text-sm">Modo Escuro</span>
-        <label class="dark-mode-toggle">
-          <input type="checkbox" id="darkModeToggle">
-          <span class="toggle-slider"></span>
-        </label>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="flex items-center">
+      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+        <i class="fas fa-rocket text-gray-900"></i>
       </div>
+      <span class="font-bold text-xl">Mentoria Ferraretto</span>
     </div>
   </div>
+
+  <div class="py-5">
+    <!-- Início -->
+    <a href="https://mferraretto.github.io/sistema-matheus/" class="sidebar-link">
+      <i class="fas fa-home"></i>
+      <span class="link-text">Início</span>
+    </a>
+
+    <!-- Vendas -->
+    <button onclick="toggleMenu('menuVendas')" class="sidebar-link">
+      <i class="fas fa-shopping-cart"></i>
+      <span class="link-text">📦 Vendas</span>
+    </button>
+    <div id="menuVendas" class="submenu hidden">
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Sobras Shopee</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Faturamento Diário</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Acompanhamento</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Controle</a>
+    </div>
+
+    <!-- Precificação -->
+    <button onclick="toggleMenu('menuPrecificacao')" class="sidebar-link">
+      <i class="fas fa-tags"></i>
+      <span class="link-text">🧮 Precificação</span>
+    </button>
+    <div id="menuPrecificacao" class="submenu hidden">
+      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">Precificação</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html#mdf" class="sidebar-link">Custeio de Produção</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" class="sidebar-link">Lista Preços</a>
+    </div>
+
+    <!-- Anúncios -->
+    <button onclick="toggleMenu('menuAnuncios')" class="sidebar-link">
+      <i class="fas fa-bullhorn"></i>
+      <span class="link-text">📣 Anúncios</span>
+    </button>
+    <div id="menuAnuncios" class="submenu hidden">
+      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Cadastro/Atualização</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Anúncios</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Análise</a>
+      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Evolução</a>
+    </div>
+
+    <!-- Modo Escuro -->
+    <div class="flex items-center justify-between px-5 mt-6">
+      <span class="text-sm text-gray-300">Modo Escuro</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="darkModeToggle" class="sr-only peer">
+        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-orange-500 transition"></div>
+        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition peer-checked:translate-x-full"></div>
+      </label>
+    </div>
+  </div>
+</div>
   
   <!-- Navbar -->
   <div class="navbar">
@@ -3030,5 +3057,33 @@
       }
     }, 300000); // 5 minutos
   </script>
+  <script>
+  function toggleMenu(menuId) {
+    const el = document.getElementById(menuId);
+    el.classList.toggle('hidden');
+  }
+
+  const toggle = document.getElementById('darkModeToggle');
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.body.classList.add('dark');
+    if (toggle) toggle.checked = true;
+  }
+
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) {
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
