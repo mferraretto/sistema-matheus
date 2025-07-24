@@ -1,0 +1,4 @@
+# Ignore local Firebase configuration and environment files
+firebase-config.override.js
+.env
+node_modules/
