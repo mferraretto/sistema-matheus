@@ -487,25 +487,35 @@ body.dark .sidebar-link.active {
 </div>
 
 
-    <!-- Top Navbar -->
-    <div class="top-navbar">
-      <div class="flex items-center">
-        <button class="mobile-menu-btn mr-4 text-gray-600 hidden">
-          <i class="fas fa-bars text-xl"></i>
-        </button>
-        <h2 class="text-lg font-semibold text-gray-800">Dashboard</h2>
-      </div>
-      
-      <div class="flex items-center space-x-5">
-        <!-- Dark mode toggle -->
-        <div class="flex items-center">
-          <i class="fas fa-moon text-gray-600 mr-2"></i>
-          <label class="dark-mode-toggle">
-            <input type="checkbox">
-            <span class="dark-mode-slider"></span>
-          </label>
-          <i class="fas fa-sun text-yellow-500 ml-2"></i>
-        </div>
+   <!-- Top Navbar -->
+<div class="top-navbar flex items-center justify-between px-6 py-4 bg-white shadow fixed top-0 left-[250px] right-0 z-50">
+  <!-- Título e menu mobile -->
+  <div class="flex items-center">
+    <button class="mobile-menu-btn mr-4 text-gray-600 hidden">
+      <i class="fas fa-bars text-xl"></i>
+    </button>
+    <h2 class="text-lg font-semibold text-gray-800">Dashboard</h2>
+  </div>
+
+  <!-- Ações da direita -->
+  <div class="flex items-center space-x-5">
+    <!-- Dark mode toggle -->
+    <div class="flex items-center">
+      <i class="fas fa-moon text-gray-600 mr-2"></i>
+      <label class="dark-mode-toggle">
+        <input type="checkbox" id="darkModeToggle">
+        <span class="dark-mode-slider"></span>
+      </label>
+      <i class="fas fa-sun text-yellow-500 ml-2"></i>
+    </div>
+
+    <!-- Botão de Login -->
+    <a href="login.html" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition flex items-center">
+      <i class="fas fa-sign-in-alt mr-2"></i> Login
+    </a>
+  </div>
+</div>
+
         
         <!-- Notificações -->
         <div class="relative tooltip" data-tooltip="Notificações">
