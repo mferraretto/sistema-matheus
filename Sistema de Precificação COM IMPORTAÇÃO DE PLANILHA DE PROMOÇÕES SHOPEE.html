@@ -1455,78 +1455,98 @@ body.dark .submenu a:hover {
     });
 
     // Funções principais do sistema
-    async function loadSystem() {
-       const user = auth.currentUser;
-      if (!user) return;
+ async function loadSystem() {
+  const user = auth.currentUser;
+  if (!user) return;
 
-      let isAdmin = false;
-      try {
-        const userDoc = await db.collection("users").doc(user.uid).get();
-        if (userDoc.exists) {
-          isAdmin = userDoc.data().perfil === 'admin';
-        }
-      } catch (error) {
-        console.error("Erro ao verificar perfil do usuário:", error);
-      }
-      // Carrega configurações do Firestore
-      try {
-        const configDoc = await db.collection("config").doc("systemConfig").get();
-        if (configDoc.exists) {
-          sistema.config = configDoc.data();
-          updateUI();
-        }
-      } catch (error) {
-        console.error("Erro ao carregar configurações:", error);
-      }
-      
-      // Carrega usuários somente se admin
-      try {
-         if (isAdmin) {
-          const usersSnapshot = await db.collection("users").get();
-          sistema.usuarios = [];
-          usersSnapshot.forEach(doc => {
-            sistema.usuarios.push({ id: doc.id, ...doc.data() });
-          });
-          loadUsers();
-        }
-      } catch (error) {
-        console.error("Erro ao carregar usuários:", error);
-      }
-      
-      // Carrega histórico
-      try {
- let historyQuery = db.collection("history").orderBy("timestamp", "desc").limit(100);
-        if (!isAdmin) {
-          historyQuery = db.collection("history").where("userId", "==", user.uid).orderBy("timestamp", "desc").limit(100);
-        }
-        const historySnapshot = await historyQuery.get();
-        sistema.historico = [];
-        historySnapshot.forEach(doc => {
-          sistema.historico.push({ id: doc.id, ...doc.data() });
-        });
-        loadHistory();
-        updateRecentUpdates();
-      } catch (error) {
-        console.error("Erro ao carregar histórico:", error);
-      }
-      
-      // Carrega produtos
-      try {
-   let productsQuery = db.collection("products").orderBy("createdAt", "desc");
-        if (!isAdmin) {
-          productsQuery = db.collection("products").where("userId", "==", user.uid).orderBy("createdAt", "desc");
-        }
-        const productsSnapshot = await productsQuery.get();
-        sistema.produtos = [];
-        productsSnapshot.forEach(doc => {
-          sistema.produtos.push({ id: doc.id, ...doc.data() });
-        });
-        atualizarLista();
-        updateKPIs();
-      } catch (error) {
-        console.error("Erro ao carregar produtos:", error);
-      }
+  let isAdmin = false;
+  try {
+    const userDoc = await db.collection("users").doc(user.uid).get();
+    if (userDoc.exists) {
+      isAdmin = userDoc.data().perfil === 'admin';
     }
+  } catch (error) {
+    console.error("Erro ao verificar perfil do usuário:", error);
+  }
+
+  // Carrega configurações do Firestore
+  try {
+    const configDoc = await db.collection("config").doc("systemConfig").get();
+    if (configDoc.exists) {
+      sistema.config = configDoc.data();
+      updateUI();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar configurações:", error);
+  }
+
+  // Carrega usuários somente se admin
+  try {
+    if (isAdmin) {
+      const usersSnapshot = await db.collection("users").get();
+      sistema.usuarios = [];
+      usersSnapshot.forEach(doc => {
+        sistema.usuarios.push({ id: doc.id, ...doc.data() });
+      });
+      loadUsers();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar usuários:", error);
+  }
+
+  // Carrega histórico
+  try {
+    let historyQuery = db.collection("history")
+      .orderBy("timestamp", "desc")
+      .limit(100);
+    if (!isAdmin) {
+      historyQuery = db.collection("history")
+        .where("userId", "==", user.uid)
+        .orderBy("timestamp", "desc")
+        .limit(100);
+    }
+    const historySnapshot = await historyQuery.get();
+    sistema.historico = [];
+    historySnapshot.forEach(doc => {
+      sistema.historico.push({ id: doc.id, ...doc.data() });
+    });
+
+    loadHistory();
+
+    // Só atualiza o resumo se o container existir
+    if (document.getElementById('recentUpdates')) {
+      updateRecentUpdates();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar histórico:", error);
+  }
+
+  // Carrega produtos
+  try {
+    let productsQuery = db.collection("products")
+      .orderBy("createdAt", "desc");
+    if (!isAdmin) {
+      productsQuery = db.collection("products")
+        .where("userId", "==", user.uid)
+        .orderBy("createdAt", "desc");
+    }
+    const productsSnapshot = await productsQuery.get();
+    sistema.produtos = [];
+    productsSnapshot.forEach(doc => {
+      sistema.produtos.push({ id: doc.id, ...doc.data() });
+    });
+
+    atualizarLista();
+
+    // Só atualiza os KPIs se o card existir
+    if (document.getElementById('totalProducts')) {
+      updateKPIs();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+  }
+}
+
 
     async function saveSystem() {
       try {
@@ -2857,29 +2877,32 @@ function updateRecentUpdates() {
       updateRecentUpdates();
     }
 
-    function updateKPIs() {
-      const totalProducts = sistema.produtos.length;
-      
-      // Calcula margem média
-      let avgMargin = 0;
-      if (sistema.produtos.length > 0) {
-        const totalMargin = sistema.produtos.reduce((sum, produto) => {
-          const custo = parseFloat(produto.custo);
-          const precoMinimo = parseFloat(produto.precoMinimo);
-          return sum + ((precoMinimo - custo) / precoMinimo * 100);
-        }, 0);
-        avgMargin = (totalMargin / sistema.produtos.length).toFixed(2);
-      }
-      
-      // Conta conexões ativas
-      const activeConnections = Object.values(sistema.config.apiConfig)
-        .filter(api => api.connected).length;
-      
-      document.getElementById('totalProducts').textContent = totalProducts;
-      document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-      document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
-      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-    }
+  function updateKPIs() {
+  // Verifica se o card de totalProducts existe
+  const totalProductsEl = document.getElementById('totalProducts');
+  if (!totalProductsEl) return;
+
+  // Cálculo dos valores
+  const totalProducts = sistema.produtos.length;
+  let avgMargin = 0;
+  if (totalProducts > 0) {
+    const totalMargin = sistema.produtos.reduce((sum, produto) => {
+      const custo = parseFloat(produto.custo);
+      const precoMinimo = parseFloat(produto.precoMinimo);
+      return sum + ((precoMinimo - custo) / precoMinimo * 100);
+    }, 0);
+    avgMargin = (totalMargin / totalProducts).toFixed(2);
+  }
+  const activeConnections = Object.values(sistema.config.apiConfig)
+    .filter(api => api.connected).length;
+
+  // Atualiza a UI
+  totalProductsEl.textContent = totalProducts;
+  document.getElementById('avgMargin').textContent        = `${avgMargin}%`;
+  document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
+  document.getElementById('lastUpdate').textContent       = new Date().toLocaleTimeString();
+}
+
     
     function showToast(message, type) {
       const toastContainer = document.getElementById('toastContainer');
