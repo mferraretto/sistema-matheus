@@ -1,14 +1,15 @@
 // Firebase configuration
 // Fill these values via environment variables or a protected configuration not checked into version control.
 const firebaseConfig = {
-  apiKey: window.FIREBASE_API_KEY || '',
-  authDomain: window.FIREBASE_AUTH_DOMAIN || '',
-  projectId: window.FIREBASE_PROJECT_ID || '',
-  storageBucket: window.FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: window.FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: window.FIREBASE_APP_ID || '',
-  databaseURL: window.FIREBASE_DATABASE_URL || ''
-};
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
+      databaseURL: "https://matheus-35023.firebaseio.com"
+    };
+    
 
 // Expose to global scope for inline scripts
 if (typeof window !== 'undefined') {
