@@ -1,0 +1,34 @@
+ <div id="embalagem" class="tab">
+        <div class="card">
+          <h2>📦 Cálculo de Custo de Embalagem Individual</h2>
+          
+          <div class="summary-box">
+            <h3>Componentes de Embalagem</h3>
+            <div class="cilindro-linha">
+              <label>Caixa (R$):</label>
+              <input type="number" id="caixa" value="2" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Plástico Bolha (R$):</label>
+              <input type="number" id="plastico" value="1.5" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Saco (R$):</label>
+              <input type="number" id="saco" value="0.5" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Etiqueta (R$):</label>
+              <input type="number" id="etiqueta" value="0.3" min="0" step="0.01">
+            </div>
+            <div class="cilindro-linha">
+              <label>Outros (R$):</label>
+              <input type="number" id="outros" value="0" min="0" step="0.01">
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="calcularEmbalagem()">Calcular Embalagem</button>
+          <div class="result" id="resultadoEmbalagem">
+            <p>Preencha os custos dos componentes acima e clique em calcular para ver o resultado.</p>
+          </div>
+        </div>
+      </div>
