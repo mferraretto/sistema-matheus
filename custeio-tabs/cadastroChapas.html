@@ -1,0 +1,55 @@
+   <div id="cadastroChapas" class="tab">
+        <div class="card">
+          <h2>📋 Cadastro de Chapas de MDF</h2>
+          
+          <div class="alert alert-success">
+            <strong>Instruções:</strong> Preencha os dados da chapa abaixo e clique em "Salvar Chapa". 
+            As chapas cadastradas aparecerão na tabela e estarão disponíveis para seleção na aba de Custo MDF.
+          </div>
+          
+          <div class="summary-box">
+            <h3>Dados da Chapa</h3>
+            <div class="cilindro-linha">
+              <label>Comprimento (cm):</label>
+              <input type="number" id="comprimentoChapa" min="0" placeholder="Ex: 275">
+            </div>
+            <div class="cilindro-linha">
+              <label>Largura (cm):</label>
+              <input type="number" id="larguraChapaCadastro" min="0" placeholder="Ex: 183">
+            </div>
+            <div class="cilindro-linha">
+              <label>Espessura (mm):</label>
+              <input type="number" id="espessuraChapa" min="0" placeholder="Ex: 15">
+            </div>
+            <div class="cilindro-linha">
+              <label>Tipo:</label>
+              <input type="text" id="tipoChapa" placeholder="Ex: Cru, BP Branco">
+            </div>
+            <div class="cilindro-linha">
+              <label>Preço (R$):</label>
+              <input type="number" id="precoChapaCadastro" min="0" step="0.01" placeholder="Ex: 420.00">
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="salvarChapa()">Salvar Chapa</button>
+
+          <h3>📦 Chapas Cadastradas:</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Comprimento (cm)</th>
+                <th>Largura (cm)</th>
+                <th>Espessura (mm)</th>
+                <th>Tipo</th>
+                <th>Preço (R$)</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaChapas">
+              <tr>
+                <td colspan="6" style="text-align:center;">Nenhuma chapa cadastrada ainda</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
