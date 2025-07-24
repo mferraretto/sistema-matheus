@@ -10,11 +10,12 @@
   
   <style>
     :root {
-      --color-primary: #F45C00;
-      --color-base: #1C2B36;
-      --color-success: #4CAF50;
-      --color-error: #F44336;
-      --color-bg: #F5F7FA;
+      --primary: #F45C00;
+      --primary-hover: #e05500;
+      --dark: #1C2B36;
+      --success: #4CAF50;
+      --error: #F44336;
+      --bg-light: #F5F7FA;
     }
     
     * {
@@ -22,42 +23,154 @@
     }
     
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--color-bg);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background-color: var(--bg-light);
       min-height: 100vh;
       overflow-x: hidden;
-      color: #333;
-      transition: background-color 0.3s ease;
     }
     
-    body.dark-mode {
-      --color-bg: #121212;
-      --color-base: #0d1a24;
-      color: #e0e0e0;
-      background-color: var(--color-bg);
+    h1, h2, h3, h4 {
+      font-family: 'Montserrat', sans-serif;
     }
     
+    .btn, button {
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Layout principal */
+    .main-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: var(--dark);
+      color: white;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 40;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .sidebar-logo {
+      padding: 20px 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    
+    .sidebar-link:hover, .sidebar-link.active {
+      background-color: rgba(255,255,255,0.05);
+      color: white;
+      border-left-color: var(--primary);
+    }
+    
+    .sidebar-link i {
+      margin-right: 12px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* Top Navbar */
+    .top-navbar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 250px;
+      height: 70px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      transition: all 0.3s ease;
+    }
+    
+    /* Conteúdo principal */
+    .content-wrapper {
+      flex: 1;
+      margin-left: 250px;
+      margin-top: 70px;
+      padding: 30px;
+    }
+    
+    /* Cards */
     .card {
       background-color: white;
-      padding: 1.75rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       transition: all 0.3s ease;
-      position: relative;
       overflow: hidden;
-      border: 1px solid rgba(226, 232, 240, 0.7);
-    }
-    
-    .dark-mode .card {
-      background-color: #1e1e1e;
-      border-color: #333;
+      border: 1px solid #eaeaea;
     }
     
     .card:hover {
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transform: translateY(-5px);
     }
     
+    .card-header {
+      padding: 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .card-header-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      background-color: rgba(244, 92, 0, 0.1);
+      color: var(--primary);
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+    
+    /* Botões */
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 10px 24px;
+      font-weight: 500;
+      font-size: 15px;
+      transition: all 0.2s;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(244, 92, 0, 0.2);
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(244, 92, 0, 0.3);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    /* Modal */
     .modal { 
       display: none; 
       position: fixed; 
@@ -81,313 +194,73 @@
       max-height: 90vh; 
       overflow-y: auto; 
       box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-      border: 1px solid rgba(226, 232, 240, 0.8);
       animation: slideIn 0.4s ease;
     }
     
-    .dark-mode .modal-content {
-      background: #1e1e1e;
-      border-color: #333;
-    }
-    
-    .btn-close { 
-      float: right; 
-      font-size: 24px; 
-      font-weight: bold; 
-      cursor: pointer; 
-      color: #94a3b8; 
-      transition: color 0.2s ease;
-    }
-    
-    .btn-close:hover { 
-      color: #475569; 
-    }
-    
-    .btn {
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-    }
-    
-    .btn-primary {
-      background-color: var(--color-primary);
-      color: white;
-      border-radius: 9999px;
-      padding: 0.5rem 1.5rem;
-    }
-    
-    .btn-primary:hover {
-      background-color: #e05500;
-      transform: scale(1.02);
-    }
-    
-    .btn-primary:active {
-      transform: scale(0.98);
-    }
-    
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 250px;
-      background-color: var(--color-base);
-      color: white;
-      padding: 1rem 0;
-      z-index: 40;
-      overflow-y: auto;
-      transition: transform 0.3s ease;
-    }
-    
-    .dark-mode .sidebar {
-      background-color: #0d1a24;
-    }
-    
-    .sidebar-item {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 1.5rem;
-      margin: 0.25rem 0.75rem;
-      border-radius: 0.5rem;
-      transition: background-color 0.3s ease;
-      cursor: pointer;
-    }
-    
-    .sidebar-item:hover {
-      background-color: rgba(255,255,255,0.1);
-    }
-    
-    .sidebar-item.active {
-      background-color: var(--color-primary);
-    }
-    
-    .sidebar-item i {
-      margin-right: 0.75rem;
-      font-size: 1.25rem;
-      width: 24px;
-      text-align: center;
-    }
-    
-    .main-content {
-      margin-left: 250px;
-      padding-top: 70px;
-      width: calc(100% - 250px);
-      min-height: 100vh;
-      transition: margin-left 0.3s ease;
-    }
-    
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 250px;
-      right: 0;
-      height: 70px;
-      background-color: white;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      z-index: 30;
-      transition: left 0.3s ease;
-    }
-    
-    .dark-mode .topbar {
-      background-color: #1e1e1e;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-    
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    
-    .user-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: var(--color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-    }
-    
-    .dark-mode .user-avatar {
-      background-color: #e05500;
-    }
-    
-    .notification-badge {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      background-color: var(--color-error);
-      color: white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: bold;
-    }
-    
-    .notification-icon {
-      position: relative;
-      cursor: pointer;
-      margin-right: 1rem;
-    }
-    
-    .tooltip {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .tooltip .tooltip-text {
-      visibility: hidden;
-      width: 120px;
-      background-color: var(--color-base);
-      color: white;
-      text-align: center;
-      border-radius: 6px;
-      padding: 5px;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.8rem;
-    }
-    
-    .tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-    
-    .skeleton {
-      animation: skeleton-loading 1.5s linear infinite alternate;
-      border-radius: 0.25rem;
-    }
-    
-    @keyframes skeleton-loading {
-      0% { background-color: #e0e0e0; }
-      100% { background-color: #f0f0f0; }
-    }
-    
-    .dark-mode .skeleton {
-      animation: skeleton-loading-dark 1.5s linear infinite alternate;
-    }
-    
-    @keyframes skeleton-loading-dark {
-      0% { background-color: #2d2d2d; }
-      100% { background-color: #3d3d3d; }
-    }
-    
-    .table-container {
-      overflow-x: auto;
-    }
-    
-    table {
+    /* Tabelas */
+    .data-table {
       width: 100%;
       border-collapse: collapse;
     }
     
-    th {
-      background-color: var(--color-base);
-      color: white;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
+    .data-table th {
+      background-color: #f8f9fa;
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--dark);
+      border-bottom: 2px solid #e9ecef;
       position: sticky;
       top: 0;
-      z-index: 10;
     }
     
-    .dark-mode th {
-      background-color: #0d1a24;
+    .data-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e9ecef;
     }
     
-    th, td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
+    .data-table tr:nth-child(even) {
+      background-color: #f8f9fa;
     }
     
-    .dark-mode th, .dark-mode td {
-      border-bottom: 1px solid #333;
+    .data-table tr:hover {
+      background-color: rgba(244, 92, 0, 0.03);
     }
     
-    tr:nth-child(even) {
-      background-color: #f9fafb;
-    }
-    
-    .dark-mode tr:nth-child(even) {
-      background-color: #1a1a1a;
-    }
-    
-    .dark-mode tr:hover {
-      background-color: #2a2a2a;
-    }
-    
-    .success-message {
+    /* Mensagens de status */
+    .alert-success {
       background-color: rgba(76, 175, 80, 0.1);
-      color: var(--color-success);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-      border-left: 4px solid var(--color-success);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      color: var(--success);
+      padding: 12px 20px;
+      border-radius: 8px;
+      border-left: 4px solid var(--success);
+      margin-bottom: 20px;
     }
     
-    .error-message {
+    .alert-error {
       background-color: rgba(244, 67, 54, 0.1);
-      color: var(--color-error);
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-      border-left: 4px solid var(--color-error);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+      color: var(--error);
+      padding: 12px 20px;
+      border-radius: 8px;
+      border-left: 4px solid var(--error);
+      margin-bottom: 20px;
     }
     
-    .dark-mode .success-message {
-      background-color: rgba(76, 175, 80, 0.15);
-    }
-    
-    .dark-mode .error-message {
-      background-color: rgba(244, 67, 54, 0.15);
-    }
-    
+    /* Dark mode toggle */
     .dark-mode-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      margin-left: 1rem;
-    }
-    
-    .toggle-switch {
       position: relative;
       display: inline-block;
       width: 50px;
       height: 24px;
     }
     
-    .toggle-switch input {
+    .dark-mode-toggle input {
       opacity: 0;
       width: 0;
       height: 0;
     }
     
-    .slider {
+    .dark-mode-slider {
       position: absolute;
       cursor: pointer;
       top: 0;
@@ -399,7 +272,7 @@
       border-radius: 24px;
     }
     
-    .slider:before {
+    .dark-mode-slider:before {
       position: absolute;
       content: "";
       height: 16px;
@@ -411,37 +284,57 @@
       border-radius: 50%;
     }
     
-    input:checked + .slider {
-      background-color: var(--color-primary);
+    input:checked + .dark-mode-slider {
+      background-color: var(--primary);
     }
     
-    input:checked + .slider:before {
+    input:checked + .dark-mode-slider:before {
       transform: translateX(26px);
     }
     
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-      
-      .sidebar.active {
-        transform: translateX(0);
-      }
-      
-      .main-content {
-        margin-left: 0;
-        width: 100%;
-      }
-      
-      .topbar {
-        left: 0;
-      }
-      
-      .menu-toggle {
-        display: block;
-      }
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
     }
     
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 200px;
+      background-color: var(--dark);
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 13px;
+    }
+    
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Skeleton loading */
+    .skeleton {
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      animation: skeleton-loading 1.5s infinite;
+    }
+    
+    @keyframes skeleton-loading {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    
+    /* Animações */
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -458,123 +351,156 @@
       }
     }
     
-    .pulse {
-      animation: pulse 2s infinite;
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 70px;
+      }
+      
+      .sidebar .link-text {
+        display: none;
+      }
+      
+      .sidebar-link {
+        justify-content: center;
+      }
+      
+      .sidebar-link i {
+        margin-right: 0;
+      }
+      
+      .top-navbar {
+        left: 70px;
+      }
+      
+      .content-wrapper {
+        margin-left: 70px;
+      }
     }
     
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    
-    h1, h2, h3, h4 {
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 700;
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .top-navbar {
+        left: 0;
+      }
+      
+      .content-wrapper {
+        margin-left: 0;
+      }
+      
+      .mobile-menu-btn {
+        display: block;
+      }
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="flex items-center space-x-3 p-4 mb-4">
-      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center">
-        <i class="fas fa-rocket text-blue-600"></i>
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="flex items-center">
+          <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-rocket text-gray-900"></i>
+          </div>
+          <span class="font-bold text-xl">Mentoria Ferraretto</span>
+        </div>
       </div>
-      <span class="font-bold text-xl">Mentoria Ferraretto</span>
-    </div>
-    
-    <div class="mb-6">
-      <div class="sidebar-item active">
-        <i class="fas fa-home"></i>
-        <span>Painel Principal</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-calculator"></i>
-        <span>🧮 Precificação Shopee</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-bullhorn"></i>
-        <span>📣 Gerenciamento de Anúncios</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-box-open"></i>
-        <span>📦 Controle de Sobras</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-industry"></i>
-        <span>🛠️ Custeio de Produção</span>
-      </div>
-      <div class="sidebar-item">
-        <i class="fas fa-users"></i>
-        <span>👥 Gerenciamento de Usuários</span>
-      </div>
-    </div>
-    
-    <div class="mt-auto px-4 pb-4">
-      <div class="dark-mode-toggle">
-        <i class="fas fa-moon"></i>
-        <label class="toggle-switch">
-          <input type="checkbox" id="darkModeToggle">
-          <span class="slider"></span>
-        </label>
-        <i class="fas fa-sun"></i>
+      
+      <div class="py-5">
+        <a href="index.html" class="sidebar-link active">
+          <i class="fas fa-home"></i>
+          <span class="link-text">Início</span>
+        </a>
+        <a href="Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" class="sidebar-link">
+          <i class="fas fa-calculator"></i>
+          <span class="link-text">🧮 Precificação</span>
+        </a>
+        <a href="Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" class="sidebar-link">
+          <i class="fas fa-bullhorn"></i>
+          <span class="link-text">📣 Anúncios</span>
+        </a>
+        <a href="CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" class="sidebar-link">
+          <i class="fas fa-box-open"></i>
+          <span class="link-text">📦 Sobras</span>
+        </a>
+        <a href="SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" class="sidebar-link">
+          <i class="fas fa-industry"></i>
+          <span class="link-text">🛠️ Custeio</span>
+        </a>
+        <a href="painel-usuarios.html" onclick="return requireLogin(event)" class="sidebar-link">
+          <i class="fas fa-users"></i>
+          <span class="link-text">👥 Usuários</span>
+        </a>
       </div>
     </div>
-  </div>
-  
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Topbar -->
-    <div class="topbar">
+
+    <!-- Top Navbar -->
+    <div class="top-navbar">
       <div class="flex items-center">
-        <button class="menu-toggle mr-4 text-gray-600 md:hidden">
+        <button class="mobile-menu-btn mr-4 text-gray-600 hidden">
           <i class="fas fa-bars text-xl"></i>
         </button>
-        <h2 class="text-xl font-bold">Painel Principal</h2>
+        <h2 class="text-lg font-semibold text-gray-800">Dashboard</h2>
       </div>
       
-      <div class="flex items-center">
-        <div class="notification-icon tooltip">
-          <i class="fas fa-bell text-xl"></i>
-          <span class="tooltip-text">Notificações</span>
-          <div class="notification-badge">3</div>
+      <div class="flex items-center space-x-5">
+        <!-- Dark mode toggle -->
+        <div class="flex items-center">
+          <i class="fas fa-moon text-gray-600 mr-2"></i>
+          <label class="dark-mode-toggle">
+            <input type="checkbox">
+            <span class="dark-mode-slider"></span>
+          </label>
+          <i class="fas fa-sun text-yellow-500 ml-2"></i>
         </div>
         
-        <div class="user-info">
-          <div class="user-avatar">
-            <span>MF</span>
-          </div>
+        <!-- Notificações -->
+        <div class="relative tooltip" data-tooltip="Notificações">
+          <button class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-bell text-xl"></i>
+          </button>
+          <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">3</span>
+        </div>
+        
+        <!-- Perfil do usuário -->
+        <div class="flex items-center space-x-3">
+          <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10"></div>
           <div>
-            <span id="currentUser" class="font-medium">admin@mentoria.com</span>
+            <span id="currentUser" class="font-medium text-gray-800">Usuário</span>
+            <span class="block text-xs text-gray-500">Administrador</span>
           </div>
+          <button id="logoutBtn" class="ml-2 text-gray-600 hover:text-gray-900 hidden">
+            <i class="fas fa-sign-out-alt text-xl"></i>
+          </button>
         </div>
-        
-        <button id="logoutBtn" class="btn btn-primary ml-4">
-          <i class="fas fa-sign-out-alt mr-2"></i>Sair
-        </button>
       </div>
     </div>
-    
-    <!-- Content -->
-    <div class="p-6">
-      <!-- Messages -->
-      <div class="success-message">
-        <i class="fas fa-check-circle"></i>
-        <span>Produto salvo com sucesso</span>
+
+    <!-- Conteúdo Principal -->
+    <div class="content-wrapper">
+      <!-- Mensagens de status -->
+      <div class="alert-success hidden">
+        <i class="fas fa-check-circle mr-2"></i>Produto salvo com sucesso
       </div>
       
-      <div class="error-message">
-        <i class="fas fa-exclamation-circle"></i>
-        <span>Erro ao importar planilha</span>
+      <div class="alert-error hidden">
+        <i class="fas fa-exclamation-circle mr-2"></i>Erro ao importar planilha
       </div>
       
       <!-- Hero Section -->
       <div class="max-w-6xl w-full text-center mb-10">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-          <span class="text-orange-600">Sistemas de Gestão</span> para sua Loja
+          <span class="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">Sistemas de Gestão</span> para sua Loja
         </h1>
-        <p class="text-gray-600 max-w-2xl mx-auto mb-8 dark:text-gray-300">
+        <p class="text-gray-600 max-w-2xl mx-auto mb-8">
           Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
         </p>
       </div>
@@ -582,260 +508,149 @@
       <!-- Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full mb-10">
         <div class="card">
-          <div class="flex items-start mb-4">
-            <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
-              <i class="fas fa-calculator text-blue-600 text-xl"></i>
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-calculator text-xl"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">📊 Sistema de Precificação Shopee</h2>
-              <p class="text-gray-600 dark:text-gray-400">Calculadora de preços com importação de planilhas de promoções da Shopee.</p>
+              <h2 class="text-xl font-bold text-gray-800">Sistema de Precificação Shopee</h2>
+              <p class="text-gray-600 text-sm">Calculadora de preços com importação de planilhas</p>
             </div>
           </div>
-          <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
-            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-          </a>
+          <div class="card-body">
+            <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+            </a>
+          </div>
         </div>
 
         <div class="card">
-          <div class="flex items-start mb-4">
-            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
-              <i class="fas fa-bullhorn text-purple-600 text-xl"></i>
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-bullhorn text-xl"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">🗂️ Gerenciamento de Anúncios</h2>
-              <p class="text-gray-600 dark:text-gray-400">Gerencie produtos, importe dados e analise desempenho com IA.</p>
+              <h2 class="text-xl font-bold text-gray-800">Gerenciamento de Anúncios</h2>
+              <p class="text-gray-600 text-sm">Gerencie produtos e analise desempenho com IA</p>
             </div>
           </div>
-          <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
-            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-          </a>
+          <div class="card-body">
+            <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+            </a>
+          </div>
         </div>
 
         <div class="card">
-          <div class="flex items-start mb-4">
-            <div class="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
-              <i class="fas fa-box-open text-yellow-600 text-xl"></i>
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-box-open text-xl"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">📦 Controle de Sobras Shopee</h2>
-              <p class="text-gray-600 dark:text-gray-400">Importe relatórios e controle sobras com gráficos e metas por SKU.</p>
+              <h2 class="text-xl font-bold text-gray-800">Controle de Sobras Shopee</h2>
+              <p class="text-gray-600 text-sm">Importe relatórios e controle sobras com gráficos</p>
             </div>
           </div>
-          <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
-            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-          </a>
+          <div class="card-body">
+            <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+            </a>
+          </div>
         </div>
 
         <div class="card">
-          <div class="flex items-start mb-4">
-            <div class="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
-              <i class="fas fa-industry text-red-600 text-xl"></i>
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-industry text-xl"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">🛠️ Custeio de Produção</h2>
-              <p class="text-gray-600 dark:text-gray-400">Calcule custos de produção por peça, incluindo MDF e mão de obra.</p>
+              <h2 class="text-xl font-bold text-gray-800">Custeio de Produção</h2>
+              <p class="text-gray-600 text-sm">Calcule custos de produção por peça</p>
             </div>
           </div>
-          <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
-            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-          </a>
-        </div>
-      </div>
-      
-      <div class="card max-w-6xl mb-10">
-        <div class="flex items-start mb-4">
-          <div class="bg-gray-100 w-12 h-12 rounded-lg flex items-center justify-center mr-4">
-            <i class="fas fa-users text-gray-600 text-xl"></i>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-gray-800 mb-1 dark:text-white">👤 Gerenciamento de Usuários</h2>
-            <p class="text-gray-600 dark:text-gray-400">Cadastre e defina permissões de acesso por perfil (ADM ou Cliente).</p>
-          </div>
-        </div>
-        <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn btn-primary inline-flex items-center">
-          <i class="fas fa-external-link-alt mr-2"></i>Acessar Painel
-        </a>
-      </div>
-      
-      <!-- Features Section -->
-      <div class="max-w-6xl w-full bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8 mb-10 border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8 dark:text-white">
-          <i class="fas fa-medal text-yellow-500 mr-2"></i>Vantagens Exclusivas
-        </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
-            <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4 dark:bg-blue-900/30">
-              <i class="fas fa-bolt text-blue-600 text-xl dark:text-blue-400"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Otimização de Tempo</h3>
-            <p class="text-gray-600 dark:text-gray-400">Automatize processos manuais e economize horas de trabalho por dia.</p>
-          </div>
-          
-          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
-            <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4 dark:bg-purple-900/30">
-              <i class="fas fa-chart-line text-purple-600 text-xl dark:text-purple-400"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Tomada de Decisão</h3>
-            <p class="text-gray-600 dark:text-gray-400">Dados precisos para decisões estratégicas baseadas em informações reais.</p>
-          </div>
-          
-          <div class="text-center p-6 rounded-xl bg-white shadow-sm dark:bg-gray-700">
-            <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 dark:bg-green-900/30">
-              <i class="fas fa-lock text-green-600 text-xl dark:text-green-400"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2 dark:text-white">Segurança de Dados</h3>
-            <p class="text-gray-600 dark:text-gray-400">Seus dados protegidos com tecnologia de criptografia avançada.</p>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Charts Section -->
-      <div class="max-w-6xl w-full mb-10">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 dark:text-white">Desempenho Geral</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="card">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">Vendas por Categoria</h3>
-            <div class="h-64 flex items-center justify-center">
-              <div class="text-center">
-                <div class="skeleton w-full h-48 mb-2"></div>
-                <p class="text-gray-500 dark:text-gray-400">Gráfico de vendas por categoria</p>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 dark:text-white">Visitas vs Cliques</h3>
-            <div class="h-64 flex items-center justify-center">
-              <div class="text-center">
-                <div class="skeleton w-full h-48 mb-2"></div>
-                <p class="text-gray-500 dark:text-gray-400">Comparativo de visitas e cliques</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Products Table -->
-      <div class="max-w-6xl w-full mb-10">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Produtos em Destaque</h2>
-          <div class="flex gap-2">
-            <input type="text" placeholder="Filtrar por nome" class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <input type="text" placeholder="Filtrar por SKU" class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <select class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-              <option>Todos os status</option>
-              <option>Ativo</option>
-              <option>Inativo</option>
-            </select>
+          <div class="card-body">
+            <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+            </a>
           </div>
         </div>
         
         <div class="card">
-          <div class="table-container">
-            <table>
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-users text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">Gerenciamento de Usuários</h2>
+              <p class="text-gray-600 text-sm">Controle de acessos e permissões</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabela de exemplo -->
+      <div class="card mb-10">
+        <div class="card-header">
+          <h2 class="text-xl font-bold text-gray-800">Últimos Produtos Adicionados</h2>
+        </div>
+        <div class="card-body">
+          <div class="overflow-x-auto">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>Produto</th>
                   <th>SKU</th>
-                  <th>Categoria</th>
                   <th>Status</th>
-                  <th>Vendas (30d)</th>
+                  <th>Preço</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Camiseta Premium</td>
+                  <td>Camiseta Básica Branca</td>
                   <td>CT-001</td>
-                  <td>Vestuário</td>
-                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
-                  <td>124</td>
+                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
+                  <td>R$ 49,90</td>
                   <td>
-                    <div class="flex gap-2">
-                      <button class="text-blue-500 hover:text-blue-700 tooltip">
-                        <i class="fas fa-edit"></i>
-                        <span class="tooltip-text">Editar</span>
-                      </button>
-                      <button class="text-green-500 hover:text-green-700 tooltip">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="tooltip-text">Analisar</span>
-                      </button>
-                      <button class="text-red-500 hover:text-red-700 tooltip">
-                        <i class="fas fa-trash-alt"></i>
-                        <span class="tooltip-text">Excluir</span>
-                      </button>
-                    </div>
+                    <button class="text-blue-500 hover:text-blue-700 mr-2 tooltip" data-tooltip="Editar">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700 tooltip" data-tooltip="Excluir">
+                      <i class="fas fa-trash"></i>
+                    </button>
                   </td>
                 </tr>
                 <tr>
-                  <td>Caneca Personalizada</td>
-                  <td>CN-205</td>
-                  <td>Casa</td>
-                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
-                  <td>89</td>
+                  <td>Calça Jeans Slim</td>
+                  <td>CJ-205</td>
+                  <td><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pausado</span></td>
+                  <td>R$ 129,90</td>
                   <td>
-                    <div class="flex gap-2">
-                      <button class="text-blue-500 hover:text-blue-700 tooltip">
-                        <i class="fas fa-edit"></i>
-                        <span class="tooltip-text">Editar</span>
-                      </button>
-                      <button class="text-green-500 hover:text-green-700 tooltip">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="tooltip-text">Analisar</span>
-                      </button>
-                      <button class="text-red-500 hover:text-red-700 tooltip">
-                        <i class="fas fa-trash-alt"></i>
-                        <span class="tooltip-text">Excluir</span>
-                      </button>
-                    </div>
+                    <button class="text-blue-500 hover:text-blue-700 mr-2">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700">
+                      <i class="fas fa-trash"></i>
+                    </button>
                   </td>
                 </tr>
                 <tr>
-                  <td>Fone Bluetooth</td>
-                  <td>FB-112</td>
-                  <td>Eletrônicos</td>
-                  <td><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs dark:bg-yellow-900/30 dark:text-yellow-400">Pausado</span></td>
-                  <td>42</td>
+                  <td>Tênis Esportivo</td>
+                  <td>TE-780</td>
+                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
+                  <td>R$ 199,90</td>
                   <td>
-                    <div class="flex gap-2">
-                      <button class="text-blue-500 hover:text-blue-700 tooltip">
-                        <i class="fas fa-edit"></i>
-                        <span class="tooltip-text">Editar</span>
-                      </button>
-                      <button class="text-green-500 hover:text-green-700 tooltip">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="tooltip-text">Analisar</span>
-                      </button>
-                      <button class="text-red-500 hover:text-red-700 tooltip">
-                        <i class="fas fa-trash-alt"></i>
-                        <span class="tooltip-text">Excluir</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Kit Maquiagem</td>
-                  <td>MK-301</td>
-                  <td>Beleza</td>
-                  <td><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs dark:bg-green-900/30 dark:text-green-400">Ativo</span></td>
-                  <td>156</td>
-                  <td>
-                    <div class="flex gap-2">
-                      <button class="text-blue-500 hover:text-blue-700 tooltip">
-                        <i class="fas fa-edit"></i>
-                        <span class="tooltip-text">Editar</span>
-                      </button>
-                      <button class="text-green-500 hover:text-green-700 tooltip">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="tooltip-text">Analisar</span>
-                      </button>
-                      <button class="text-red-500 hover:text-red-700 tooltip">
-                        <i class="fas fa-trash-alt"></i>
-                        <span class="tooltip-text">Excluir</span>
-                      </button>
-                    </div>
+                    <button class="text-blue-500 hover:text-blue-700 mr-2">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700">
+                      <i class="fas fa-trash"></i>
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -844,84 +659,73 @@
         </div>
       </div>
       
-      <!-- Footer -->
-      <footer class="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-8 px-6">
-        <div class="max-w-6xl mx-auto">
-          <div class="flex flex-col md:flex-row justify-between items-center">
-            <div class="mb-6 md:mb-0">
-              <div class="flex items-center space-x-3 mb-4">
-                <div class="bg-blue-500 w-10 h-10 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-rocket text-white"></i>
-                </div>
-                <span class="font-bold text-xl">Mentoria Ferraretto</span>
-              </div>
-              <p class="text-gray-400 max-w-md">Soluções inteligentes para otimizar seus negócios na Shopee e maximizar seus lucros.</p>
-            </div>
-            
-            <div class="flex space-x-4">
-              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-blue-500 flex items-center justify-center transition-colors">
-                <i class="fab fa-instagram"></i>
-              </a>
-              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-blue-700 flex items-center justify-center transition-colors">
-                <i class="fab fa-facebook-f"></i>
-              </a>
-              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-blue-400 flex items-center justify-center transition-colors">
-                <i class="fab fa-twitter"></i>
-              </a>
-              <a href="#" class="w-10 h-10 rounded-full bg-gray-700 hover:bg-red-500 flex items-center justify-center transition-colors">
-                <i class="fab fa-youtube"></i>
-              </a>
-            </div>
+      <!-- Gráficos Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="text-xl font-bold text-gray-800">Desempenho de Vendas</h2>
           </div>
-          
-          <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
-            <p>&copy; 2023 Mentoria Ferraretto. Todos os direitos reservados.</p>
+          <div class="card-body">
+            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
+              Gráfico de Linhas - Visitas, Cliques e Vendas
+            </div>
           </div>
         </div>
-      </footer>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="text-xl font-bold text-gray-800">Distribuição de Categorias</h2>
+          </div>
+          <div class="card-body">
+            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
+              Gráfico de Pizza - Categorias de Produtos
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Modais de Login -->
   <div id="loginModal" class="modal">
     <div class="modal-content">
-      <span class="btn-close" onclick="closeModal('loginModal')">&times;</span>
+      <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('loginModal')">&times;</span>
       
       <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
           <i class="fas fa-lock text-white text-3xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Acesso ao Sistema</h3>
-        <p class="text-gray-600 mt-2 dark:text-gray-400">Insira suas credenciais para acessar as ferramentas</p>
+        <h3 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h3>
+        <p class="text-gray-600 mt-2">Insira suas credenciais para acessar as ferramentas</p>
       </div>
       
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">E-mail</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-envelope text-gray-400"></i>
             </div>
-            <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="seu@email.com">
+            <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="seu@email.com">
           </div>
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Senha</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700">Senha</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-lock text-gray-400"></i>
             </div>
-            <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="••••••••">
+            <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
           </div>
         </div>
         
-        <button onclick="login()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
+        <button onclick="login()" class="btn-primary w-full py-3.5">
           <i class="fas fa-sign-in-alt mr-2"></i> Entrar
         </button>
         
         <div class="text-center pt-4">
-          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-blue-600 hover:text-blue-800 font-medium dark:text-blue-400">
+          <a href="#recover" onclick="openRecoverModal()" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
             Esqueci minha senha
           </a>
         </div>
@@ -931,28 +735,28 @@
 
   <div id="recoverModal" class="modal">
     <div class="modal-content">
-      <span class="btn-close" onclick="closeModal('recoverModal')">&times;</span>
+      <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('recoverModal')">&times;</span>
       
       <div class="text-center mb-6">
-        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
           <i class="fas fa-key text-white text-3xl"></i>
         </div>
-        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Recuperar Senha</h3>
-        <p class="text-gray-600 mt-2 dark:text-gray-400">Insira seu e-mail para receber as instruções de recuperação</p>
+        <h3 class="text-2xl font-bold text-gray-800">Recuperar Senha</h3>
+        <p class="text-gray-600 mt-2">Insira seu e-mail para receber as instruções de recuperação</p>
       </div>
       
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">E-mail cadastrado</label>
+          <label class="block text-sm font-medium mb-2 text-gray-700">E-mail cadastrado</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-envelope text-gray-400"></i>
             </div>
-            <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="seu@email.com">
+            <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="seu@email.com">
           </div>
         </div>
         
-        <button onclick="sendRecovery()" class="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 rounded-lg font-medium text-lg">
+        <button onclick="sendRecovery()" class="btn-primary w-full py-3.5">
           <i class="fas fa-paper-plane mr-2"></i> Enviar Link de Recuperação
         </button>
       </div>
@@ -1019,16 +823,12 @@
 
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
-      
-      // Create user avatar initials
-      const nameParts = user.email.split('@')[0].split('.');
-      const initials = nameParts.map(part => part.charAt(0).join('').toUpperCase();
-      document.querySelector('.user-avatar').innerHTML = `<span>${initials}</span>`;
+      document.getElementById('logoutBtn').classList.remove('hidden');
     }
 
     function hideUserArea() {
-      document.getElementById('currentUser').textContent = '';
-      document.querySelector('.user-avatar').innerHTML = '<span>MF</span>';
+      document.getElementById('currentUser').textContent = 'Usuário';
+      document.getElementById('logoutBtn').classList.add('hidden');
     }
 
     window.requireLogin = (event) => {
@@ -1050,26 +850,7 @@
       });
     }
 
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('change', () => {
-      document.body.classList.toggle('dark-mode');
-      // Save preference to localStorage
-      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-    });
-    
-    // Check for saved dark mode preference
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark-mode');
-      darkModeToggle.checked = true;
-    }
-    
-    // Mobile menu toggle
-    document.querySelector('.menu-toggle').addEventListener('click', () => {
-      document.querySelector('.sidebar').classList.toggle('active');
-    });
-    
-    // Initialize
+    document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
     document.getElementById('logoutBtn').addEventListener('click', logout);
     
     if (window.location.search.includes('login=1')) {
@@ -1077,6 +858,17 @@
     }
     
     checkLogin();
+    
+    // Tooltips
+    document.querySelectorAll('.tooltip').forEach(el => {
+      const tooltipText = el.getAttribute('data-tooltip');
+      if (tooltipText) {
+        const tooltip = document.createElement('span');
+        tooltip.className = 'tooltip-text';
+        tooltip.textContent = tooltipText;
+        el.appendChild(tooltip);
+      }
+    });
   </script>
 </body>
 </html>
