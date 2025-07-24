@@ -777,7 +777,10 @@
     
     <!-- Abas principais -->
     <div class="tabs">
-      <button class="tab-button active" data-tab="precificacao">
+      <button class="tab-button active" data-tab="dashboard">
+        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+      </button>
+      <button class="tab-button" data-tab="precificacao">
         <i class="fas fa-calculator mr-2"></i> Precificação
       </button>
       <button class="tab-button" data-tab="produtos">
@@ -792,8 +795,67 @@
     </div>
 
     <!-- Conteúdo das abas -->
+    <div id="dashboard" class="tab-content active">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Produtos Cadastrados</h3>
+          <p id="totalProducts" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Margem Média</h3>
+          <p id="avgMargin" class="text-2xl font-bold">0%</p>
+        </div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Conexões Ativas</h3>
+          <p id="activeConnections" class="text-2xl font-bold">0/3</p>
+        </div>
+        <div class="dashboard-card">
+          <h3 class="text-gray-500 text-sm">Última Atualização</h3>
+          <p id="lastUpdate" class="text-2xl font-bold">-</p>
+        </div>
+      </div>
 
-    <div id="precificacao" class="tab-content active">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="dashboard-card">
+          <h3 class="font-bold text-lg mb-4">Margem por Plataforma</h3>
+          <canvas id="marginChart" height="200"></canvas>
+        </div>
+        <div class="dashboard-card">
+          <h3 class="font-bold text-lg mb-4">Produtos Mais Rentáveis</h3>
+          <canvas id="topProductsChart" height="200"></canvas>
+        </div>
+        <div class="dashboard-card">
+          <h3 class="font-bold text-lg mb-4">Status de Conexão</h3>
+          <div class="space-y-3">
+            <div class="flex items-center">
+              <span class="api-status api-connected"></span>
+              <span>Mercado Livre: <span class="font-semibold">Conectado</span></span>
+            </div>
+            <div class="flex items-center">
+              <span class="api-status api-connected"></span>
+              <span>Shopee: <span class="font-semibold">Conectado</span></span>
+            </div>
+            <div class="flex items-center">
+              <span class="api-status api-disconnected"></span>
+              <span>Magalu: <span class="font-semibold">Desconectado</span></span>
+            </div>
+          </div>
+          <div class="mt-6">
+            <h4 class="font-semibold mb-2">Últimas Atualizações</h4>
+            <div id="recentUpdates" class="space-y-2">
+              <!-- Preenchido dinamicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="dashboard-card mb-6">
+        <h3 class="font-bold text-lg mb-4">Histórico de Preços</h3>
+        <canvas id="priceHistoryChart" height="300"></canvas>
+      </div>
+    </div>
+
+    <div id="precificacao" class="tab-content">
       <div class="card mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="input-group">
@@ -1394,6 +1456,7 @@
 
     // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
+      setupCharts();
       setupEventListeners();
       checkLogin();
       const params = new URLSearchParams(window.location.search);
@@ -1418,7 +1481,7 @@
     });
 
     // Funções principais do sistema
-  async function loadSystem() {
+    async function loadSystem() {
        const user = auth.currentUser;
       if (!user) return;
 
@@ -1502,8 +1565,6 @@
 
     function setupCharts() {
       // Gráfico de margens
-       const marginCanvas = document.getElementById('marginChart');
-  if (!marginCanvas) return; // Impede erro se o gráfico não existe
       const marginCtx = document.getElementById('marginChart').getContext('2d');
       new Chart(marginCtx, {
         type: 'bar',
@@ -1525,6 +1586,11 @@
           scales: {
             y: {
               beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
             }
           }
         }
@@ -1548,7 +1614,12 @@
           }]
         },
         options: {
-          responsive: true
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
         }
       });
 
@@ -1563,13 +1634,15 @@
               label: 'Preço Mínimo',
               data: [89, 92, 95, 94, 96, 98],
               borderColor: '#F44336',
-              fill: false
+              fill: false,
+              tension: 0.4
             },
             {
               label: 'Preço Ideal',
               data: [120, 122, 125, 124, 126, 128],
               borderColor: '#4CAF50',
-              fill: false
+              fill: false,
+              tension: 0.4
             }
           ]
         },
@@ -1578,27 +1651,7 @@
         }
       });
     }
-function showUserArea(user) {
-  document.getElementById('currentUser').textContent = user.email;
 
-  // Atualizar avatar com iniciais
-  const nameParts = user.email.split('@')[0].split('.');
-  const initials = nameParts.map(part => part[0]).join('').toUpperCase();
-  document.querySelector('.user-avatar').textContent = initials;
-
-  // Verifica permissões
-  checkPermissions(user);
-
-  // Evita erro se elementos não existem
-  const configTab = document.getElementById('configTab');
-  const historyTab = document.getElementById('historyTab');
-
-  if (configTab) configTab.classList.remove('hidden');
-  if (historyTab) historyTab.classList.remove('hidden');
-
-  // Carrega dados do sistema
-  loadSystem();
-}
     // Funções de autenticação
     function checkLogin() {
       auth.onAuthStateChanged(user => {
@@ -1612,8 +1665,7 @@ function showUserArea(user) {
       });
     }
 
-
-  function login() {
+    function login() {
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
       
@@ -1623,9 +1675,11 @@ function showUserArea(user) {
           showUserArea(user);
           closeModal('loginModal');
           addHistoryEntry('login', `Usuário ${user.email} fez login`);
+          showToast('Login realizado com sucesso!', 'success');
         })
         .catch((error) => {
           alert('Credenciais inválidas! ' + error.message);
+          showToast('Erro ao fazer login!', 'error');
         });
     }
 
@@ -1633,6 +1687,7 @@ function showUserArea(user) {
       const user = auth.currentUser;
       if (user) {
         addHistoryEntry('logout', `Usuário ${user.email} fez logout`);
+        showToast('Logout realizado com sucesso!', 'success');
       }
       auth.signOut()
         .then(() => {
@@ -1640,15 +1695,17 @@ function showUserArea(user) {
         })
         .catch((error) => {
           console.error("Erro ao fazer logout: ", error);
+          showToast('Erro ao fazer logout!', 'error');
         });
     }
 
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
-      document.getElementById('currentUser').classList.remove('hidden');
       
-      document.getElementById('loginBtn').classList.add('hidden');
-      document.getElementById('logoutBtn').classList.remove('hidden');
+      // Atualizar avatar com iniciais
+      const nameParts = user.email.split('@')[0].split('.');
+      const initials = nameParts.map(part => part[0]).join('').toUpperCase();
+      document.querySelector('.user-avatar').textContent = initials;
       
       // Verifica permissões
       checkPermissions(user);
@@ -1658,9 +1715,6 @@ function showUserArea(user) {
 
     function hideUserArea() {
       document.getElementById('currentUser').textContent = '';
-      document.getElementById('currentUser').classList.add('hidden');
-      document.getElementById('loginBtn').classList.remove('hidden');
-      document.getElementById('logoutBtn').classList.add('hidden');
       
       // Remove todas as restrições de permissão
       document.getElementById('configTab').classList.remove('hidden');
@@ -1703,7 +1757,6 @@ function showUserArea(user) {
         console.error("Erro ao adicionar histórico:", error);
       }
     }
-
 
     async function loadHistory() {
       const historyContainer = document.getElementById('historyList');
@@ -1795,12 +1848,12 @@ function showUserArea(user) {
       try {
         // Simulação de teste de conexão
         await new Promise(resolve => setTimeout(resolve, 1000));
-        alert('Conexão com Mercado Livre testada com sucesso!');
+        showToast('Conexão com Mercado Livre testada com sucesso!', 'success');
         sistema.config.apiConfig.ml.connected = true;
         updateApiStatusUI();
         addHistoryEntry('api_config', 'Teste de conexão com Mercado Livre realizado');
       } catch (error) {
-        alert('Falha na conexão: ' + error.message);
+        showToast('Falha na conexão com Mercado Livre!', 'error');
       }
     }
 
@@ -1808,12 +1861,12 @@ function showUserArea(user) {
       try {
         // Simulação de teste de conexão
         await new Promise(resolve => setTimeout(resolve, 1000));
-        alert('Conexão com Shopee testada com sucesso!');
+        showToast('Conexão com Shopee testada com sucesso!', 'success');
         sistema.config.apiConfig.shopee.connected = true;
         updateApiStatusUI();
         addHistoryEntry('api_config', 'Teste de conexão com Shopee realizado');
       } catch (error) {
-        alert('Falha na conexão: ' + error.message);
+        showToast('Falha na conexão com Shopee!', 'error');
       }
     }
 
@@ -1833,11 +1886,11 @@ function showUserArea(user) {
       try {
         await saveSystem();
         updateApiStatusUI();
-        alert('Configurações salvas com sucesso!');
+        showToast('Configurações salvas com sucesso!', 'success');
         addHistoryEntry('api_config', 'Configurações de API atualizadas');
       } catch (error) {
         console.error("Erro ao salvar configurações:", error);
-        alert('Erro ao salvar configurações!');
+        showToast('Erro ao salvar configurações!', 'error');
       }
     }
 
@@ -1858,11 +1911,10 @@ function showUserArea(user) {
         // Atualiza UI
         document.getElementById('lastBackupInfo').textContent = `Último backup: ${new Date().toLocaleString('pt-BR')}`;
         addHistoryEntry('backup', 'Backup do sistema realizado');
-        
-        alert('Backup criado com sucesso!');
+        showToast('Backup criado com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao criar backup:", error);
-        alert('Erro ao criar backup!');
+        showToast('Erro ao criar backup!', 'error');
       }
     }
 
@@ -1870,7 +1922,7 @@ function showUserArea(user) {
       try {
         const backupsSnapshot = await db.collection("backups").orderBy("timestamp", "desc").limit(1).get();
         if (backupsSnapshot.empty) {
-          alert('Nenhum backup encontrado!');
+          showToast('Nenhum backup encontrado!', 'warning');
           return;
         }
         
@@ -1896,15 +1948,15 @@ function showUserArea(user) {
           loadSystem();
           
           addHistoryEntry('backup', 'Sistema restaurado a partir de backup');
-          alert('Backup restaurado com sucesso!');
+          showToast('Backup restaurado com sucesso!', 'success');
         }
       } catch (error) {
         console.error("Erro ao restaurar backup:", error);
-        alert('Erro ao restaurar backup!');
+        showToast('Erro ao restaurar backup!', 'error');
       }
     }
 
-// Funções de usuários
+    // Funções de usuários
     async function loadUsers() {
       const usersTable = document.getElementById('usersTableBody');
       usersTable.innerHTML = '';
@@ -1961,12 +2013,12 @@ function showUserArea(user) {
       const perfil = document.getElementById('newUserProfile').value;
       
       if (!nome || !email || !senha) {
-        alert('Preencha todos os campos!');
+        showToast('Preencha todos os campos!', 'warning');
         return;
       }
       
       if (sistema.usuarios.some(u => u.email === email)) {
-        alert('Já existe um usuário com este e-mail!');
+        showToast('Já existe um usuário com este e-mail!', 'warning');
         return;
       }
       
@@ -1993,10 +2045,10 @@ function showUserArea(user) {
         loadUsers();
         closeModal('addUserModal');
         addHistoryEntry('user_add', `Usuário ${email} adicionado`);
-        alert('Usuário adicionado com sucesso!');
+        showToast('Usuário adicionado com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao adicionar usuário:", error);
-        alert('Erro ao adicionar usuário: ' + error.message);
+        showToast('Erro ao adicionar usuário!', 'error');
       }
     }
 
@@ -2052,10 +2104,10 @@ function showUserArea(user) {
         loadUsers();
         closeModal('addUserModal');
         addHistoryEntry('user_edit', `Usuário ${sistema.usuarios[userIndex].email} atualizado`);
-        alert('Usuário atualizado com sucesso!');
+        showToast('Usuário atualizado com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao atualizar usuário:", error);
-        alert('Erro ao atualizar usuário!');
+        showToast('Erro ao atualizar usuário!', 'error');
       }
     }
 
@@ -2064,7 +2116,7 @@ function showUserArea(user) {
       if (!user) return;
       
       if (user.email === 'admin@empresa.com') {
-        alert('Não é possível remover o usuário administrador principal!');
+        showToast('Não é possível remover o usuário administrador principal!', 'warning');
         return;
       }
       
@@ -2083,13 +2135,12 @@ function showUserArea(user) {
         sistema.usuarios = sistema.usuarios.filter(u => u.id !== userId);
         loadUsers();
         addHistoryEntry('user_delete', `Usuário ${user.email} removido`);
-        alert('Usuário removido com sucesso!');
+        showToast('Usuário removido com sucesso!', 'success');
       } catch (error) {
         console.error("Erro ao remover usuário:", error);
-        alert('Erro ao remover usuário!');
+        showToast('Erro ao remover usuário!', 'error');
       }
     }
-
 
     // Funções de precificação
     function calcular(plataforma) {
@@ -2098,7 +2149,7 @@ function showUserArea(user) {
       const sku = document.getElementById("sku").value.trim();
       
       if (!produto || custo <= 0) {
-        alert("Preencha o nome do produto e um custo válido!");
+        showToast("Preencha o nome do produto e um custo válido!", "warning");
         return;
       }
 
@@ -2141,7 +2192,7 @@ function showUserArea(user) {
 
       // Verificação de valores
       if (totalPercentual >= 100) {
-        alert("As taxas percentuais não podem somar 100% ou mais!");
+        showToast("As taxas percentuais não podem somar 100% ou mais!", "warning");
         return;
       }
 
@@ -2170,7 +2221,7 @@ function showUserArea(user) {
     async function salvarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
       const user = auth.currentUser;
       if (!user) {
-        alert("Usuário não autenticado!");
+        showToast("Usuário não autenticado!", "error");
         return;
       }
 
@@ -2196,27 +2247,20 @@ function showUserArea(user) {
         atualizarLista();
         
         // Mostrar feedback visual
-        const feedback = document.createElement('div');
-        feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-        feedback.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Produto salvo com sucesso!`;
-        document.body.appendChild(feedback);
-        
-        setTimeout(() => {
-          feedback.remove();
-        }, 3000);
+        showToast("Produto salvo com sucesso!", "success");
         
         // Registrar no histórico
         addHistoryEntry('product_add', `Produto "${produto}" cadastrado para ${plataforma}`);
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
-        alert("Erro ao salvar produto!");
+        showToast("Erro ao salvar produto!", "error");
       }
     }
 
     async function atualizarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
       const user = auth.currentUser;
       if (!user) {
-        alert("Usuário não autenticado!");
+        showToast("Usuário não autenticado!", "error");
         return;
       }
 
@@ -2251,21 +2295,14 @@ function showUserArea(user) {
           atualizarLista();
           
           // Mostrar feedback visual
-          const feedback = document.createElement('div');
-          feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-          feedback.innerHTML = `<i class="fas fa-check-circle mr-2"></i> Produto atualizado com sucesso!`;
-          document.body.appendChild(feedback);
-          
-          setTimeout(() => {
-            feedback.remove();
-          }, 3000);
+          showToast("Produto atualizado com sucesso!", "success");
           
           // Registrar no histórico
           addHistoryEntry('product_edit', `Produto "${produto}" atualizado`);
         }
       } catch (error) {
         console.error("Erro ao atualizar produto:", error);
-        alert("Erro ao atualizar produto!");
+        showToast("Erro ao atualizar produto!", "error");
       }
     }
 
@@ -2327,7 +2364,7 @@ function showUserArea(user) {
             </div>
             <div class="text-right">
               <div class="text-gray-500 text-sm">Preço mínimo</div>
-              <div class="product-price text-green-600">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
+              <div class="product-price">R$ ${parseFloat(item.precoMinimo).toFixed(2)}</div>
             </div>
           </div>
           
@@ -2425,7 +2462,7 @@ function showUserArea(user) {
         </div>
         
         <div class="mt-8 text-right">
-          <button onclick="fecharModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-medium">
+          <button onclick="fecharModal()" class="btn-outline">
             Fechar
           </button>
         </div>
@@ -2510,20 +2547,13 @@ function showUserArea(user) {
         atualizarLista();
         
         // Mostrar feedback visual
-        const feedback = document.createElement('div');
-        feedback.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
-        feedback.innerHTML = `<i class="fas fa-trash-alt mr-2"></i> Produto excluído com sucesso!`;
-        document.body.appendChild(feedback);
-        
-        setTimeout(() => {
-          feedback.remove();
-        }, 3000);
+        showToast("Produto excluído com sucesso!", "success");
         
         // Registrar no histórico
         addHistoryEntry('product_delete', `Produto excluído`);
       } catch (error) {
         console.error("Erro ao excluir produto:", error);
-        alert("Erro ao excluir produto!");
+        showToast("Erro ao excluir produto!", "error");
       }
     }
 
@@ -2533,7 +2563,7 @@ function showUserArea(user) {
 
     function exportarExcel() {
       if (sistema.produtos.length === 0) {
-        alert("Nenhum produto para exportar!");
+        showToast("Nenhum produto para exportar!", "warning");
         return;
       }
       
@@ -2599,11 +2629,12 @@ function showUserArea(user) {
       document.body.removeChild(link);
       
       addHistoryEntry('export', 'Exportação para Excel realizada');
+      showToast('Exportação para Excel realizada com sucesso!', 'success');
     }
 
     function exportarPDF() {
       if (sistema.produtos.length === 0) {
-        alert("Nenhum produto para exportar!");
+        showToast("Nenhum produto para exportar!", "warning");
         return;
       }
       
@@ -2672,6 +2703,7 @@ function showUserArea(user) {
       doc.save(`precificacao_produtos_${new Date().toISOString().slice(0, 10)}.pdf`);
       
       addHistoryEntry('export', 'Exportação para PDF realizada');
+      showToast('Exportação para PDF realizada com sucesso!', 'success');
     }
 
  
@@ -2680,7 +2712,7 @@ function showUserArea(user) {
       const file = fileInput.files[0];
       
       if (!file) {
-        alert('Selecione um arquivo primeiro!');
+        showToast('Selecione um arquivo primeiro!', 'warning');
         return;
       }
       
@@ -2696,7 +2728,7 @@ function showUserArea(user) {
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
         
         if (jsonData.length < 2) {
-          alert('Planilha vazia ou formato inválido!');
+          showToast('Planilha vazia ou formato inválido!', 'warning');
           return;
         }
         
@@ -2727,6 +2759,7 @@ function showUserArea(user) {
         document.getElementById('importedShopeeProducts').style.display = 'block';
         
         addHistoryEntry('import', `${products.length} produtos importados da Shopee`);
+        showToast(`${products.length} produtos importados com sucesso!`, 'success');
       };
       
       reader.readAsArrayBuffer(file);
@@ -2757,7 +2790,7 @@ function showUserArea(user) {
 
     function applyPriceUpdate(type) {
       if (!sistema.importedShopeeData) {
-        alert('Importe os dados da Shopee primeiro!');
+        showToast('Importe os dados da Shopee primeiro!', 'warning');
         return;
       }
       
@@ -2818,20 +2851,7 @@ function showUserArea(user) {
       displayImportedProducts(sistema.importedShopeeData);
       
       // Feedback visual detalhado
-      const feedback = document.createElement('div');
-      feedback.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-      feedback.innerHTML = `
-        <i class="fas fa-check-circle mr-2"></i> 
-        Operação concluída!<br>
-        Produtos atualizados: ${productsUpdated}<br>
-        Produtos não encontrados: ${productsNotFound}<br>
-        Produtos sem SKU: ${productsWithNoSku}
-      `;
-      document.body.appendChild(feedback);
-      
-      setTimeout(() => {
-        feedback.remove();
-      }, 5000);
+      showToast(`Atualizados ${productsUpdated} preços! Não encontrados: ${productsNotFound}, Sem SKU: ${productsWithNoSku}`, 'success');
       
       // Registrar no histórico
       addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
@@ -2839,7 +2859,7 @@ function showUserArea(user) {
 
     function exportShopeeFile() {
       if (!sistema.importedShopeeData) {
-        alert('Nenhum dado para exportar!');
+        showToast('Nenhum dado para exportar!', 'warning');
         return;
       }
       
@@ -2862,6 +2882,7 @@ function showUserArea(user) {
       XLSX.writeFile(wb, `promocoes_shopee_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
       addHistoryEntry('export', 'Planilha Shopee exportada');
+      showToast('Planilha Shopee exportada com sucesso!', 'success');
     }
 
     // Funções auxiliares
@@ -2881,65 +2902,47 @@ function showUserArea(user) {
     function sendRecovery() {
       const email = document.getElementById('recoverEmail').value;
       if (!email.includes('@')) {
-        alert('E-mail inválido!');
+        showToast('E-mail inválido!', 'warning');
         return;
       }
       
       // Simulação de envio
-      alert(`Link de recuperação enviado para ${email}`);
+      showToast(`Link de recuperação enviado para ${email}`, 'success');
       closeModal('recoverModal');
       addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
     }
 
-   function setupEventListeners() {
-  // Login/logout (evita erro se o botão não existir)
-  const loginBtn = document.getElementById('loginBtn');
-  if (loginBtn) loginBtn.addEventListener('click', () => openModal('loginModal'));
-
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) logoutBtn.addEventListener('click', logout);
-  
-  // Tabs
-  document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById(btn.dataset.tab).classList.add('active');
-    });
-  });
-
-  // Filtros
-  const filtro1 = document.getElementById('filterHistoryType');
-  if (filtro1) filtro1.addEventListener('change', loadHistory);
-
-  const filtro2 = document.getElementById('filterHistoryUser');
-  if (filtro2) filtro2.addEventListener('change', loadHistory);
-
-  const filtro3 = document.getElementById('filterHistoryDate');
-  if (filtro3) filtro3.addEventListener('change', loadHistory);
-
-  const filtro4 = document.getElementById('filtroPlataforma');
-  if (filtro4) filtro4.addEventListener('change', atualizarLista);
-
-  // Configurações
-  const autoBackup = document.getElementById('autoBackup');
-  if (autoBackup) {
-    autoBackup.addEventListener('change', function () {
-      sistema.config.backupAuto = this.checked;
-      saveSystem();
-    });
-  }
-
-  const backupFreq = document.getElementById('backupFrequency');
-  if (backupFreq) {
-    backupFreq.addEventListener('change', function () {
-      sistema.config.backupFrequency = this.value;
-      saveSystem();
-    });
-  }
-}
-
+    function setupEventListeners() {
+      // Login/logout
+      document.getElementById('logoutBtn').addEventListener('click', logout);
+      
+      // Tabs
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+      });
+      
+      // Filtros
+      document.getElementById('filterHistoryType').addEventListener('change', loadHistory);
+      document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
+      document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
+      document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
+      
+      // Configurações
+      document.getElementById('autoBackup').addEventListener('change', function() {
+        sistema.config.backupAuto = this.checked;
+        saveSystem();
+      });
+      
+      document.getElementById('backupFrequency').addEventListener('change', function() {
+        sistema.config.backupFrequency = this.value;
+        saveSystem();
+      });
+    }
 
     function updateUI() {
       // Atualiza checkbox de backup automático
@@ -2976,6 +2979,23 @@ function showUserArea(user) {
       document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
       document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
+    
+    function showToast(message, type) {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'}"></i>
+        ${message}
+      `;
+      
+      toastContainer.appendChild(toast);
+      
+      // Remover toast após animação
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
 
     // Verificações periódicas
     setInterval(() => {
@@ -3010,14 +3030,5 @@ function showUserArea(user) {
       }
     }, 300000); // 5 minutos
   </script>
-  <script>
-  function toggleMenu(id) {
-    const menu = document.getElementById(id);
-    const icon = document.getElementById('icon-' + id);
-    menu.classList.toggle('hidden');
-    icon.classList.toggle('rotate-180');
-  }
-</script>
-
 </body>
 </html>
