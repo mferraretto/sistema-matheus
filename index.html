@@ -812,8 +812,8 @@ body.dark .sidebar-link.active {
       </div>
     </div>
   </div>
-  <script src="firebase-config.js"></script>
 
+  <script src="firebase-config.js"></script>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
@@ -913,33 +913,8 @@ body.dark .sidebar-link.active {
       }
     });
   </script>
-  <script>
-  // Menu retrátil
-  function toggleMenu(menuId) {
-    const el = document.getElementById(menuId);
-    el.classList.toggle('hidden');
-  }
+   <script src="shared.js"></script>
 
-  // Modo Escuro
-  const toggle = document.getElementById('darkModeToggle');
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-    document.body.classList.add('dark');
-    toggle.checked = true;
-  }
-
-  toggle.addEventListener('change', () => {
-    if (toggle.checked) {
-      document.body.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  });
-</script>
 
 </body>
 </html>
