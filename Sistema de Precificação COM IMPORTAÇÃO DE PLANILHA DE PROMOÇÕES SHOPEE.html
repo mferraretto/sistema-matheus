@@ -1694,21 +1694,25 @@ body.dark .submenu a:hover {
       });
     }
 
-    function updateRecentUpdates() {
-      const updatesContainer = document.getElementById('recentUpdates');
-      updatesContainer.innerHTML = '';
-      
-      const recent = sistema.historico.slice(0, 3);
-      recent.forEach(entry => {
-        const div = document.createElement('div');
-        div.className = 'text-sm';
-        div.innerHTML = `
-          <div>${entry.description}</div>
-          <div class="text-xs text-gray-500">${new Date(entry.timestamp).toLocaleTimeString()}</div>
-        `;
-        updatesContainer.appendChild(div);
-      });
-    }
+function updateRecentUpdates() {
+  const updatesContainer = document.getElementById('recentUpdates');
+  if (!updatesContainer) return;    // <— sai se não existir
+
+  updatesContainer.innerHTML = '';
+  
+  const recent = sistema.historico.slice(0, 3);
+  recent.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'text-sm';
+    div.innerHTML = `
+      <div>${entry.description}</div>
+      <div class="text-xs text-gray-500">${
+        new Date(entry.timestamp).toLocaleTimeString()
+      }</div>
+    `;
+    updatesContainer.appendChild(div);
+  });
+}
 
     // Funções de API
     function checkApiConnections() {
@@ -1720,16 +1724,26 @@ body.dark .submenu a:hover {
       updateKPIs();
     }
 
-    function updateApiStatusUI() {
-      // Atualiza indicadores de status na UI
-      document.querySelectorAll('.api-status').forEach(el => {
-        const platform = el.parentElement.textContent.includes('Mercado') ? 'ml' : 
-                       el.parentElement.textContent.includes('Shopee') ? 'shopee' : 'magalu';
-        
-        el.classList.toggle('api-connected', sistema.config.apiConfig[platform]?.connected);
-        el.classList.toggle('api-disconnected', !sistema.config.apiConfig[platform]?.connected);
-      });
-    }
+   function updateApiStatusUI() {
+  const statusEls = document.querySelectorAll('.api-status');
+  if (statusEls.length === 0) return;       // sai se não houver nenhum
+
+  statusEls.forEach(el => {
+    const parent = el.parentElement;
+    if (!parent) return;                    // sai se a hierarquia mudou
+
+    const text = parent.textContent || '';
+    let platform = 'magalu';
+    if (text.includes('Mercado')) platform = 'ml';
+    else if (text.includes('Shopee'))      platform = 'shopee';
+
+    const connected = sistema.config?.apiConfig?.[platform]?.connected;
+    if (connected === undefined) return;    // sai se plataforma não estiver configurada
+
+    el.classList.toggle('api-connected', connected);
+    el.classList.toggle('api-disconnected', !connected);
+  });
+}
 
     async function testMlConnection() {
       try {
