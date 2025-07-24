@@ -37,19 +37,4 @@
   document.addEventListener('DOMContentLoaded', function() {
     window.initDarkMode();
   });
-   // Carrega o conteudo das abas a partir de arquivos externos
-  window.loadTabs = async function(mapping) {
-    for (var id in mapping) {
-      try {
-        var resp = await fetch(mapping[id]);
-        if (resp.ok) {
-          var html = await resp.text();
-          var el = document.getElementById(id);
-          if (el) el.innerHTML = html;
-        }
-      } catch (e) {
-        console.error('Erro ao carregar aba', id, e);
-      }
-    }
-  };
 })();
