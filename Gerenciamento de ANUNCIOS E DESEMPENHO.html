@@ -1898,31 +1898,7 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     if (ativa) document.getElementById(ativa).style.display = "block";
   });
 </script>
-<script>
-  function toggleMenu(menuId) {
-    const el = document.getElementById(menuId);
-    el.classList.toggle('hidden');
-  }
-
-  const toggle = document.getElementById('darkModeToggle');
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-    document.body.classList.add('dark');
-    toggle.checked = true;
-  }
-
-  toggle.addEventListener('change', () => {
-    if (toggle.checked) {
-      document.body.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  });
-</script>
+<script src="shared.js"></script>
 
 </body>
 </html>
