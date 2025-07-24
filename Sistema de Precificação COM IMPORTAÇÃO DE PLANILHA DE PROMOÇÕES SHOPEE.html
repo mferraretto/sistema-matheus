@@ -2871,38 +2871,55 @@
       addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
     }
 
-    function setupEventListeners() {
-      // Login/logout
-      document.getElementById('loginBtn').addEventListener('click', () => openModal('loginModal'));
-      document.getElementById('logoutBtn').addEventListener('click', logout);
-      
-      // Tabs
-      document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-          btn.classList.add('active');
-          document.getElementById(btn.dataset.tab).classList.add('active');
-        });
-      });
-      
-      // Filtros
-      document.getElementById('filterHistoryType').addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
-      document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
-      
-      // Configurações
-      document.getElementById('autoBackup').addEventListener('change', function() {
-        sistema.config.backupAuto = this.checked;
-        saveSystem();
-      });
-      
-      document.getElementById('backupFrequency').addEventListener('change', function() {
-        sistema.config.backupFrequency = this.value;
-        saveSystem();
-      });
-    }
+   function setupEventListeners() {
+  // Login/logout (evita erro se o botão não existir)
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) loginBtn.addEventListener('click', () => openModal('loginModal'));
+
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
+  
+  // Tabs
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Filtros
+  const filtro1 = document.getElementById('filterHistoryType');
+  if (filtro1) filtro1.addEventListener('change', loadHistory);
+
+  const filtro2 = document.getElementById('filterHistoryUser');
+  if (filtro2) filtro2.addEventListener('change', loadHistory);
+
+  const filtro3 = document.getElementById('filterHistoryDate');
+  if (filtro3) filtro3.addEventListener('change', loadHistory);
+
+  const filtro4 = document.getElementById('filtroPlataforma');
+  if (filtro4) filtro4.addEventListener('change', atualizarLista);
+
+  // Configurações
+  const autoBackup = document.getElementById('autoBackup');
+  if (autoBackup) {
+    autoBackup.addEventListener('change', function () {
+      sistema.config.backupAuto = this.checked;
+      saveSystem();
+    });
+  }
+
+  const backupFreq = document.getElementById('backupFrequency');
+  if (backupFreq) {
+    backupFreq.addEventListener('change', function () {
+      sistema.config.backupFrequency = this.value;
+      saveSystem();
+    });
+  }
+}
+
 
     function updateUI() {
       // Atualiza checkbox de backup automático
