@@ -4,18 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Sobras - Shopee Premium</title>
+  
   <!-- Fontes Google -->
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <!-- Meta tag para CSP -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://www.googleapis.com;
-    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
-    font-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com;
-    img-src 'self' data:;
-    connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://us-central1-matheus-35023.cloudfunctions.net;
-  ">
-
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
   <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -30,27 +22,20 @@
   
   <style>
     :root {
-      /* Paleta de cores */
-      --primary: #F45C00;       /* Laranja Shopee */
-      --primary-hover: #e05300; /* Laranja mais escuro para hover */
-      --primary-light: #fef0e8; /* Fundo claro laranja */
-      --primary-dark: #d45300;
-      --secondary: #1C2B36;     /* Azul petróleo escuro */
-      --secondary-light: #2a3c4a;
-      --success: #4CAF50;       /* Verde sucesso */
-      --warning: #FF9800;       /* Laranja alerta */
-      --danger: #F44336;        /* Vermelho erro */
-      --light: #f8f9fa;
+      --primary: #F45C00; /* Laranja Shopee */
+      --primary-light: #fff0e6;
+      --primary-dark: #c44a00;
+      --secondary: #1C2B36; /* Azul petróleo escuro */
+      --success: #4CAF50;
+      --warning: #FFC107;
+      --danger: #F44336;
+      --light: #F5F7FA; /* Fundo geral */
       --dark: #212529;
-      --gray: #adb5bd;
-      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --gray: #9e9e9e;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       --transition: all 0.3s ease;
-      
-      /* Cores modo escuro */
-      --bg-dark: #121a21;
-      --card-dark: #1a2430;
-      --text-dark: #e0e0e0;
-      --border-dark: #2a3c4a;
+      --sidebar-width: 250px;
+      --navbar-height: 64px;
     }
     
     * {
@@ -60,157 +45,188 @@
     }
     
     body { 
-      font-family: 'Inter', system-ui, sans-serif;
-      background: #F5F7FA; /* Cinza claro */
+      font-family: 'Inter', sans-serif; 
+      background: var(--light);
       color: #333;
       line-height: 1.6;
-      display: flex;
       min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
+      display: flex;
+      flex-direction: column;
     }
     
-    body.dark-mode {
-      background: var(--bg-dark);
-      color: var(--text-dark);
+    /* Layout principal */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
     }
     
     /* Sidebar */
     .sidebar {
-      width: 260px;
+      width: var(--sidebar-width);
       background: var(--secondary);
       color: white;
-      height: 100vh;
       position: fixed;
-      left: 0;
-      top: 0;
+      height: 100vh;
+      z-index: 100;
+      transition: var(--transition);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
       overflow-y: auto;
-      z-index: 1000;
-      transition: all 0.3s ease;
     }
     
-    .logo-area {
-      padding: 20px 20px 15px;
+    .logo-container {
+      padding: 1.5rem 1.5rem 1rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .logo {
       display: flex;
       align-items: center;
-      gap: 12px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      gap: 10px;
     }
     
-    .logo-area img {
-      height: 40px;
-    }
-    
-    .logo-area h1 {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 1.2rem;
-      font-weight: 700;
+    .logo i {
+      font-size: 1.8rem;
+      color: var(--primary);
     }
     
     .nav-menu {
-      padding: 15px 0;
+      padding: 1.5rem 0;
     }
     
     .nav-item {
-      padding: 12px 20px;
+      padding: 0.8rem 1.5rem;
       display: flex;
       align-items: center;
       gap: 12px;
       transition: var(--transition);
       cursor: pointer;
+      font-family: 'Poppins', sans-serif;
       font-size: 0.95rem;
-      opacity: 0.8;
     }
     
-    .nav-item:hover, .nav-item.active {
+    .nav-item:hover, 
+    .nav-item.active {
       background: rgba(255, 255, 255, 0.1);
-      opacity: 1;
+      border-left: 3px solid var(--primary);
     }
     
     .nav-item i {
       width: 24px;
       text-align: center;
-      font-size: 1.1rem;
     }
     
-    /* Topbar */
-    .topbar {
+    /* Navbar */
+    .navbar {
       background: white;
-      height: 70px;
+      color: var(--secondary);
+      height: var(--navbar-height);
       position: fixed;
       top: 0;
-      left: 260px;
+      left: var(--sidebar-width);
       right: 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 25px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      z-index: 900;
-      transition: all 0.3s;
+      justify-content: flex-end;
+      padding: 0 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      z-index: 90;
     }
     
-    body.dark-mode .topbar {
-      background: var(--card-dark);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    }
-    
-    .topbar-right {
+    .user-actions {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 1.5rem;
     }
     
     .user-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 0.8rem;
     }
     
     .user-avatar {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: var(--primary-light);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--primary);
-      font-weight: 600;
     }
     
-    .theme-toggle {
-      background: transparent;
+    .action-btn {
+      background: none;
       border: none;
-      cursor: pointer;
-      font-size: 1.2rem;
       color: var(--secondary);
+      cursor: pointer;
+      position: relative;
+      font-size: 1.1rem;
     }
     
-    body.dark-mode .theme-toggle {
-      color: var(--text-dark);
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--danger);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .dark-mode-toggle {
+      background: #e0e0e0;
+      width: 50px;
+      height: 26px;
+      border-radius: 13px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .dark-mode-toggle.active {
+      background: var(--primary);
+    }
+    
+    .toggle-switch {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      transition: transform 0.3s;
+    }
+    
+    .dark-mode-toggle.active .toggle-switch {
+      transform: translateX(24px);
     }
     
     /* Conteúdo principal */
     .main-content {
       flex: 1;
-      margin-left: 260px;
-      margin-top: 70px;
-      padding: 25px;
-      transition: all 0.3s;
+      margin-left: var(--sidebar-width);
+      margin-top: var(--navbar-height);
+      padding: 2rem;
     }
     
     .page-title {
-      margin-bottom: 25px;
-      font-family: 'Montserrat', sans-serif;
+      margin-bottom: 1.5rem;
       font-size: 1.8rem;
       color: var(--secondary);
       display: flex;
       align-items: center;
-      gap: 15px;
-    }
-    
-    body.dark-mode .page-title {
-      color: var(--text-dark);
+      gap: 12px;
+      font-family: 'Montserrat', sans-serif;
     }
     
     .page-title i {
@@ -225,45 +241,93 @@
       font-size: 1.5rem;
     }
     
-    /* Cartões */
-    .card {
+    /* Abas de navegação */
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
       background: white;
       border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
+      padding: 0.5rem;
       box-shadow: var(--card-shadow);
-      transition: all 0.3s;
     }
     
-    body.dark-mode .card {
-      background: var(--card-dark);
-      border: 1px solid var(--border-dark);
+    .tab-btn {
+      padding: 0.8rem 1.5rem;
+      cursor: pointer;
+      background: white;
+      border: none;
+      color: var(--secondary);
+      border-radius: 8px;
+      font-weight: 600;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .tab-btn:hover, 
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 10px rgba(244, 92, 0, 0.3);
+    }
+    
+    .tab-btn i {
+      font-size: 1.1rem;
+    }
+    
+    /* Conteúdo das abas */
+    .tab-content {
+      display: none;
+      background-color: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    /* Quando ativa */
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Cartões de informação */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--card-shadow);
+      border-left: 4px solid var(--primary);
     }
     
     .card-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-      color: var(--primary);
-      font-family: 'Poppins', sans-serif;
+      gap: 10px;
+      margin-bottom: 1rem;
+      color: var(--secondary);
       font-weight: 600;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      font-family: 'Poppins', sans-serif;
     }
     
     .card-header i {
       font-size: 1.3rem;
+      color: var(--primary);
     }
     
-    /* Alertas */
+    /* Alertas e mensagens */
     .alert {
-      padding: 15px;
-      border-radius: 10px;
-      margin: 15px 0;
+      padding: 1rem;
+      border-radius: 12px;
+      margin: 1rem 0;
       display: flex;
       align-items: center;
-      gap: 15px;
-      font-size: 0.95rem;
+      gap: 12px;
     }
     
     .alert-success {
@@ -278,20 +342,65 @@
       border-left: 4px solid var(--danger);
     }
     
+    /* 🔥 NOVO ESTILO PARA OS CARDS DE FATURAMENTO E VENDAS */
+    .card-metric-novo {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+      border-left: 5px solid var(--primary);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 160px;
+    }
+    
+    .card-metric-novo:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-metric-novo h4 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--secondary);
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    .card-metric-novo .valor-principal {
+      font-size: 1.7rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    
+    .card-metric-novo .info-secundaria {
+      margin-top: 0.3rem;
+      font-size: 0.95rem;
+      color: var(--gray);
+    }
+    
+    .card-metric-novo .card-botoes {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
     /* Botões */
     .btn {
       padding: 0.75rem 1.5rem;
-      border-radius: 8px;
+      border-radius: 50px;
       border: none;
       cursor: pointer;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
       transition: var(--transition);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 0.95rem;
+      font-family: 'Poppins', sans-serif;
     }
     
     .btn-primary {
@@ -301,7 +410,7 @@
     }
     
     .btn-primary:hover {
-      background: var(--primary-hover);
+      background: var(--primary-dark);
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(244, 92, 0, 0.4);
     }
@@ -318,10 +427,10 @@
     
     .btn-sm {
       padding: 0.5rem 1rem;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
     }
     
-    /* Formulários */
+    /* Formulários e controles */
     .form-group {
       margin-bottom: 1.2rem;
     }
@@ -329,18 +438,12 @@
     .form-control {
       padding: 0.8rem 1rem;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      border-radius: 10px;
       width: 100%;
       font-size: 1rem;
       transition: var(--transition);
       background: #f8fafc;
       font-family: 'Inter', sans-serif;
-    }
-    
-    body.dark-mode .form-control {
-      background: #1f2a36;
-      border-color: #2a3c4a;
-      color: var(--text-dark);
     }
     
     .form-control:focus {
@@ -362,11 +465,27 @@
       margin-bottom: 0;
     }
     
+    .input-with-icon {
+      position: relative;
+    }
+    
+    .input-with-icon i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray);
+    }
+    
+    .input-with-icon input {
+      padding-left: 3rem;
+    }
+    
     /* Tabelas */
     .table-container {
       overflow-x: auto;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       margin: 1.5rem 0;
     }
     
@@ -375,7 +494,6 @@
       border-collapse: separate;
       border-spacing: 0;
       min-width: 1000px;
-      font-family: 'Inter', sans-serif;
     }
     
     thead {
@@ -385,7 +503,7 @@
     }
     
     th {
-      background: var(--primary);
+      background: var(--secondary);
       color: white;
       padding: 1rem;
       text-align: center;
@@ -409,17 +527,8 @@
       background: white;
     }
     
-    body.dark-mode td {
-      background: var(--card-dark);
-      border-bottom: 1px solid var(--border-dark);
-    }
-    
     tr:nth-child(even) td {
       background: #f9fafb;
-    }
-    
-    body.dark-mode tr:nth-child(even) td {
-      background: #1a2430;
     }
     
     tr:last-child td {
@@ -427,11 +536,7 @@
     }
     
     tr:hover td {
-      background: #f0f5ff;
-    }
-    
-    body.dark-mode tr:hover td {
-      background: #1f2a36;
+      background: #f1f5f9;
     }
     
     /* Badges */
@@ -449,8 +554,8 @@
     }
     
     .badge-warning {
-      background: rgba(255, 152, 0, 0.15);
-      color: #ef6c00;
+      background: rgba(255, 193, 7, 0.15);
+      color: #8d6e00;
     }
     
     .badge-danger {
@@ -459,27 +564,22 @@
     }
     
     .badge-info {
-      background: rgba(244, 92, 0, 0.15);
-      color: var(--primary);
+      background: rgba(28, 43, 54, 0.15);
+      color: var(--secondary);
     }
     
     .badge-secondary {
-      background: rgba(28, 43, 54, 0.15);
-      color: var(--secondary);
+      background: rgba(158, 158, 158, 0.15);
+      color: var(--gray);
     }
     
     /* Gráficos */
     .chart-container {
       background: white;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 1.5rem;
       margin: 2rem 0;
       box-shadow: var(--card-shadow);
-      transition: all 0.3s;
-    }
-    
-    body.dark-mode .chart-container {
-      background: var(--card-dark);
     }
     
     .chart-header {
@@ -490,14 +590,31 @@
     }
     
     .chart-title {
-      font-family: 'Poppins', sans-serif;
       font-size: 1.2rem;
       font-weight: 600;
       color: var(--secondary);
+      font-family: 'Poppins', sans-serif;
     }
     
-    body.dark-mode .chart-title {
-      color: var(--text-dark);
+    /* Histórico */
+    .history-item {
+      padding: 1rem;
+      border-bottom: 1px solid #edf2f7;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      transition: var(--transition);
+    }
+    
+    .history-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .history-date {
+      color: var(--gray);
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
     }
     
     /* Status de conexão */
@@ -550,43 +667,21 @@
       to { transform: rotate(360deg); }
     }
     
-    /* Skeleton Loading */
+    /* Skeleton loading */
     .skeleton {
       background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
       background-size: 200% 100%;
-      animation: loading 1.5s infinite;
+      animation: shimmer 1.5s infinite;
       border-radius: 4px;
     }
     
-    body.dark-mode .skeleton {
-      background: linear-gradient(90deg, #1f2a36 25%, #2a3c4a 50%, #1f2a36 75%);
-    }
-    
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
     
     /* Responsividade */
     @media (max-width: 992px) {
-      .sidebar {
-        width: 70px;
-      }
-      
-      .logo-area h1, .nav-item span {
-        display: none;
-      }
-      
-      .main-content {
-        margin-left: 70px;
-      }
-      
-      .topbar {
-        left: 70px;
-      }
-    }
-    
-    @media (max-width: 768px) {
       .sidebar {
         transform: translateX(-100%);
       }
@@ -595,214 +690,751 @@
         transform: translateX(0);
       }
       
+      .navbar {
+        left: 0;
+      }
+      
       .main-content {
         margin-left: 0;
       }
       
-      .topbar {
-        left: 0;
+      .navbar {
+        justify-content: space-between;
       }
       
-      .mobile-menu-btn {
+      .menu-toggle {
         display: block;
       }
     }
     
-    @media (max-width: 576px) {
-      .topbar {
-        padding: 0 15px;
+    @media (max-width: 768px) {
+      .tab-bar {
+        gap: 0.3rem;
       }
       
-      .user-name {
-        display: none;
+      .tab-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
       }
+      
+      .form-row {
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      
+      .chart-container {
+        padding: 1rem;
+      }
+      
+      th, td {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+      }
+      
+      .tab-bar {
+        justify-content: center;
+      }
+      
+      .tab-btn {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+      }
+      
+      .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+    }
+    
+    /* Estilos para os cards */
+    .grid {
+      display: grid;
+    }
+    
+    .gap-4 {
+      gap: 1rem;
+    }
+    
+    .grid-cols-1 {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+    }
+    
+    @media (min-width: 768px) {
+      .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .lg\:grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    
+    .bg-white {
+      background-color: white;
+    }
+    
+    .rounded-lg {
+      border-radius: 0.5rem;
+    }
+    
+    .rounded-2xl {
+      border-radius: 1rem;
+    }
+    
+    .shadow {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    }
+    
+    .shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .p-4 {
+      padding: 1rem;
+    }
+    
+    .p-5 {
+      padding: 1.25rem;
+    }
+    
+    .border {
+      border-width: 1px;
+    }
+    
+    .border-gray-200 {
+      border-color: #edf2f7;
+    }
+    
+    .hover\:shadow-xl:hover {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .transition {
+      transition: all 0.3s ease;
+    }
+    
+    .text-sm {
+      font-size: 0.875rem;
+    }
+    
+    .text-base {
+      font-size: 1rem;
+    }
+    
+    .text-xl {
+      font-size: 1.25rem;
+    }
+    
+    .text-2xl {
+      font-size: 1.5rem;
+    }
+    
+    .font-bold {
+      font-weight: 700;
+    }
+    
+    .font-semibold {
+      font-weight: 600;
+    }
+    
+    .text-gray-500 {
+      color: #718096;
+    }
+    
+    .text-gray-600 {
+      color: #4a5568;
+    }
+    
+    .text-gray-700 {
+      color: #2d3748;
+    }
+    
+    .text-blue-800 {
+      color: #2b6cb0;
+    }
+    
+    .text-green-600 {
+      color: #38a169;
+    }
+    
+    .mb-2 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .mb-4 {
+      margin-bottom: 1rem;
+    }
+    
+    .mt-3 {
+      margin-top: 0.75rem;
+    }
+    
+    .flex {
+      display: flex;
+    }
+    
+    .justify-between {
+      justify-content: space-between;
+    }
+    
+    .bg-blue-500 {
+      background-color: #4299e1;
+    }
+    
+    .hover\:bg-blue-600:hover {
+      background-color: #3182ce;
+    }
+    
+    .bg-red-500 {
+      background-color: #f56565;
+    }
+    
+    .hover\:bg-red-600:hover {
+      background-color: #e53e3e;
+    }
+    
+    .text-white {
+      color: white;
+    }
+    
+    .px-3 {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    .py-1 {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+    
+    .rounded {
+      border-radius: 0.25rem;
+    }
+    
+    .bg-blue-100 {
+      background-color: #ebf8ff;
+    }
+    
+    .text-blue-800 {
+      color: #2b6cb0;
+    }
+    
+    .py-2 {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
     }
     
     /* Tooltips */
-    [data-tooltip] {
+    .tooltip {
       position: relative;
-      cursor: pointer;
+      display: inline-block;
     }
     
-    [data-tooltip]::after {
-      content: attr(data-tooltip);
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 140px;
+      background-color: var(--secondary);
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
       position: absolute;
+      z-index: 1;
       bottom: 125%;
       left: 50%;
       transform: translateX(-50%);
-      padding: 6px 12px;
-      background: var(--secondary);
-      color: white;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      white-space: nowrap;
       opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s;
-      z-index: 1000;
+      transition: opacity 0.3s;
+      font-size: 0.8rem;
     }
     
-    [data-tooltip]:hover::after {
-      opacity: 1;
+    .tooltip:hover .tooltip-text {
       visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Menu toggle para mobile */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    
+    @media (max-width: 992px) {
+      .menu-toggle {
+        display: block;
+      }
+    }
+    
+    /* Modo Escuro */
+    body.dark-mode {
+      --light: #1a202c;
+      --secondary: #2d3748;
+      background: var(--light);
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .card,
+    body.dark-mode .tab-content,
+    body.dark-mode .chart-container,
+    body.dark-mode .tab-bar,
+    body.dark-mode .table-container {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .navbar {
+      background: #2d3748;
+      color: #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    body.dark-mode .form-control {
+      background: #4a5568;
+      border-color: #4a5568;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode th {
+      background: #4a5568;
+    }
+    
+    body.dark-mode td {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode tr:nth-child(even) td {
+      background: #2d3748;
+    }
+    
+    body.dark-mode tr:hover td {
+      background: #4a5568;
+    }
+    
+    body.dark-mode .sidebar {
+      background: #1a202c;
+    }
+    
+    body.dark-mode .card-header {
+      color: #e2e8f0;
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="logo-area">
-      <i class="fas fa-calculator fa-2x" style="color: #F45C00;"></i>
-      <h1>Sistema Sobras</h1>
-    </div>
-    
-    <div class="nav-menu">
-      <div class="nav-item active" onclick="trocarAba('importar')" data-tooltip="Dashboard">
-        <i class="fas fa-home"></i>
-        <span>🏠 Dashboard</span>
-      </div>
-      <div class="nav-item" onclick="trocarAba('metas')" data-tooltip="Produtos">
-        <i class="fas fa-box"></i>
-        <span>📦 Produtos</span>
-      </div>
-      <div class="nav-item" onclick="trocarAba('graficos')" data-tooltip="Desempenho">
-        <i class="fas fa-chart-line"></i>
-        <span>📈 Desempenho</span>
-      </div>
-      <div class="nav-item" onclick="trocarAba('historico')" data-tooltip="Histórico">
-        <i class="fas fa-history"></i>
-        <span>📋 Histórico</span>
-      </div>
-      <div class="nav-item" onclick="trocarAba('faturamento')" data-tooltip="Faturamento">
-        <i class="fas fa-cash-register"></i>
-        <span>💰 Faturamento</span>
-      </div>
-      <div class="nav-item" onclick="analisarSobrasIA()" data-tooltip="Sugestões com IA">
-        <i class="fas fa-robot"></i>
-        <span>💡 Sugestões com IA</span>
-      </div>
-      <div class="nav-item" data-tooltip="Configurações">
-        <i class="fas fa-cog"></i>
-        <span>⚙️ Configurações</span>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Topbar -->
-  <div class="topbar">
-    <button class="mobile-menu-btn" style="display: none;">
-      <i class="fas fa-bars"></i>
-    </button>
-    
-    <div class="topbar-right">
-      <button class="theme-toggle" onclick="toggleDarkMode()">
-        <i class="fas fa-moon"></i>
-      </button>
-      
-      <div class="user-info">
-        <div class="user-avatar">MF</div>
-        <div class="user-details">
-          <div class="user-name">Matheus Ferraretto</div>
-          <div class="user-role">Administrador</div>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <div class="logo">
+          <i class="fas fa-calculator"></i>
+          <span>Sistema Shopee</span>
         </div>
       </div>
       
-      <button class="btn btn-sm btn-outline" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i> Sair
-      </button>
-    </div>
-  </div>
-  
-  <!-- Conteúdo principal -->
-  <div class="main-content">
-    <div class="page-title">
-      <i class="fas fa-check-circle"></i>
-      <h1>Mentoria Ferraretto - Conferência de Sobras</h1>
-    </div>
-    
-    <!-- Alertas e status de conexão -->
-    <div id="alertSuccess" class="alert alert-success" style="display: none;">
-      <i class="fas fa-check-circle"></i>
-      <div class="alert-content"></div>
-    </div>
-    
-    <div id="alertError" class="alert alert-danger" style="display: none;">
-      <i class="fas fa-exclamation-circle"></i>
-      <div class="alert-content"></div>
-    </div>
-    
-    <div id="firebase-error" class="card" style="display: none;">
-      <div class="card-header">
-        <i class="fas fa-exclamation-triangle"></i>
-        <h3>Erro de Conexão com o Firebase</h3>
+      <div class="nav-menu">
+        <div class="nav-item">
+          <i class="fas fa-calculator"></i>
+          <span>Sistema de Precificação</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-bullhorn"></i>
+          <span>Gerenciamento de Anúncios</span>
+        </div>
+        <div class="nav-item active">
+          <i class="fas fa-box-open"></i>
+          <span>Controle de Sobras</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-tools"></i>
+          <span>Custeio de Produção</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-users"></i>
+          <span>Gerenciamento de Usuários</span>
+        </div>
       </div>
-      <p id="error-message" style="margin-bottom: 1rem;"></p>
-      <button onclick="verificarConexao()" class="btn btn-primary">
-        <i class="fas fa-sync-alt"></i> Tentar Reconectar
-      </button>
-    </div>
+    </aside>
     
-    <!-- Barra de navegação por abas -->
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="trocarAba('importar')">
-        <i class="fas fa-box-open"></i> Conferir Pedidos
+    <!-- Navbar -->
+    <nav class="navbar">
+      <button class="menu-toggle">
+        <i class="fas fa-bars"></i>
       </button>
-      <button class="tab-btn" onclick="trocarAba('metas')">
-        <i class="fas fa-bullseye"></i> Metas por SKU
-      </button>
-      <button class="tab-btn" onclick="trocarAba('graficos')">
-        <i class="fas fa-chart-bar"></i> Gráficos
-      </button>
-      <button class="tab-btn" onclick="trocarAba('historico')">
-        <i class="fas fa-history"></i> Histórico
-      </button>
-      <button class="tab-btn" onclick="trocarAba('faturamento')">
-        <i class="fas fa-cash-register"></i> Faturamento Diário
-      </button>
-      <button class="tab-btn" onclick="trocarAba('registroFaturamento'); carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')">
-        <i class="fas fa-file-alt"></i> Registro de Faturamento
-      </button>
-      <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
-        <i class="fas fa-boxes"></i> Controle de Vendas
-      </button>
-    </div>
-
-    <!-- Aba de Importação/Conferência -->
-    <div id="importar" class="tab-content active">
-      <!-- Conteúdo original mantido -->
-    </div>
-
-    <!-- Aba de Metas -->
-    <div id="metas" class="tab-content">
-      <!-- Conteúdo original mantido -->
-    </div>
-
-    <!-- Aba de Gráficos -->
-    <div id="graficos" class="tab-content">
-      <!-- Conteúdo original mantido -->
-    </div>
-
-    <!-- Aba de Histórico -->
-    <div id="historico" class="tab-content">
-      <!-- Conteúdo original mantido -->
-    </div>
+      
+      <div class="user-actions">
+        <div class="dark-mode-toggle" id="darkModeToggle">
+          <div class="toggle-switch"></div>
+        </div>
+        
+        <div class="action-btn tooltip">
+          <i class="fas fa-bell"></i>
+          <span class="notification-badge">3</span>
+          <span class="tooltip-text">Notificações</span>
+        </div>
+        
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <span>Usuário Admin</span>
+        </div>
+        
+        <button class="action-btn tooltip">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="tooltip-text">Sair</span>
+        </button>
+      </div>
+    </nav>
     
-    <!-- Aba de Faturamento -->
-    <div id="faturamento" class="tab-content">
-      <!-- Conteúdo original mantido -->
-    </div>
-    
-    <!-- Aba de Registro de Faturamento -->
-    <div id="registroFaturamento" class="tab-content">
-      <!-- Conteúdo original mantido -->
-    </div>
-    
-    <!-- Aba de Controle de Vendas -->
-    <div id="controleVendas" class="tab-content">
-      <!-- Conteúdo original mantido -->
+    <!-- Conteúdo principal -->
+    <div class="main-content">
+      <div class="page-title">
+        <i class="fas fa-check-circle"></i>
+        <h1>Mentoria Ferraretto - Conferência de Sobras</h1>
+      </div>
+      
+      <!-- Alertas e status de conexão -->
+      <div id="alertSuccess" class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <div class="alert-content"></div>
+      </div>
+      
+      <div id="alertError" class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i>
+        <div class="alert-content"></div>
+      </div>
+      
+      <div id="firebase-error" class="card" style="display: none;">
+        <div class="card-header">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h3>Erro de Conexão com o Firebase</h3>
+        </div>
+        <p id="error-message" style="margin-bottom: 1rem;"></p>
+        <button onclick="verificarConexao()" class="btn btn-primary">
+          <i class="fas fa-sync-alt"></i> Tentar Reconectar
+        </button>
+      </div>
+      
+      <!-- Barra de navegação por abas -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="trocarAba('importar')">
+          <i class="fas fa-box-open"></i> Conferir Pedidos
+        </button>
+        <button class="tab-btn" onclick="trocarAba('metas')">
+          <i class="fas fa-bullseye"></i> Metas por SKU
+        </button>
+        <button class="tab-btn" onclick="trocarAba('graficos')">
+          <i class="fas fa-chart-bar"></i> Gráficos
+        </button>
+        <button class="tab-btn" onclick="trocarAba('historico')">
+          <i class="fas fa-history"></i> Histórico
+        </button>
+        <button class="tab-btn" onclick="trocarAba('faturamento')">
+          <i class="fas fa-cash-register"></i> Faturamento Diário
+        </button>
+        <button class="tab-btn" onclick="trocarAba('registroFaturamento'); carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')">
+          <i class="fas fa-file-alt"></i> Registro de Faturamento
+        </button>
+        <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
+          <i class="fas fa-boxes"></i> Controle de Vendas
+        </button>  
+      </div>
+
+      <!-- Aba de Importação/Conferência -->
+      <div id="importar" class="tab-content active">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-info-circle"></i>
+            <h3>Como usar</h3>
+          </div>
+          <p>Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas.</p>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-file-import"></i>
+            <h3>Importar Planilha</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
+            </div>
+            <button onclick="processarPlanilha()" class="btn btn-primary" id="btnProcessar">
+              <span id="btnProcessarText"><i class="fas fa-cogs"></i> Processar Planilha</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-filter"></i>
+            <h3>Filtrar Resultados</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <select id="tipoFiltro" class="form-control">
+                <option value="exata">Correspondência Exata</option>
+                <option value="comeca">Começa com</option>
+                <option value="contem">Contém</option>
+              </select>
+            </div>
+            <div class="form-group input-with-icon">
+              <i class="fas fa-search"></i>
+              <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
+            </div>
+            <button onclick="limparFiltros()" class="btn btn-outline">
+              <i class="fas fa-times"></i> Limpar Filtros
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-table"></i>
+            <h3>Resultados da Conferência</h3>
+          </div>
+          <div class="table-container">
+            <table id="resultado">
+              <thead>
+                <tr>
+                  <th>ID do Pedido</th>
+                  <th>SKU</th>
+                  <th>Subtotal</th>
+                  <th>Reembolso</th>
+                  <th>Cupom</th>
+                  <th>Comissão</th>
+                  <th>Serviço</th>
+                  <th>Sobra</th>
+                  <th>% vs Meta</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-4">
+            <button onclick="analisarSobrasIA()" class="btn btn-primary">
+              <i class="fas fa-robot"></i> Analisar Sobras com IA
+            </button>
+            <input type="hidden" id="dadosSobrasIA">
+            <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
+          </div>
+          <div id="totalSobra" style="margin-top: 1.5rem;"></div>
+          
+          <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <button onclick="exportarCSV()" class="btn btn-primary">
+              <i class="fas fa-file-export"></i> Exportar CSV
+            </button>
+            <button onclick="exportarJSON()" class="btn btn-outline">
+              <i class="fas fa-file-code"></i> Exportar JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aba de Metas -->
+      <div id="metas" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-bullseye"></i>
+            <h3>Metas de Sobra por SKU</h3>
+          </div>
+          <p>Cadastre metas de sobra para cada SKU. O sistema irá comparar automaticamente o desempenho real com a meta estabelecida.</p>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-plus-circle"></i>
+            <h3>Adicionar Nova Meta</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <input type="text" id="metaSku" list="listaSkus" placeholder="SKU do Produto" class="form-control" />
+              <datalist id="listaSkus"></datalist>
+              <div id="precoMinimoInfo" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
+            </div>
+            <div class="form-group">
+              <input type="number" id="metaValor" placeholder="Sobra Esperada (R$)" step="0.01" class="form-control" />
+            </div>
+            <button onclick="adicionarMeta()" class="btn btn-primary" id="btnAdicionarMeta">
+              <i class="fas fa-plus"></i> Adicionar Meta
+            </button>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-list"></i>
+            <h3>Metas Cadastradas</h3>
+          </div>
+          <div class="table-container">
+            <table id="tabelaMetas">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Preço Mínimo</th>
+                  <th>Meta R$</th>
+                  <th>Última Atualização</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aba de Gráficos -->
+      <div id="graficos" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-chart-bar"></i>
+            <h3>Gráficos de Desempenho</h3>
+          </div>
+          <p>Visualize gráficos comparativos entre o desempenho real e as metas estabelecidas.</p>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-sliders-h"></i>
+            <h3>Configurações do Gráfico</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <select id="filtroGrafico" class="form-control">
+                <option value="top10">Top 10 SKUs com maior diferença</option>
+                <option value="bottom10">Top 10 SKUs com menor diferença</option>
+                <option value="all">Todos os SKUs</option>
+              </select>
+            </div>
+            <button onclick="atualizarGraficos()" class="btn btn-primary">
+              <i class="fas fa-sync-alt"></i> Atualizar Gráficos
+            </button>
+          </div>
+        </div>
+        
+        <div class="chart-container">
+          <div class="chart-header">
+            <div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>
+          </div>
+          <canvas id="graficoBarras" height="300"></canvas>
+        </div>
+        
+        <div class="chart-container">
+          <div class="chart-header">
+            <div class="chart-title">Desempenho vs Meta por SKU (%)</div>
+          </div>
+          <canvas id="graficoPizza" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- Aba de Histórico -->
+      <div id="historico" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-history"></i>
+            <h3>Histórico de Alterações</h3>
+          </div>
+          <p>Registro de todas as alterações nas metas de sobra.</p>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-filter"></i>
+            <h3>Filtrar Histórico</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group input-with-icon">
+              <i class="fas fa-search"></i>
+              <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" />
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-list"></i>
+            <h3>Registros Recentes</h3>
+          </div>
+          <div id="listaHistorico" style="max-height: 500px; overflow-y: auto;"></div>
+        </div>
+      </div>
+      
+      <!-- Aba de Faturamento -->
+      <div id="faturamento" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-file-import"></i>
+            <h3>Importar Planilha de Vendas</h3>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="form-control" />
+            </div>
+            <button onclick="importarFaturamento()" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Importar
+            </button>
+          </div>
+          <div id="resultadoFaturamento" class="mt-4"></div>
+        </div>
+      </div>
+
+      <!-- Aba de Registro de Faturamento -->
+      <div id="registroFaturamento" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-calendar-alt"></i>
+            <h3>Registros de Faturamento Diário</h3>
+          </div>
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+            <div class="flex items-center gap-2">
+              <label for="filtroMesRegistro" class="font-medium">Filtrar por mês:</label>
+              <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-1"
+                onchange="carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')" />
+            </div>
+            <button onclick="exportarFaturamentoExcelRegistro()" class="btn btn-primary">
+              <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+          </div>
+          <div id="listaFaturamentoRegistro" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+        </div>
+      </div>
+
+      <!-- Aba de Controle de Vendas -->
+      <div id="controleVendas" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-boxes"></i>
+            <h3>Controle de Vendas por SKU</h3>
+          </div>
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+            <div class="flex items-center gap-2">
+              <label for="filtroMesVendas" class="font-medium">Filtrar por mês:</label>
+              <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-1"
+                onchange="carregarControleVendas()" />
+            </div>
+          </div>
+          <div id="listaControleVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+        </div>
+      </div>
     </div>
   </div>
-  
+
   <!-- Status de conexão -->
   <div id="connectionStatus" class="connection-status offline">
     <div class="status-dot"></div>
@@ -810,34 +1442,6 @@
   </div>
 
   <script>
-    // Funções para modo escuro
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-      const icon = document.querySelector('.theme-toggle i');
-      if (document.body.classList.contains('dark-mode')) {
-        icon.className = 'fas fa-sun';
-        localStorage.setItem('darkMode', 'enabled');
-      } else {
-        icon.className = 'fas fa-moon';
-        localStorage.setItem('darkMode', 'disabled');
-      }
-    }
-    
-    // Verificar preferência de modo escuro
-    if (localStorage.getItem('darkMode') === 'enabled') {
-      document.body.classList.add('dark-mode');
-      document.querySelector('.theme-toggle i').className = 'fas fa-sun';
-    }
-    
-    // Função de logout
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        window.location.href = 'index.html';
-      }).catch((error) => {
-        mostrarErro('Erro ao fazer logout: ' + error.message);
-      });
-    }
-    
     // =============================================
     // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
     // =============================================
@@ -916,15 +1520,42 @@
       mostrarErroFirebase(error);
     }
 
-    // Funções originais mantidas abaixo...
-    // (Todas as funções JavaScript originais permanecem aqui)
-    // As funções originais foram mantidas integralmente
-    // Apenas adicionei as funções de UI (modo escuro, logout, etc.)
+    // Toggle modo escuro
+    document.getElementById('darkModeToggle').addEventListener('click', function() {
+      this.classList.toggle('active');
+      document.body.classList.toggle('dark-mode');
+    });
+    
+    // Menu toggle para mobile
+    document.querySelector('.menu-toggle').addEventListener('click', function() {
+      document.querySelector('.sidebar').classList.toggle('active');
+    });
 
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
     // =============================================
-    
+    async function consultarDeepSeek(mensagemUser) {
+      try {
+        const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: [
+              { role: "system", content: "Você é um analista de sobras de produtos da Shopee." },
+              { role: "user", content: mensagemUser }
+            ]
+          })
+        });
+
+        const dados = await resposta.json();
+        return dados.choices?.[0]?.message?.content || "❌ Sem resposta da IA.";
+      } catch (error) {
+        console.error("Erro ao consultar DeepSeek:", error);
+        return "❌ Erro ao se comunicar com o servidor.";
+      }
+    }
+
     function verificarConexao() {
       firebase.firestore().enableNetwork()
         .then(() => {
@@ -1032,11 +1663,10 @@
       }
     }
     
-    // ... (todas as demais funções originais permanecem aqui)
-    // As funções originais foram mantidas integralmente
-    // Apenas adicionei as funções de UI (modo escuro, logout, etc.)
+    // =============================================
+    // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
+    // =============================================
     
-    // Função para trocar abas
     function trocarAba(id) {
       // Remove a classe 'active' de todas as abas
       document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
@@ -1067,33 +1697,1486 @@
       if (id === 'graficos') {
         setTimeout(atualizarGraficos, 100);
       }
-      
-      // Atualiza a aba ativa na sidebar
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      if (id === 'importar') {
-        document.querySelector('.nav-item:nth-child(1)').classList.add('active');
-      } else if (id === 'metas') {
-        document.querySelector('.nav-item:nth-child(2)').classList.add('active');
-      } else if (id === 'graficos') {
-        document.querySelector('.nav-item:nth-child(3)').classList.add('active');
-      } else if (id === 'historico') {
-        document.querySelector('.nav-item:nth-child(4)').classList.add('active');
-      } else if (id === 'faturamento') {
-        document.querySelector('.nav-item:nth-child(5)').classList.add('active');
+    }
+
+    // =============================================
+    // FUNÇÕES DE GERENCIAMENTO DE METAS
+    // =============================================
+    async function carregarProdutos() {
+      try {
+        let consulta = db.collection("products");
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          consulta = consulta.where('uid', '==', usuarioLogado.uid);
+        }
+        const snapshot = await consulta.get();
+        produtos = {};
+        const datalist = document.getElementById('listaSkus');
+        if (datalist) datalist.innerHTML = '';
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (!data.sku) return;
+          produtos[data.sku] = data.custo;
+          if (datalist) {
+            const opt = document.createElement('option');
+            const preco = data.custo ? parseFloat(data.custo).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0.00';
+            opt.value = data.sku;
+            opt.label = `${data.sku} - R$ ${preco}`;
+            datalist.appendChild(opt);
+          }
+        });
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
       }
     }
-    
-    // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
-      // Verificar modo escuro ao carregar
-      if (localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark-mode');
-        document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+
+    async function carregarMetas() {
+      try {
+        toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+        
+        return await executarComRetry(async () => {
+          metas = {};
+          // Carrega SKUs e preço mínimo da coleção de produtos
+          let produtosSnapQuery = db.collection("products");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            produtosSnapQuery = produtosSnapQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const produtosSnap = await produtosSnapQuery.get();
+          produtosSnap.forEach((doc) => {
+            const data = doc.data();
+            if (data.sku && data.custo !== undefined) {
+              metas[data.sku] = {
+                valor: parseFloat(data.custo),
+                atualizadoEm: new Date()
+              };
+            }
+          });
+
+          // Sobrepõe com metas salvas manualmente se existirem
+          let metasSnapQuery = db.collection("metasSKU");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            metasSnapQuery = metasSnapQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const metasSnap = await metasSnapQuery.get();
+          metasSnap.forEach((doc) => {
+            const originalSku = doc.id.replaceAll('__', '/');
+            metas[originalSku] = {
+              valor: doc.data().valor,
+              atualizadoEm: doc.data().atualizadoEm?.toDate() || new Date()
+            };
+          });
+          
+          renderizarMetas();
+          return true;
+        });
+      } catch (error) {
+        mostrarErroFirebase(`Erro ao carregar metas: ${error.message}`);
+        console.error("Erro ao carregar metas:", error);
+        return false;
+      } finally {
+        toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+      }
+    }
+
+    async function carregarHistorico() {
+      try {
+        return await executarComRetry(async () => {
+          historico = [];
+          let histQuery = db.collection("historicoMetas");
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            histQuery = histQuery.where('uid', '==', usuarioLogado.uid);
+          }
+          const snapshot = await histQuery.orderBy("data", "desc").limit(50).get();          
+          snapshot.forEach((doc) => {
+            historico.push({
+              sku: doc.data().sku,
+              acao: doc.data().acao,
+              valorAnterior: doc.data().valorAnterior,
+              valorNovo: doc.data().valorNovo,
+              data: doc.data().data.toDate(),
+              usuario: doc.data().usuario || 'Sistema'
+            });
+          });
+          
+          renderizarHistorico();
+          return true;
+        });
+      } catch (error) {
+        mostrarErroFirebase(`Erro ao carregar histórico: ${error.message}`);
+        console.error("Erro ao carregar histórico:", error);
+        return false;
+      }
+    }
+
+    async function registrarHistorico(sku, acao, valorAnterior, valorNovo) {
+      try {
+        await executarComRetry(async () => {
+          await db.collection("historicoMetas").add({
+            sku: sku,
+            acao: acao,
+            valorAnterior: valorAnterior,
+            valorNovo: valorNovo,
+            data: new Date(),
+            usuario: "Usuário", // Em um sistema real, pegaria do auth
+            uid: usuarioLogado.uid
+          });
+          
+          // Recarregar histórico após adicionar novo registro
+          await carregarHistorico();
+          return true;
+        });
+      } catch (error) {
+        console.error("Erro ao registrar histórico:", error);
+        throw error;
+      }
+    }
+
+    function renderizarMetas() {
+      const tbody = document.querySelector('#tabelaMetas tbody');
+      tbody.innerHTML = '';
+      
+      if (Object.keys(metas).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhuma meta cadastrada</td></tr>';
+        return;
       }
       
-      // Ativar aba inicial
-      trocarAba('importar');
-    });
+      for (let sku in metas) {
+        const meta = metas[sku];
+        const precoProduto = produtos[sku];
+        const dataFormatada = meta.atualizadoEm ? meta.atualizadoEm.toLocaleDateString('pt-BR') : 'N/A';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${sku}</td>
+          <td>${precoProduto ? 'R$ ' + parseFloat(precoProduto).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
+          <td>
+            <span class="valorMeta">R$ ${meta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            <input class="editInput" type="number" value="${meta.valor}" step="0.01" />
+          </td>
+          <td>${dataFormatada}</td>
+          <td>
+            <button onclick="editarMeta(this, '${sku}')" class="btn btn-sm" style="background: rgba(67, 97, 238, 0.1); color: var(--primary);">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="excluirMeta('${sku}', this)" class="btn btn-sm" style="background: rgba(239, 71, 111, 0.1); color: var(--danger);">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderizarHistorico() {
+      const lista = document.getElementById('listaHistorico');
+      lista.innerHTML = '';
+      
+      if (historico.length === 0) {
+        lista.innerHTML = '<div class="history-item" style="text-align: center;">Nenhum registro histórico encontrado</div>';
+        return;
+      }
+      
+      historico.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        
+        let acaoTexto = '';
+        let valorTexto = '';
+        
+        if (item.acao === 'adicionar') {
+          acaoTexto = `<span class="badge badge-success">Adicionado</span>`;
+          valorTexto = `Novo valor: R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
+        } else if (item.acao === 'editar') {
+          acaoTexto = `<span class="badge badge-warning">Editado</span>`;
+          valorTexto = `De R$ ${item.valorAnterior?.toFixed(2) || '0.00'} para R$ ${item.valorNovo?.toFixed(2) || '0.00'}`;
+        } else if (item.acao === 'remover') {
+          acaoTexto = `<span class="badge badge-danger">Removido</span>`;
+          valorTexto = `Valor anterior: R$ ${item.valorAnterior?.toFixed(2) || '0.00'}`;
+        }
+        
+        div.innerHTML = `
+          <div class="flex justify-between items-start flex-wrap gap-4 p-4 rounded-lg shadow transition hover:shadow-xl border border-gray-200 bg-white">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <strong class="text-blue-800">${item.sku}</strong>
+                ${acaoTexto}
+              </div>
+              <div class="text-sm text-gray-600">${valorTexto}</div>
+              <div class="text-sm text-gray-500 mt-1">👤 Por: ${item.usuario}</div>
+            </div>
+            <div class="text-sm text-gray-500 text-right">
+              <i class="fas fa-clock"></i>
+              ${item.data.toLocaleDateString('pt-BR')}<br>${item.data.toLocaleTimeString('pt-BR')}
+            </div>
+          </div>
+        `;
+        
+        lista.appendChild(div);
+      });
+    }
+
+    function filtrarHistorico() {
+      const filtro = document.getElementById('filtroHistorico').value.toLowerCase();
+      const itens = document.querySelectorAll('#listaHistorico .history-item');
+      
+      itens.forEach(item => {
+        const sku = item.querySelector('strong')?.textContent.toLowerCase() || '';
+        item.style.display = sku.includes(filtro) ? '' : 'none';
+      });
+    }
+
+    async function adicionarMeta() {
+      const skuInput = document.getElementById('metaSku');
+      const valorInput = document.getElementById('metaValor');
+      
+      const sku = skuInput.value.trim();
+      const valor = parseFloat(valorInput.value);
+      
+      if (!sku) {
+        mostrarErro('Por favor, informe o SKU do produto.');
+        skuInput.focus();
+        return;
+      }
+      
+      if (isNaN(valor) || valor <= 0) {
+        mostrarErro('Por favor, informe um valor válido para a meta (maior que zero).');
+        valorInput.focus();
+        return;
+      }
+      if (!produtos[sku]) {
+        const usarIA = confirm("SKU não cadastrado. Deseja uma sugestão de meta via IA?");
+        
+        if (usarIA) {
+            try {
+                const categoria = prompt("Informe a categoria do produto:");
+                if (categoria === null) return;
+                
+                const custo = prompt("Informe o custo do produto:");
+                if (custo === null) return;
+                
+                const margem = prompt("Informe a margem esperada (%):");
+                if (margem === null) return;
+                
+                const concorrentes = prompt("Informe o preço médio dos concorrentes:");
+                if (concorrentes === null) return;
+
+                const promptText = `Sugira uma meta de sobra para: ${categoria} | Custo: R$${custo} | Margem: ${margem}% | Concorrentes: ${concorrentes}`;
+                
+                const resposta = await consultarDeepSeek(promptText);
+                const match = resposta.match(/R\$\s*([\d.,]+)/);
+                const valorSugerido = match ? parseFloat(match[1].replace('.', '').replace(',', '.')) : null;
+                
+                if (valorSugerido && !isNaN(valorSugerido)) {
+                    valorInput.value = valorSugerido.toFixed(2);
+                    mostrarSucesso(`Sugestão da IA: R$ ${valorSugerido.toFixed(2)}`);
+                } else {
+                    mostrarErro("Não consegui extrair o valor. Resposta completa: " + resposta);
+                }
+            } catch (error) {
+                mostrarErro(`Erro na consulta: ${error.message}`);
+            }
+            return;
+        }
+        }
+      try {
+        toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+        
+        const safeSku = sku.replaceAll('/', '__');
+        const metaData = {
+          valor: valor,
+          atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          uid: usuarioLogado.uid
+        };
+        
+        await executarComRetry(async () => {
+          await db.collection("metasSKU").doc(safeSku).set(metaData);
+          return true;
+        });
+        
+        // Atualizar localmente
+        metas[sku] = {
+          valor: valor,
+          atualizadoEm: new Date()
+        };
+        
+        // Registrar no histórico
+        await registrarHistorico(sku, 'adicionar', null, valor);
+        
+        renderizarMetas();
+        
+        skuInput.value = '';
+        valorInput.value = '';
+        document.getElementById('precoMinimoInfo').textContent = '';
+        
+        mostrarSucesso(`Meta para o SKU ${sku} adicionada com sucesso!`);
+        
+        // Atualizar gráficos se estiver na aba
+        if (document.getElementById('graficos').classList.contains('active')) {
+          atualizarGraficos();
+        }
+      } catch (error) {
+        mostrarErro(`Erro ao adicionar meta: ${error.message}`);
+        console.error("Erro ao adicionar meta:", error);
+      } finally {
+        toggleLoading(document.getElementById('btnAdicionarMeta'), '<i class="fas fa-plus"></i> Adicionar Meta');
+      }
+    }
+
+    async function editarMeta(botao, sku) {
+      const tr = botao.closest('tr');
+      const span = tr.querySelector('.valorMeta');
+      const input = tr.querySelector('.editInput');
+      const icon = botao.querySelector('i');
+      
+      if (input.style.display === 'none') {
+        // Iniciar edição
+        input.style.display = 'inline-block';
+        span.style.display = 'none';
+        icon.className = 'fas fa-save';
+        input.focus();
+      } else {
+        // Salvar edição
+        const novoValor = parseFloat(input.value);
+        
+        if (isNaN(novoValor) || novoValor <= 0) {
+          mostrarErro('Por favor, informe um valor válido para a meta (maior que zero).');
+          input.focus();
+          return;
+        }
+        
+        try {
+          icon.className = 'fas fa-spinner fa-spin';
+          
+          const valorAnterior = metas[sku].valor;
+          const safeSku = sku.replaceAll('/', '__');
+          const metaData = {
+            valor: novoValor,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+            uid: usuarioLogado.uid
+          };
+          
+          await executarComRetry(async () => {
+            await db.collection("metasSKU").doc(safeSku).set(metaData);
+            return true;
+          });
+          
+          // Atualizar localmente
+          metas[sku] = {
+            valor: novoValor,
+            atualizadoEm: new Date()
+          };
+          
+          // Registrar no histórico
+          await registrarHistorico(sku, 'editar', valorAnterior, novoValor);
+          
+          renderizarMetas();
+          mostrarSucesso(`Meta para o SKU ${sku} atualizada com sucesso!`);
+          
+          // Atualizar gráficos se estiver na aba
+          if (document.getElementById('graficos').classList.contains('active')) {
+            atualizarGraficos();
+          }
+        } catch (error) {
+          mostrarErro(`Erro ao editar meta: ${error.message}`);
+          console.error("Erro ao editar meta:", error);
+          // Reverter visualmente
+          input.value = metas[sku].valor;
+        } finally {
+          input.style.display = 'none';
+          span.style.display = 'inline-block';
+          icon.className = 'fas fa-edit';
+        }
+      }
+    }
+
+    async function excluirMeta(sku, botao) {
+      if (!confirm(`Tem certeza que deseja excluir a meta do SKU ${sku}?`)) {
+        return;
+      }
+      
+      try {
+        const icon = botao.querySelector('i');
+        icon.className = 'fas fa-spinner fa-spin';
+        
+        const valorAnterior = metas[sku].valor;
+        const safeSku = sku.replaceAll('/', '__');
+        
+        await executarComRetry(async () => {
+          await db.collection("metasSKU").doc(safeSku).delete();
+          return true;
+        });
+        
+        // Remover localmente
+        delete metas[sku];
+        
+        // Registrar no histórico
+        await registrarHistorico(sku, 'remover', valorAnterior, null);
+        
+        renderizarMetas();
+        mostrarSucesso(`Meta para o SKU ${sku} removida com sucesso!`);
+        
+        // Atualizar gráficos se estiver na aba
+        if (document.getElementById('graficos').classList.contains('active')) {
+          atualizarGraficos();
+        }
+      } catch (error) {
+        mostrarErro(`Erro ao excluir meta: ${error.message}`);
+        console.error("Erro ao excluir meta:", error);
+      }
+    }
+
+    // =============================================
+    // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
+    // =============================================
+    
+    function processarPlanilha() {
+      const fileInput = document.getElementById('inputExcel');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        mostrarErro('Por favor, selecione um arquivo antes de processar.');
+        return;
+      }
+      
+      try {
+        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const pedidos = XLSX.utils.sheet_to_json(sheet);
+            
+            processarPedidos(pedidos);
+          } catch (error) {
+            mostrarErro(`Erro ao ler o arquivo: ${error.message}`);
+            console.error("Erro ao ler arquivo:", error);
+          } finally {
+            toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+          }
+        };
+        
+        reader.onerror = function() {
+          mostrarErro('Erro ao ler o arquivo. Por favor, tente novamente.');
+          toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+        };
+        
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        mostrarErro(`Erro ao processar o arquivo: ${error.message}`);
+        console.error("Erro ao processar arquivo:", error);
+        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+      }
+    }
+
+    function processarPedidos(pedidos) {
+      const contagem = {};
+      pedidos.forEach(p => {
+        const id = p['ID do pedido'];
+        if (id) contagem[id] = (contagem[id] || 0) + 1;
+      });
+
+      const tbody = document.querySelector('#resultado tbody');
+      tbody.innerHTML = '';
+      let totalSobra = 0, totalPercentual = 0, totalPedidos = 0;
+      
+      pedidosProcessados = [];
+
+      pedidos.forEach(p => {
+        const id = p['ID do pedido'];
+        if (!id || contagem[id] > 1) return;
+
+        const sku = p['Número de referência SKU'] || '';
+        const status = (p['Status do pedido'] || '').toLowerCase();
+        if (!sku || status.includes('cancelado') || status.includes('não pago')) return;
+
+        const subtotal = parseFloat(p['Subtotal do produto']) || 0;
+        const reembolso = parseFloat(p['Reembolso Shopee']) || 0;
+        const cupom = parseFloat(p['Cupom do vendedor']) || 0;
+        const comissao = parseFloat(p['Taxa de comissão']) || 0;
+        const servico = parseFloat(p['Taxa de serviço']) || 0;
+        const sobra = subtotal + reembolso - cupom - comissao - servico;
+        const meta = metas[sku]?.valor || 0;
+        const percentual = meta ? ((sobra - meta) / meta) * 100 : 0;
+        
+        const pedidoData = {
+          id, sku, subtotal, reembolso, cupom, comissao, servico, sobra, meta, percentual, status
+        };
+        
+        pedidosProcessados.push(pedidoData);
+
+        const tr = document.createElement('tr');
+        
+        // Determinar classe CSS baseada no desempenho
+        let statusClass = '';
+        let statusText = '';
+        
+        if (meta) {
+          if (percentual <= -10) {
+            statusClass = 'danger';
+            statusText = 'Crítico';
+          } else if (percentual <= -5) {
+            statusClass = 'warning';
+            statusText = 'Atenção';
+          } else if (percentual >= 5) {
+            statusClass = 'success';
+            statusText = 'Bom';
+          } else {
+            statusClass = 'info';
+            statusText = 'Normal';
+          }
+        } else {
+          statusClass = 'secondary';
+          statusText = 'Sem meta';
+        }
+
+        tr.innerHTML = `
+          <td>${id}</td>
+          <td>${sku}</td>
+          <td>R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td>R$ ${reembolso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td>R$ ${cupom.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td>R$ ${comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td>R$ ${servico.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td><strong>R$ ${sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong><br><small>Meta: R$ ${meta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</small></td>
+          <td>${percentual.toFixed(2)}%</td>
+          <td><span class="badge badge-${statusClass}">${statusText}</span></td>
+        `;
+        
+        tbody.appendChild(tr);
+
+        totalSobra += sobra;
+        totalPercentual += percentual;
+        totalPedidos++;
+      });
+
+      // Calcular total esperado com base na quantidade de pedidos por SKU
+      const linhas = document.querySelectorAll("#resultado tbody tr");
+      let esperadoTotal = 0;
+      linhas.forEach(l => {
+        const sku = l.children[1].textContent.trim();
+        if (metas[sku]) esperadoTotal += metas[sku].valor;
+      });
+    
+      const media = totalPedidos ? (totalPercentual / totalPedidos).toFixed(2) : '0.00';
+      const diferencaTotal = totalSobra - esperadoTotal;
+      const diferencaPercentual = esperadoTotal ? (diferencaTotal / esperadoTotal) * 100 : 0;
+
+      let diferencaHTML = '';
+      if (esperadoTotal > 0) {
+        const diferencaClass = diferencaTotal >= 0 ? 'success' : 'danger';
+        diferencaHTML = `
+          <div style="margin-top: 1rem; padding: 1rem; background: rgba(6, 214, 160, 0.05); border-radius: 12px; border-left: 4px solid var(--${diferencaClass});">
+            <h4>
+              <span class="badge badge-${diferencaClass}">
+                Diferença Total: R$ ${Math.abs(diferencaTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
+                (${diferencaPercentual.toFixed(2)}%)
+                ${diferencaTotal >= 0 ? 'acima' : 'abaixo'} da meta
+              </span>
+            </h4>
+          </div>
+        `;
+      }
+
+      document.getElementById('totalSobra').innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-coins"></i>
+            <h3>Resumo Financeiro</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <div style="background: rgba(67, 97, 238, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary);">
+              <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Sobra Total</h4>
+              <h2>R$ ${totalSobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+            </div>
+            
+            <div style="background: rgba(6, 214, 160, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--success);">
+              <h4 style="color: var(--success); margin-bottom: 0.5rem;">Sobra Esperada</h4>
+              <h2>R$ ${esperadoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+            </div>
+            
+            <div style="background: rgba(108, 117, 125, 0.05); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--secondary);">
+              <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">Média de Desempenho</h4>
+              <h2>${media}%</h2>
+            </div>
+          </div>
+          ${diferencaHTML}
+        </div>
+      `;
+        document.getElementById('totalSobra').innerHTML += `
+        <div style="margin-top: 1.5rem;">
+           
+        </div>
+    `;
+    
+    // Salvar dados para análise posterior
+    window.dadosParaAnalise = {
+        pedidos: pedidosProcessados,
+        resumo: {
+            totalSobra,
+            esperadoTotal,
+            media
+        }
+    };
+      const sobras = pedidosProcessados.map(p => {
+  return {
+    sku: p.sku,
+    vendido: p.subtotal,
+    sobra: p.sobra,
+    meta: p.meta,
+    data: new Date().toLocaleDateString()
+  };
+});
+
+document.getElementById("dadosSobrasIA").value = sobras.map(s => {
+  return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Meta: R$ ${s.meta?.toFixed(2) || 0}, Data: ${s.data}`;
+}).join("\n");
+}
+
+      // Atualizar gráficos se estiver na aba
+      if (document.getElementById('graficos').classList.contains('active')) {
+        atualizarGraficos();
+      }
+    
+    async function analisarSobrasComIA() {
+        const btn = document.getElementById('btnAnalisarIA');
+        const originalText = btn.innerHTML;
+        
+        try {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
+            btn.disabled = true;
+
+            // Preparar prompt com dados resumidos
+    const prompt = `### ANALISAR DESEMPENHO DE SKUs SHOPEE
+
+Abaixo estão os dados de performance de estoque da Shopee:
+${JSON.stringify(window.dadosParaAnalise, null, 2)}
+
+Quero que você atue como um analista profissional de vendas.
+
+**Objetivo:** Gerar um relatório claro, estruturado e com aparência profissional para orientar decisões de estoque e promoção.
+
+**Regras de resposta:**
+- Use **títulos e subtítulos claros** em Markdown.
+- Agrupe os SKUs em 3 seções: 
+  1. SKUs com Alta Performance
+  2. SKUs Próximos à Meta
+  3. SKUs com Baixa Performance
+- Dê **ações sugeridas** para cada grupo.
+- Crie um bloco final com **Resumo das Ações Recomendadas**.
+- Ao final, inclua a **data da análise** e um rodapé como "*Relatório gerado automaticamente por IA de Estoque Shopee*".
+
+**Exemplo de estilo desejado:**
+
+### 📈 Análise de Performance de SKUs - Shopee  
+**📅 Data:** [coloque data aqui]
+
+#### ✅ 1. SKUs com Alta Performance
+- SKU123: descrição...
+- Ações: ...
+
+#### 🟡 2. SKUs Próximos à Meta
+- SKU456: descrição...
+- Ações: ...
+
+#### 🔴 3. SKUs com Baixa Performance
+- SKU789: descrição...
+- Ações: ...
+
+#### 🧠 Resumo de Ações Prioritárias
+1. Ação 1...
+2. Ação 2...
+
+**Próxima revisão sugerida:** daqui a 7 dias
+
+---
+
+Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
+
+            const resposta = await consultarDeepSeek(prompt);
+            
+            // Exibir resultado
+            document.getElementById('totalSobra').innerHTML += `
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <i class="fas fa-robot"></i>
+          <h3>Análise Preditiva de Estoque</h3>
+        </div>
+        <div style="padding: 1.5rem; background: #f8f9fa; border-radius: 0 0 12px 12px;">
+          ${resposta}
+        </div>
+      </div>
+    `;
+        } catch (error) {
+            mostrarErro(`Erro na análise: ${error.message}`);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    function filtrarPorSKU() {
+      const filtro = document.getElementById("filtroSKU").value.toLowerCase();
+      const tipo = document.getElementById("tipoFiltro").value;
+      const linhas = document.querySelectorAll("#resultado tbody tr");
+      
+      linhas.forEach(linha => {
+        const sku = linha.children[1].textContent.toLowerCase();
+
+        if (!filtro) {
+          linha.style.display = "";
+          return;
+        }
+
+        if (tipo === "exata") {
+          linha.style.display = sku === filtro ? "" : "none";
+        } else if (tipo === "comeca") {
+          linha.style.display = sku.startsWith(filtro) ? "" : "none";
+        } else if (tipo === "contem") {
+          linha.style.display = sku.includes(filtro) ? "" : "none";
+        }
+      });
+    }
+
+    function limparFiltros() {
+      document.getElementById("filtroSKU").value = "";
+      filtrarPorSKU();
+    }
+
+    // =============================================
+    // FUNÇÕES DE GRÁFICOS
+    // =============================================
+    
+    function atualizarGraficos() {
+        // Elemento do cabeçalho
+        const chartHeader = document.querySelector('.chart-header');
+        
+        // Limpa o conteúdo anterior
+        chartHeader.innerHTML = '<div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>';
+        
+        // Verificação de dados
+        if (pedidosProcessados.length === 0) {
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">Nenhum dado disponível para exibir gráficos. Processe um arquivo primeiro.</p>';
+            });
+            
+            // Adiciona botão mesmo sem dados (opcional)
+            chartHeader.innerHTML += `
+                <button onclick="analisarTendenciasIA()" class="btn btn-outline" disabled>
+                    <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+                </button>
+            `;
+            return;
+        }
+        
+        // Adiciona botão funcional quando há dados
+        chartHeader.innerHTML += `
+            <button onclick="analisarTendenciasIA()" class="btn btn-outline">
+                <i class="fas fa-chart-line"></i> Analisar Tendências com IA
+            </button>
+        `;
+        
+        // Processamento dos dados
+        const tipoFiltro = document.getElementById('filtroGrafico').value;
+        let dados = agruparPorSKU(pedidosProcessados);
+        
+        // Aplicar filtro
+        if (tipoFiltro === 'top10') {
+            dados.sort((a, b) => b.diferencaPercentual - a.diferencaPercentual);
+            dados = dados.slice(0, 10);
+        } else if (tipoFiltro === 'bottom10') {
+            dados.sort((a, b) => a.diferencaPercentual - b.diferencaPercentual);
+            dados = dados.slice(0, 10);
+        }
+        
+        // Criar gráficos
+        criarGraficoBarras(dados);
+        criarGraficoPizza(dados);
+    }
+
+    function agruparPorSKU(pedidos) {
+      const agrupados = {};
+      
+      pedidos.forEach(pedido => {
+        if (!agrupados[pedido.sku]) {
+          agrupados[pedido.sku] = {
+            sku: pedido.sku,
+            totalSobra: 0,
+            totalMeta: 0,
+            quantidade: 0
+          };
+        }
+        
+        agrupados[pedido.sku].totalSobra += pedido.sobra;
+        agrupados[pedido.sku].totalMeta += pedido.meta || 0;
+        agrupados[pedido.sku].quantidade += 1;
+      });
+      
+      // Converter para array e calcular diferenças
+      return Object.values(agrupados).map(item => {
+        const diferenca = item.totalSobra - item.totalMeta;
+        const diferencaPercentual = item.totalMeta ? (diferenca / item.totalMeta) * 100 : 0;
+        
+        return {
+          ...item,
+          diferenca,
+          diferencaPercentual
+        };
+      });
+    } // ← Fechamento correto da função
+    async function analisarTendenciasIA() {
+        try {
+            const prompt = `Analise estes dados de desempenho de produtos:
+    ${JSON.stringify(pedidosProcessados.slice(0, 50), null, 2)}
+
+    Identifique:
+    1. Tendências sazonais
+    2. Produtos com crescimento/declínio consistente
+    3. Sugestões de ajuste de estoque
+    4. Previsão para próxima semana
+
+    Responda em tópicos curtos e diretos.`;
+
+            const resposta = await consultarDeepSeek(prompt);
+            
+            // Exibir resultado
+            document.querySelector('.chart-header').innerHTML += `
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Análise de Tendências</h3>
+                    </div>
+                    <div style="padding: 1.5rem;">
+                        <pre style="white-space: pre-wrap;">${resposta}</pre>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            mostrarErro(`Erro na análise de tendências: ${error.message}`);
+        }
+    }
+    function criarGraficoBarras(dados) {
+      const ctx = document.getElementById('graficoBarras').getContext('2d');
+      
+      // Destruir gráfico anterior se existir
+      if (graficoBarras) {
+        graficoBarras.destroy();
+      }
+      
+      // Preparar dados
+      const labels = dados.map(item => item.sku);
+      const sobras = dados.map(item => item.totalSobra);
+      const metas = dados.map(item => item.totalMeta);
+      
+      graficoBarras = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Sobra Real (R$)',
+              data: sobras,
+              backgroundColor: 'rgba(244, 92, 0, 0.7)',
+              borderColor: 'rgba(244, 92, 0, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Meta Esperada (R$)',
+              data: metas,
+              backgroundColor: 'rgba(76, 175, 80, 0.7)',
+              borderColor: 'rgba(76, 175, 80, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Valor (R$)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'SKU'
+              }
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Comparação entre Sobra Real e Meta por SKU'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  label += 'R$ ' + context.raw.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                  return label;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function criarGraficoPizza(dados) {
+      const ctx = document.getElementById('graficoPizza').getContext('2d');
+      
+      // Destruir gráfico anterior se existir
+      if (graficoPizza) {
+        graficoPizza.destroy();
+      }
+      
+      // Preparar dados - vamos mostrar a diferença percentual
+      const labels = dados.map(item => item.sku);
+      const diferencas = dados.map(item => item.diferencaPercentual);
+      
+      // Criar cores baseadas no desempenho
+      const backgroundColors = diferencas.map(val => {
+        if (val >= 5) return 'rgba(76, 175, 80, 0.7)'; // Verde - acima
+        if (val <= -5) return 'rgba(244, 67, 54, 0.7)'; // Vermelho - abaixo
+        return 'rgba(255, 193, 7, 0.7)'; // Amarelo - dentro do esperado
+      });
+      
+      graficoPizza = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: diferencas,
+            backgroundColor: backgroundColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Desempenho vs Meta por SKU (%)'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  return `${label}: ${value.toFixed(2)}%`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    window.importarFaturamento = async function () {
+      const input = document.getElementById("inputFaturamento");
+      const file = input.files[0];
+      if (!file) return mostrarErro("Selecione um arquivo para importar.");
+
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+
+          let dataReferencia = prompt("Informe a data da planilha (formato YYYY-MM-DD):");
+          if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
+            return mostrarErro("Data inválida.");
+          }
+
+          let loja = prompt("Informe o nome da loja:");
+          if (!loja || loja.length < 2) {
+            return mostrarErro("Nome da loja inválido.");
+          }
+
+          const ref = db.collection("faturamento").doc(dataReferencia).collection("lojas").doc(loja);
+          const doc = await ref.get();
+
+          let operacao = "salvar";
+          if (doc.exists) {
+            operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
+          }
+
+          let bruto = 0, taxas = 0, qtdVendas = 0;
+
+          rows.forEach((row) => {
+            const status = (row["Status do pedido"] || "").toLowerCase();
+            if (status.includes("cancelado") || status.includes("não pago")) return;
+
+            const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
+            const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
+            const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
+            const comissao = parseFloat(row["Taxa de comissão"]) || 0;
+            const servico = parseFloat(row["Taxa de serviço"]) || 0;
+
+            bruto += subtotal + reembolso;
+            taxas += cupom + comissao + servico;
+            qtdVendas++;
+          });
+
+          const liquido = bruto - taxas;
+
+          if (operacao === "somar" && doc.exists) {
+            const anterior = doc.data();
+            bruto += anterior.valorBruto || 0;
+            taxas += anterior.taxasPlataforma || 0;
+            qtdVendas += anterior.qtdVendas || 0;
+          }
+
+          // ✅ Agrupar SKUs vendidos usando apenas a coluna exata
+          const skusVendidos = {};
+          rows.forEach((row) => {
+            const status = (row["Status do pedido"] || "").toLowerCase();
+            if (status.includes("cancelado") || status.includes("não pago")) return;
+
+            const headers = Object.keys(row);
+            const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
+
+            const sku = headerSKU ? row[headerSKU] : null;
+            if (!sku) return;
+
+            if (!skusVendidos[sku]) skusVendidos[sku] = 0;
+            skusVendidos[sku]++;
+          });
+
+          // Salvar SKUs vendidos
+          const refSku = db.collection("skusVendidos").doc(dataReferencia);
+          await refSku.set({ data: dataReferencia }); // garante doc pai
+
+          for (const [sku, total] of Object.entries(skusVendidos)) {
+            const skuId = String(sku).replace(/[.#$/\[\]]/g, "_");
+            const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
+            const docSnap = await docRef.get();
+
+            let totalFinal = total;
+            if (docSnap.exists) {
+              const dadosAnteriores = docSnap.data();
+              totalFinal += dadosAnteriores.total || 0;
+            }
+
+            await docRef.set({
+              sku: sku,
+              total: totalFinal,
+              data: dataReferencia,
+              loja: loja,
+              uid: usuarioLogado.uid
+            });
+          }
+
+          await ref.set({
+            valorBruto: bruto,
+            taxasPlataforma: taxas,
+            valorLiquido: liquido,
+            qtdVendas: qtdVendas,
+            loja: loja,
+            atualizadoEm: new Date(),
+            uid: usuarioLogado.uid
+          });
+
+          await db.collection("faturamento").doc(dataReferencia).set({
+            valorBruto: bruto,
+            valorLiquido: liquido,
+            taxasPlataforma: taxas,
+            vendas: qtdVendas,
+            atualizadoEm: new Date(),
+            uid: usuarioLogado.uid
+          }, { merge: true });
+
+          document.getElementById("resultadoFaturamento").innerHTML = `
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle"></i>
+              Faturamento de <strong>${dataReferencia}</strong> da loja <strong>${loja}</strong> registrado com sucesso.<br>
+              <strong>Bruto:</strong> R$ ${bruto.toFixed(2)}<br>
+              <strong>Taxas:</strong> R$ ${taxas.toFixed(2)}<br>
+              <strong>Líquido:</strong> R$ ${liquido.toFixed(2)}<br>
+              <strong>Qtd. Vendas:</strong> ${qtdVendas}
+            </div>
+          `;
+
+        } catch (err) {
+          mostrarErro("Erro ao importar: " + err.message);
+          console.error(err);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    };
+
+    // =============================================
+    // FUNÇÕES DE EXPORTAÇÃO
+    // =============================================
+    
+    function exportarCSV() {
+      if (pedidosProcessados.length === 0) {
+        mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
+        return;
+      }
+      
+      try {
+        // Cabeçalhos
+        let csv = 'ID do Pedido;SKU;Subtotal;Reembolso;Cupom;Comissão;Serviço;Sobra;Meta;% vs Meta;Status\n';
+        
+        // Dados
+        pedidosProcessados.forEach(pedido => {
+          const status = pedido.meta ? 
+            (pedido.percentual <= -10 ? 'Crítico' : 
+             pedido.percentual <= -5 ? 'Atenção' : 
+             pedido.percentual >= 5 ? 'Bom' : 'Normal') : 'Sem meta';
+          
+          csv += `"${pedido.id}";"${pedido.sku}";"${pedido.subtotal.toFixed(2)}";"${pedido.reembolso.toFixed(2)}";"${pedido.cupom.toFixed(2)}";"${pedido.comissao.toFixed(2)}";"${pedido.servico.toFixed(2)}";"${pedido.sobra.toFixed(2)}";"${pedido.meta.toFixed(2)}";"${pedido.percentual.toFixed(2)}";"${status}"\n`;
+        });
+        
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        saveAs(blob, `relatorio_sobras_${new Date().toISOString().slice(0,10)}.csv`);
+        
+        mostrarSucesso('Arquivo CSV exportado com sucesso!');
+      } catch (error) {
+        mostrarErro(`Erro ao exportar CSV: ${error.message}`);
+        console.error("Erro ao exportar CSV:", error);
+      }
+    }
+    async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", idFiltroMes = "filtroMes") {
+      const ref = db.collection("faturamento");
+      const snap = await ref.get();
+      const container = document.getElementById(idContainer);
+      container.innerHTML = "";
+
+      const filtroMes = document.getElementById(idFiltroMes)?.value;
+
+      for (const docData of snap.docs) {
+        if (filtroMes) {
+          const [anoFiltro, mesFiltro] = filtroMes.split("-");
+          const [anoData, mesData] = docData.id.split("-");
+          if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
+        }
+
+        const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+        let bruto = 0, liquido = 0, qtd = 0;
+
+        subSnap.forEach(sub => {
+          const d = sub.data();
+          bruto += d.valorBruto || 0;
+          liquido += d.valorLiquido || 0;
+          qtd += d.qtdVendas || 0;
+        });
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl shadow-lg p-5 border border-gray-200 hover:shadow-xl transition";
+
+        card.innerHTML = `
+          <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
+            <i class="fas fa-calendar-alt text-blue-600"></i>
+            <span class="font-semibold">${docData.id}</span>
+          </div>
+
+          <div class="text-2xl font-bold text-blue-800 mb-1">💰 Bruto: R$ ${bruto.toLocaleString('pt-BR')}</div>
+          <div class="text-xl font-semibold text-green-600 mb-1">🔻 Líquido: R$ ${liquido.toLocaleString('pt-BR')}</div>
+          <div class="text-base text-gray-600 mb-4">🛒 Vendas: ${qtd}</div>
+
+          <div class="flex justify-between items-center mt-4">
+            <button onclick='mostrarDetalhesFaturamento("${docData.id}")'
+              class="btn btn-outline">
+              <i class="fas fa-search"></i> Ver Detalhes
+            </button>
+            <button onclick='excluirFaturamento("${docData.id}")'
+              class="btn btn-outline">
+              <i class="fas fa-trash-alt"></i> Excluir
+            </button>
+          </div>
+
+          <div id="detalhes-${docData.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
+        `;
+
+        container.appendChild(card);
+      }
+    }
+
+    async function mostrarDetalhesFaturamento(dataRef) {
+      const detalhesEl = document.getElementById("detalhes-" + dataRef);
+      if (detalhesEl.style.display === "block") {
+        detalhesEl.style.display = "none";
+        return;
+      }
+
+      detalhesEl.innerHTML = `<div class="text-sm text-gray-500">🔄 Carregando...</div>`;
+      detalhesEl.style.display = "block";
+
+      const ref = db.collection("faturamento").doc(dataRef).collection("lojas");
+      const snap = await ref.get();
+
+      let html = "";
+      snap.forEach(doc => {
+        const d = doc.data();
+        const loja = d.loja || "Desconhecida";
+        const bruto = d.valorBruto?.toLocaleString("pt-BR") || "0,00";
+        const liquido = d.valorLiquido?.toLocaleString("pt-BR") || "0,00";
+        const vendas = d.qtdVendas || 0;
+
+        html += `
+          <div class="mt-1 text-sm text-gray-800 border-t pt-1">
+            <strong>${loja}</strong>: Bruto R$ ${bruto} | Líquido R$ ${liquido} | Vendas: ${vendas}
+          </div>
+        `;
+      });
+
+      detalhesEl.innerHTML = html;
+    }
+
+    async function excluirFaturamento(data) {
+      if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
+      await db.collection("faturamento").doc(data).delete();
+      mostrarSucesso("Registro excluído com sucesso.");
+      carregarRegistrosFaturamento();
+    }
+
+    function exportarJSON() {
+      if (pedidosProcessados.length === 0) {
+        mostrarErro('Nenhum dado disponível para exportar. Processe um arquivo primeiro.');
+        return;
+      }
+      
+      try {
+        const data = {
+          geradoEm: new Date().toISOString(),
+          pedidos: pedidosProcessados,
+          resumo: {
+            totalSobra: pedidosProcessados.reduce((sum, p) => sum + p.sobra, 0),
+            totalMeta: pedidosProcessados.reduce((sum, p) => sum + (p.meta || 0), 0)
+          }
+        };
+        
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+        saveAs(blob, `relatorio_sobras_${new Date().toISOString().slice(0,10)}.json`);
+        
+        mostrarSucesso('Arquivo JSON exportado com sucesso!');
+      } catch (error) {
+        mostrarErro(`Erro ao exportar JSON: ${error.message}`);
+        console.error("Erro ao exportar JSON:", error);
+      }
+    }
+    async function analisarSobrasComIA() {
+      try {
+        const linhas = document.querySelectorAll("#tabelaSobras tbody tr");
+        let dados = [];
+
+        linhas.forEach(linha => {
+          const colunas = linha.querySelectorAll("td");
+          if (colunas.length >= 5) {
+            dados.push({
+              sku: colunas[0].innerText.trim(),
+              nome: colunas[1].innerText.trim(),
+              vendido: parseInt(colunas[2].innerText) || 0,
+              sobra: parseInt(colunas[3].innerText) || 0,
+              data: colunas[4].innerText.trim()
+            });
+          }
+        });
+
+        const prompt = `
+    Você é um especialista em controle de estoque e sobras da Shopee.
+
+    Receberá uma lista com SKUs, nomes, vendidos e sobras.
+
+    Analise:
+    🔹 1. Valide se a sobra registrada faz sentido
+    🔹 2. Detecte padrões incomuns (ex: sobra alta sem venda)
+    🔹 3. Gere resumo por SKU com observações
+    🔹 4. Sugira ações (ex: revisar, repor, ignorar)
+
+    Dados:
+    ${JSON.stringify(dados, null, 2)}
+    `;
+
+        const resposta = await consultarDeepSeek(prompt);
+        document.getElementById("resultadoIA").innerText = resposta;
+      } catch (erro) {
+        console.error("Erro IA sobras:", erro);
+        document.getElementById("resultadoIA").innerText = "Erro ao analisar sobras com IA.";
+      }
+    }
+    async function analisarSobrasIA() {
+      const prompt = `
+    Sou um sistema de controle de sobras da Shopee. Com base nos dados abaixo, analise se os SKUs estão performando bem, identifique padrões incomuns e sugira ações como promoções, reposição ou atenção especial.
+
+    Dados:
+    ${document.getElementById("dadosSobrasIA").value}
+
+    Gere um resumo inteligente com insights práticos.
+    `;
+
+      document.getElementById("resultadoIA").innerHTML = "⌛ Analisando com IA...";
+      
+      try {
+        const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pergunta: prompt })
+        });
+
+        const data = await resposta.json();
+        const output = data.choices?.[0]?.message?.content || data.resposta || "⚠️ Resposta não recebida.";
+
+        document.getElementById("resultadoIA").innerHTML = output;
+      } catch (error) {
+        document.getElementById("resultadoIA").innerHTML = "❌ Erro ao consultar IA: " + error.message;
+        console.error("Erro IA:", error);
+      }
+    }
+    async function carregarControleVendas() {
+      const container = document.getElementById("listaControleVendas");
+      const filtroMes = document.getElementById("filtroMesVendas")?.value;
+      container.innerHTML = "🔄 Carregando...";
+
+      const ref = db.collection("skusVendidos");
+      const snap = await ref.get();
+
+      container.innerHTML = "";
+
+      for (const doc of snap.docs) {
+        const dataDoc = doc.id; // Ex: 2025-07-21
+        if (filtroMes) {
+          const [anoFiltro, mesFiltro] = filtroMes.split("-");
+          const [anoDoc, mesDoc] = dataDoc.split("-");
+          if (anoFiltro !== anoDoc || mesFiltro !== mesDoc) continue;
+        }
+
+        const listaSnap = await db.collection(`skusVendidos/${dataDoc}/lista`).get();
+        if (listaSnap.empty) continue;
+
+        let htmlSKUs = "";
+        let totalDia = 0;
+
+        listaSnap.forEach(docSKU => {
+          const { sku, total, loja } = docSKU.data();
+          totalDia += total || 0;
+          htmlSKUs += `
+      <div class="text-sm text-gray-700">
+        <strong>${sku || docSKU.id}</strong> (${loja || "-"}) — ${total || 0} unid.
+      </div>`;
+        });
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-lg shadow p-4 border border-gray-200";
+        card.innerHTML = `
+          <div class="text-center font-bold bg-blue-100 text-blue-800 py-2 rounded mb-2">${dataDoc}</div>
+          <div class="mb-2 text-sm text-gray-600">🧾 Total do dia: <strong>${totalDia}</strong> unidades</div>
+          ${htmlSKUs}
+          <div class="text-right mt-2">
+        <button onclick="verDetalhesDia('${dataDoc}')" class="text-blue-600 text-sm underline">🔍 Ver mais</button>
+      </div>
+        `;
+        container.appendChild(card);
+      }
+
+      if (container.innerHTML === "") {
+        container.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
+      }
+    }
+    window.verDetalhesDia = async function (dataDoc) {
+      const ref = db.collection(`skusVendidos/${dataDoc}/lista`);
+      const snap = await ref.get();
+
+      const agrupadoPorLoja = {};
+      let sobraEsperada = 0;
+
+      for (const doc of snap.docs) {
+        const { sku, total, loja } = doc.data();
+        if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
+        agrupadoPorLoja[loja].push({ sku, total });
+
+        // 🔍 Buscar CUSTO do SKU na coleção "products"
+        try {
+          const produtosRef = db.collection("products");
+          const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
+          if (!querySnap.empty) {
+            const dados = querySnap.docs[0].data();
+            const custo = Number(dados.custo || 0);
+            sobraEsperada += (total || 0) * custo;
+          }
+        } catch (e) {
+          console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
+        }
+      }
+
+      // 🔍 Somar valor líquido de todas as lojas do dia
+      let valorLiquido = 0;
+      try {
+        const lojasSnap = await db.collection(`faturamento/${dataDoc}/lojas`).get();
+        lojasSnap.forEach(lojaDoc => {
+          const dados = lojaDoc.data();
+          valorLiquido += Number(dados.valorLiquido || 0);
+        });
+      } catch (e) {
+        console.warn("Erro ao buscar valor líquido por loja:", e);
+      }
+
+      // 🧾 Montar HTML
+      let html = `<strong>📅 Detalhes de ${dataDoc}</strong><br><br>`;
+      for (const loja in agrupadoPorLoja) {
+        html += `<strong>🏪 Loja: ${loja}</strong><br>`;
+        agrupadoPorLoja[loja].forEach(({ sku, total }) => {
+          html += `• ${sku}: ${total} unid.<br>`;
+        });
+        html += `<br>`;
+      }
+
+      html += `<hr><strong>📦 Sobra Esperada:</strong> R$ ${sobraEsperada.toFixed(2)}<br>`;
+      html += `<strong>💰 Valor Líquido Real:</strong> R$ ${valorLiquido.toFixed(2)}<br>`;
+
+      Swal.fire({
+        title: 'Detalhamento por Loja',
+        html: html,
+        icon: 'info',
+        confirmButtonText: 'Fechar'
+      });
+    };
+
+    async function exportarFaturamentoExcel() {
+      const snap = await db.collection("faturamento").get();
+      const dataExport = [];
+
+      for (const docData of snap.docs) {
+        const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+        subSnap.forEach(sub => {
+          const d = sub.data();
+          dataExport.push({
+            Data: docData.id,
+            Loja: d.loja || "Desconhecida",
+            Bruto: d.valorBruto || 0,
+            Taxas: d.taxasPlataforma || 0,
+            Líquido: d.valorLiquido || 0,
+            Vendas: d.qtdVendas || 0
+          });
+        });
+      }
+
+      if (dataExport.length === 0) {
+        alert("Nenhum dado de faturamento encontrado.");
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(dataExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
+      XLSX.writeFile(wb, "faturamento.xlsx");
+    }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </body>
 </html>
