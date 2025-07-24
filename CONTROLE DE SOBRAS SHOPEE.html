@@ -1038,7 +1038,7 @@
 <body>
   <div class="app-container">
     <!-- Sidebar -->
-    <div class="sidebar">
+  <div class="sidebar">
   <div class="sidebar-logo">
     <div class="flex items-center">
       <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
@@ -3209,8 +3209,10 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
       XLSX.writeFile(wb, "faturamento.xlsx");
     }
-  </script>
-  <script>
+</script>
+
+<!-- Script: Menu retrátil e modo escuro -->
+<script>
   // Menu retrátil
   function toggleMenu(menuId) {
     const el = document.getElementById(menuId);
@@ -3238,6 +3240,8 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
   });
 </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- Outras bibliotecas (como XLSX) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 </body>
 </html>
