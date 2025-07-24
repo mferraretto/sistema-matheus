@@ -1,0 +1,86 @@
+  <div id="resumoFinal" class="tab">
+        <div class="card">
+          <h2>📊 Resumo Final do Produto</h2>
+          
+          <div class="alert alert-success">
+            <strong>Instruções:</strong> Os valores de custos serão preenchidos automaticamente conforme você calcula nas outras abas. 
+            Você pode ajustar manualmente se necessário. Preencha também a quantidade produzida e estimada de vendas.
+          </div>
+          
+          <div class="flex-container">
+            <div class="flex-item">
+              <div class="summary-box">
+                <h3>Dados de Custo</h3>
+                <div class="cilindro-linha">
+                  <label>Custo MDF (R$):</label>
+                  <input type="number" id="custoMDF" min="0" step="0.01">
+                </div>
+                <div class="cilindro-linha">
+                  <label>Custo Mão de Obra (R$):</label>
+                  <input type="number" id="custoMao" min="0" step="0.01">
+                </div>
+                <div class="cilindro-linha">
+                  <label>Custo Embalagem (R$):</label>
+                  <input type="number" id="custoEmbalagem" min="0" step="0.01">
+                </div>
+                <div class="cilindro-linha">
+                  <label>Custo Indireto Total Mensal (R$):</label>
+                  <input type="number" id="custoIndiretoMensal" min="0" step="0.01">
+                </div>
+                <div class="cilindro-linha">
+                  <label>Qtd Produzida no Mês:</label>
+                  <input type="number" id="qtdMensal" min="0">
+                </div>
+                <div class="cilindro-linha">
+                  <label>Qtd Estimada de Vendas:</label>
+                  <input type="number" id="qtdVendida" min="0">
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex-item">
+              <div class="summary-box">
+                <h3>Identificação do Produto</h3>
+                <div class="cilindro-linha">
+                  <label><strong>📦 Nome do Produto:</strong></label>
+                  <input type="text" id="nomeProduto" placeholder="Ex: Trio Cilindros Festa">
+                </div>
+                <div class="cilindro-linha">
+                  <label><strong>🔢 Código / SKU:</strong></label>
+                  <input type="text" id="codigoProduto" placeholder="Ex: KIT-CIL-PMG-001">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn-primary" onclick="calcularResumoFinal()">Calcular Resumo</button>
+            <button class="btn-secondary" onclick="calcularResumoFinal(); exportarResumoPDF()">📄 Exportar PDF</button>
+            <button class="btn-primary" onclick="salvarResumo()">💾 Salvar Resumo</button>
+          </div>
+          
+          <div class="resumo-container" id="resumoContainer">
+            <div id="resultadoResumo">
+              <p>Preencha os dados acima e clique em "Calcular Resumo" para ver os resultados.</p>
+            </div>
+          </div>
+          
+          <div id="resumoPDFContent" style="height: auto; visibility: hidden; position: absolute; left: -9999px;"></div>
+          <h3>🗂 Cálculos Salvos</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>SKU</th>
+                <th>Data</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaCalculos">
+              <tr>
+                <td colspan="4" style="text-align:center;">Nenhum cálculo salvo</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
