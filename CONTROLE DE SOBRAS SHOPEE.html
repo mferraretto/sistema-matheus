@@ -1334,6 +1334,15 @@ body.dark .submenu a:hover {
               <i class="fas fa-search"></i>
               <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
             </div>
+            <div class="form-group">
+  <select id="filtroStatus" class="form-control">
+    <option value="">Todos os Status</option>
+    <option value="CRÍTICO">Crítico</option>
+    <option value="OK">OK</option>
+    <option value="Atenção">Atenção</option>
+  </select>
+</div>
+
             <button onclick="limparFiltros()" class="btn btn-outline">
               <i class="fas fa-times"></i> Limpar Filtros
             </button>
@@ -1624,6 +1633,8 @@ body.dark .submenu a:hover {
         document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
         document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
         document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
+        document.getElementById('filtroStatus').addEventListener('change', filtrarPorSKU);
+document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
       });
       
       // Configurações importantes para a conexão
@@ -3305,6 +3316,45 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
       XLSX.writeFile(wb, "faturamento.xlsx");
     }
+    function aplicarEstiloCritico() {
+  const linhas = document.querySelectorAll("#resultado tbody tr");
+  linhas.forEach(linha => {
+    const status = linha.querySelector("td:nth-child(10)")?.textContent.trim();
+    if (status === "CRÍTICO") {
+      linha.style.backgroundColor = "#ffebee"; // fundo vermelho claro
+      linha.style.color = "#b71c1c"; // texto vermelho escuro
+      linha.style.fontWeight = "bold";
+    }
+  });
+}
+
+function filtrarPorSKU() {
+  const tipoFiltro = document.getElementById('tipoFiltro').value;
+  const textoSKU = document.getElementById('filtroSKU').value.toLowerCase();
+  const filtroStatus = document.getElementById('filtroStatus').value;
+
+  const linhas = document.querySelectorAll("#resultado tbody tr");
+
+  linhas.forEach(linha => {
+    const sku = linha.children[1].textContent.toLowerCase();
+    const status = linha.children[9].textContent.trim();
+
+    let corresponde = false;
+
+    if (tipoFiltro === 'exata') {
+      corresponde = sku === textoSKU;
+    } else if (tipoFiltro === 'comeca') {
+      corresponde = sku.startsWith(textoSKU);
+    } else {
+      corresponde = sku.includes(textoSKU);
+    }
+
+    const statusCorresponde = !filtroStatus || status === filtroStatus;
+
+    linha.style.display = corresponde && statusCorresponde ? '' : 'none';
+  });
+}
+
 </script>
 <script src="shared.js"></script>
 
