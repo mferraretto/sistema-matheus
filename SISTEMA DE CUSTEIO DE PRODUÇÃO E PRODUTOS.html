@@ -566,89 +566,53 @@
     <div class="container">
       <h1>🛠 Mentoria Ferraretto Cálculo de Produção</h1>
 
-      <div class="tabs">
-      <button class="tab-button active" data-tab="mdf">
-        <i class="fas fa-tachometer-alt mr-2"></i> mdf
-      </button>
-      <button class="tab-button" data-tab="mao">
-        <i class="fas fa-calculator mr-2"></i> mao
-      </button>
-      <button class="tab-button" data-tab="embalagem">
-        <i class="fas fa-box mr-2"></i> embalagem
-      </button>
-      <button class="tab-button" data-tab="cadastroChapas" id="cadastroChapasTab">
-        <i class="fas fa-history mr-2"></i> cadastroChapas
-      </button>
-      <button class="tab-button" data-tab="custosIndiretos" id="custosIndiretosTab">
-        <i class="fas fa-cog mr-2"></i> custosIndiretos
-      </button>
-           <button class="tab-button" data-tab="resumoFinal" id="resumoFinalTab">
-        <i class="fas fa-history mr-2"></i> resumoFinal
-      </button>
-     <button class="tab-button" data-tab="precificacao">
-  <i class="fas fa-dollar-sign mr-2"></i> precificação
-</button>
-    </div>
+     <div class="tab-buttons">
+        <button onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
+        <button onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
+        <button onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
+        <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
+        <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
+        <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
+        <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
+      </div>
+ <div id="mdf" class="tab active"></div>
 
-<div id="mdf" class="tab-content active"></div>
-<div id="mao" class="tab-content"></div>
-<div id="embalagem" class="tab-content"></div>
-<div id="cadastroChapas" class="tab-content"></div>
-<div id="custosIndiretos" class="tab-content"></div>
-<div id="resumoFinal" class="tab-content"></div>
-<div id="precificacao" class="tab-content"></div> <!-- ADICIONE ESTE -->
+      <div id="mao" class="tab"></div>
+
+      <div id="embalagem" class="tab"></div>
+      
+      <div id="cadastroChapas" class="tab"></div>
+
+      <div id="custosIndiretos" class="tab"></div>
+      
+      <div id="resumoFinal" class="tab"></div>
+      
+      <div id="precificacao" class="tab"></div>
+
     </div>
     
     <div class="footer">
       Mentoria Matheus Ferraretto &copy; 2025 - Todos os direitos reservados
     </div>
   </div>
-
-  <script>
-    let db;
-  let currentUser = null;
-  let chapas = [];
-document.addEventListener('DOMContentLoaded', () => {
-  const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
-
-  // 🔄 Carregar conteúdo das abas
-  Promise.all(
-    tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
-      document.getElementById(t).innerHTML = h;
-    }))
-  ).then(() => {
-    const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-    const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
-    showTab(activeTab);
-
-    const campos = document.querySelectorAll('#custosIndiretos .indireto');
-    campos.forEach(campo => {
-      campo.addEventListener('input', salvarCustosIndiretos);
-    });
-
-    // ⚠️ Nada aqui deve depender de currentUser
-  });
-
-  // 🔐 Firebase
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  db = firebase.firestore();
-
-
-  // ✅ Tudo que depende de currentUser entra aqui
-  firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-      window.location.href = 'index.html?login=1';
-    } else {
-      currentUser = user;
-
-      listarChapas().then(preencherSelectChapas);
-      carregarCustosIndiretos();
-      listarCalculos();
-
-      // Atualiza nome/ícone na navbar
-      setTimeout(() => {
+<script>
+  
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    let currentUser = null;
+    let chapas = [];
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+      } else {
+        currentUser = user;
+        listarChapas().then(preencherSelectChapas);
+        carregarCustosIndiretos();
+        listarCalculos();
+        
+        // Atualizar informações do usuário na navbar
         const userAvatar = document.getElementById('user-avatar');
         const userName = document.getElementById('user-name');
         if (userAvatar && userName) {
@@ -656,11 +620,31 @@ document.addEventListener('DOMContentLoaded', () => {
           userAvatar.textContent = initials;
           userName.textContent = user.email || 'Usuário';
         }
-      }, 500);
-    }
-  });
-});
+      }
+    });
+  </script>
 
+  <script>
+ // Inicialização com carregamento dinâmico das abas
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
+      Promise.all(
+        tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
+          document.getElementById(t).innerHTML = h;
+        }))
+      ).then(() => {
+        const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+        const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
+        showTab(activeTab);
+        const campos = document.querySelectorAll('#custosIndiretos .indireto');
+        campos.forEach(campo => {
+          campo.addEventListener('input', salvarCustosIndiretos);
+        });
+        listarChapas().then(preencherSelectChapas);
+        carregarCustosIndiretos();
+        listarCalculos();
+      });
+    });
     // Funções principais do sistema
     function showTab(id) {
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
