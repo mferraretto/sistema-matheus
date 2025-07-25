@@ -1157,69 +1157,7 @@ body.dark .submenu a:hover {
 <body>
   <div class="app-container">
   <!-- Sidebar -->
-  <div class="sidebar">
-  <div class="sidebar-logo">
-    <div class="flex items-center">
-      <div class="bg-white w-10 h-10 rounded-lg flex items-center justify-center mr-3">
-        <i class="fas fa-rocket text-gray-900"></i>
-      </div>
-      <span class="font-bold text-xl">Mentoria Ferraretto</span>
-    </div>
-  </div>
-
-  <div class="py-5">
-    <!-- Início -->
-    <a href="https://mferraretto.github.io/sistema-matheus/" class="sidebar-link">
-      <i class="fas fa-home"></i>
-      <span class="link-text">Início</span>
-    </a>
-
-    <!-- Vendas -->
-    <button onclick="toggleMenu('menuVendas')" class="sidebar-link">
-      <i class="fas fa-shopping-cart"></i>
-      <span class="link-text">📦 Vendas</span>
-    </button>
-    <div id="menuVendas" class="pl-8 space-y-1 hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Sobras Shopee</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Faturamento Diário</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Acompanhamento</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html" class="sidebar-link">Controle</a>
-    </div>
-
-    <!-- Precificação -->
-    <button onclick="toggleMenu('menuPrecificacao')" class="sidebar-link">
-      <i class="fas fa-tags"></i>
-      <span class="link-text">🧮 Precificação</span>
-    </button>
-    <div id="menuPrecificacao" class="pl-8 space-y-1 hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html" class="sidebar-link">Precificação</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/SISTEMA%20DE%20CUSTEIO%20DE%20PRODU%C3%87%C3%83O%20E%20PRODUTOS.html#mdf" class="sidebar-link">Custeio de Produção</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html" class="sidebar-link">Lista Preços</a>
-    </div>
-
-    <!-- Anúncios -->
-    <button onclick="toggleMenu('menuAnuncios')" class="sidebar-link">
-      <i class="fas fa-bullhorn"></i>
-      <span class="link-text">📣 Anúncios</span>
-    </button>
-    <div id="menuAnuncios" class="pl-8 space-y-1 hidden">
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Cadastro/Atualização</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Anúncios</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Análise</a>
-      <a href="https://mferraretto.github.io/sistema-matheus/Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" class="sidebar-link">Evolução</a>
-    </div>
-
-    <!-- Modo Escuro -->
-    <div class="flex items-center justify-between px-5 mt-6">
-      <span class="text-sm text-gray-300">Modo Escuro</span>
-      <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="darkModeToggle" class="sr-only peer">
-        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-orange-500 transition"></div>
-        <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition peer-checked:translate-x-full"></div>
-      </label>
-    </div>
-  </div>
-</div>
+  <div id="sidebar-container"></div>
 
 
     
