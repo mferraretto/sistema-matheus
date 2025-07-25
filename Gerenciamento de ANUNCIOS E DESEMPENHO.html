@@ -672,40 +672,56 @@ body.dark .submenu a {
           </div>
         </div>
         
-        <div class="card-body">
-          <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <button onclick="carregarAnuncios()" class="btn btn-primary px-4 py-2 flex items-center">
-              <i class="fas fa-sync-alt mr-2"></i>Recarregar Anúncios
-            </button>
-            
-            <div class="relative flex-grow max-w-md">
-              <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-              <input type="text" id="campoBusca" placeholder="Buscar por ID, Nome ou SKU..." 
-                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-            </div>
-          </div>
+    <div class="card-body">
+  <!-- Filtros e Pesquisa -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <!-- Botão Recarregar -->
+    <button onclick="carregarAnuncios()" class="btn btn-primary px-4 py-2 flex items-center">
+      <i class="fas fa-sync-alt mr-2"></i>Recarregar Anúncios
+    </button>
 
-          <div class="table-container">
-            <table id="tabelaAnuncios" class="w-full">
-              <thead class="table-header">
-                <tr>
-                  <th class="cursor-pointer" onclick="ordenarTabela(0)">ID</th>
-                  <th>Imagem</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
-                  <th class="cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white"></tbody>
-            </table>
-          </div>
-          
-          <div class="mt-4 text-sm text-gray-500">
-            <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
-          </div>
-        </div>
+    <!-- Campo de Busca -->
+    <div class="relative">
+      <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+      <input type="text" id="campoBusca" oninput="filtrarTabela()" placeholder="Buscar por Nome, SKU ou ID..." 
+             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500">
+    </div>
+
+    <!-- Filtros -->
+    <div class="grid grid-cols-2 gap-2">
+      <input type="number" id="filtroPrecoMax" oninput="filtrarTabela()" placeholder="Preço até R$" class="border rounded px-3 py-1 text-sm">
+      <input type="number" id="filtroEstoqueMin" oninput="filtrarTabela()" placeholder="Estoque mínimo" class="border rounded px-3 py-1 text-sm">
+      <input type="number" id="filtroConversaoMin" oninput="filtrarTabela()" placeholder="Conversão mínima (%)" class="border rounded px-3 py-1 text-sm">
+      <label class="flex items-center text-sm space-x-2 col-span-2">
+        <input type="checkbox" id="filtroAlertaPreco" onchange="filtrarTabela()">
+        <span>Somente com alerta de preço</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="table-container">
+    <table id="tabelaAnuncios" class="w-full">
+      <thead class="table-header">
+        <tr>
+          <th class="cursor-pointer" onclick="ordenarTabela(0)">ID</th>
+          <th>Imagem</th>
+          <th class="cursor-pointer" onclick="ordenarTabela(2)">Nome</th>
+          <th class="cursor-pointer" onclick="ordenarTabela(3)">Valor</th>
+          <th class="cursor-pointer" onclick="ordenarTabela(4)">Estoque</th>
+          <th class="cursor-pointer" onclick="ordenarTabela(5)">Conversão</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white"></tbody>
+    </table>
+  </div>
+
+  <div class="mt-4 text-sm text-gray-500">
+    <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
+  </div>
+</div>
+
       </div>
     </div>
 
@@ -1247,6 +1263,13 @@ window.carregarAnuncios = async function () {
           </button>
         </td>
       `;
+tr.setAttribute("data-id", id);
+tr.setAttribute("data-nome", (data.nome || "").toLowerCase());
+tr.setAttribute("data-sku", (variantes.map(v => v.skuVariante).join(" ") || "").toLowerCase());
+tr.setAttribute("data-preco", precoMedio);
+tr.setAttribute("data-estoque", estoqueTotal);
+tr.setAttribute("data-conversao", conversao);
+tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
 
       tbody.appendChild(tr);
     } // ✅ FECHAMENTO DO `for`
@@ -1925,6 +1948,32 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     const ativa = document.querySelector(".tab-button.active")?.getAttribute("data-tab");
     if (ativa) document.getElementById(ativa).style.display = "block";
   });
+    window.filtrarTabela = function () {
+  const busca = document.getElementById("campoBusca").value.toLowerCase();
+  const precoMax = parseFloat(document.getElementById("filtroPrecoMax").value);
+  const estoqueMin = parseInt(document.getElementById("filtroEstoqueMin").value);
+  const conversaoMin = parseFloat(document.getElementById("filtroConversaoMin").value);
+  const alertaPreco = document.getElementById("filtroAlertaPreco").checked;
+
+  document.querySelectorAll("#tabelaAnuncios tbody tr").forEach(tr => {
+    const nome = tr.getAttribute("data-nome") || "";
+    const sku = tr.getAttribute("data-sku") || "";
+    const id = tr.getAttribute("data-id") || "";
+    const preco = parseFloat(tr.getAttribute("data-preco") || "0");
+    const estoque = parseInt(tr.getAttribute("data-estoque") || "0");
+    const conversao = parseFloat(tr.getAttribute("data-conversao") || "0");
+    const alerta = tr.getAttribute("data-alerta") === "1";
+
+    const matchBusca = nome.includes(busca) || sku.includes(busca) || id.includes(busca);
+    const matchPreco = isNaN(precoMax) || preco <= precoMax;
+    const matchEstoque = isNaN(estoqueMin) || estoque >= estoqueMin;
+    const matchConversao = isNaN(conversaoMin) || conversao >= conversaoMin;
+    const matchAlerta = !alertaPreco || alerta;
+
+    tr.style.display = (matchBusca && matchPreco && matchEstoque && matchConversao && matchAlerta) ? "" : "none";
+  });
+};
+
 </script>
 <script src="shared.js"></script>
 
