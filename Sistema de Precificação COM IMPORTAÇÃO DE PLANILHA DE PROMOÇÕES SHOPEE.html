@@ -824,6 +824,9 @@ body.dark .submenu a:hover {
       <button class="tab-button" data-tab="produtos">
         <i class="fas fa-box mr-2"></i> Produtos
       </button>
+      <button class="tab-button" data-tab="lista-precos">
+        <i class="fas fa-list mr-2"></i> Lista de Preços
+      </button>
       <button class="tab-button" data-tab="historico" id="historyTab">
         <i class="fas fa-history mr-2"></i> Histórico
       </button>
@@ -836,6 +839,7 @@ body.dark .submenu a:hover {
     <div id="dashboard" class="tab-content active"></div>
     <div id="precificacao" class="tab-content"></div>
     <div id="produtos" class="tab-content p-4"></div>
+        <div id="lista-precos" class="tab-content p-4"></div>
     <div id="historico" class="tab-content p-4"></div>
     <div id="configuracoes" class="tab-content p-4"></div>
 
@@ -959,7 +963,7 @@ body.dark .submenu a:hover {
 
   // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
-const tabs = ['dashboard','precificacao','produtos','historico','configuracoes'];
+const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','configuracoes'];
   Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text()).then(h => { document.getElementById(t).innerHTML = h; }))).then(() => {
     setupCharts();
     setupEventListeners();
