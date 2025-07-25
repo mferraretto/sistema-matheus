@@ -605,6 +605,9 @@
   </div>
 
   <script>
+    let db;
+  let currentUser = null;
+  let chapas = [];
 document.addEventListener('DOMContentLoaded', () => {
   const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
 
@@ -630,10 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
-  const db = firebase.firestore();
+  db = firebase.firestore();
 
-  let currentUser = null;
-  let chapas = [];
 
   // ✅ Tudo que depende de currentUser entra aqui
   firebase.auth().onAuthStateChanged(user => {
