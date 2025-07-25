@@ -3313,7 +3313,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
 
 function filtrarPorSKU() {
   const tipoFiltro = document.getElementById('tipoFiltro').value;
-  const textoSKU = document.getElementById('filtroSKU').value.toLowerCase();
+  const textoSKU = document.getElementById('filtroSKU').value.trim().toLowerCase();
   const filtroStatus = document.getElementById('filtroStatus').value.toLowerCase();
 
   const linhas = document.querySelectorAll("#resultado tbody tr");
@@ -3324,7 +3324,9 @@ function filtrarPorSKU() {
 
     let corresponde = false;
 
-    if (tipoFiltro === 'exata') {
+    if (textoSKU === '') {
+      corresponde = true;
+    } else if (tipoFiltro === 'exata') {
       corresponde = sku === textoSKU;
     } else if (tipoFiltro === 'comeca') {
       corresponde = sku.startsWith(textoSKU);
