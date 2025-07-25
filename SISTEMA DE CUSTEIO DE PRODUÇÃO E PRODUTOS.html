@@ -566,15 +566,28 @@
     <div class="container">
       <h1>🛠 Mentoria Ferraretto Cálculo de Produção</h1>
 
-      <div class="tab-buttons">
-        <button onclick="showTab('mdf')"><span class="info-icon">🪵</span> Custo MDF</button>
-        <button onclick="showTab('mao')"><span class="info-icon">👷</span> Mão de Obra</button>
-        <button onclick="showTab('embalagem')"><span class="info-icon">📦</span> Embalagem</button>
-        <button onclick="showTab('cadastroChapas')"><span class="info-icon">📋</span> Chapas MDF</button>
-        <button onclick="showTab('custosIndiretos')"><span class="info-icon">🏭</span> Custos Indiretos</button>
-        <button onclick="showTab('resumoFinal')"><span class="info-icon">📊</span> Resumo Final</button>
-        <button onclick="showTab('precificacao')"><span class="info-icon">💲</span> Precificação</button>
-      </div>
+      <div class="tabs">
+      <button class="tab-button active" data-tab="mdf">
+        <i class="fas fa-tachometer-alt mr-2"></i> mdf
+      </button>
+      <button class="tab-button" data-tab="mao">
+        <i class="fas fa-calculator mr-2"></i> mao
+      </button>
+      <button class="tab-button" data-tab="embalagem">
+        <i class="fas fa-box mr-2"></i> embalagem
+      </button>
+      <button class="tab-button" data-tab="cadastroChapas" id="cadastroChapasTab">
+        <i class="fas fa-history mr-2"></i> cadastroChapas
+      </button>
+      <button class="tab-button" data-tab="custosIndiretos" id="custosIndiretosTab">
+        <i class="fas fa-cog mr-2"></i> custosIndiretos
+      </button>
+           <button class="tab-button" data-tab="resumoFinal" id="resumoFinalTab">
+        <i class="fas fa-history mr-2"></i> resumoFinal
+      </button>
+     
+    </div>
+
 
 
       <div id="mdf" class="tab-content active"></div>
@@ -589,7 +602,6 @@
       
       <div id="resumoFinal" class="tab-content"></div>
       
-      <div id="precificacao" class="tab-content"></div>
 
     </div>
     
