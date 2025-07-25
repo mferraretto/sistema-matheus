@@ -33,12 +33,14 @@
         carregarCustosIndiretos();
         listarCalculos();
 
-        const userAvatar = document.getElementById('user-avatar');
-        const userName = document.getElementById('user-name');
-        if (userAvatar && userName) {
+       const avatarEl = document.getElementById('user-avatar');
+        const userSpan = document.getElementById('currentUser');
+        if (avatarEl) {
           const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-          userAvatar.textContent = initials;
-          userName.textContent = user.email || 'Usuário';
+       avatarEl.textContent = initials;
+        }
+        if (userSpan) {
+          userSpan.textContent = user.email || 'Usuário';
         }
       }
     });
