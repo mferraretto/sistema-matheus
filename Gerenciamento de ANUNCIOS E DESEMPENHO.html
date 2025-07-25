@@ -1136,6 +1136,32 @@ window.carregarAnuncios = async function () {
       const snap = await getDocs(variantesRef);
       const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
 
+        // 🔍 Verificar se alguma variação está abaixo do preço mínimo na coleção products
+  for (const v of variantes) {
+    const sku = v.skuVariante || data.skuVariante || data.sku;
+    if (!sku) continue;
+
+    try {
+      const refProd = collection(db, "products");
+      const qProd = query(refProd, where("sku", "==", sku));
+      const snapshotProd = await getDocs(qProd);
+
+      if (!snapshotProd.empty) {
+        const docProd = snapshotProd.docs[0].data();
+        const precoMinimo = parseFloat(docProd.precoMinimo || 0);
+        const precoVar = parseFloat(v.preco || 0);
+
+        if (precoVar > 0 && precoVar < precoMinimo) {
+          v.alertaPreco = true;
+          v.precoMinimo = precoMinimo;
+        }
+      }
+    } catch (e) {
+      console.warn(`Erro ao buscar SKU ${sku} em products:`, e);
+    }
+  }
+
+
       // 🔄 Buscar últimos 7 dias da subcoleção desempenho
       const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
       const desempenhoQuery = query(desempenhoRef, orderBy("__name__", "desc"), limit(7));
@@ -1178,10 +1204,12 @@ window.carregarAnuncios = async function () {
       tr.className = "hover:bg-gray-50";
 
       let variacoesHTML = variantes.map(v => {
-        const nome = v.nomeVariante || v.skuVariante || v.varianteId;
-        const preco = v.preco ? `R$ ${parseFloat(v.preco).toFixed(2)}` : '';
-        return `<li class="text-xs text-gray-700">↳ ${nome} — ${preco}</li>`;
-      }).join("");
+  const nome = v.nomeVariante || v.skuVariante || v.varianteId;
+  const preco = v.preco ? `R$ ${parseFloat(v.preco).toFixed(2)}` : '';
+  const alerta = v.alertaPreco ? `<span class="badge badge-danger ml-2">Abaixo do mínimo (R$ ${v.precoMinimo.toFixed(2)})</span>` : '';
+  return `<li class="text-xs text-gray-700">↳ ${nome} — ${preco} ${alerta}</li>`;
+}).join("");
+
 
       const precosValidos = variantes.map(v => parseFloat(v.preco)).filter(p => !isNaN(p));
       const precoMedio = precosValidos.length
