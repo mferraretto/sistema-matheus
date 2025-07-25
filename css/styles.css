@@ -27,49 +27,15 @@
   --sidebar-width: 250px;
 }
     
-    * {
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      background-color: var(--bg-light);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    
-    h1, h2, h3, h4 {
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .btn, button {
-      font-family: 'Poppins', sans-serif;
-    }
-    
-    /* Layout principal */
-    .main-container {
-      display: flex;
-      min-height: 100vh;
-    }
-    
- /* Sidebar logo */
-    
-    .sidebar-logo {
-      padding: 20px 15px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
   
-    
-    /* Top Navbar */
 .top-navbar {
   position: fixed;
   top: 0;
   right: 0;
   left: 250px;
   height: 70px;
-  background-color: #1C2B36; /* Azul petróleo escuro */
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  background-color: #1c2b36; /* Azul petróleo escuro */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   z-index: 30;
   display: flex;
   align-items: center;
