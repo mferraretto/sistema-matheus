@@ -126,30 +126,7 @@
       padding: 20px;
     }
     
-    /* Botões */
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      padding: 10px 24px;
-      font-weight: 500;
-      font-size: 15px;
-      transition: all 0.2s;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(244, 92, 0, 0.2);
-    }
-    
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(244, 92, 0, 0.3);
-    }
-    
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-    
+ 
     /* Modal */
     .modal { 
       display: none; 
@@ -698,40 +675,7 @@ body.dark .sidebar-link.active {
       flex-wrap: wrap;
     }
     
-    .btn-primary {
-      background: var(--success);
-    }
-    
-    .btn-secondary {
-      background: #3498db;
-    }
-    
-    .btn-danger {
-      background: var(--error);
-    }
-    
-    /* Alertas */
-    .alert {
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px 0;
-      font-weight: 500;
-    }
-    
-    .alert-warning {
-      background: #fef9e7;
-      border-left: 4px solid #f39c12;
-      color: #7d6608;
-    }
-    
-    .alert-success {
-      background: #eafaf1;
-      border-left: 4px solid var(--success);
-      color: #196f3d;
-    }
-    
-    /* Layout Responsivo */
-    .flex-container {
+   
       display: flex;
       gap: 20px;
       flex-wrap: wrap;
@@ -1492,7 +1436,43 @@ body.dark .submenu a:hover {
     .btn-outline:hover {
       background: rgba(244, 92, 0, 0.05);
     }
-    
+      .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: white;
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-success:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background-color: var(--error);
+      color: white;
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-danger:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
     .btn-sm {
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
@@ -2338,63 +2318,7 @@ body.dark .submenu a:hover {
       box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
 
-    /* Buttons */
-    .btn-primary {
-      background-color: var(--primary);
-      color: white;
-      border-radius: 9999px;
-      padding: 8px 20px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
-
-    .btn-outline {
-      border: 1px solid var(--border);
-      border-radius: 9999px;
-      padding: 8px 20px;
-      font-weight: 500;
-      transition: all 0.2s;
-      background: transparent;
-      color: var(--text);
-    }
-
-    .btn-outline:hover {
-      background: var(--bg);
-    }
-
-    .btn-success {
-      background-color: var(--success);
-      color: white;
-      border-radius: 9999px;
-      padding: 8px 20px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-success:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-    }
-
-    .btn-danger {
-      background-color: var(--error);
-      color: white;
-      border-radius: 9999px;
-      padding: 8px 20px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .btn-danger:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-    }
-
+   
     /* Tabs */
     .tabs {
       display: flex;
