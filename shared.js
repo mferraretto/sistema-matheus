@@ -6,6 +6,18 @@
       el.classList.toggle('hidden');
     }
   };
+ // Load sidebar HTML into placeholder
+  window.loadSidebar = function(containerId) {
+    containerId = containerId || 'sidebar-container';
+    return fetch('partials/sidebar.html')
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        var container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = html;
+        }
+      });
+  };
 
   // Initialize dark mode handling
   window.initDarkMode = function(toggleId, darkClass) {
@@ -35,6 +47,8 @@
   };
 
   document.addEventListener('DOMContentLoaded', function() {
-    window.initDarkMode();
+ window.loadSidebar().then(function() {
+      window.initDarkMode();
+    });
   });
 })();
