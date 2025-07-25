@@ -19,42 +19,8 @@
 
 
 <!-- Top Navbar -->
-    <div class="top-navbar">
-      <div class="flex items-center">
-        <button class="mobile-menu-btn mr-4 text-gray-600 hidden">
-          <i class="fas fa-bars text-xl"></i>
-        </button>
-        <h2 class="text-lg font-semibold text-gray-800">Dashboard</h2>
-      </div>
-      
-      <div class="flex items-center space-x-5">
-        <!-- Dark mode toggle -->
-        <button id="loginBtn" onclick="openModal('loginModal')" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition flex items-center">
-          <i class="fas fa-sign-in-alt mr-2"></i> Login
-        </button>
-        
-        <!-- Notificações -->
-        <div class="relative tooltip" data-tooltip="Notificações">
-          <button class="text-gray-600 hover:text-gray-900">
-            <i class="fas fa-bell text-xl"></i>
-          </button>
-          <span class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">3</span>
-        </div>
-        
-        <!-- Perfil do usuário -->
-        <div class="flex items-center space-x-3">
-          <div class="bg-gray-200 border-2 border-dashed rounded-xl w-10 h-10"></div>
-          <div>
-            <span id="currentUser" class="font-medium text-gray-800">Usuário</span>
-            <span class="block text-xs text-gray-500">Administrador</span>
-          </div>
-          <button id="logoutBtn" class="ml-2 text-gray-600 hover:text-gray-900 hidden">
-            <i class="fas fa-sign-out-alt text-xl"></i>
-          </button>
-        </div>
-          
-      </div>
-    </div>
+  <div id="navbar-container"></div>
+
 
     <!-- Conteúdo Principal -->
     <div class="content-wrapper">
