@@ -2269,47 +2269,33 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
     // =============================================
     
-    function processarPlanilha() {
-      const fileInput = document.getElementById('inputExcel');
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        mostrarErro('Por favor, selecione um arquivo antes de processar.');
-        return;
-      }
-      
-      try {
-        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          try {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
-            const sheet = wb.Sheets[wb.SheetNames[0]];
-            const pedidos = XLSX.utils.sheet_to_json(sheet);
-            
-            processarPedidos(pedidos);
-          } catch (error) {
-            mostrarErro(`Erro ao ler o arquivo: ${error.message}`);
-            console.error("Erro ao ler arquivo:", error);
-          } finally {
-            toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-          }
-        };
-        
-        reader.onerror = function() {
-          mostrarErro('Erro ao ler o arquivo. Por favor, tente novamente.');
-          toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-        };
-        
-        reader.readAsArrayBuffer(file);
-      } catch (error) {
-        mostrarErro(`Erro ao processar o arquivo: ${error.message}`);
-        console.error("Erro ao processar arquivo:", error);
-        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-      }
-    }
+   function processarPedidos(pedidos) {
+  const tbody = document.querySelector("#resultado tbody");
+  tbody.innerHTML = "";
+
+  pedidos.forEach(pedido => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${pedido["ID do Pedido"] || ""}</td>
+      <td>${pedido["SKU"] || ""}</td>
+      <td>${pedido["Subtotal"] || 0}</td>
+      <td>${pedido["Reembolso"] || 0}</td>
+      <td>${pedido["Cupom"] || 0}</td>
+      <td>${pedido["Comissão"] || 0}</td>
+      <td>${pedido["Serviço"] || 0}</td>
+      <td>${pedido["Sobra"] || 0}</td>
+      <td>${pedido["% vs Meta"] || ""}</td>
+      <td>${pedido["Status"] || ""}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  aplicarEstiloCritico(); // 🔴 Destaca os pedidos críticos
+  filtrarPorSKU();        // 🔍 Aplica os filtros ativos
+}
+
 
     function processarPedidos(pedidos) {
       const contagem = {};
@@ -2557,28 +2543,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
         }
     }
     
-    function filtrarPorSKU() {
-      const filtro = document.getElementById("filtroSKU").value.toLowerCase();
-      const tipo = document.getElementById("tipoFiltro").value;
-      const linhas = document.querySelectorAll("#resultado tbody tr");
-      
-      linhas.forEach(linha => {
-        const sku = linha.children[1].textContent.toLowerCase();
-
-        if (!filtro) {
-          linha.style.display = "";
-          return;
-        }
-
-        if (tipo === "exata") {
-          linha.style.display = sku === filtro ? "" : "none";
-        } else if (tipo === "comeca") {
-          linha.style.display = sku.startsWith(filtro) ? "" : "none";
-        } else if (tipo === "contem") {
-          linha.style.display = sku.includes(filtro) ? "" : "none";
-        }
-      });
-    }
+   filtrarPor
 
     function limparFiltros() {
       document.getElementById("filtroSKU").value = "";
