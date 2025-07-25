@@ -447,11 +447,13 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
     function showUserArea(user) {
       document.getElementById('currentUser').textContent = user.email;
       
-      // Atualizar avatar com iniciais
+      // Atualizar avatar com iniciais, se o elemento existir
       const nameParts = user.email.split('@')[0].split('.');
       const initials = nameParts.map(part => part[0]).join('').toUpperCase();
-      document.querySelector('.user-avatar').textContent = initials;
-      
+ const avatarEl = document.getElementById('user-avatar');
+      if (avatarEl) {
+        avatarEl.textContent = initials;
+      }      
       // Verifica permissões
       checkPermissions(user);
        // Carrega dados do sistema para o usuário logado
