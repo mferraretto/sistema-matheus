@@ -382,7 +382,7 @@
     }
 
     document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
-    document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('logoutBtn')?.addEventListener('click', logout);
     
     if (window.location.search.includes('login=1')) {
       openModal('loginModal');
