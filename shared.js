@@ -61,6 +61,6 @@
     window.loadSidebar().then(function() {
       window.initDarkMode();
     });
-        window.loadNavbar();
+    window.loadNavbar();
   });
 })();
