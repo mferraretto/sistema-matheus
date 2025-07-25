@@ -688,15 +688,41 @@ body.dark .submenu a {
     </div>
 
     <!-- Filtros -->
-    <div class="grid grid-cols-2 gap-2">
-      <input type="number" id="filtroPrecoMax" oninput="filtrarTabela()" placeholder="Preço até R$" class="border rounded px-3 py-1 text-sm">
-      <input type="number" id="filtroEstoqueMin" oninput="filtrarTabela()" placeholder="Estoque mínimo" class="border rounded px-3 py-1 text-sm">
-      <input type="number" id="filtroConversaoMin" oninput="filtrarTabela()" placeholder="Conversão mínima (%)" class="border rounded px-3 py-1 text-sm">
-      <label class="flex items-center text-sm space-x-2 col-span-2">
-        <input type="checkbox" id="filtroAlertaPreco" onchange="filtrarTabela()">
-        <span>Somente com alerta de preço</span>
-      </label>
-    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Preço até (R$)</label>
+    <input type="number" id="filtroPrecoMax" oninput="filtrarTabela()" 
+           class="w-full border rounded px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+           placeholder="Ex: 99.90">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Estoque mínimo</label>
+    <input type="number" id="filtroEstoqueMin" oninput="filtrarTabela()" 
+           class="w-full border rounded px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+           placeholder="Ex: 10">
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">Conversão mínima (%)</label>
+    <input type="number" id="filtroConversaoMin" oninput="filtrarTabela()" 
+           class="w-full border rounded px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+           placeholder="Ex: 2.5">
+  </div>
+
+  <div class="flex items-center space-x-2 sm:col-span-2 lg:col-span-1">
+    <input type="checkbox" id="filtroAlertaPreco" onchange="filtrarTabela()" 
+           class="form-checkbox h-4 w-4 text-orange-500 focus:ring-orange-500">
+    <label for="filtroAlertaPreco" class="text-sm text-gray-700">Somente com alerta de preço</label>
+  </div>
+
+  <div class="flex items-center space-x-2 sm:col-span-2 lg:col-span-1">
+    <input type="checkbox" id="filtroSkuInvalido" onchange="filtrarTabela()" 
+           class="form-checkbox h-4 w-4 text-orange-500 focus:ring-orange-500">
+    <label for="filtroSkuInvalido" class="text-sm text-gray-700">Somente com SKU inválido</label>
+  </div>
+</div>
+
   </div>
 
   <!-- Tabela -->
@@ -1152,30 +1178,36 @@ window.carregarAnuncios = async function () {
       const snap = await getDocs(variantesRef);
       const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
 
-        // 🔍 Verificar se alguma variação está abaixo do preço mínimo na coleção products
-  for (const v of variantes) {
-    const sku = v.skuVariante || data.skuVariante || data.sku;
-    if (!sku) continue;
+       
+// 🔍 Verificar se alguma variação está abaixo do preço mínimo ou tem SKU não cadastrado
+for (const v of variantes) {
+  const sku = v.skuVariante || data.skuVariante || data.sku;
+  if (!sku) continue;
 
-    try {
-      const refProd = collection(db, "products");
-      const qProd = query(refProd, where("sku", "==", sku));
-      const snapshotProd = await getDocs(qProd);
+  try {
+    const refProd = collection(db, "products");
+    const qProd = query(refProd, where("sku", "==", sku));
+    const snapshotProd = await getDocs(qProd);
 
-      if (!snapshotProd.empty) {
-        const docProd = snapshotProd.docs[0].data();
-        const precoMinimo = parseFloat(docProd.precoMinimo || 0);
-        const precoVar = parseFloat(v.preco || 0);
+    if (!snapshotProd.empty) {
+      const docProd = snapshotProd.docs[0].data();
+      const precoMinimo = parseFloat(docProd.precoMinimo || 0);
+      const precoVar = parseFloat(v.preco || 0);
 
-        if (precoVar > 0 && precoVar < precoMinimo) {
-          v.alertaPreco = true;
-          v.precoMinimo = precoMinimo;
-        }
+      if (precoVar > 0 && precoVar < precoMinimo) {
+        v.alertaPreco = true;
+        v.precoMinimo = precoMinimo;
       }
-    } catch (e) {
-      console.warn(`Erro ao buscar SKU ${sku} em products:`, e);
+    } else {
+      // 🚨 SKU não encontrado na base de produtos
+      v.skuNaoEncontrado = true;
     }
+  } catch (e) {
+    console.warn(`Erro ao buscar SKU ${sku} em products:`, e);
+    v.skuNaoEncontrado = true; // fallback de segurança
   }
+}
+
 
 
       // 🔄 Buscar últimos 7 dias da subcoleção desempenho
@@ -1219,12 +1251,21 @@ window.carregarAnuncios = async function () {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50";
 
-      let variacoesHTML = variantes.map(v => {
+     let variacoesHTML = variantes.map(v => {
   const nome = v.nomeVariante || v.skuVariante || v.varianteId;
   const preco = v.preco ? `R$ ${parseFloat(v.preco).toFixed(2)}` : '';
-  const alerta = v.alertaPreco ? `<span class="badge badge-danger ml-2">Abaixo do mínimo (R$ ${v.precoMinimo.toFixed(2)})</span>` : '';
-  return `<li class="text-xs text-gray-700">↳ ${nome} — ${preco} ${alerta}</li>`;
+
+  const alertaPreco = v.alertaPreco 
+    ? `<span class="badge badge-danger ml-2">Abaixo do mínimo (R$ ${v.precoMinimo.toFixed(2)})</span>` 
+    : '';
+
+  const alertaSku = v.skuNaoEncontrado 
+    ? `<span class="badge badge-warning ml-2">SKU não cadastrado</span>` 
+    : '';
+
+  return `<li class="text-xs text-gray-700">↳ ${nome} — ${preco} ${alertaPreco} ${alertaSku}</li>`;
 }).join("");
+
 
 
       const precosValidos = variantes.map(v => parseFloat(v.preco)).filter(p => !isNaN(p));
@@ -1270,6 +1311,8 @@ tr.setAttribute("data-preco", precoMedio);
 tr.setAttribute("data-estoque", estoqueTotal);
 tr.setAttribute("data-conversao", conversao);
 tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
+      tr.setAttribute("data-skuinvalido", variantes.some(v => v.skuNaoEncontrado) ? "1" : "0");
+
 
       tbody.appendChild(tr);
     } // ✅ FECHAMENTO DO `for`
@@ -1948,12 +1991,13 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     const ativa = document.querySelector(".tab-button.active")?.getAttribute("data-tab");
     if (ativa) document.getElementById(ativa).style.display = "block";
   });
-    window.filtrarTabela = function () {
+  window.filtrarTabela = function () {
   const busca = document.getElementById("campoBusca").value.toLowerCase();
   const precoMax = parseFloat(document.getElementById("filtroPrecoMax").value);
   const estoqueMin = parseInt(document.getElementById("filtroEstoqueMin").value);
   const conversaoMin = parseFloat(document.getElementById("filtroConversaoMin").value);
   const alertaPreco = document.getElementById("filtroAlertaPreco").checked;
+  const skuInvalido = document.getElementById("filtroSkuInvalido")?.checked || false;
 
   document.querySelectorAll("#tabelaAnuncios tbody tr").forEach(tr => {
     const nome = tr.getAttribute("data-nome") || "";
@@ -1963,16 +2007,19 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     const estoque = parseInt(tr.getAttribute("data-estoque") || "0");
     const conversao = parseFloat(tr.getAttribute("data-conversao") || "0");
     const alerta = tr.getAttribute("data-alerta") === "1";
+    const skuInvalidoAttr = tr.getAttribute("data-skuinvalido") === "1";
 
     const matchBusca = nome.includes(busca) || sku.includes(busca) || id.includes(busca);
     const matchPreco = isNaN(precoMax) || preco <= precoMax;
     const matchEstoque = isNaN(estoqueMin) || estoque >= estoqueMin;
     const matchConversao = isNaN(conversaoMin) || conversao >= conversaoMin;
     const matchAlerta = !alertaPreco || alerta;
+    const matchSkuInvalido = !skuInvalido || skuInvalidoAttr;
 
-    tr.style.display = (matchBusca && matchPreco && matchEstoque && matchConversao && matchAlerta) ? "" : "none";
+    tr.style.display = (matchBusca && matchPreco && matchEstoque && matchConversao && matchAlerta && matchSkuInvalido) ? "" : "none";
   });
 };
+
 
 </script>
 <script src="shared.js"></script>
