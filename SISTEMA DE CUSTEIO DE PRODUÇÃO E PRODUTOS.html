@@ -36,24 +36,27 @@
       if (!user) {
         window.location.href = 'index.html?login=1';
       } else {
-        currentUser = user;
-        listarChapas().then(preencherSelectChapas);
-        carregarCustosIndiretos();
-        listarCalculos();
-        
-        // Atualizar informações do usuário na navbar
-       const avatarEl = document.getElementById('user-avatar');
-        const userSpan = document.getElementById('currentUser');
-        if (avatarEl) {
-          const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-         avatarEl.textContent = initials;
-        }
-        if (userSpan) {
-          userSpan.textContent = user.email || 'Usuário';
-        }
-        document.getElementById('sidebarToggle').addEventListener('click', () => {
-      document.querySelector('.sidebar').classList.toggle('active');
-    });
+        document.addEventListener('navbarLoaded', function init() {
+          document.removeEventListener('navbarLoaded', init);
+          currentUser = user;
+          listarChapas().then(preencherSelectChapas);
+          carregarCustosIndiretos();
+          listarCalculos();
+
+          // Atualizar informações do usuário na navbar
+         const avatarEl = document.getElementById('user-avatar');
+          const userSpan = document.getElementById('currentUser');
+          if (avatarEl) {
+            const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
+           avatarEl.textContent = initials;
+          }
+          if (userSpan) {
+            userSpan.textContent = user.email || 'Usuário';
+          }
+          document.getElementById('sidebarToggle').addEventListener('click', () => {
+        document.querySelector('.sidebar').classList.toggle('active');
+      });
+        });
       }
     });
   </script>
