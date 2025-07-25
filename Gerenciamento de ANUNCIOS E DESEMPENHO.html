@@ -1074,19 +1074,24 @@ await setDoc(ref, limparUndefined(dadosCompletos));
         atualizados++;
       }
 
-      // 🔸 Salvar variações
-      for (const [varianteId, variante] of Object.entries(variantes)) {
-        const varianteRef = doc(db, `anuncios/${id}/variantes/${varianteId}`);
+  // 🔸 Salvar variações
+for (const [varianteId, variante] of Object.entries(variantes)) {
+  const varianteRef = doc(db, `anuncios/${id}/variantes/${varianteId}`);
 
-        // Se for planilha de desempenho, salvar em subcoleção "desempenho"
-        if (variante.dataReferencia) {
-          const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${variante.dataReferencia}`);
-          const { dataReferencia, ...metricas } = variante;
-await setDoc(desempenhoRef, limparUndefined(metricas));
-        } else {
-await setDoc(varianteRef, limparUndefined(variante));
-        }
-      }
+  if (variante.dataReferencia) {
+    // Só salva desempenho se o anúncio já existir
+    if (snapshot.exists()) {
+      const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${variante.dataReferencia}`);
+      const { dataReferencia, ...metricas } = variante;
+      await setDoc(desempenhoRef, limparUndefined(metricas));
+    } else {
+      console.warn(`❌ Desempenho ignorado - anúncio ${id} não existe no Firebase.`);
+    }
+  } else {
+    await setDoc(varianteRef, limparUndefined(variante));
+  }
+}
+
     }
 
     window.produtos = {};
