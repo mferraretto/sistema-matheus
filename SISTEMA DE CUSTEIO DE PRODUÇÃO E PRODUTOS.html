@@ -1447,23 +1447,16 @@
       });
     };
   </script>
-  <script>
-  document.getElementById('sidebar-container').innerHTML = `
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <h2>🧮 Sistema</h2>
-      </div>
-      <ul class="sidebar-menu">
-        <li><a href="#mdf" onclick="showTab('mdf')"><i class="fas fa-tree"></i> Custo MDF</a></li>
-        <li><a href="#mao" onclick="showTab('mao')"><i class="fas fa-user-cog"></i> Mão de Obra</a></li>
-        <li><a href="#embalagem" onclick="showTab('embalagem')"><i class="fas fa-box"></i> Embalagem</a></li>
-        <li><a href="#cadastroChapas" onclick="showTab('cadastroChapas')"><i class="fas fa-clipboard-list"></i> Chapas MDF</a></li>
-        <li><a href="#custosIndiretos" onclick="showTab('custosIndiretos')"><i class="fas fa-industry"></i> Indiretos</a></li>
-        <li><a href="#resumoFinal" onclick="showTab('resumoFinal')"><i class="fas fa-chart-pie"></i> Resumo</a></li>
-        <li><a href="#precificacao" onclick="showTab('precificacao')"><i class="fas fa-dollar-sign"></i> Precificação</a></li>
-      </ul>
-    </div>
-  `;
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetch('partials/sidebar.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('sidebar-container').innerHTML = html;
+      })
+      .catch(err => console.error("Erro ao carregar o sidebar:", err));
+  });
 </script>
+
 </body>
 </html>
