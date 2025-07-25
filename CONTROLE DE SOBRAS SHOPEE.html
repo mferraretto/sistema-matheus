@@ -1638,6 +1638,7 @@ body.dark .submenu a:hover {
         document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
         document.getElementById('filtroStatus').addEventListener('change', filtrarPorSKU);
 document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
+        document.getElementById('btnLimparFiltros')?.addEventListener('click', limparFiltros);
       });
       
       // Configurações importantes para a conexão
@@ -3299,17 +3300,28 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
       XLSX.writeFile(wb, "faturamento.xlsx");
     }
-    function aplicarEstiloCritico() {
+   function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
-    linhas.forEach(linha => {
-      const status = linha.querySelector("td:nth-child(10)")?.textContent.trim().toLowerCase();
-      if (status === "crítico") {
-        linha.style.backgroundColor = "#ffebee"; // fundo vermelho claro
-        linha.style.color = "#b71c1c"; // texto vermelho escuro
-        linha.style.fontWeight = "bold";
-      }
-    });
+
+  linhas.forEach(linha => {
+    const statusEl = linha.querySelector(".status-only");
+    if (!statusEl) return;
+
+    const status = statusEl.textContent.trim().toLowerCase();
+
+    if (status === "crítico") {
+      linha.style.backgroundColor = "#ffebee"; // fundo vermelho claro
+      linha.style.color = "#b71c1c";            // texto vermelho escuro
+      linha.style.fontWeight = "bold";
+    } else {
+      // Remove estilo se não for crítico (útil em reaplicações de filtro)
+      linha.style.backgroundColor = "";
+      linha.style.color = "";
+      linha.style.fontWeight = "";
+    }
+  });
 }
+
 
 function filtrarPorSKU() {
   const tipoFiltro = document.getElementById('tipoFiltro').value;
