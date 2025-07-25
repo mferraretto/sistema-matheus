@@ -27,6 +27,8 @@
         var container = document.getElementById(containerId);
         if (container) {
           container.innerHTML = html;
+            var event = new CustomEvent('navbarLoaded', { detail: { containerId: containerId } });
+          document.dispatchEvent(event);
         }
       });
   };
