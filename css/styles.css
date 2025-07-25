@@ -8,6 +8,8 @@
       --bg-light: #F5F7FA;
        --border: #E5E7EB;
       --card: #FFFFFF;
+    --sidebar-width: 250px;
+
     }
     
     * {
