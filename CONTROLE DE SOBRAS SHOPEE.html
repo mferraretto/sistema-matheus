@@ -1151,10 +1151,6 @@ body.dark .submenu a:hover {
 .hidden {
   display: none;
 }
-.meta-label {
-  font-size: 0.75rem;
-  color: #888;
-}
 
   </style>
 </head>
@@ -2272,7 +2268,8 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     // =============================================
     // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
     // =============================================
-     function processarPlanilha() {
+    
+    function processarPlanilha() {
       const fileInput = document.getElementById('inputExcel');
       const file = fileInput.files[0];
       
@@ -2314,38 +2311,6 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
       }
     }
 
-
-   function processarPedidos(pedidos) {
-  const tbody = document.querySelector("#resultado tbody");
-  tbody.innerHTML = "";
-
-  pedidos.forEach(pedido => {
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td>${pedido["ID do Pedido"] || ""}</td>
-      <td>${pedido["SKU"] || ""}</td>
-      <td>${pedido["Subtotal"] || 0}</td>
-      <td>${pedido["Reembolso"] || 0}</td>
-      <td>${pedido["Cupom"] || 0}</td>
-      <td>${pedido["Comissão"] || 0}</td>
-      <td>${pedido["Serviço"] || 0}</td>
-      <td>${pedido["Sobra"] || 0}</td>
-     <td>
-  ${pedido["% vs Meta"] || ""}
-  <div class="meta-label">Meta: R$ ${pedido["Meta"] || "0,00"}</div>
-</td>
-<td class="status-only">${pedido["Status"] || ""}</td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-
-  aplicarEstiloCritico(); // 🔴 Destaca os pedidos críticos
-  filtrarPorSKU();        // 🔍 Aplica os filtros ativos
-}
-
-
     function processarPedidos(pedidos) {
       const contagem = {};
       pedidos.forEach(p => {
@@ -2364,7 +2329,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         if (!id || contagem[id] > 1) return;
 
         const sku = p['Número de referência SKU'] || '';
-const status = linha.querySelector(".status-only")?.textContent.trim();
+        const status = (p['Status do pedido'] || '').toLowerCase();
         if (!sku || status.includes('cancelado') || status.includes('não pago')) return;
 
         const subtotal = parseFloat(p['Subtotal do produto']) || 0;
@@ -2592,7 +2557,28 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
         }
     }
     
-   filtrarPor
+    function filtrarPorSKU() {
+      const filtro = document.getElementById("filtroSKU").value.toLowerCase();
+      const tipo = document.getElementById("tipoFiltro").value;
+      const linhas = document.querySelectorAll("#resultado tbody tr");
+      
+      linhas.forEach(linha => {
+        const sku = linha.children[1].textContent.toLowerCase();
+
+        if (!filtro) {
+          linha.style.display = "";
+          return;
+        }
+
+        if (tipo === "exata") {
+          linha.style.display = sku === filtro ? "" : "none";
+        } else if (tipo === "comeca") {
+          linha.style.display = sku.startsWith(filtro) ? "" : "none";
+        } else if (tipo === "contem") {
+          linha.style.display = sku.includes(filtro) ? "" : "none";
+        }
+      });
+    }
 
     function limparFiltros() {
       document.getElementById("filtroSKU").value = "";
