@@ -608,6 +608,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
 
+  // 🔄 Carregar abas HTML dinamicamente
   Promise.all(
     tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
       document.getElementById(t).innerHTML = h;
@@ -617,17 +618,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
     showTab(activeTab);
 
+    // 🔁 Espera os campos carregarem para adicionar listeners
     const campos = document.querySelectorAll('#custosIndiretos .indireto');
     campos.forEach(campo => {
       campo.addEventListener('input', salvarCustosIndiretos);
     });
 
-    listarChapas().then(preencherSelectChapas);
-    carregarCustosIndiretos();
-    listarCalculos();
+    // ⚠️ NÃO chame nada aqui que dependa de currentUser
   });
 
-  // Firebase init
+  // 🔐 Firebase Init
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
@@ -636,20 +636,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUser = null;
   let chapas = [];
 
+  // 🔒 Autenticação do usuário
   firebase.auth().onAuthStateChanged(user => {
     if (!user) {
       window.location.href = 'index.html?login=1';
     } else {
       currentUser = user;
+
+      // ✅ Somente agora você pode chamar essas funções
       listarChapas().then(preencherSelectChapas);
       carregarCustosIndiretos();
       listarCalculos();
 
-      // Atualizar informações do usuário na navbar
+      // Atualiza avatar e nome
       setTimeout(() => {
         const userAvatar = document.getElementById('user-avatar');
         const userName = document.getElementById('user-name');
-        if (userAvatar && userName && user) {
+        if (userAvatar && userName) {
           const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
           userAvatar.textContent = initials;
           userName.textContent = user.email || 'Usuário';
@@ -658,6 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
 
     // Funções principais do sistema
     function showTab(id) {
