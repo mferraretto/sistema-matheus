@@ -3301,14 +3301,14 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
     }
     function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
-  linhas.forEach(linha => {
-    const status = linha.querySelector("td:nth-child(10)")?.textContent.trim();
-    if (status === "CRÍTICO") {
-      linha.style.backgroundColor = "#ffebee"; // fundo vermelho claro
-      linha.style.color = "#b71c1c"; // texto vermelho escuro
-      linha.style.fontWeight = "bold";
-    }
-  });
+    linhas.forEach(linha => {
+      const status = linha.querySelector("td:nth-child(10)")?.textContent.trim().toLowerCase();
+      if (status === "crítico") {
+        linha.style.backgroundColor = "#ffebee"; // fundo vermelho claro
+        linha.style.color = "#b71c1c"; // texto vermelho escuro
+        linha.style.fontWeight = "bold";
+      }
+    });
 }
 
 function filtrarPorSKU() {
