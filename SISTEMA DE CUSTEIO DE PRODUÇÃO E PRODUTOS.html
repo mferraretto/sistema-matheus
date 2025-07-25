@@ -611,53 +611,60 @@
   </div>
 
   <script>
-     // Inicialização com carregamento dinâmico das abas
-    document.addEventListener('DOMContentLoaded', () => {
-    const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
-      Promise.all(
-        tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
-          document.getElementById(t).innerHTML = h;
-        }))
-      ).then(() => {
-        const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-        const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
-        showTab(activeTab);
-        const campos = document.querySelectorAll('#custosIndiretos .indireto');
-        campos.forEach(campo => {
-          campo.addEventListener('input', salvarCustosIndiretos);
-        });
-        listarChapas().then(preencherSelectChapas);
-        carregarCustosIndiretos();
-        listarCalculos();
-      });
-        });
-  
-  
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    let currentUser = null;
-    let chapas = [];
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = 'index.html?login=1';
-      } else {
-        currentUser = user;
-        listarChapas().then(preencherSelectChapas);
-        carregarCustosIndiretos();
-        listarCalculos();
-        
-        // Atualizar informações do usuário na navbar
+document.addEventListener('DOMContentLoaded', () => {
+  const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
+
+  Promise.all(
+    tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
+      document.getElementById(t).innerHTML = h;
+    }))
+  ).then(() => {
+    const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+    const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
+    showTab(activeTab);
+
+    const campos = document.querySelectorAll('#custosIndiretos .indireto');
+    campos.forEach(campo => {
+      campo.addEventListener('input', salvarCustosIndiretos);
+    });
+
+    listarChapas().then(preencherSelectChapas);
+    carregarCustosIndiretos();
+    listarCalculos();
+  });
+
+  // Firebase init
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+
+  let currentUser = null;
+  let chapas = [];
+
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = 'index.html?login=1';
+    } else {
+      currentUser = user;
+      listarChapas().then(preencherSelectChapas);
+      carregarCustosIndiretos();
+      listarCalculos();
+
+      // Atualizar informações do usuário na navbar
+      setTimeout(() => {
         const userAvatar = document.getElementById('user-avatar');
         const userName = document.getElementById('user-name');
-        if (userAvatar && userName) {
+        if (userAvatar && userName && user) {
           const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
           userAvatar.textContent = initials;
           userName.textContent = user.email || 'Usuário';
         }
-      }
-    });
+      }, 500);
+    }
+  });
+});
+
     // Funções principais do sistema
     function showTab(id) {
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
