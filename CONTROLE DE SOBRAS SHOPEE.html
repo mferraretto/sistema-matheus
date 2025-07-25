@@ -2272,7 +2272,49 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     // =============================================
     // FUNÇÕES DE PROCESSAMENTO DE PEDIDOS
     // =============================================
-    
+     function processarPlanilha() {
+      const fileInput = document.getElementById('inputExcel');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        mostrarErro('Por favor, selecione um arquivo antes de processar.');
+        return;
+      }
+      
+      try {
+        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const pedidos = XLSX.utils.sheet_to_json(sheet);
+            
+            processarPedidos(pedidos);
+          } catch (error) {
+            mostrarErro(`Erro ao ler o arquivo: ${error.message}`);
+            console.error("Erro ao ler arquivo:", error);
+          } finally {
+            toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+          }
+        };
+        
+        reader.onerror = function() {
+          mostrarErro('Erro ao ler o arquivo. Por favor, tente novamente.');
+          toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+        };
+        
+        reader.readAsArrayBuffer(file);
+      } catch (error) {
+        mostrarErro(`Erro ao processar o arquivo: ${error.message}`);
+        console.error("Erro ao processar arquivo:", error);
+        toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
+      }
+    }
+
+
    function processarPedidos(pedidos) {
   const tbody = document.querySelector("#resultado tbody");
   tbody.innerHTML = "";
