@@ -1001,49 +1001,7 @@ body.dark .submenu a:hover {
       font-size: 1.1rem;
     }
     
-   /* Abas */
-    .tab-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 25px;
-    }
-    
-    .tab-buttons button {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .tab-buttons button:hover {
-      background: var(--hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    
-    .tab {
-      display: none;
-      animation: fadeIn 0.5s ease;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .tab.active {
-      display: block;
-    }
+
     
     /* Formulários e Inputs */
     input, select {
@@ -1088,7 +1046,22 @@ body.dark .submenu a:hover {
       box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     
-    
+       .navbar {
+        left: 0;
+      }
+      
+      .tab-buttons {
+        flex-direction: column;
+      }
+      
+      .tab-buttons button {
+        width: 100%;
+      }
+      
+      .flex-container {
+        flex-direction: column;
+      }
+    }
     /* Toggle para menu mobile */
     .mobile-menu-btn {
       display: none;
