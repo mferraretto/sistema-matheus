@@ -42,12 +42,14 @@
         listarCalculos();
         
         // Atualizar informações do usuário na navbar
-        const userAvatar = document.getElementById('user-avatar');
-        const userName = document.getElementById('user-name');
-        if (userAvatar && userName) {
+       const avatarEl = document.getElementById('user-avatar');
+        const userSpan = document.getElementById('currentUser');
+        if (avatarEl) {
           const initials = user.email ? user.email.charAt(0).toUpperCase() : 'U';
-          userAvatar.textContent = initials;
-          userName.textContent = user.email || 'Usuário';
+         avatarEl.textContent = initials;
+        }
+        if (userSpan) {
+          userSpan.textContent = user.email || 'Usuário';
         }
         document.getElementById('sidebarToggle').addEventListener('click', () => {
       document.querySelector('.sidebar').classList.toggle('active');
@@ -930,14 +932,11 @@
   </script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    fetch('partials/sidebar.html')
-      .then(res => res.text())
-      .then(html => {
-        document.getElementById('sidebar-container').innerHTML = html;
-      })
-      .catch(err => console.error("Erro ao carregar o sidebar:", err));
+    window.loadSidebar();
+    window.loadNavbar();
   });
 </script>
+<script src="shared.js"></script>
 
 </body>
 </html>
