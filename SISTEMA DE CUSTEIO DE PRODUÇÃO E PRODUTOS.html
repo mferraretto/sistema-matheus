@@ -604,19 +604,19 @@
       </div>
 
 
-      <div id="mdf" class="tab active"></div>
+      <div id="mdf" class="tab-content active"></div>
 
-      <div id="mao" class="tab"></div>
+      <div id="mao" class="tab-content"></div>
 
-      <div id="embalagem" class="tab"></div>
+      <div id="embalagem" class="tab-content"></div>
       
-      <div id="cadastroChapas" class="tab"></div>
+      <div id="cadastroChapas" class="tab-content"></div>
 
-      <div id="custosIndiretos" class="tab"></div>
+      <div id="custosIndiretos" class="tab-content"></div>
       
-      <div id="resumoFinal" class="tab"></div>
+      <div id="resumoFinal" class="tab-content"></div>
       
-      <div id="precificacao" class="tab"></div>
+      <div id="precificacao" class="tab-content"></div>
 
     </div>
     
@@ -626,6 +626,22 @@
   </div>
 
   <script>
+     // Inicialização com carregamento dinâmico das abas
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
+      Promise.all(tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => { document.getElementById(t).innerHTML = h; }))).then(() => {
+        const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
+        const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
+        showTab(activeTab);
+        const campos = document.querySelectorAll('#custosIndiretos .indireto');
+        campos.forEach(campo => {
+          campo.addEventListener('input', salvarCustosIndiretos);
+        });
+        listarChapas().then(preencherSelectChapas);
+        carregarCustosIndiretos();
+        listarCalculos();
+      });
+        });
     // Funções principais do sistema
     function showTab(id) {
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -1034,26 +1050,7 @@
       });
     }
     
-  // Inicialização com carregamento dinâmico das abas
-    document.addEventListener('DOMContentLoaded', () => {
-      const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
-      Promise.all(
-        tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
-          document.getElementById(t).innerHTML = h;
-        }))
-      ).then(() => {
-        const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
-        const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
-        showTab(activeTab);
-        const campos = document.querySelectorAll('#custosIndiretos .indireto');
-        campos.forEach(campo => {
-          campo.addEventListener('input', salvarCustosIndiretos);
-        });
-        listarChapas().then(preencherSelectChapas);
-        carregarCustosIndiretos();
-        listarCalculos();
-      });
-        });
+ 
   </script>
 </body>
 </html>
