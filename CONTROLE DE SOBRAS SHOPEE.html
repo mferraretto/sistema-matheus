@@ -1335,13 +1335,16 @@ body.dark .submenu a:hover {
               <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
             </div>
             <div class="form-group">
-  <select id="filtroStatus" class="form-control">
-    <option value="">Todos os Status</option>
-    <option value="CRÍTICO">Crítico</option>
-    <option value="OK">OK</option>
-    <option value="Atenção">Atenção</option>
-  </select>
-</div>
+   <select id="filtroStatus" class="form-control">
+      <option value="">Todos os Status</option>
+      <option value="Crítico">Crítico</option>
+      <option value="Atenção">Atenção</option>
+      <option value="Bom">Bom</option>
+      <option value="Normal">Normal</option>
+      <option value="Sem meta">Sem meta</option>
+    </select>
+  </div>
+
 
             <button onclick="limparFiltros()" class="btn btn-outline">
               <i class="fas fa-times"></i> Limpar Filtros
@@ -2557,29 +2560,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
         }
     }
     
-    function filtrarPorSKU() {
-      const filtro = document.getElementById("filtroSKU").value.toLowerCase();
-      const tipo = document.getElementById("tipoFiltro").value;
-      const linhas = document.querySelectorAll("#resultado tbody tr");
-      
-      linhas.forEach(linha => {
-        const sku = linha.children[1].textContent.toLowerCase();
-
-        if (!filtro) {
-          linha.style.display = "";
-          return;
-        }
-
-        if (tipo === "exata") {
-          linha.style.display = sku === filtro ? "" : "none";
-        } else if (tipo === "comeca") {
-          linha.style.display = sku.startsWith(filtro) ? "" : "none";
-        } else if (tipo === "contem") {
-          linha.style.display = sku.includes(filtro) ? "" : "none";
-        }
-      });
-    }
-
+    
     function limparFiltros() {
       document.getElementById("filtroSKU").value = "";
       filtrarPorSKU();
@@ -3331,13 +3312,13 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
 function filtrarPorSKU() {
   const tipoFiltro = document.getElementById('tipoFiltro').value;
   const textoSKU = document.getElementById('filtroSKU').value.toLowerCase();
-  const filtroStatus = document.getElementById('filtroStatus').value;
+  const filtroStatus = document.getElementById('filtroStatus').value.toLowerCase();
 
   const linhas = document.querySelectorAll("#resultado tbody tr");
 
   linhas.forEach(linha => {
     const sku = linha.children[1].textContent.toLowerCase();
-    const status = linha.children[9].textContent.trim();
+    const status = linha.children[9].textContent.trim().toLowerCase();
 
     let corresponde = false;
 
