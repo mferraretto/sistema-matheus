@@ -1151,6 +1151,10 @@ body.dark .submenu a:hover {
 .hidden {
   display: none;
 }
+.meta-label {
+  font-size: 0.75rem;
+  color: #888;
+}
 
   </style>
 </head>
@@ -2285,8 +2289,11 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
       <td>${pedido["Comissão"] || 0}</td>
       <td>${pedido["Serviço"] || 0}</td>
       <td>${pedido["Sobra"] || 0}</td>
-      <td>${pedido["% vs Meta"] || ""}</td>
-      <td>${pedido["Status"] || ""}</td>
+     <td>
+  ${pedido["% vs Meta"] || ""}
+  <div class="meta-label">Meta: R$ ${pedido["Meta"] || "0,00"}</div>
+</td>
+<td class="status-only">${pedido["Status"] || ""}</td>
     `;
 
     tbody.appendChild(tr);
@@ -2315,7 +2322,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         if (!id || contagem[id] > 1) return;
 
         const sku = p['Número de referência SKU'] || '';
-        const status = (p['Status do pedido'] || '').toLowerCase();
+const status = linha.querySelector(".status-only")?.textContent.trim();
         if (!sku || status.includes('cancelado') || status.includes('não pago')) return;
 
         const subtotal = parseFloat(p['Subtotal do produto']) || 0;
