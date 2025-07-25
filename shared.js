@@ -18,7 +18,18 @@
         }
       });
   };
-
+// Load navbar HTML into placeholder
+  window.loadNavbar = function(containerId) {
+    containerId = containerId || 'navbar-container';
+    return fetch('partials/navbar.html')
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        var container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = html;
+        }
+      });
+  };
   // Initialize dark mode handling
   window.initDarkMode = function(toggleId, darkClass) {
     toggleId = toggleId || 'darkModeToggle';
@@ -47,8 +58,9 @@
   };
 
   document.addEventListener('DOMContentLoaded', function() {
- window.loadSidebar().then(function() {
+    window.loadSidebar().then(function() {
       window.initDarkMode();
     });
+        window.loadNavbar();
   });
 })();
