@@ -613,8 +613,12 @@
   <script>
      // Inicialização com carregamento dinâmico das abas
     document.addEventListener('DOMContentLoaded', () => {
-      const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
-      Promise.all(tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => { document.getElementById(t).innerHTML = h; }))).then(() => {
+    const tabs = ['mdf','mao','embalagem','cadastroChapas','custosIndiretos','resumoFinal','precificacao'];
+      Promise.all(
+        tabs.map(t => fetch(`custeio-tabs/${t}.html`).then(r => r.text()).then(h => {
+          document.getElementById(t).innerHTML = h;
+        }))
+      ).then(() => {
         const hashTab = window.location.hash ? window.location.hash.substring(1) : null;
         const activeTab = hashTab || localStorage.getItem('activeTab') || 'mdf';
         showTab(activeTab);
