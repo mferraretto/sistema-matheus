@@ -333,7 +333,7 @@
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
             <div class="flex items-center gap-2">
               <label for="filtroMesRegistro" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-1"
+              <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-2"
                 onchange="carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')" />
             </div>
 <button onclick="exportarFaturamentoExcel()">Exportar</button>
@@ -354,7 +354,7 @@
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
             <div class="flex items-center gap-2">
               <label for="filtroMesVendas" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-1"
+              <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-2"
                 onchange="carregarControleVendas()" />
             </div>
           </div>
@@ -1780,7 +1780,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
         });
 
         const card = document.createElement("div");
-        card.className = "bg-white rounded-2xl shadow-lg p-5 border border-gray-200 hover:shadow-xl transition";
+        card.className = "bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition";
 
         card.innerHTML = `
           <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
