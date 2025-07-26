@@ -385,7 +385,7 @@ input,
 select {
   border: 1px solid var(--border);
   transition: .3s;
-  font-family: Inter,sans-serif
+  font-family: Montserrat,sans-serif
 }
 label {
   display: block;
@@ -681,7 +681,7 @@ tr:hover {
     border-bottom: 3px solid var(--primary)
   }
   h2 {
-    font-family: Poppins,sans-serif;
+    font-family: Montserrat,sans-serif;
     color: var(--secondary);
     margin-top: 30px;
     padding-bottom: 10px;
@@ -689,14 +689,14 @@ tr:hover {
     font-size: 1.6rem
   }
   h3 {
-    font-family: Poppins,sans-serif;
+    font-family: Montserrat,sans-serif;
     color: var(--secondary);
     margin-top: 25px;
     margin-bottom: 15px;
     font-size: 1.3rem
   }
   h4 {
-    font-family: Poppins,sans-serif;
+    font-family: Montserrat,sans-serif;
     color: var(--secondary);
     margin-top: 0;
     margin-bottom: 10px;
@@ -730,7 +730,7 @@ tr:hover {
     border: none;
     padding: 12px 25px;
     border-radius: 30px;
-    font-family: Poppins,sans-serif;
+    font-family: Inter,sans-serif;
     font-weight: 500;
     cursor: pointer;
     transition: .3s;
@@ -777,12 +777,12 @@ tr:hover {
   padding: 1.5rem 1.5rem 1rem;
   border-bottom: 1px solid rgba(255,255,255,.1)
 }
-.logo {
+  .logo {
   display: flex;
   align-items: center;
   font-size: 1.3rem;
   font-weight: 600;
-  font-family: Poppins,sans-serif;
+    font-family: Montserrat,sans-serif;
   gap: 10px
 }
 .logo i {
@@ -792,14 +792,14 @@ tr:hover {
 .nav-menu {
   padding: 1.5rem 0
 }
-.nav-item {
+  .nav-item {
   padding: .8rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 12px;
   transition: var(--transition);
   cursor: pointer;
-  font-family: Poppins,sans-serif;
+    font-family: Inter,sans-serif;
   font-size: .95rem
 }
 .nav-item.active,
@@ -924,7 +924,7 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: Poppins,sans-serif
+  font-family: Inter,sans-serif
 }
 .tab-btn.active,
 .tab-btn:hover {
@@ -956,7 +956,7 @@ tr:hover {
   color: var(--secondary);
   font-weight: 600;
   font-size: 1.1rem;
-  font-family: Poppins,sans-serif
+  font-family: Inter,sans-serif
 }
 .card-header i {
   font-size: 1.3rem;
@@ -1001,7 +1001,7 @@ tr:hover {
   font-weight: 700;
   margin-bottom: .3rem;
   color: var(--secondary);
-  font-family: Poppins,sans-serif
+  font-family: Montserrat,sans-serif
 }
 .card-metric-novo .valor-principal {
   font-size: 1.7rem;
@@ -1146,7 +1146,7 @@ th {
   text-align: center;
   font-weight: 600;
   border: none;
-  font-family: Poppins,sans-serif
+  font-family: Inter,sans-serif
 }
 th:first-child {
   border-radius: 10px 0 0
@@ -1213,7 +1213,7 @@ tr:hover td {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--secondary);
-  font-family: Poppins,sans-serif
+  font-family: Montserrat,sans-serif
 }
 .history-item {
   padding: 1rem;
@@ -1608,7 +1608,7 @@ h5 {
 }
 .btn,
 button {
-  font-family: Poppins,sans-serif;
+  font-family: Inter,sans-serif;
   font-weight: 500
 }
 .sidebar {
