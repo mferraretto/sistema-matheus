@@ -2,15 +2,15 @@
   <h2 class="text-2xl font-bold mb-6"><i class="fas fa-list mr-2"></i> Lista de Preços</h2>
  <div class="flex flex-wrap items-end gap-4 mb-4">
     <input id="filtroBusca" type="text" placeholder="Filtrar por SKU, nome ou loja" class="border p-2 rounded flex-1" />
-    <div class="flex">
-      <button id="btnCardView" class="px-3 py-2 bg-gray-200 rounded-l">Cards</button>
-      <button id="btnListView" class="px-3 py-2 bg-gray-200 rounded-r">Lista</button>
-    </div>
+  <div class="flex">
+  <button id="viewCardsBtn" class="px-3 py-2 bg-gray-200 rounded-l">Cards</button>
+  <button id="viewListBtn" class="px-3 py-2 bg-gray-200 rounded-r">Lista</button>
+</div>
   </div>
 
-  <div id="listaPrecos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+<div id="listaPrecosCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-  <div id="listaPrecosList" class="hidden">
+<div id="listaPrecosList" class="hidden p-4">
     <table class="data-table w-full">
       <thead>
         <tr>
