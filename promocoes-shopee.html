@@ -397,7 +397,7 @@ showToast(`✅ Atualizados ${changedIdx.length} SKUs! ❌ Não encontrados: ${pr
 }
 
     function exportShopeeFile() {
-      if (!sistema.importedShopeeData) {
+      if (!sistema.importedShopeeData || !sistema.originalShopeeData.length) {
         showToast('Nenhum dado para exportar!', 'warning');
         return;
       }
@@ -406,9 +406,14 @@ showToast(`✅ Atualizados ${changedIdx.length} SKUs! ❌ Não encontrados: ${pr
       const headers = Object.keys(sistema.originalShopeeData[0]);
       const dataToExport = [headers];
       
-      // Adicionar dados modificados mantendo a estrutura original
-      sistema.importedShopeeData.forEach(product => {
-        const row = headers.map(header => product[header]);
+      // Usar os dados originais e aplicar apenas as alterações de preço
+      sistema.originalShopeeData.forEach((origProd, idx) => {
+        const updated = sistema.importedShopeeData[idx] || {};
+        const exportProd = { ...origProd };
+        if (updated['Preço de desconto'] !== undefined) {
+          exportProd['Preço de desconto'] = updated['Preço de desconto'];
+        }
+        const row = headers.map(header => exportProd[header]);
         dataToExport.push(row);
       });
       
