@@ -79,47 +79,8 @@
     </div>
   </div>
 
-  <script>
-    // Toggle para menu mobile
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('active');
-    }
+    <script src="custeio.js"></script>
 
-    // Corrigido cálculo da área do cilindro (2 bases + lateral)
-    function areaCilindro(h, d) {
-      const pi = Math.PI;
-      const r = d / 2;
-      const areaBase = pi * r * r;
-      const areaLateral = 2 * pi * r * h;
-      return (2 * areaBase) + areaLateral;
-    }
-
-
-    function salvarCustosIndiretos() {
-      const campos = document.querySelectorAll('#custosIndiretos .indireto');
-      campos.forEach(campo => {
-        localStorage.setItem(`indireto_${campo.name}`, campo.value);
-      });
-    }
-
-    function carregarCustosIndiretos() {
-      const campos = document.querySelectorAll('#custosIndiretos .indireto');
-      campos.forEach(campo => {
-        const valor = localStorage.getItem(`indireto_${campo.name}`);
-        if (valor !== null) {
-          campo.value = valor;
-        }
-      });
-    }
-
-    window.onload = () => {
-      const campos = document.querySelectorAll('#custosIndiretos .indireto');
-      campos.forEach(campo => {
-        campo.addEventListener('input', salvarCustosIndiretos);
-      });
-    };
-  </script>
   <script src="../shared.js"></script>
 </body>
 </html>
