@@ -6,11 +6,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+const BASE_PATH = new URL('.', import.meta.url);
 const tabs = ["cadastro","anuncios","analise","evolucao"];
 for (const t of tabs) {
   const container = document.getElementById(t);
   if (container) {
-    const res = await fetch(`anuncios-tabs/${t}.html`);
+    const tabUrl = new URL(`anuncios-tabs/${t}.html`, BASE_PATH);
+    const res = await fetch(tabUrl);
     const text = await res.text();
     const doc = new DOMParser().parseFromString(text, 'text/html');
     const content = doc.getElementById('tab-content')?.innerHTML || text;
@@ -1172,6 +1174,4 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
     tr.style.display = (matchBusca && matchPreco && matchEstoque && matchConversao && matchAlerta && matchSkuInvalido) ? "" : "none";
   });
 };
-
-
 
