@@ -68,6 +68,27 @@ async function monitorar() {
 }
 
 window.executarMonitoramento = monitorar;
+async function pesquisarShopee() {
+  const termoInput = document.getElementById('termoPesquisaShopee');
+  const termo = (termoInput && termoInput.value.trim()) || '';
+  if (!termo) {
+    alert('Digite um termo para pesquisar');
+    return;
+  }
+  const container = document.getElementById('resultadoPesquisaShopee');
+  container.innerHTML = '<div class="text-center">Carregando...</div>';
+  const resultados = await buscarShopee(termo);
+  if (!resultados.length) {
+    container.innerHTML = '<div class="text-center">Nenhum resultado encontrado.</div>';
+    return;
+  }
+  const linhas = resultados.map(r => {
+    return `<tr><td>${r.name}</td><td>R$ ${r.price}</td><td>${r.sold}</td></tr>`;
+  }).join('');
+  container.innerHTML = `<table class="w-full text-sm"><thead><tr><th>Nome</th><th>Preço</th><th>Vendas</th></tr></thead><tbody>${linhas}</tbody></table>`;
+}
+
+window.pesquisarShopee = pesquisarShopee;
 
 async function carregarHistorico() {
   const container = document.getElementById('historicoMonitoramento');
