@@ -108,7 +108,13 @@ function verDetalhes(id) {
     <div><strong>Preço médio:</strong> R$ ${prod.precoMedio}</div>
     <div><strong>Preço promo:</strong> R$ ${prod.precoPromo}</div>
   `;
+    // Utilize global modal helpers to ensure proper display
   document.getElementById('detalhesModal').classList.remove('hidden');
+  if (typeof openModal === 'function') {
+    openModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'block';
+  }
 }
 
 let editId = null;
@@ -129,6 +135,11 @@ function editarProduto(id) {
   `;
   document.getElementById('saveBtn').classList.remove('hidden');
   document.getElementById('detalhesModal').classList.remove('hidden');
+  if (typeof openModal === 'function') {
+    openModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'block';
+  }
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -153,6 +164,11 @@ function excluirProduto(id) {
 }
 
 function fecharModal() {
+  if (typeof closeModal === 'function') {
+    closeModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'none';
+  }
   document.getElementById('detalhesModal').classList.add('hidden');
   editId = null;
 }
