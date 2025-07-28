@@ -289,6 +289,7 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
           sistema.produtos.push({ id: doc.id, ...doc.data() });
         });
         atualizarLista();
+        mostrarDuplicados();
         updateKPIs();
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
@@ -466,6 +467,7 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       sistema.produtos = [];
       sistema.historico = [];
       atualizarLista();
+    mostrarDuplicados();
       loadHistory();
       updateKPIs();
     }
@@ -988,6 +990,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         // Atualizar lista local
         sistema.produtos.unshift({ ...novoProduto, id: "temp" });
         atualizarLista();
+                mostrarDuplicados();
+
         
         // Mostrar feedback visual
         showToast("Produto salvo com sucesso!", "success");
@@ -1036,7 +1040,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
             taxas
           };
           atualizarLista();
-          
+                  mostrarDuplicados();
+
           // Mostrar feedback visual
           showToast("Produto atualizado com sucesso!", "success");
           
@@ -1134,6 +1139,7 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
   });
 
   updateKPIs();
+      mostrarDuplicados();
 }
 
     async function verDetalhes(id) {
@@ -1289,6 +1295,7 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         // Atualizar lista local
         sistema.produtos = sistema.produtos.filter(item => item.id !== id);
         atualizarLista();
+            mostrarDuplicados();
         
         // Mostrar feedback visual
         showToast("Produto excluído com sucesso!", "success");
@@ -1303,6 +1310,47 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
 
     function fecharModal() {
       document.getElementById("detalhesModal").style.display = "none";
+    }
+function mostrarDuplicados() {
+      const container = document.getElementById("listaDuplicados");
+      if (!container) return;
+      const groups = {};
+      sistema.produtos.forEach(p => {
+        if (!p.sku || !p.plataforma) return;
+        const key = `${p.sku}_${p.plataforma}`;
+        groups[key] = groups[key] || [];
+        groups[key].push(p);
+      });
+      container.innerHTML = "";
+      const dupGroups = Object.values(groups).filter(g => g.length > 1);
+      if (dupGroups.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Nenhum duplicado encontrado.</p>';
+        return;
+      }
+      dupGroups.forEach(g => {
+        const div = document.createElement('div');
+        div.className = 'border p-4 rounded-lg bg-gray-50';
+        let html = `<div class="font-semibold mb-2">${g[0].sku} - ${g[0].plataforma}</div>`;
+        g.forEach(prod => {
+          html += `<div class="flex justify-between items-center mb-1"><span>${prod.produto}</span><button onclick="excluirDuplicado('${prod.id}')" class="btn-action btn-delete"><i class="fas fa-trash"></i></button></div>`;
+        });
+        div.innerHTML = html;
+        container.appendChild(div);
+      });
+    }
+
+    async function excluirDuplicado(id) {
+      if (!confirm('Excluir este produto duplicado?')) return;
+      try {
+        await db.collection('products').doc(id).delete();
+        sistema.produtos = sistema.produtos.filter(p => p.id !== id);
+        mostrarDuplicados();
+        atualizarLista();
+        showToast('Produto duplicado removido!', 'success');
+      } catch (err) {
+        console.error('Erro ao excluir duplicado:', err);
+        showToast('Erro ao excluir produto!', 'error');
+      }
     }
 
     function exportarExcel() {
@@ -1463,7 +1511,7 @@ function downloadPricingTemplate() {
       XLSX.utils.book_append_sheet(wb, ws, 'Modelo');
       XLSX.writeFile(wb, 'modelo_precificacao.xlsx');
     }
-  function importPricingFile() {
+  async function importPricingFile() {
       const fileInput = document.getElementById('pricingFileInput');
       const file = fileInput.files[0];
 
@@ -1473,7 +1521,7 @@ function downloadPricingTemplate() {
       }
 
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1528,7 +1576,25 @@ function downloadPricingTemplate() {
           const precoMedio = (precoMinimo * 1.05).toFixed(2);
           const precoIdeal = (precoMinimo * 1.10).toFixed(2);
 
-          salvarProduto(nome, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas);
+  // Verifica se já existe produto com o mesmo SKU e plataforma
+          const existing = await db.collection("products")
+            .where("sku", "==", sku)
+            .where("plataforma", "==", plataforma)
+            .limit(1)
+            .get();
+
+          if (!existing.empty) {
+            await existing.docs[0].ref.update({
+              precoMinimo,
+              precoIdeal,
+              precoMedio,
+              precoPromo,
+              custo,
+              taxas
+            });
+          } else {
+            await salvarProduto(nome, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas);
+          }
           imported++;
         }
 
