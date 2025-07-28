@@ -1346,9 +1346,10 @@ function mostrarDuplicados() {
       dupGroups.forEach(g => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded-lg bg-gray-50';
-        let html = `<div class="font-semibold mb-2">${g[0].sku} - ${g[0].plataforma}</div>`;
-        g.forEach(prod => {
-          html += `<div class="flex justify-between items-center mb-1"><span>${prod.produto}</span><button onclick="excluirDuplicado('${prod.id}')" class="btn-action btn-delete"><i class="fas fa-trash"></i></button></div>`;
+      g.forEach((prod, idx) => {
+          const keep = idx === 0 ? '<span class="text-green-600 ml-2">(manter)</span>' : '';
+          const btn = idx === 0 ? '' : `<button onclick="excluirDuplicado('${prod.id}')" class="btn-action btn-delete"><i class="fas fa-trash"></i></button>`;
+          html += `<div class="flex justify-between items-center mb-1"><span>${prod.produto}${keep}</span>${btn}</div>`;
         });
         div.innerHTML = html;
         container.appendChild(div);
@@ -1845,6 +1846,7 @@ function applyPriceUpdate(type) {
       sistema.duplicados = [];
       Object.values(skuMap).forEach(group => {
         if (group.length > 1) {
+                    group.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           sistema.duplicados.push(...group.slice(1));
         }
       });
