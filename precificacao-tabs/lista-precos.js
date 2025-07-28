@@ -172,6 +172,81 @@ function fecharModal() {
   document.getElementById('detalhesModal').classList.add('hidden');
   editId = null;
 }
+function exportarExcelLista() {
+  if (!produtos.length) return;
+  const data = produtos.map(p => ({
+    SKU: p.sku || '',
+    Produto: p.produto,
+    Loja: p.plataforma,
+    'Preço Mínimo': parseFloat(p.precoMinimo).toFixed(2),
+    'Preço Ideal': parseFloat(p.precoIdeal).toFixed(2),
+    'Preço Médio': parseFloat(p.precoMedio).toFixed(2),
+    'Preço Promo': parseFloat(p.precoPromo).toFixed(2)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Precos');
+  XLSX.writeFile(wb, 'lista_precos.xlsx');
+}
+
+function exportarPDFLista() {
+  if (!produtos.length) return;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const headers = ['Produto','SKU','Loja','Preço Mín.','Preço Ideal','Preço Médio','Preço Promo'];
+  const body = produtos.map(p => [
+    p.produto,
+    p.sku || '',
+    p.plataforma,
+    parseFloat(p.precoMinimo).toFixed(2),
+    parseFloat(p.precoIdeal).toFixed(2),
+    parseFloat(p.precoMedio).toFixed(2),
+    parseFloat(p.precoPromo).toFixed(2)
+  ]);
+  doc.autoTable({ head:[headers], body, startY:20, styles:{ fontSize:8 } });
+  doc.save('lista_precos.pdf');
+}
+
+function importarExcelLista() {
+  const input = document.getElementById('importFileInput');
+  const file = input?.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    if (!rows.length) return;
+    const headers = rows[0].map(h => String(h).toLowerCase());
+    const idxSku = headers.indexOf('sku');
+    const idxMin = headers.findIndex(h => h.includes('mín'));
+    const idxIdeal = headers.findIndex(h => h.includes('ideal'));
+    const idxMedio = headers.findIndex(h => h.includes('médio'));
+    const idxPromo = headers.findIndex(h => h.includes('promo'));
+    let updated = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const sku = row[idxSku];
+      if (!sku) continue;
+      const prod = produtos.find(p => String(p.sku) === String(sku));
+      if (!prod) continue;
+      const updateData = {};
+      if (idxMin !== -1 && row[idxMin] !== undefined) updateData.precoMinimo = parseFloat(row[idxMin]) || 0;
+      if (idxIdeal !== -1 && row[idxIdeal] !== undefined) updateData.precoIdeal = parseFloat(row[idxIdeal]) || 0;
+      if (idxMedio !== -1 && row[idxMedio] !== undefined) updateData.precoMedio = parseFloat(row[idxMedio]) || 0;
+      if (idxPromo !== -1 && row[idxPromo] !== undefined) updateData.precoPromo = parseFloat(row[idxPromo]) || 0;
+      if (Object.keys(updateData).length) {
+        await dbListaPrecos.collection('products').doc(prod.id).update(updateData);
+        Object.assign(prod, updateData);
+        updated++;
+      }
+    }
+    input.value = '';
+    aplicarFiltros();
+    alert(`${updated} produtos atualizados`);
+  };
+  reader.readAsArrayBuffer(file);
+}
 function setupListeners() {
   document.getElementById('filtroBusca')?.addEventListener('input', aplicarFiltros);
   document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
