@@ -458,7 +458,7 @@ for (const v of variantes) {
           <span class="badge badge-${conversaoStatus}">${conversao}%</span>
         </td>
         <td class="px-4 py-2 whitespace-nowrap">
-          <button onclick="verDetalhes('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm">
+          <button onclick="verDetalhesAnuncio('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm">
             <i class="fas fa-eye mr-1"></i>Ver Detalhes
           </button>
         </td>
@@ -482,7 +482,7 @@ tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
 };
 
 
-window.verDetalhes = async function (id) {
+window.verDetalhesAnuncio = async function (id) {
   try {
     const docRef = doc(db, "anuncios", id);
     const docSnap = await getDoc(docRef);
@@ -549,10 +549,12 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
 
 
     const container = document.getElementById("detalhesProduto");
-if (!container) {
-      console.error("Elemento 'detalhesProduto' não encontrado no DOM");
+ if (!container) {
+      console.error("Elemento 'detalhesProduto' não encontrado");
+      showNotification("❌ Elemento de detalhes não encontrado", "error");
       return;
     }
+
     // 🔸 Tabela de variantes
     let variantesHtml = '';
     if (variantes.length > 0) {
@@ -853,7 +855,7 @@ if (!container) {
                  <button onclick="copiarTitulo('${nome.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm mr-2">
                     <i class="far fa-copy mr-1"></i>Copiar Título
                   </button>
-                  <button onclick="verDetalhes('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-sm">
+                  <button onclick="verDetalhesAnuncio('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-sm">
                     <i class="fas fa-eye mr-1"></i>Ver Detalhes
                   </button>
                 </div>
