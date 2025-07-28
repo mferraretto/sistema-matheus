@@ -1346,6 +1346,7 @@ function mostrarDuplicados() {
       dupGroups.forEach(g => {
         const div = document.createElement('div');
         div.className = 'border p-4 rounded-lg bg-gray-50';
+                let html = '';
       g.forEach((prod, idx) => {
           const keep = idx === 0 ? '<span class="text-green-600 ml-2">(manter)</span>' : '';
           const btn = idx === 0 ? '' : `<button onclick="excluirDuplicado('${prod.id}')" class="btn-action btn-delete"><i class="fas fa-trash"></i></button>`;
