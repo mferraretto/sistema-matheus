@@ -3,6 +3,9 @@ const fetch = require('node-fetch');
 const cors = require("cors")({ origin: true });
 exports.proxyShopeeSearch = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
+     res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Methods', 'GET');
 
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
