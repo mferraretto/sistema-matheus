@@ -7,16 +7,24 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
+  <script src="firebase-config.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">👥 Gerenciamento de Usuários</h1>
+<body class="bg-gray-100">
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div id="navbar-container"></div>
+    <div class="main-content p-6">
+      <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4">👥 Gerenciamento de Usuários</h1>
 
-    <form id="userForm" class="space-y-4">
-      <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
-      <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
+        <form id="userForm" class="space-y-4">
+          <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
+          <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
       <select id="perfil" class="w-full p-2 border rounded">
         <option value="Cliente">Cliente</option>
         <option value="ADM">ADM</option>
@@ -29,6 +37,9 @@
     <h2 class="text-xl font-semibold mb-2">📋 Lista de Usuários</h2>
     <ul id="listaUsuarios" class="space-y-2"></ul>
   </div>
+ </div>
+    </div>
+    <script src="shared.js"></script>
 
   <script>
 
