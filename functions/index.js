@@ -1,9 +1,8 @@
 const functions = require('firebase-functions');
 const fetch = require('node-fetch');
-exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
-  res.set('Access-Control-Allow-Methods', 'GET');
+const cors = require("cors")({ origin: true });
+exports.proxyShopeeSearch = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
 
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
@@ -37,6 +36,7 @@ exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: 'Proxy error' });
   }
 });
+  });
 exports.proxyDeepSeek = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
