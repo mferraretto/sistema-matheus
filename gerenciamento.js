@@ -549,7 +549,10 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
 
 
     const container = document.getElementById("detalhesProduto");
-
+if (!container) {
+      console.error("Elemento 'detalhesProduto' não encontrado no DOM");
+      return;
+    }
     // 🔸 Tabela de variantes
     let variantesHtml = '';
     if (variantes.length > 0) {
