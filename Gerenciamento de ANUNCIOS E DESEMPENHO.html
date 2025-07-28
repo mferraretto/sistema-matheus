@@ -1098,7 +1098,15 @@ window.carregarEvolucao = async function () {
 
     // Initial load
     document.addEventListener('DOMContentLoaded', () => {
-      atualizarContador();
+       const tabs = ['cadastro','anuncios','analise','evolucao'];
+      Promise.all(tabs.map(t =>
+        fetch(`anuncios-tabs/${t}.html`)
+          .then(r => r.text())
+          .then(h => {
+            const el = document.getElementById(t);
+            if (el) el.innerHTML = h;
+          })
+      )).then(atualizarContador).catch(console.error);
     });
     
 let ordemAscendente = true;
