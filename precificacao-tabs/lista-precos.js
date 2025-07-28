@@ -82,8 +82,8 @@ function renderLista(lista) {
         <td>${data.produto}</td>
         <td>${data.sku || ''}</td>
         <td>${data.plataforma}</td>
-        <td>R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
-        <td>
+        <td class="whitespace-nowrap">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
+        <td class="whitespace-nowrap">
           <button class="text-blue-600 mr-2" onclick="verDetalhes('${data.id}')"><i class='fas fa-eye'></i></button>
           <button class="text-yellow-600 mr-2" onclick="editarProduto('${data.id}')"><i class='fas fa-edit'></i></button>
           <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
