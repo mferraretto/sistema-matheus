@@ -8,7 +8,7 @@ let produtos = [];
 function carregarProdutos() {
   dbListaPrecos.collection('products').orderBy('createdAt', 'desc').get().then(snap => {
     produtos = [];
-    const container = document.getElementById('listaProdutos');
+    const container = document.getElementById('listaPrecos');
     if (!container) return;
     container.innerHTML = '';
     snap.forEach(doc => {
