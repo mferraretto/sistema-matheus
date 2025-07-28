@@ -243,7 +243,7 @@ body.dark .sidebar-link:hover {
   margin-bottom: 20px
 }
 .sidebar-logo h2 {
-  font-family: Montserrat,sans-serif;
+  font-family: Inter,sans-serif;
   font-size: 1.4rem;
   color: #fff;
   margin-top: 10px
@@ -349,7 +349,7 @@ input,
 select {
   border: 1px solid var(--border);
   transition: .3s;
-  font-family: Montserrat,sans-serif
+  font-family: Inter,sans-serif
 }
 label {
   display: block;
@@ -634,7 +634,7 @@ tr:hover {
     padding: 0 20px
   }
   h1 {
-    font-family: Montserrat,sans-serif;
+    font-family: Inter,sans-serif;
     color: var(--secondary);
     margin-bottom: 25px;
     font-size: 2.2rem;
@@ -642,7 +642,7 @@ tr:hover {
     border-bottom: 3px solid var(--primary)
   }
   h2 {
-    font-family: Montserrat,sans-serif;
+    font-family: Inter,sans-serif;
     color: var(--secondary);
     margin-top: 30px;
     padding-bottom: 10px;
@@ -650,14 +650,14 @@ tr:hover {
     font-size: 1.6rem
   }
   h3 {
-    font-family: Montserrat,sans-serif;
+    font-family: Inter,sans-serif;
     color: var(--secondary);
     margin-top: 25px;
     margin-bottom: 15px;
     font-size: 1.3rem
   }
   h4 {
-    font-family: Montserrat,sans-serif;
+    font-family: Inter,sans-serif;
     color: var(--secondary);
     margin-top: 0;
     margin-bottom: 10px;
@@ -743,7 +743,7 @@ tr:hover {
   align-items: center;
   font-size: 1.3rem;
   font-weight: 600;
-    font-family: Montserrat,sans-serif;
+    font-family: Inter,sans-serif;
   gap: 10px
 }
 .logo i {
@@ -850,7 +850,7 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: Montserrat,sans-serif
+  font-family: Inter,sans-serif
 }
 .page-title i {
   background: var(--primary-light);
@@ -947,7 +947,7 @@ tr:hover {
   font-weight: 700;
   margin-bottom: .3rem;
   color: var(--secondary);
-  font-family: Montserrat,sans-serif
+  font-family: Inter,sans-serif
 }
 .card-metric-novo .valor-principal {
   font-size: 1.7rem;
@@ -1159,7 +1159,7 @@ tr:hover td {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--secondary);
-  font-family: Montserrat,sans-serif
+  font-family: Inter,sans-serif
 }
 .history-item {
   padding: 1rem;
@@ -1548,7 +1548,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: Montserrat,sans-serif
+  font-family: Inter,sans-serif
 }
 .btn,
 button {
