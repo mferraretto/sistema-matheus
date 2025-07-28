@@ -53,21 +53,18 @@ transition: .3s;
   padding: 30px
 }
 
-.card {
-  box-shadow: 0 4px 20px rgba(0,0,0,.05);
-  overflow: hidden;
-  border: 1px solid #eaeaea
-}
-.card:hover {
-  box-shadow: 0 10px 30px rgba(0,0,0,.1);
-  box-shadow: 0 10px 25px rgba(0,0,0,.1)
 
-}
 .card-header {
   padding: 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  align-items: center
+ align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+  color: var(--secondary);
+  font-weight: 600;
+  font-size: 1.1rem;
+  font-family: Inter,sans-serif
 }
 
 .card-header-icon {
@@ -375,10 +372,7 @@ button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,.15)
 }
-.card {
-  background-color: var(--card-bg);
-  box-shadow: 0 5px 15px rgba(0,0,0,.05)
-}
+
 .result {
   background: #f8f9fa;
   padding: 20px;
@@ -909,22 +903,7 @@ tr:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,.05);
   animation: .3s fadeIn
 }
-.card {
-  background: #fff;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--card-shadow);
-  border-left: 4px solid var(--primary)
-}
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 1rem;
-  color: var(--secondary);
-  font-weight: 600;
-  font-size: 1.1rem;
-  font-family: Inter,sans-serif
-}
+
 .card-header i {
   font-size: 1.3rem;
   color: var(--primary)
@@ -1697,6 +1676,8 @@ body.dark .submenu a:hover {
   box-shadow: 0 4px 6px rgba(0,0,0,.05);
   padding: 20px;
   border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
   transition: .3s
 }
 .card:hover {
