@@ -1,7 +1,10 @@
 function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('active');
-    }
+     const sidebar = document.getElementById('sidebar') ||
+                  document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('active');
+  }
+}
     
     // Corrigido cálculo da área do cilindro (2 bases + lateral)
     function areaCilindro(h, d) {
