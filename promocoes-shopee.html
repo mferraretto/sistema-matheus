@@ -237,7 +237,6 @@ function applyPriceUpdate(type) {
     const searchSku = sku || parentSku;
 
     if (!searchSku) {
-      console.log('Produto sem SKU identificável:', importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
       productsWithNoSku++;
       continue;
     }
@@ -248,7 +247,6 @@ function applyPriceUpdate(type) {
     });
 
     if (!systemProduct) {
-      console.log('Produto não encontrado no sistema:', searchSku, importedProduct['Nome do Produto. (Opcional)'] || 'Sem nome');
       productsNotFound++;
       skusNaoEncontrados.push(searchSku);
       continue;
@@ -257,7 +255,7 @@ function applyPriceUpdate(type) {
     let priceToApply = 0;
     switch(type) {
       case 'promo':
-        priceToApply = parseFloat(systemProduct.precoPromo).toFixed(2);
+        priceToApply = parseFloat(systemProduct.precoMinimo).toFixed(2); // ✅ usa o preço mínimo
         break;
       case 'medium':
         priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
@@ -273,10 +271,8 @@ function applyPriceUpdate(type) {
 
   displayImportedProducts(sistema.importedShopeeData);
 
-  // 🟢 Toast com resumo
   showToast(`✅ Atualizados ${productsUpdated} preços! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
 
-  // 🟡 Detalhe SKUs não encontrados
   if (skusNaoEncontrados.length > 0) {
     const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
     document.getElementById('toastContainer').innerHTML += `
@@ -290,7 +286,7 @@ function applyPriceUpdate(type) {
     `;
   }
 
-  addHistoryEntry('price_update', `${productsUpdated} preços atualizados na planilha Shopee`);
+  addHistoryEntry('price_update', `${productsUpdated} preços atualizados com ${type}`);
 }
 
     function exportShopeeFile() {
