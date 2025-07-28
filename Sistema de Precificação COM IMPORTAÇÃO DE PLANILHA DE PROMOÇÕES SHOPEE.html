@@ -153,7 +153,8 @@
       },
       importedShopeeData: null,
       originalShopeeData: null,
-      produtoEditando: null
+produtoEditando: null,
+      duplicados: []
     };
 
   // Inicialização
@@ -1816,7 +1817,72 @@ function applyPriceUpdate(type) {
       closeModal('recoverModal');
       addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
     }
+  function verificarProdutosDuplicados() {
+      const skuMap = {};
+      sistema.produtos.forEach(p => {
+        const sku = p.sku ? String(p.sku).trim() : '';
+        if (!sku) return;
+        if (!skuMap[sku]) skuMap[sku] = [];
+        skuMap[sku].push(p);
+      });
 
+      // lista somente itens excedentes (mantém 1 por SKU)
+      sistema.duplicados = [];
+      Object.values(skuMap).forEach(group => {
+        if (group.length > 1) {
+          sistema.duplicados.push(...group.slice(1));
+        }
+      });
+
+      const tbody = document.getElementById('duplicadosBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (sistema.duplicados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">Nenhum SKU duplicado encontrado.</td></tr>';
+      } else {
+        sistema.duplicados.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td><input type="checkbox" class="dup-check" data-id="${item.id}"></td><td>${item.sku}</td><td>${item.produto}</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+      document.getElementById('duplicadosModal').style.display = 'block';
+    }
+
+    async function removerProdutosDuplicados() {
+      const checks = document.querySelectorAll('#duplicadosBody .dup-check:checked');
+      if (checks.length === 0) {
+        fecharDuplicadosModal();
+        return;
+      }
+
+      let removidos = 0;
+      for (const chk of checks) {
+        const id = chk.dataset.id;
+        try {
+          await db.collection('products').doc(id).delete();
+          sistema.produtos = sistema.produtos.filter(p => p.id !== id);
+          removidos++;
+        } catch (err) {
+          console.error('Erro ao remover duplicado', id, err);
+        }
+      }
+
+      sistema.duplicados = sistema.duplicados.filter(item => !checksNamed(item.id));
+
+      function checksNamed(id){
+        return Array.from(checks).some(chk => chk.dataset.id === id);
+      }
+
+      atualizarLista();
+      showToast('Duplicados removidos com sucesso!', 'success');
+      addHistoryEntry('product_delete', `${removidos} itens duplicados removidos`);
+      fecharDuplicadosModal();
+    }
+
+    function fecharDuplicadosModal() {
+      document.getElementById('duplicadosModal').style.display = 'none';
+    }
     function setupEventListeners() {
       // Login/logout
       document.getElementById('logoutBtn').addEventListener('click', logout);
