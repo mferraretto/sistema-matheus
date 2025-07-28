@@ -1,10 +1,11 @@
 if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig); // ✅ Inicializa Firebase apenas se necessário
 }
 if (!window.db) {
-  window.db = firebase.firestore();
+  window.db = firebase.firestore();       // ✅ Salva Firestore de forma global e segura
 }
-const db = window.db;
+const db = window.db;                     // ✅ Usa uma referência reutilizável
+
 
 let produtos = [];
 
