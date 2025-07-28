@@ -15,7 +15,7 @@ function carregarProdutos() {
       const data = { id: doc.id, ...doc.data() };
       produtos.push(data);
       const card = document.createElement('div');
-      card.className = 'product-card';
+card.className = 'bg-white p-4 rounded shadow border border-gray-200 hover:shadow-lg transition';
       card.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
