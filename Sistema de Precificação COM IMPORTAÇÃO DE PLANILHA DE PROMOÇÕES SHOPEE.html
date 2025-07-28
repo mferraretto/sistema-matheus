@@ -986,19 +986,34 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       };
 
       try {
-        await db.collection("products").add(novoProduto);
-        
-        // Atualizar lista local
-        sistema.produtos.unshift({ ...novoProduto, id: "temp" });
-        atualizarLista();
-                mostrarDuplicados();
+   const querySnapshot = await db.collection("products")
+          .where("sku", "==", sku)
+          .where("userId", "==", user.uid)
+          .get();
 
-        
-        // Mostrar feedback visual
-        showToast("Produto salvo com sucesso!", "success");
-        
-        // Registrar no histórico
-        addHistoryEntry('product_add', `Produto "${produto}" cadastrado para ${plataforma}`);
+        if (!querySnapshot.empty) {
+          const docId = querySnapshot.docs[0].id;
+          await db.collection("products").doc(docId).update(novoProduto);
+
+          const index = sistema.produtos.findIndex(item => item.id === docId);
+          if (index !== -1) {
+            sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
+          } else {
+            sistema.produtos.unshift({ ...novoProduto, id: docId });
+          }
+
+          atualizarLista();
+          showToast("Produto atualizado com sucesso!", "success");
+          addHistoryEntry('product_edit', `Produto "${produto}" atualizado`);
+        } else {
+          const docRef = await db.collection("products").add(novoProduto);
+
+          sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
+          atualizarLista();
+
+          showToast("Produto criado com sucesso!", "success");
+          addHistoryEntry('product_add', `Produto "${produto}" cadastrado para ${plataforma}`);
+        }
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
         showToast("Erro ao salvar produto!", "error");
