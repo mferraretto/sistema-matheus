@@ -30,6 +30,17 @@
           </button>
         </div>
       </div>
+      <div class="card mb-6">
+        <div class="flex flex-wrap gap-4 items-end">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-2">Importar Planilha de Promoções:</label>
+            <input type="file" id="promoFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+          </div>
+          <button onclick="importShopeePromoFile()" class="btn-primary">
+            <i class="fas fa-upload mr-2"></i> Importar Promoções
+          </button>
+        </div>
+      </div>
       <div id="importedShopeeProducts" style="display:none;" class="mt-6">
         <div class="overflow-x-auto">
           <table class="table">
@@ -46,6 +57,26 @@
             <tbody id="importedProductsTableBody"></tbody>
           </table>
         </div>
+        <p id="modifiedCount" class="mt-2 font-bold"></p>
+      </div>
+
+      <div id="promoImportedProducts" style="display:none;" class="mt-6">
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID Produto</th>
+                <th>Parent SKU</th>
+                <th>SKU</th>
+                <th>Preço Original</th>
+                <th>Preço Desconto</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="promoProductsTableBody"></tbody>
+          </table>
+        </div>
+        <p id="promoChangesCount" class="mt-2 font-bold"></p>
       </div>
       <!-- Botões de ação -->
 <div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
@@ -76,7 +107,8 @@
   produtos: [],
   importedShopeeData: [],
   promoShopeeData: [],
-  originalShopeeData: []
+  originalShopeeData: [],
+  originalPromoShopeeData: []
 };
 
 async function carregarProdutosSistema() {
@@ -136,8 +168,17 @@ await checkProducts();
     function displayImportedProducts(products) {
       const body = document.getElementById('importedProductsTableBody');
       body.innerHTML = '';
-      products.forEach(prod => {
+ let modified = 0;
+      products.forEach((prod, idx) => {
         const tr = document.createElement('tr');
+        const original = sistema.originalShopeeData[idx] || {};
+        const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
+        if (isModified) {
+          tr.classList.add('bg-green-100');
+          modified++;
+        } else {
+          tr.classList.add('bg-red-100');
+        }
         tr.innerHTML = `
           <td>${prod['ID do produto'] || ''}</td>
           <td>${prod['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
@@ -148,6 +189,9 @@ await checkProducts();
         `;
         body.appendChild(tr);
       });
+      const countEl = document.getElementById('modifiedCount');
+      if (countEl) countEl.textContent = `${modified} SKUs modificados`;
+      return modified;
     }
 
     async function checkProducts() {
@@ -205,6 +249,7 @@ await checkProducts();
         }
 
         sistema.promoShopeeData = products;
+                sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
         displayPromoProducts(products);
         document.getElementById('promoImportedProducts').style.display = 'block';
         showToast(`${products.length} produtos importados!`, 'success');
@@ -217,8 +262,9 @@ await checkProducts();
       const body = document.getElementById('promoProductsTableBody');
       body.innerHTML = '';
       const systemProducts = sistema.produtos || [];
+            let modified = 0;
 
-      products.forEach(prod => {
+      products.forEach((prod, idx) => {
         const sku = prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '';
         const parentSku = prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '';
         const searchSku = sku || parentSku;
@@ -228,6 +274,14 @@ await checkProducts();
         });
 
         const row = document.createElement('tr');
+        const original = sistema.originalPromoShopeeData[idx] || {};
+        const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
+        if (isModified) {
+          row.classList.add('bg-green-100');
+          modified++;
+        } else {
+          row.classList.add('bg-red-100');
+        }
         if (!found) row.classList.add('bg-red-50');
         row.innerHTML = `
           <td>${prod['ID do produto'] || ''}</td>
@@ -239,6 +293,8 @@ await checkProducts();
         `;
         body.appendChild(row);
       });
+         const countEl = document.getElementById('promoChangesCount');
+      if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
 function applyPriceUpdate(type) {
   if (!sistema.importedShopeeData) {
@@ -293,9 +349,9 @@ function applyPriceUpdate(type) {
     productsUpdated++;
   }
 
-  displayImportedProducts(sistema.importedShopeeData);
+  const modifiedCount = displayImportedProducts(sistema.importedShopeeData);
 
-  showToast(`✅ Atualizados ${productsUpdated} preços! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
+ showToast(`✅ ${modifiedCount} SKUs modificados. ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
 
   if (skusNaoEncontrados.length > 0) {
     const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
