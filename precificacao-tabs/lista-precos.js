@@ -4,37 +4,44 @@ if (!firebase.apps.length) {
 // Avoid clashing with a global `db` from other scripts
 const dbListaPrecos = firebase.firestore();
 let produtos = [];
-let modoVisualizacao = 'cards';
+let viewMode = 'cards';
 
 function carregarProdutos() {
-  dbListaPrecos.collection('products').orderBy('createdAt', 'desc').get().then(snap => {
-    produtos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    filtrarEExibir();
-  });
+  dbListaPrecos
+    .collection('products')
+    .orderBy('createdAt', 'desc')
+    .get()
+    .then(snap => {
+      produtos = [];
+      snap.forEach(doc => {
+        produtos.push({ id: doc.id, ...doc.data() });
+      });
+      aplicarFiltros();
+    });
 }
 
-function filtrarEExibir() {
-  const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+function aplicarFiltros() {
+  const termo = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  const loja = document.getElementById('storeFilter')?.value || '';
   const filtrados = produtos.filter(p => {
-    const sku = (p.sku || '').toLowerCase();
-    const nome = (p.produto || '').toLowerCase();
-    const loja = (p.plataforma || '').toLowerCase();
-    return sku.includes(termo) || nome.includes(termo) || loja.includes(termo);
+    const texto = `${p.produto || ''} ${(p.sku || '')}`.toLowerCase();
+    const lojaOK = !loja || p.plataforma === loja;
+    return (!termo || texto.includes(termo)) && lojaOK;
   });
-  renderProdutos(filtrados);
+  renderLista(filtrados);
 }
 
-function renderProdutos(lista) {
-  const cardContainer = document.getElementById('listaPrecos');
-  const listContainer = document.getElementById('listaPrecosList');
-  const tbody = document.getElementById('listaPrecosListBody');
-
-  cardContainer.innerHTML = '';
+function renderLista(lista) {
+  const cards = document.getElementById('listaPrecosCards');
+  const table = document.getElementById('listaPrecosTable');
+  const tbody = document.getElementById('listaPrecosTableBody');
+  if (!cards || !table || !tbody) return;
+  cards.innerHTML = '';
   tbody.innerHTML = '';
 
-  if (modoVisualizacao === 'cards') {
-    cardContainer.classList.remove('hidden');
-    listContainer.classList.add('hidden');
+  if (viewMode === 'cards') {
+    cards.classList.remove('hidden');
+    table.classList.add('hidden');
     lista.forEach(data => {
       const card = document.createElement('div');
       card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition duration-200';
@@ -51,30 +58,37 @@ function renderProdutos(lista) {
         </div>
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
           <div class="text-sm text-gray-500"><i class="far fa-calendar-alt"></i> ${new Date(data.createdAt).toLocaleDateString('pt-BR')}</div>
-          <div class="flex space-x-2">
-            <button class="text-blue-600" onclick="verDetalhes('${data.id}')"><i class='fas fa-eye'></i> Ver</button>
-            <button class="text-yellow-600" onclick="editarProduto('${data.id}')"><i class='fas fa-edit'></i> Editar</button>
-            <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
-          </div>
+         <div class="flex space-x-2">
+  <button onclick="verDetalhes('${data.id}')" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+    <i class='fas fa-eye mr-1'></i> Ver
+  </button>
+  <button onclick="editarProduto('${data.id}')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+    <i class='fas fa-edit mr-1'></i> Editar
+  </button>
+  <button onclick="excluirProduto('${data.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+    <i class='fas fa-trash mr-1'></i> Excluir
+  </button>
+</div>
+
         </div>`;
-      cardContainer.appendChild(card);
+      cards.appendChild(card);
     });
-  } else {
-    cardContainer.classList.add('hidden');
-    listContainer.classList.remove('hidden');
+} else {
+    cards.classList.add('hidden');
+    table.classList.remove('hidden');
     lista.forEach(data => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      const row = document.createElement('tr');
+      row.innerHTML = `
         <td>${data.produto}</td>
         <td>${data.sku || ''}</td>
-        <td>${data.plataforma || ''}</td>
+        <td>${data.plataforma}</td>
         <td>R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
         <td>
           <button class="text-blue-600 mr-2" onclick="verDetalhes('${data.id}')"><i class='fas fa-eye'></i></button>
           <button class="text-yellow-600 mr-2" onclick="editarProduto('${data.id}')"><i class='fas fa-edit'></i></button>
           <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
         </td>`;
-      tbody.appendChild(tr);
+      tbody.appendChild(row);
     });
   }
 }
@@ -142,19 +156,19 @@ function fecharModal() {
   document.getElementById('detalhesModal').classList.add('hidden');
   editId = null;
 }
+function setupListeners() {
+  document.getElementById('searchInput')?.addEventListener('input', aplicarFiltros);
+  document.getElementById('storeFilter')?.addEventListener('change', aplicarFiltros);
+  document.getElementById('viewCardsBtn')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
+  document.getElementById('viewListBtn')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
+}
+
 
 if (document.readyState !== 'loading') {
+    setupListeners();
   carregarProdutos();
 } else {
   document.addEventListener('DOMContentLoaded', carregarProdutos);
 }
 
-document.getElementById('filtroBusca')?.addEventListener('input', filtrarEExibir);
-document.getElementById('btnCardView')?.addEventListener('click', () => {
-  modoVisualizacao = 'cards';
-  filtrarEExibir();
-});
-document.getElementById('btnListView')?.addEventListener('click', () => {
-  modoVisualizacao = 'list';
-  filtrarEExibir();
-});
+
