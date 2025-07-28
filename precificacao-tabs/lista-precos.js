@@ -15,7 +15,7 @@ function carregarProdutos() {
       const data = { id: doc.id, ...doc.data() };
       produtos.push(data);
       const card = document.createElement('div');
-card.className = 'bg-white p-4 rounded shadow border border-gray-200 hover:shadow-lg transition';
+card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition duration-200';
       card.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
@@ -24,7 +24,7 @@ card.className = 'bg-white p-4 rounded shadow border border-gray-200 hover:shado
           </div>
           <div class="text-right">
             <div class="text-gray-500 text-sm">Preço mínimo</div>
-            <div class="product-price">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
+<div class="text-lg font-semibold text-green-600">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
           </div>
         </div>
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
