@@ -1,7 +1,11 @@
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
-const db = firebase.firestore();
+if (!window.db) {
+  window.db = firebase.firestore();
+}
+const db = window.db;
+
 let produtos = [];
 
 function carregarProdutos() {
