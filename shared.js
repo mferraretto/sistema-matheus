@@ -1,4 +1,13 @@
 (function() {
+  // Determine base path of current script for loading partials
+  var currentScript = document.currentScript || (function() {
+    var scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })();
+  var BASE_PATH = '';
+  if (currentScript && currentScript.src) {
+    BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
+  }
   // Toggle submenu visibility
   window.toggleMenu = function(menuId) {
     var el = document.getElementById(menuId);
@@ -9,7 +18,7 @@
  // Load sidebar HTML into placeholder
   window.loadSidebar = function(containerId) {
     containerId = containerId || 'sidebar-container';
-    return fetch('partials/sidebar.html')
+    return fetch(BASE_PATH + 'partials/sidebar.html')
       .then(function(res) { return res.text(); })
       .then(function(html) {
         var container = document.getElementById(containerId);
@@ -21,7 +30,7 @@
 // Load navbar HTML into placeholder
   window.loadNavbar = function(containerId) {
     containerId = containerId || 'navbar-container';
-    return fetch('partials/navbar.html')
+    return fetch(BASE_PATH + 'partials/navbar.html')
       .then(function(res) { return res.text(); })
       .then(function(html) {
         var container = document.getElementById(containerId);
@@ -36,7 +45,7 @@
   // Load authentication modals into placeholder
   window.loadAuthModals = function(containerId) {
     containerId = containerId || 'auth-modals-container';
-    return fetch('partials/auth-modals.html')
+    return fetch(BASE_PATH + 'partials/auth-modals.html')
       .then(function(res) { return res.text(); })
       .then(function(html) {
         var container = document.getElementById(containerId);
