@@ -548,11 +548,24 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
 }
 
 
-    const container = document.getElementById("detalhesProduto");
- if (!container) {
-      console.error("Elemento 'detalhesProduto' não encontrado");
-      showNotification("❌ Elemento de detalhes não encontrado", "error");
-      return;
+ let container = document.getElementById("detalhesProduto");
+    if (!container) {
+      // se o modal ainda não existe, cria uma estrutura básica para exibição
+      const modal = document.createElement('div');
+      modal.id = 'modalDetalhes';
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content w-full max-w-3xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold"><i class="fas fa-info-circle mr-2 text-blue-500"></i>Detalhes do Produto</h3>
+            <button onclick="fecharModal('modalDetalhes')" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div id="detalhesProduto" class="space-y-4"></div>
+        </div>`;
+      document.body.appendChild(modal);
+      container = modal.querySelector('#detalhesProduto');
     }
 
     // 🔸 Tabela de variantes
