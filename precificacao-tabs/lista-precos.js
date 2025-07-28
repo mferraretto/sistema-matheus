@@ -164,10 +164,12 @@ function setupListeners() {
 
 
 if (document.readyState !== 'loading') {
-    setupListeners();
+  setupListeners();
   carregarProdutos();
 } else {
-  document.addEventListener('DOMContentLoaded', carregarProdutos);
+  document.addEventListener('DOMContentLoaded', () => {
+    setupListeners();
+    carregarProdutos();
+  });
 }
-
 
