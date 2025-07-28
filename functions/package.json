@@ -1,0 +1,8 @@
+{
+  "name": "functions",
+  "description": "Cloud Functions for Shopee monitoring proxy",
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "cors": "^2.8.5"
+  }
+}
