@@ -1931,13 +1931,13 @@ select:focus {
   color: var(--text)
 }
 .product-card {
-  background: var(--card);
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,.08);
-  padding: 20px;
-  transition: .3s;
-  border: 1px solid var(--border)
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
 }
+
 .product-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 12px rgba(0,0,0,.12);
