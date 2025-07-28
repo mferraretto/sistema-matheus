@@ -9,9 +9,21 @@ const auth = getAuth(app);
 const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
-  const res = await fetch(`https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=${encodeURIComponent(term)}`);
-  const data = await res.json();
-  return data.items || [];
+ try {
+    const res = await fetch(
+      `https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=${encodeURIComponent(term)}`,
+      { mode: 'cors' }
+    );
+    if (!res.ok) {
+      console.error('Erro ao buscar Shopee:', res.status);
+      return [];
+    }
+    const data = await res.json();
+    return data.items || [];
+  } catch (err) {
+    console.error('Falha na requisição Shopee:', err);
+    return [];
+  }
 }
 
 async function registrarHistorico(id, dadosAntigos, dadosNovos) {
