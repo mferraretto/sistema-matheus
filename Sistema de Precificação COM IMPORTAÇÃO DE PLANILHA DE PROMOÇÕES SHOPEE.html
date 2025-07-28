@@ -195,8 +195,15 @@
   // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
 const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','configuracoes'];
-  Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text()).then(h => { document.getElementById(t).innerHTML = h; }))).then(() => {
-    setupCharts();
+Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text()).then(h => { 
+    document.getElementById(t).innerHTML = h; 
+    if (t === 'lista-precos') {
+      const s = document.createElement('script');
+      s.src = `precificacao-tabs/${t}.js`;
+      document.body.appendChild(s);
+    }
+  }))).then(() => {
+  setupCharts();
    document.addEventListener('navbarLoaded', () => {
       setupEventListeners();
       checkLogin();
