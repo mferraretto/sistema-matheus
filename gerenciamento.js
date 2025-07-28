@@ -45,10 +45,12 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     }
 
     // Update product counter
-    function atualizarContador() {
-      const count = Object.keys(window.produtos).length;
-      document.getElementById('contador-produtos').textContent = `${count} produto${count !== 1 ? 's' : ''}`;
-    }
+     function atualizarContador() {
+        const el = document.getElementById('contador-produtos');
+        if (!el) return;
+        const count = Object.keys(window.produtos).length;
+        el.textContent = `${count} produto${count !== 1 ? 's' : ''}`;
+      }
     
 function limparUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
