@@ -544,15 +544,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
     taxaRejeicao: (acumulado.taxaRejeicao / divisor).toFixed(2),
   };
 }
-// 🧠 Preencher os campos invisíveis para a IA
-document.getElementById('nomeProduto').value = data.nome || '';
-document.getElementById('tituloProduto').value = data.titulo || data.nome || '';
-document.getElementById('categoriaProduto').value = data.categoria || '';
-document.getElementById('beneficiosProduto').value = data.descricao || '';
-document.getElementById('visitasProduto').value = desempenho.visualizacoes || data.visualizacoes || 0;
-document.getElementById('cliquesProduto').value = desempenho.curtidas || data.curtidas || 0;
-document.getElementById('vendasProduto').value = desempenho.unidadesPago || data.unidadesPago || 0;
-document.getElementById('estoqueProduto').value = data.estoque || 0;
+
 
     const container = document.getElementById("detalhesProduto");
 
@@ -680,7 +672,15 @@ document.getElementById('estoqueProduto').value = data.estoque || 0;
 <input type="hidden" id="vendasProduto">
 <input type="hidden" id="estoqueProduto">
     `;
-    
+     // 🧠 Preencher os campos invisíveis para a IA agora que eles existem no DOM
+    document.getElementById('nomeProduto').value = data.nome || '';
+    document.getElementById('tituloProduto').value = data.titulo || data.nome || '';
+    document.getElementById('categoriaProduto').value = data.categoria || '';
+    document.getElementById('beneficiosProduto').value = data.descricao || '';
+    document.getElementById('visitasProduto').value = desempenho.visualizacoes || data.visualizacoes || 0;
+    document.getElementById('cliquesProduto').value = desempenho.curtidas || data.curtidas || 0;
+    document.getElementById('vendasProduto').value = desempenho.unidadesPago || data.unidadesPago || 0;
+    document.getElementById('estoqueProduto').value = data.estoque || 0;
 
     document.getElementById("modalDetalhes").style.display = "flex";
   } catch (error) {
