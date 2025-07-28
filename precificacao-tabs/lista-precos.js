@@ -4,18 +4,40 @@ if (!firebase.apps.length) {
 // Avoid clashing with a global `db` from other scripts
 const dbListaPrecos = firebase.firestore();
 let produtos = [];
+let modoVisualizacao = 'cards';
 
 function carregarProdutos() {
   dbListaPrecos.collection('products').orderBy('createdAt', 'desc').get().then(snap => {
-    produtos = [];
-    const container = document.getElementById('listaPrecos');
-    if (!container) return;
-    container.innerHTML = '';
-    snap.forEach(doc => {
-      const data = { id: doc.id, ...doc.data() };
-      produtos.push(data);
+    produtos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    filtrarEExibir();
+  });
+}
+
+function filtrarEExibir() {
+  const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+  const filtrados = produtos.filter(p => {
+    const sku = (p.sku || '').toLowerCase();
+    const nome = (p.produto || '').toLowerCase();
+    const loja = (p.plataforma || '').toLowerCase();
+    return sku.includes(termo) || nome.includes(termo) || loja.includes(termo);
+  });
+  renderProdutos(filtrados);
+}
+
+function renderProdutos(lista) {
+  const cardContainer = document.getElementById('listaPrecos');
+  const listContainer = document.getElementById('listaPrecosList');
+  const tbody = document.getElementById('listaPrecosListBody');
+
+  cardContainer.innerHTML = '';
+  tbody.innerHTML = '';
+
+  if (modoVisualizacao === 'cards') {
+    cardContainer.classList.remove('hidden');
+    listContainer.classList.add('hidden');
+    lista.forEach(data => {
       const card = document.createElement('div');
-card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition duration-200';
+      card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition duration-200';
       card.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
@@ -24,7 +46,7 @@ card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover
           </div>
           <div class="text-right">
             <div class="text-gray-500 text-sm">Preço mínimo</div>
-<div class="text-lg font-semibold text-green-600">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
+            <div class="text-lg font-semibold text-green-600">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
           </div>
         </div>
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
@@ -35,9 +57,26 @@ card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover
             <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
           </div>
         </div>`;
-      container.appendChild(card);
+      cardContainer.appendChild(card);
     });
-  });
+  } else {
+    cardContainer.classList.add('hidden');
+    listContainer.classList.remove('hidden');
+    lista.forEach(data => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${data.produto}</td>
+        <td>${data.sku || ''}</td>
+        <td>${data.plataforma || ''}</td>
+        <td>R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
+        <td>
+          <button class="text-blue-600 mr-2" onclick="verDetalhes('${data.id}')"><i class='fas fa-eye'></i></button>
+          <button class="text-yellow-600 mr-2" onclick="editarProduto('${data.id}')"><i class='fas fa-edit'></i></button>
+          <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
 }
 
 function verDetalhes(id) {
@@ -109,3 +148,13 @@ if (document.readyState !== 'loading') {
 } else {
   document.addEventListener('DOMContentLoaded', carregarProdutos);
 }
+
+document.getElementById('filtroBusca')?.addEventListener('input', filtrarEExibir);
+document.getElementById('btnCardView')?.addEventListener('click', () => {
+  modoVisualizacao = 'cards';
+  filtrarEExibir();
+});
+document.getElementById('btnListView')?.addEventListener('click', () => {
+  modoVisualizacao = 'list';
+  filtrarEExibir();
+});
