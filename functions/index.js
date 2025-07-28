@@ -1,45 +1,40 @@
 const functions = require('firebase-functions');
 const fetch = require('node-fetch');
-const cors = require("cors")({ origin: true });
-exports.proxyShopeeSearch = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-     res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
-  res.set('Access-Control-Allow-Methods', 'GET');
 
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
+const ALLOWED_ORIGIN = 'https://mferraretto.github.io';
+
+exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Vary', 'Origin');
+
+  if (req.method === 'OPTIONS') return res.status(204).send('');
 
   const q = req.query.q;
-  if (!q) {
-    res.status(400).json({ error: 'Missing query parameter q' });
-    return;
-  }
+  if (!q) return res.status(400).json({ error: 'Missing q param' });
 
   try {
-    const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=${encodeURIComponent(q)}&limit=10&newest=0&order=desc&page_type=search&scenario=PAGE_GLOBAL_SEARCH&version=2`;
+    const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=${encodeURIComponent(q)}&limit=10`;
     const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     const data = await response.json();
-    const items = (data?.items || []).map(it => {
-      const item = it.item_basic || {};
-      return {
-        itemid: item.itemid,
-        shopid: item.shopid,
-        name: item.name,
-        price: item.price / 100000,
-        sold: item.sold,
-        image: item.image
-      };
-    });
+
+    const items = (data?.items || []).map(({ item_basic: p }) => ({
+      name: p.name,
+      price: p.price / 100000,
+      sold: p.sold,
+      image: p.image,
+      itemid: p.itemid,
+      shopid: p.shopid
+    }));
+
     res.json({ items });
   } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(500).json({ error: 'Proxy error' });
+    console.error("Erro ao buscar Shopee:", err);
+    res.status(500).json({ error: 'Erro ao buscar Shopee' });
   }
 });
-  });
+
 exports.proxyDeepSeek = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
