@@ -6,7 +6,7 @@ const dbListaPrecos = firebase.firestore();
 let produtos = [];
 let viewMode = 'cards';
 
-function carregarProdutos() {
+function lpCarregarProdutos() {
   dbListaPrecos
     .collection('products')
     .orderBy('createdAt', 'desc')
@@ -16,11 +16,11 @@ function carregarProdutos() {
       snap.forEach(doc => {
         produtos.push({ id: doc.id, ...doc.data() });
       });
-      aplicarFiltros();
+      lpAplicarFiltros();
     });
 }
 
-function aplicarFiltros() {
+function lpAplicarFiltros() {
     const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
 
   const filtrados = produtos.filter(p => {
@@ -28,10 +28,10 @@ function aplicarFiltros() {
         return !termo || texto.includes(termo);
 
   });
-  renderLista(filtrados);
+  lpRenderLista(filtrados);
 }
 
-function renderLista(lista) {
+function lpRenderLista(lista) {
   const cards = document.getElementById('listaPrecos');
   const table = document.getElementById('listaPrecosList');
   const tbody = document.getElementById('listaPrecosListBody');
@@ -59,13 +59,13 @@ function renderLista(lista) {
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
           <div class="text-sm text-gray-500"><i class="far fa-calendar-alt"></i> ${new Date(data.createdAt).toLocaleDateString('pt-BR')}</div>
          <div class="flex space-x-2">
-  <button onclick="verDetalhes('${data.id}')" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+  <button onclick="lpVerDetalhes('${data.id}')" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
     <i class='fas fa-eye mr-1'></i> Ver
   </button>
-  <button onclick="editarProduto('${data.id}')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+  <button onclick="lpEditarProduto('${data.id}')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
     <i class='fas fa-edit mr-1'></i> Editar
   </button>
-  <button onclick="excluirProduto('${data.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+  <button onclick="lpExcluirProduto('${data.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
     <i class='fas fa-trash mr-1'></i> Excluir
   </button>
 </div>
@@ -79,26 +79,28 @@ function renderLista(lista) {
     lista.forEach(data => {
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${data.produto}</td>
-        <td>${data.sku || ''}</td>
-        <td>${data.plataforma}</td>
-        <td>R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
-        <td>
-          <button class="text-blue-600 mr-2" onclick="verDetalhes('${data.id}')"><i class='fas fa-eye'></i></button>
-          <button class="text-yellow-600 mr-2" onclick="editarProduto('${data.id}')"><i class='fas fa-edit'></i></button>
-          <button class="text-red-600" onclick="excluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
+        <td class="p-3">${data.produto}</td>
+        <td class="p-3">${data.sku || ''}</td>
+        <td class="p-3">${data.plataforma}</td>
+        <td class="p-3">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</td>
+        <td class="p-3">
+          <div class="flex space-x-2">
+            <button class="text-blue-600" onclick="lpVerDetalhes('${data.id}')"><i class='fas fa-eye'></i></button>
+            <button class="text-yellow-600" onclick="lpEditarProduto('${data.id}')"><i class='fas fa-edit'></i></button>
+            <button class="text-red-600" onclick="lpExcluirProduto('${data.id}')"><i class='fas fa-trash'></i></button>
+          </div>
         </td>`;
       tbody.appendChild(row);
     });
   }
 }
 
-function verDetalhes(id) {
+function lpVerDetalhes(id) {
   const prod = produtos.find(p => p.id === id);
   if (!prod) return;
-  document.getElementById('saveBtn').classList.add('hidden');
-  document.getElementById('modalTitle').textContent = prod.produto;
-  const body = document.getElementById('modalBody');
+  document.getElementById('lpSaveBtn').classList.add('hidden');
+  document.getElementById('lpModalTitle').textContent = prod.produto;
+  const body = document.getElementById('lpModalBody');
   body.innerHTML = `
     ${prod.sku ? `<div><strong>SKU:</strong> ${prod.sku}</div>` : ''}
     <div><strong>Plataforma:</strong> ${prod.plataforma}</div>
@@ -108,16 +110,16 @@ function verDetalhes(id) {
     <div><strong>Preço médio:</strong> R$ ${prod.precoMedio}</div>
     <div><strong>Preço promo:</strong> R$ ${prod.precoPromo}</div>
   `;
-  document.getElementById('detalhesModal').classList.remove('hidden');
+  document.getElementById('lpDetalhesModal').classList.remove('hidden');
 }
 
 let editId = null;
-function editarProduto(id) {
+function lpEditarProduto(id) {
   const prod = produtos.find(p => p.id === id);
   if (!prod) return;
   editId = id;
-  document.getElementById('modalTitle').textContent = 'Editar ' + prod.produto;
-  const body = document.getElementById('modalBody');
+ document.getElementById('lpModalTitle').textContent = 'Editar ' + prod.produto;
+  const body = document.getElementById('lpModalBody');
   body.innerHTML = `
     <label class='block'>Nome<input id='editNome' class='w-full border p-2 rounded mt-1' value="${prod.produto}"></label>
     <label class='block mt-2'>SKU<input id='editSku' class='w-full border p-2 rounded mt-1' value="${prod.sku || ''}"></label>
@@ -127,11 +129,11 @@ function editarProduto(id) {
     <label class='block mt-2'>Preço médio<input id='editMedio' type='number' step='0.01' class='w-full border p-2 rounded mt-1' value="${prod.precoMedio}"></label>
     <label class='block mt-2'>Preço promo<input id='editPromo' type='number' step='0.01' class='w-full border p-2 rounded mt-1' value="${prod.precoPromo}"></label>
   `;
-  document.getElementById('saveBtn').classList.remove('hidden');
-  document.getElementById('detalhesModal').classList.remove('hidden');
+ document.getElementById('lpSaveBtn').classList.remove('hidden');
+  document.getElementById('lpDetalhesModal').classList.remove('hidden');
 }
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
+document.getElementById('lpSaveBtn').addEventListener('click', async () => {
   if (!editId) return;
   const data = {
     produto: document.getElementById('editNome').value,
@@ -143,31 +145,31 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     precoPromo: parseFloat(document.getElementById('editPromo').value) || 0
   };
   await dbListaPrecos.collection('products').doc(editId).update(data);
-  fecharModal();
-  carregarProdutos();
+  lpFecharModal();
+  lpCarregarProdutos();
 });
 
-function excluirProduto(id) {
+function lpExcluirProduto(id) {
   if (!confirm('Excluir este produto?')) return;
-  dbListaPrecos.collection('products').doc(id).delete().then(carregarProdutos);
+  dbListaPrecos.collection('products').doc(id).delete().then(lpCarregarProdutos);
 }
 
-function fecharModal() {
-  document.getElementById('detalhesModal').classList.add('hidden');
+function lpFecharModal() {
+  document.getElementById('lpDetalhesModal').classList.add('hidden');
   editId = null;
 }
 function setupListeners() {
-  document.getElementById('filtroBusca')?.addEventListener('input', aplicarFiltros);
-  document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
-  document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
+document.getElementById('filtroBusca')?.addEventListener('input', lpAplicarFiltros);
+  document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; lpAplicarFiltros(); });
+  document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; lpAplicarFiltros(); });
 }
 
 
 if (document.readyState !== 'loading') {
     setupListeners();
-  carregarProdutos();
+  lpCarregarProdutos();
 } else {
-  document.addEventListener('DOMContentLoaded', carregarProdutos);
+  document.addEventListener('DOMContentLoaded', lpCarregarProdutos);
 }
 
 
