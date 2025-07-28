@@ -32,6 +32,19 @@
         }
       });
   };
+  
+  // Load authentication modals into placeholder
+  window.loadAuthModals = function(containerId) {
+    containerId = containerId || 'auth-modals-container';
+    return fetch('partials/auth-modals.html')
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        var container = document.getElementById(containerId);
+        if (container) {
+          container.innerHTML = html;
+        }
+      });
+  };
   // Initialize dark mode handling
   window.initDarkMode = function(toggleId, darkClass) {
     toggleId = toggleId || 'darkModeToggle';
@@ -64,5 +77,6 @@
       window.initDarkMode();
     });
     window.loadNavbar();
+    window.loadAuthModals();
   });
 })();
