@@ -1,16 +1,12 @@
 if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig); // ✅ Inicializa Firebase apenas se necessário
+  firebase.initializeApp(firebaseConfig);
 }
-if (!window.db) {
-  window.db = firebase.firestore();       // ✅ Salva Firestore de forma global e segura
-}
-const db = window.db;                     // ✅ Usa uma referência reutilizável
-
-
+// Avoid clashing with a global `db` from other scripts
+const dbListaPrecos = firebase.firestore();
 let produtos = [];
 
 function carregarProdutos() {
-  db.collection('products').orderBy('createdAt', 'desc').get().then(snap => {
+  dbListaPrecos.collection('products').orderBy('createdAt', 'desc').get().then(snap => {
     produtos = [];
     const container = document.getElementById('listaProdutos');
     if (!container) return;
@@ -93,14 +89,14 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     precoMedio: parseFloat(document.getElementById('editMedio').value) || 0,
     precoPromo: parseFloat(document.getElementById('editPromo').value) || 0
   };
-  await db.collection('products').doc(editId).update(data);
+  await dbListaPrecos.collection('products').doc(editId).update(data);
   fecharModal();
   carregarProdutos();
 });
 
 function excluirProduto(id) {
   if (!confirm('Excluir este produto?')) return;
-  db.collection('products').doc(id).delete().then(carregarProdutos);
+  dbListaPrecos.collection('products').doc(id).delete().then(carregarProdutos);
 }
 
 function fecharModal() {
