@@ -444,15 +444,22 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
       mostrarErroFirebase(error);
     }
 
-    // Toggle modo escuro
-    document.getElementById('darkModeToggle').addEventListener('click', function() {
-      this.classList.toggle('active');
-      document.body.classList.toggle('dark-mode');
-    });
-    
-    // Menu toggle para mobile
-    document.querySelector('.menu-toggle').addEventListener('click', function() {
-      document.querySelector('.sidebar').classList.toggle('active');
+ // Eventos dependentes do carregamento da navbar
+    document.addEventListener('navbarLoaded', () => {
+      const darkToggle = document.getElementById('darkModeToggle');
+      if (darkToggle) {
+        darkToggle.addEventListener('click', function() {
+          this.classList.toggle('active');
+          document.body.classList.toggle('dark-mode');
+        });
+      }
+
+      const menuToggle = document.querySelector('.menu-toggle');
+      if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+          document.querySelector('.sidebar')?.classList.toggle('active');
+        });
+      }
     });
 
     // =============================================
