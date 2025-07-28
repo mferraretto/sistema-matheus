@@ -69,8 +69,26 @@ function limparUndefined(obj) {
     const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
     if (tipo === "desempenho") {
-      const dataReferencia = prompt("📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)", new Date().toISOString().slice(0, 10));
-      window.dataDesempenhoReferencia = dataReferencia;
+      const escolha = prompt(
+        "Digite 1 para usar um dia único ou 2 para especificar um período"
+      );
+      if (escolha === "2") {
+        const inicio = prompt(
+          "📅 Data inicial do período (AAAA-MM-DD)",
+          new Date().toISOString().slice(0, 10)
+        );
+        const fim = prompt(
+          "📅 Data final do período (AAAA-MM-DD)",
+          new Date().toISOString().slice(0, 10)
+        );
+        window.dataDesempenhoReferencia = `${inicio}_ate_${fim}`;
+      } else {
+        const dataReferencia = prompt(
+          "📅 Qual a data de referência desses dados de desempenho? (formato: AAAA-MM-DD)",
+          new Date().toISOString().slice(0, 10)
+        );
+        window.dataDesempenhoReferencia = dataReferencia;
+      }
     }
 
     for (const linha of dados) {
