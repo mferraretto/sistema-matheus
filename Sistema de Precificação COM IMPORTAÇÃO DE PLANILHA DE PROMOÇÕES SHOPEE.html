@@ -201,9 +201,20 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       setupEventListeners();
       checkLogin();
       const params = new URLSearchParams(window.location.search);
-      if (params.get('login') === '1') {
-        openModal('loginModal');
-      }
+       const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
+       if (initialTab) {
+         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+         const btn = document.querySelector(`.tab-button[data-tab="${initialTab}"]`);
+         const content = document.getElementById(initialTab);
+         if (btn && content) {
+           btn.classList.add('active');
+           content.classList.add('active');
+         }
+       }
+       if (params.get('login') === '1') {
+         openModal('loginModal');
+       }
       document.getElementById('darkModeToggle').addEventListener('change', () => {
         document.body.classList.toggle('dark-mode');
       });
