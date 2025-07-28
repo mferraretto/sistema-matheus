@@ -21,20 +21,20 @@ function carregarProdutos() {
 }
 
 function aplicarFiltros() {
-  const termo = document.getElementById('searchInput')?.value.toLowerCase() || '';
-  const loja = document.getElementById('storeFilter')?.value || '';
+    const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+
   const filtrados = produtos.filter(p => {
     const texto = `${p.produto || ''} ${(p.sku || '')}`.toLowerCase();
-    const lojaOK = !loja || p.plataforma === loja;
-    return (!termo || texto.includes(termo)) && lojaOK;
+        return !termo || texto.includes(termo);
+
   });
   renderLista(filtrados);
 }
 
 function renderLista(lista) {
-  const cards = document.getElementById('listaPrecosCards');
-  const table = document.getElementById('listaPrecosTable');
-  const tbody = document.getElementById('listaPrecosTableBody');
+  const cards = document.getElementById('listaPrecos');
+  const table = document.getElementById('listaPrecosList');
+  const tbody = document.getElementById('listaPrecosListBody');
   if (!cards || !table || !tbody) return;
   cards.innerHTML = '';
   tbody.innerHTML = '';
@@ -157,10 +157,9 @@ function fecharModal() {
   editId = null;
 }
 function setupListeners() {
-  document.getElementById('searchInput')?.addEventListener('input', aplicarFiltros);
-  document.getElementById('storeFilter')?.addEventListener('change', aplicarFiltros);
-  document.getElementById('viewCardsBtn')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
-  document.getElementById('viewListBtn')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
+  document.getElementById('filtroBusca')?.addEventListener('input', aplicarFiltros);
+  document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
+  document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
 }
 
 
