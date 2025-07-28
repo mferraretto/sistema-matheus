@@ -215,15 +215,28 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
        if (params.get('login') === '1') {
          openModal('loginModal');
        }
-      document.getElementById('darkModeToggle').addEventListener('change', () => {
-        document.body.classList.toggle('dark-mode');
-      });
-      document.getElementById('userDropdown').addEventListener('click', () => {
-        document.getElementById('dropdownMenu').classList.toggle('hidden');
-      });
-      document.getElementById('sidebarToggle').addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
-      });
+       const darkToggle = document.getElementById('darkModeToggle');
+      if (darkToggle) {
+        darkToggle.addEventListener('change', () => {
+          document.body.classList.toggle('dark-mode');
+        });
+      }
+
+      const userDropdown = document.getElementById('userDropdown');
+      if (userDropdown) {
+        userDropdown.addEventListener('click', () => {
+          const menu = document.getElementById('dropdownMenu');
+          if (menu) menu.classList.toggle('hidden');
+        });
+      }
+
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+          const sidebar = document.querySelector('.sidebar');
+          if (sidebar) sidebar.classList.toggle('active');
+        });
+      }
       const filtroPlataforma = document.getElementById('filtroPlataforma');
       const filtroSKU = document.getElementById('filtroSKU');
       if (filtroPlataforma) {
