@@ -1,0 +1,42 @@
+<div id="analise" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-chart-line text-2xl text-purple-600 mr-3"></i>
+            <h2 class="text-2xl font-bold">Análise e Sugestões de Otimização</h2>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-robot text-purple-500 text-xl mt-1 mr-3"></i>
+              <div>
+                <p class="font-medium">Sugestões baseadas em análise de:</p>
+                <ul class="list-disc pl-5 mt-2 text-gray-700">
+                  <li>Taxa de conversão abaixo do esperado</li>
+                  <li>Imagens de capa ausentes ou de baixa qualidade</li>
+                  <li>Títulos incompletos ou pouco atrativos</li>
+                  <li>Descrições com poucas informações</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <button onclick="gerarSugestoes()" class="btn btn-primary px-4 py-2 flex items-center mb-6">
+            <i class="fas fa-bolt mr-2"></i>Gerar Sugestões de Otimização
+          </button>
+          <div id="sugestoesIA" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+      </div>
+    
+      <!-- Campos invisíveis usados pela IA -->
+      <input type="hidden" id="nomeProduto" value="">
+      <input type="hidden" id="categoriaProduto" value="">
+      <input type="hidden" id="beneficiosProduto" value="">
+      <input type="hidden" id="tituloProduto" value="">
+      <input type="hidden" id="visitasProduto" value="">
+      <input type="hidden" id="cliquesProduto" value="">
+      <input type="hidden" id="vendasProduto" value="">
+      <input type="hidden" id="estoqueProduto" value="">
+    </div>
