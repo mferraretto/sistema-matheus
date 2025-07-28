@@ -1,0 +1,34 @@
+  <div id="evolucao" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div class="flex items-center">
+            <i class="fas fa-history text-2xl text-yellow-600 mr-3"></i>
+            <h2 class="text-2xl font-bold">Evolução dos Anúncios</h2>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1 mr-3"></i>
+              <div>
+                <p class="font-medium">Acompanhe a evolução dos seus produtos:</p>
+                <ul class="list-disc pl-5 mt-2 text-gray-700">
+                  <li>Histórico de alterações nos produtos</li>
+                  <li>Evolução de visualizações e vendas</li>
+                  <li>Comparação entre versões anteriores</li>
+                  <li>Impacto das alterações no desempenho</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <button onclick="carregarEvolucao()" class="btn btn-primary px-4 py-2 flex items-center mb-6">
+            <i class="fas fa-sync-alt mr-2"></i>Carregar Dados de Evolução
+          </button>
+          
+          <div id="conteudoEvolucao" class="space-y-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
