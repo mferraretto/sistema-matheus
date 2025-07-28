@@ -47,6 +47,25 @@
           </table>
         </div>
       </div>
+      <!-- Botões de ação -->
+<div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
+  <button onclick="applyPriceUpdate('promo')" class="btn-danger">
+    <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
+  </button>
+  <button onclick="applyPriceUpdate('medium')" class="btn-secondary">
+    <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
+  </button>
+  <button onclick="applyPriceUpdate('ideal')" class="btn-success">
+    <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
+  </button>
+
+  <button onclick="exportShopeeFile()" class="btn btn-success">
+    <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+  </button>
+  <button onclick="window.print()" class="btn btn-danger">
+    <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
+  </button>
+</div>
     </div>
   </div>
   <script>
@@ -83,8 +102,9 @@
           importedProducts.push(prod);
         }
         displayImportedProducts(importedProducts);
-        document.getElementById('importedShopeeProducts').style.display = 'block';
-        await checkProducts();
+       document.getElementById('importedShopeeProducts').style.display = 'block';
+document.getElementById('acaoPromocoes').style.display = 'flex';
+await checkProducts();
       };
       reader.readAsArrayBuffer(file);
     }
