@@ -34,6 +34,8 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
     // Global products object
     window.produtos = {};
+// Lista global de SKUs não cadastrados
+    window.skusNaoCadastrados = [];
 // Escape HTML for safe insertion of text content
     function escapeHTML(str) {
       return str
@@ -367,21 +369,29 @@ for (const v of variantes) {
     const snapshotProd = await getDocs(qProd);
 
     if (!snapshotProd.empty) {
-      const docProd = snapshotProd.docs[0].data();
-      const precoMinimo = parseFloat(docProd.precoMinimo || 0);
-      const precoVar = parseFloat(v.preco || 0);
+        const docProd = snapshotProd.docs[0].data();
+        const precoMinimo = parseFloat(docProd.precoMinimo || 0);
+        const precoVar = parseFloat(v.preco || 0);
 
       if (precoVar > 0 && precoVar < precoMinimo) {
         v.alertaPreco = true;
         v.precoMinimo = precoMinimo;
       }
-    } else {
-      // 🚨 SKU não encontrado na base de produtos
-      v.skuNaoEncontrado = true;
-    }
+     } else {
+        // 🚨 SKU não encontrado na base de produtos
+        v.skuNaoEncontrado = true;
+        const skuLower = String(sku);
+        if (!window.skusNaoCadastrados.includes(skuLower)) {
+          window.skusNaoCadastrados.push(skuLower);
+        }
+      }
   } catch (e) {
     console.warn(`Erro ao buscar SKU ${sku} em products:`, e);
     v.skuNaoEncontrado = true; // fallback de segurança
+    const skuLower = String(sku);
+    if (!window.skusNaoCadastrados.includes(skuLower)) {
+      window.skusNaoCadastrados.push(skuLower);
+    }
   }
 }
 
@@ -1213,3 +1223,15 @@ Analise o desempenho e diga por que esse anúncio pode estar performando abaixo 
   });
 };
 
+// 📤 Exporta lista de SKUs não cadastrados
+window.exportarSkusNaoCadastrados = function () {
+  if (!window.skusNaoCadastrados.length) {
+    showNotification("Nenhum SKU não cadastrado encontrado", "warning");
+    return;
+  }
+  const data = window.skusNaoCadastrados.map(sku => ({ SKU: sku }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "SKUs");
+  XLSX.writeFile(wb, "skus_nao_cadastrados.xlsx");
+};
