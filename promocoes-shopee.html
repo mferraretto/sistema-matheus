@@ -342,6 +342,31 @@ function applyPriceUpdate(type) {
     }
 
   </script>
+  <!-- Toast container -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+<script>
+  function showToast(mensagem, tipo = 'success') {
+    const container = document.getElementById('toastContainer');
+
+    const cor = tipo === 'success' ? 'bg-green-500' :
+                tipo === 'warning' ? 'bg-yellow-500' :
+                tipo === 'error'   ? 'bg-red-500' : 'bg-blue-500';
+
+    const toast = document.createElement('div');
+    toast.className = `${cor} text-white px-4 py-3 rounded shadow-lg flex items-center justify-between min-w-[250px] animate-fadeIn`;
+    toast.innerHTML = `
+      <span class="mr-4">${mensagem}</span>
+      <button onclick="this.parentElement.remove()" class="text-white font-bold">×</button>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remover após 4s
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+
   <script src="shared.js"></script>
 </body>
 </html>
