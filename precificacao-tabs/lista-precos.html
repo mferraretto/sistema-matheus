@@ -10,8 +10,8 @@
 
   <div id="listaPrecos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-  <div id="listaPrecosList" class="hidden">
-    <table class="data-table w-full">
+ <div id="listaPrecosList" class="hidden overflow-x-auto">
+    <table class="data-table w-full table-auto text-sm">
       <thead>
         <tr>
           <th>Produto</th>
@@ -24,8 +24,8 @@
       <tbody id="listaPrecosListBody"></tbody>
     </table>
   </div>
-<div id="detalhesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-start justify-center pt-10">
-  <div class="bg-white p-6 rounded-lg shadow-lg max-w-xl w-full">
+<div id="detalhesModal" class="modal hidden">
+  <div class="modal-content">
     <h3 id="modalTitle" class="text-xl font-bold mb-4"></h3>
     <div id="modalBody" class="space-y-2"></div>
     <div class="mt-4 text-right">
