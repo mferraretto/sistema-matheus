@@ -311,39 +311,6 @@ body.dark .sidebar-link:hover {
   transition: .2s
 }
 .logout-btn:hover {
-  background-color: rgba(244,92,0,.1)  left: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end
-}
-.navbar-user {
-  display: flex;
-  align-items: center;
-  gap: 15px
-}
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px
-}
-.user-avatar {
-  background-color: var(--primary);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center
-}
-.logout-btn {
-  background: 0 0;
-  border: none;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 500;
-  padding: 8px 15px;
-  border-radius: 20px;
-  transition: .2s
-}
-.logout-btn:hover {
   background-color: rgba(244,92,0,.1)
 }
 .main-content {
