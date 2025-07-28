@@ -171,21 +171,22 @@ await checkProducts();
  let modified = 0;
       products.forEach((prod, idx) => {
         const tr = document.createElement('tr');
-        const original = sistema.originalShopeeData[idx] || {};
-        const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
-        if (isModified) {
+        if (prod.modificado === true) {
           tr.classList.add('bg-green-100');
-          modified++;
-        } else {
+        } else if (prod.modificado === false) {
           tr.classList.add('bg-red-100');
+        } else if (typeof prod.encontrado !== 'undefined') {
+          tr.classList.add(prod.encontrado ? 'bg-green-100' : 'bg-red-100');
         }
+
+        const statusText = prod.status || '';
         tr.innerHTML = `
           <td>${prod['ID do produto'] || ''}</td>
           <td>${prod['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
           <td>${prod['Nº de Ref. SKU. (Opcional)'] || ''}</td>
           <td>${prod['Preço original (opcional)'] || ''}</td>
           <td>${prod['Preço de desconto'] || ''}</td>
-          <td class="status"></td>
+          <td class="status">${statusText}</td>
         `;
         body.appendChild(tr);
       });
@@ -217,7 +218,10 @@ await checkProducts();
         const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
                     (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
         const row = rows[idx];
-        if (sku && systemSkus.has(sku)) {
+ const found = sku && systemSkus.has(sku);
+        prod.encontrado = found;
+        prod.status = found ? 'Encontrado' : 'Não encontrado';
+        if (found) {
           row.classList.add('bg-green-100');
           row.querySelector('.status').textContent = 'Encontrado';
         } else {
@@ -330,6 +334,8 @@ function applyPriceUpdate(type) {
 
     if (!searchSku) {
       productsWithNoSku++;
+       importedProduct.modificado = false;
+      importedProduct.status = 'Sem SKU';
       return;
     }
 
@@ -340,7 +346,9 @@ function applyPriceUpdate(type) {
 
     if (!systemProduct) {
       productsNotFound++;
+      importedProduct.modificado = false;
       skusNaoEncontrados.push(searchSku);
+      importedProduct.status = 'Não encontrado';
       return;
     }
 
@@ -361,6 +369,8 @@ function applyPriceUpdate(type) {
       changedIdx.push(idx);
     }
     importedProduct['Preço de desconto'] = priceToApply;
+     importedProduct.modificado = true;
+    importedProduct.status = 'Atualizado';
     productsUpdated++;
   });
 
