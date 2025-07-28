@@ -19,6 +19,14 @@
     </div>
     <div class="card-body">
       <p class="mb-4">Busca diária de dados públicos dos seus anúncios e concorrentes na Shopee.</p>
+       <div class="form-row">
+        <div class="form-group input-with-icon">
+          <i class="fas fa-search"></i>
+          <input type="text" id="termoPesquisaShopee" placeholder="Digite o que deseja pesquisar..." class="form-control" />
+        </div>
+        <button onclick="pesquisarShopee()" class="btn btn-primary"><i class="fas fa-search mr-1"></i>Pesquisar</button>
+      </div>
+      <div id="resultadoPesquisaShopee" class="overflow-x-auto mb-4"></div>
       <div id="historicoMonitoramento" class="overflow-x-auto"></div>
     </div>
   </div>
