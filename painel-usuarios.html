@@ -45,7 +45,11 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
+firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+      }
+    });
     const form = document.getElementById("userForm");
     const lista = document.getElementById("listaUsuarios");
 
