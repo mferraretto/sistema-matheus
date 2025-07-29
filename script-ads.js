@@ -60,15 +60,18 @@ async function importarShopeeAds() {
 
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
-  const snap = await db.collectionGroup('desempenho').get();
+  const campanhasSnap = await db.collection('ads').get();
 
   const dadosPorData = {};
-  snap.forEach(doc => {
-    const d = doc.data();
-    if (!dadosPorData[d.data]) dadosPorData[d.data] = { gasto: 0, receita: 0 };
-    dadosPorData[d.data].gasto += d.gasto;
-    dadosPorData[d.data].receita += d.receita;
-  });
+  for (const campDoc of campanhasSnap.docs) {
+    const desempenhoSnap = await campDoc.ref.collection('desempenho').get();
+    desempenhoSnap.forEach(doc => {
+      const d = doc.data();
+      if (!dadosPorData[d.data]) dadosPorData[d.data] = { gasto: 0, receita: 0 };
+      dadosPorData[d.data].gasto += d.gasto;
+      dadosPorData[d.data].receita += d.receita;
+    });
+  }
 
   const labels = Object.keys(dadosPorData).sort();
   const gastos = labels.map(d => dadosPorData[d].gasto);
