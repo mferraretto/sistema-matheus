@@ -2,9 +2,7 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
-const { doc, setDoc } = firebase.firestore;
 
-// Função no script-ads.js
 async function importarShopeeAds() {
   const fileInput = document.getElementById('adsFileInput');
   const file = fileInput.files[0];
@@ -12,19 +10,19 @@ async function importarShopeeAds() {
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-  const todasLinhas = e.target.result.split(/\r?\n/);
+    const todasLinhas = e.target.result.split(/\r?\n/);
 
-// Detecta a linha onde está o cabeçalho da Shopee Ads: "#,Palavra-chave,..."
-const linhaCabecalhoIndex = todasLinhas.findIndex(l => l.startsWith("#,"));
+    // Detecta o cabeçalho da Shopee Ads
+    const linhaCabecalhoIndex = todasLinhas.findIndex(l => l.startsWith("#,"));
 
-if (linhaCabecalhoIndex === -1) {
-  return alert("❌ Cabeçalho da tabela não encontrado. Verifique a planilha.");
-}
+    if (linhaCabecalhoIndex === -1) {
+      return alert("❌ Cabeçalho da tabela não encontrado. Verifique a planilha.");
+    }
 
-const cabecalho = todasLinhas[linhaCabecalhoIndex].split(",");
-const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
-  .map(l => l.split(","))
-  .filter(l => l.length === cabecalho.length);
+    const cabecalho = todasLinhas[linhaCabecalhoIndex].split(",");
+    const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
+      .map(l => l.split(","))
+      .filter(l => l.length === cabecalho.length);
 
     const getIndex = (termo) =>
       cabecalho.findIndex(c => c.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/gi, "").includes(termo));
@@ -45,12 +43,12 @@ const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
 
     for (const linha of dados) {
       const dataRaw = linha[pos.data] || "";
-      const dataFormatada = dataRaw.split(" ")[0]?.replaceAll("/", "-");
+      const dataFormatada = dataRaw.split(" ")[0]?.split("/").reverse().join("-");
       const campanha = linha[pos.campanha] || "Campanha Desconhecida";
       const produto = linha[pos.produto] || "";
 
-      const ref = doc(db, "ads", campanha, "desempenho", dataFormatada);
-      await setDoc(ref, {
+      const ref = db.doc(`ads/${campanha}/desempenho/${dataFormatada}`);
+      await ref.set({
         produto,
         impressoes: parseInt(linha[pos.impressoes]) || 0,
         cliques: parseInt(linha[pos.cliques]) || 0,
@@ -69,7 +67,6 @@ const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
 
   reader.readAsText(file, "UTF-8");
 }
-
 
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
