@@ -7,6 +7,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const ADMIN_EMAIL = 'admin@empresa.com';
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    window.location.href = 'index.html?login=1';
+  }
+});
 
 async function buscarShopee(term) {
   try {
