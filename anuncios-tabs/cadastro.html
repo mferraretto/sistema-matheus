@@ -21,6 +21,9 @@
           <div class="flex items-center">
             <i class="fas fa-file-import text-2xl text-orange-500 mr-3"></i>
             <h2 class="text-2xl font-bold">Importar Dados de Produtos</h2>
+            <span class="tooltip tooltip-lg ml-2" data-tooltip="Envie planilhas exportadas da Shopee. Cada tipo preenche parte do cadastro: Básicas (nome e descrição), Vendas (preço, estoque e SKU), Frete (peso e dimensões), Mídia (imagens e variações) e Desempenho (visitas e vendas). Baixe-as em Meus Produtos > Editar em Massa e clique em 'Escolher arquivo' para importar.">
+              <i class="fas fa-info-circle text-base text-gray-500"></i>
+            </span>
           </div>
         </div>
         
@@ -145,5 +148,16 @@
   <script src="../firebase-config.js"></script>
   <script type="module" src="../gerenciamento.js"></script>
   <script src="../shared.js"></script>
+   <script>
+    document.querySelectorAll('.tooltip').forEach(el => {
+      const text = el.getAttribute('data-tooltip');
+      if (text) {
+        const span = document.createElement('span');
+        span.className = 'tooltip-text';
+        span.textContent = text;
+        el.appendChild(span);
+      }
+    });
+  </script>
 </body>
 </html>
