@@ -75,7 +75,6 @@
     <div id="configuracoes" class="tab-content p-4"></div>
 
   <!-- Modais -->
-  <div id="auth-modals-container"></div>
 
 
   <div id="addUserModal" class="modal">
@@ -184,9 +183,7 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
            content.classList.add('active');
          }
        }
-       if (params.get('login') === '1') {
-         openModal('loginModal');
-       }
+       
        const darkToggle = document.getElementById('darkModeToggle');
       if (darkToggle) {
         darkToggle.addEventListener('change', () => {
@@ -399,32 +396,14 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
     function checkLogin() {
       auth.onAuthStateChanged(user => {
         if (user) {
-          // Usuário logado
           showUserArea(user);
         } else {
-          // Usuário não logado
-          hideUserArea();
+       window.location.href = 'index.html?login=1';
         }
       });
     }
 
-    function login() {
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          showUserArea(user);
-          closeModal('loginModal');
-          addHistoryEntry('login', `Usuário ${user.email} fez login`);
-          showToast('Login realizado com sucesso!', 'success');
-        })
-        .catch((error) => {
-          alert('Credenciais inválidas! ' + error.message);
-          showToast('Erro ao fazer login!', 'error');
-        });
-    }
+   
 
     function logout() {
       const user = auth.currentUser;
@@ -1817,23 +1796,6 @@ function applyPriceUpdate(type) {
       document.getElementById(modalId).style.display = 'block';
     }
 
-    function openRecoverModal() {
-      closeModal('loginModal');
-      openModal('recoverModal');
-    }
-
-    function sendRecovery() {
-      const email = document.getElementById('recoverEmail').value;
-      if (!email.includes('@')) {
-        showToast('E-mail inválido!', 'warning');
-        return;
-      }
-      
-      // Simulação de envio
-      showToast(`Link de recuperação enviado para ${email}`, 'success');
-      closeModal('recoverModal');
-      addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
-    }
   function verificarProdutosDuplicados() {
       const skuMap = {};
       sistema.produtos.forEach(p => {
