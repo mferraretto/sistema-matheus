@@ -692,50 +692,51 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
 
     // Funções de usuários
     async function loadUsers() {
-      const usersTable = document.getElementById('usersTableBody');
-      usersTable.innerHTML = '';
-      
-      // Atualiza filtro de usuários no histórico
-      const userFilter = document.getElementById('filterHistoryUser');
-      userFilter.innerHTML = '<option value="all">Todos os usuários</option>';
-      
-      sistema.usuarios.forEach(user => {
-        // Adiciona à tabela
-        const row = document.createElement('tr');
-        row.className = 'border-b';
-        row.innerHTML = `
-          <td class="p-3">${user.nome || user.email}</td>
-          <td class="p-3">${user.email}</td>
-          <td class="p-3">
-            <span class="${user.perfil === 'admin' ? 'admin-badge' : user.perfil === 'operador' ? 'operator-badge' : 'viewer-badge'} profile-badge">
-              ${user.perfil}
-            </span>
-          </td>
-          <td class="p-3">
-            <button onclick="editUser('${user.id}')" class="btn-action btn-edit mr-2">
-              <i class="fas fa-edit"></i>
-            </button>
-            ${user.email !== 'admin@empresa.com' ? `
-            <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete mr-2">
-              <i class="fas fa-trash"></i>
-            </button>
-            <button onclick="deleteAllProducts('${user.id}')" class="btn-action btn-delete">
-              <i class="fas fa-box-open"></i>
-            </button>
-            ` : ''}
-          </td>
-        `;
-        usersTable.appendChild(row);
-        
-        // Adiciona ao filtro
-        const option = document.createElement('option');
-        option.value = user.email;
-        option.textContent = user.email;
-        userFilter.appendChild(option);
-      });
-    }
- populateDeleteUserSelect();
-    }
+  const usersTable = document.getElementById('usersTableBody');
+  usersTable.innerHTML = '';
+  
+  // Atualiza filtro de usuários no histórico
+  const userFilter = document.getElementById('filterHistoryUser');
+  userFilter.innerHTML = '<option value="all">Todos os usuários</option>';
+  
+  sistema.usuarios.forEach(user => {
+    // Adiciona à tabela
+    const row = document.createElement('tr');
+    row.className = 'border-b';
+    row.innerHTML = `
+      <td class="p-3">${user.nome || user.email}</td>
+      <td class="p-3">${user.email}</td>
+      <td class="p-3">
+        <span class="${user.perfil === 'admin' ? 'admin-badge' : user.perfil === 'operador' ? 'operator-badge' : 'viewer-badge'} profile-badge">
+          ${user.perfil}
+        </span>
+      </td>
+      <td class="p-3">
+        <button onclick="editUser('${user.id}')" class="btn-action btn-edit mr-2">
+          <i class="fas fa-edit"></i>
+        </button>
+        ${user.email !== 'admin@empresa.com' ? `
+        <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete mr-2">
+          <i class="fas fa-trash"></i>
+        </button>
+        <button onclick="deleteAllProducts('${user.id}')" class="btn-action btn-delete">
+          <i class="fas fa-box-open"></i>
+        </button>
+        ` : ''}
+      </td>
+    `;
+    usersTable.appendChild(row);
+    
+    // Adiciona ao filtro
+    const option = document.createElement('option');
+    option.value = user.email;
+    option.textContent = user.email;
+    userFilter.appendChild(option);
+  });
+}
+
+populateDeleteUserSelect(); // OK fora da função
+
 
     function populateDeleteUserSelect() {
       const select = document.getElementById('deleteAllProductsSelect');
