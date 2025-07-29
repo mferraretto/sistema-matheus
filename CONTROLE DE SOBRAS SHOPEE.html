@@ -1516,7 +1516,10 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       }
     }
     async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", idFiltroMes = "filtroMes") {
-      const ref = db.collection("faturamento");
+ let ref = db.collection("faturamento");
+      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+        ref = ref.where('uid', '==', usuarioLogado.uid);
+      }
       const snap = await ref.get();
       const container = document.getElementById(idContainer);
       container.innerHTML = "";
@@ -1530,7 +1533,11 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
         }
 
-        const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+ let subRef = db.collection(`faturamento/${docData.id}/lojas`);
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          subRef = subRef.where('uid', '==', usuarioLogado.uid);
+        }
+        const subSnap = await subRef.get();
         let bruto = 0, liquido = 0, qtd = 0;
 
         subSnap.forEach(sub => {
@@ -1581,7 +1588,10 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       detalhesEl.innerHTML = `<div class="text-sm text-gray-500">🔄 Carregando...</div>`;
       detalhesEl.style.display = "block";
 
-      const ref = db.collection("faturamento").doc(dataRef).collection("lojas");
+ let ref = db.collection("faturamento").doc(dataRef).collection("lojas");
+      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+        ref = ref.where('uid', '==', usuarioLogado.uid);
+      }
       const snap = await ref.get();
 
       let html = "";
