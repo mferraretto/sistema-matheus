@@ -14,7 +14,13 @@ reader.onload = async (e) => {
 
   // 🟡 Captura o nome da campanha (linha: Nome do Produto / Anúncio)
   const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
-  const nomeProduto = todasLinhas[linhaProdutoIndex + 1]?.split(",")[0]?.trim() || "Campanha_Desconhecida";
+const nomeProduto = (
+  todasLinhas[linhaProdutoIndex]?.split(",")[1] || "Campanha_Desconhecida"
+)
+  .normalize("NFD")                      // Remove acentos
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-zA-Z0-9]/g, "_")         // Substitui espaços e símbolos
+  .trim();
 
   // 🗓️ Captura a data final do período
   const linhaPeriodoIndex = todasLinhas.findIndex(l => l.startsWith("Período"));
