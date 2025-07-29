@@ -1,10 +1,17 @@
 const functions = require('firebase-functions');
 const fetch = require('node-fetch');
 
-const ALLOWED_ORIGIN = 'https://mferraretto.github.io';
-
+const ORIGENS_PERMITIDAS = (process. env . ORIGEM_PERMITIDA || 'https://mferraretto.github.io' )
+ 
+  . dividir ( ',' )
+  . mapa ( o => o. trim ());
 exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+const origin = req. cabeçalhos . origem ;
+  se ( ORIGENS_PERMITIDAS . inclui (origem)) {
+    res. set ( 'Acesso-Controle-Permitir-Origem' , origem);
+  } outro {
+    res. set ( 'Controle de Acesso-Permitir-Origem' , ORIGENS_PERMITIDAS [ 0 ]);
+  }
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.set('Vary', 'Origin');
