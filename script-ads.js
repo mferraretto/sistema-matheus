@@ -1,4 +1,3 @@
-const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
