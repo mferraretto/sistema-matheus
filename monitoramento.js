@@ -10,7 +10,7 @@ const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
   try {
-    const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=${encodeURIComponent(term)}`;
+const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComponent(term)}`;
     const res = await fetch(url, { method: "GET" });
 
     if (!res.ok) {
