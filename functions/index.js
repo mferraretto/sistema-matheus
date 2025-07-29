@@ -24,7 +24,14 @@ exports.proxyShopeeSearch = onRequest(
       const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&limit=5&keyword=${encodeURIComponent(q)}&newest=0&order=desc&page_type=search`;
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Referer': 'https://shopee.com.br/',
+          }
+        });
+
         if (!response.ok) throw new Error(`status ${response.status}`);
 
         const data = await response.json();
@@ -45,6 +52,7 @@ exports.proxyShopeeSearch = onRequest(
     });
   }
 );
+
 
 // 🤖 Função para encaminhar mensagens à IA DeepSeek
 exports.proxyDeepSeek = onRequest(
