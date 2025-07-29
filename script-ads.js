@@ -41,38 +41,41 @@ async function importarShopeeAds() {
       ctr: getIndex("ctr")
     };
 
-    for (const linha of dados) {
-      const dataRaw = linha[pos.data] || "";
-      const dataFormatada = dataRaw.split(" ")[0]?.split("/").reverse().join("-");
-      const campanha = linha[pos.campanha] || "Campanha Desconhecida";
-      const produto = linha[pos.produto] || "";
+   for (const linha of dados) {
+  const dataRaw = linha[pos.data] || "";
+  const dataFormatada = dataRaw.split(" ")[0]?.split("/").reverse().join("-");
+  const campanha = linha[pos.campanha]?.trim() || "Campanha_Desconhecida";
+  const produto = linha[pos.produto]?.trim() || "";
 
-if (!dataFormatada) continue;
+  if (!dataFormatada) continue;
 
-const ref = db
-  .collection("ads")
-  .doc(campanha)
-  .collection("desempenho")
-  .doc(dataFormatada);
-      await ref.set({
-        produto,
-        impressoes: parseInt(linha[pos.impressoes]) || 0,
-        cliques: parseInt(linha[pos.cliques]) || 0,
-        gasto: parseFloat(linha[pos.gasto].replace(",", ".")) || 0,
-        receita: parseFloat(linha[pos.receita].replace(",", ".")) || 0,
-        vendas: parseInt(linha[pos.vendas]) || 0,
-        roas: parseFloat(linha[pos.roas].replace(",", ".")) || 0,
-        cpc: parseFloat(linha[pos.cpc].replace(",", ".")) || 0,
-        ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
-        data: dataFormatada
-      }, { merge: true });
-    }
+  const ref = db
+    .collection("ads")
+    .doc(campanha)
+    .collection("desempenho")
+    .doc(dataFormatada);
 
-    alert("✅ Planilha importada com sucesso.");
+  const registro = {
+    produto,
+    impressoes: parseInt(linha[pos.impressoes]) || 0,
+    cliques: parseInt(linha[pos.cliques]) || 0,
+    gasto: parseFloat(linha[pos.gasto].replace(",", ".")) || 0,
+    receita: parseFloat(linha[pos.receita].replace(",", ".")) || 0,
+    vendas: parseInt(linha[pos.vendas]) || 0,
+    roas: parseFloat(linha[pos.roas].replace(",", ".")) || 0,
+    cpc: parseFloat(linha[pos.cpc].replace(",", ".")) || 0,
+    ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
+    data: dataFormatada
   };
 
-  reader.readAsText(file, "UTF-8");
+  try {
+    await ref.set(registro, { merge: true });
+    console.log("✅ Salvo:", campanha, dataFormatada, registro);
+  } catch (erro) {
+    console.error("❌ Erro ao salvar no Firebase:", erro);
+  }
 }
+
 
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
