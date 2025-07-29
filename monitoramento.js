@@ -10,44 +10,22 @@ const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
   try {
-    const url = "https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=" + encodeURIComponent(term);
-const res = await fetch(url, {
-  method: "GET",
-});
-if (res.ok) {
-      const data = await res.json();
-      if (data.items && data.items.length) {
-        return data.items;
-      }
-    } else {
-  console.error('Erro ao buscar Shopee:', res.status);
-    }
-  } catch (err) {
-    console.error('Falha na requisição Shopee:', err);
-     }
+    const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=${encodeURIComponent(term)}`;
+    const res = await fetch(url, { method: "GET" });
 
-  // Fallback em caso de falha ou sem resultados
-  try {
-    const url2 =
-      'https://dummyjson.com/products/search?q=' + encodeURIComponent(term);
-    const res2 = await fetch(url2);
-    if (!res2.ok) {
+    if (!res.ok) {
+      console.error('Erro ao buscar Shopee:', res.status);
       return [];
     }
-    const data2 = await res2.json();
-    return (data2.products || []).map(p => ({
-      name: p.title,
-      price: p.price,
-      sold: p.stock,
-      image: Array.isArray(p.images) ? p.images[0] : '',
-      itemid: p.id,
-      shopid: p.brand || ''
-    }));
-  } catch (err2) {
-    console.error('Fallback erro:', err2);
+
+    const data = await res.json();
+    return data.items || data.data?.items || []; // ajusta conforme resposta real da Shopee
+  } catch (err) {
+    console.error('Falha na requisição Shopee:', err);
     return [];
   }
 }
+
 
 async function registrarHistorico(id, dadosAntigos, dadosNovos) {
   await addDoc(collection(db, 'monitoramento_historico'), {
