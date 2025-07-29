@@ -162,6 +162,7 @@
           console.error('Erro ao obter perfil do usuário:', e);
         }
         await tabsLoaded;
+        window.initTooltips && window.initTooltips();
 
         await carregarProdutos();
         await carregarMetas();
