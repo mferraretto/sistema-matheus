@@ -12,8 +12,6 @@ async function importarShopeeAds() {
   reader.onload = async (e) => {
     const todasLinhas = e.target.result.split(/\r?\n/).filter(l => l.trim());
 
-  // 🟡 Captura nome do produto (linha com "Nome do Produto / Anúncio")
-const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
 // 🟡 Captura nome do produto corretamente
 let nomeProdutoRaw = "Campanha_Desconhecida";
 const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
@@ -152,3 +150,5 @@ async function carregarGrafico() {
     }
   });
 }
+window.importarShopeeAds = importarShopeeAds;
+
