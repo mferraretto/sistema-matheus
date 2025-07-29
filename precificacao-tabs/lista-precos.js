@@ -7,17 +7,17 @@ let produtos = [];
 let viewMode = 'cards';
 
 function carregarProdutos() {
- const uid = firebase.auth().currentUser?.uid || window.sistema?.currentUserId;
-  const isAdmin = window.sistema?.isAdmin;
-
-  let query = dbListaPrecos.collection('products').orderBy('createdAt', 'desc');
-  if (!isAdmin && uid) {
-    query = dbListaPrecos
-      .collection('products')
-      .where('userId', '==', uid)
-      .orderBy('createdAt', 'desc');
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    firebase.auth().onAuthStateChanged(u => {
+      if (u) carregarProdutos();
+    });
+    return;
   }
-
+  let query = dbListaPrecos.collection('products').orderBy('createdAt', 'desc');
+  if (!window.sistema?.isAdmin) {
+    query = query.where('userId', '==', user.uid);
+  }
   query.get().then(snap => {
     produtos = [];
     snap.forEach(doc => {
