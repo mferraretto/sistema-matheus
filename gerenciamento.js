@@ -4,6 +4,8 @@ import {
   getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs,
   query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
+
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const BASE_PATH = new URL('.', import.meta.url);
@@ -240,8 +242,7 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-await setDoc(ref, limparUndefined(dadosCompletos));
-
+        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), window.sistema.passphrase);
         if (registrarHistorico) {
           await addDoc(collection(db, "atualizacoes"), {
             id,
@@ -356,8 +357,8 @@ window.carregarAnuncios = async function () {
     }
 
     for (const doc of querySnapshot.docs) {
-      const data = doc.data();
       const id = doc.id;
+      const data = await loadSecureDoc(db, 'anuncios', id, window.sistema.passphrase) || {};
 
       // 🔄 Buscar subcoleção de variantes
       const variantesRef = collection(db, `anuncios/${id}/variantes`);
