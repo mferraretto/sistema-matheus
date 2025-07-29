@@ -1895,7 +1895,15 @@ function filtrarPorSKU() {
 
 </script>
 <script src="shared.js"></script>
-
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
+    if (initialTab && document.getElementById(initialTab)) {
+      trocarAba(initialTab);
+    }
+  });
+</script>
 
 <!-- Outras bibliotecas (como XLSX) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
