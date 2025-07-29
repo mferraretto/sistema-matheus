@@ -1,0 +1,90 @@
+<!DOCTYPE html >
+< html lang = "pt-BR" > 
+< cabeça >
+  < meta charset = "UTF-8" > 
+  < meta nome = "viewport" conteúdo = "largura=largura-do-dispositivo, escala-inicial=1.0" >  
+  < title > Manual do Sistema Shopee </ title >
+  < link href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel = "folha de estilo" >  
+  < link rel = "folha de estilo" href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" >  
+  < link href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel = "folha de estilo" >  
+  < link rel = "folha de estilo" href = "css/estilos.css" >  
+  < link rel = "folha de estilo" href = "css/components.css" >  
+</head>​​
+< classe corporal = "bg-gray-50" > 
+  <!-- Barra lateral e barra de navegação -->
+  < div id = "recipiente-da-barra-lateral" > </ div > 
+  < div id = "navbar-container" > </ div > 
+
+  < classe principal = "conteúdo principal p-6 espaço-y-8" > 
+    < seção >
+      < h1 class = "text-3xl font-bold mb-4" > Manual de Uso do Sistema Shopee </ h1 > 
+      <p class="text-gray-700">Bem-vindo ao guia rápido de utilização do sistema de gerenciamento Shopee. Aqui você encontra instruções para iniciar, importar planilhas e aproveitar os recursos disponíveis.</p>
+    </ seção >
+
+    < seção >
+      <h2 class="text-2xl font-semibold mb-2">Como Baixar Planilhas da Shopee</h2>
+      < ol class = "lista-decimal lista-dentro espaço-y-2 texto-cinza-700" > 
+        <li>Acesse o Seller Center e vá ao menu <strong>Pedidos</strong>.</li>
+        <li>Escolha o período desejado e clique em <strong>Exportar</strong>.</li>
+        <li>Salve o arquivo em seu computador.</li>
+      </ ol >
+      <img src="imagens/placeholder1.jpg" alt="Baixar planilha" class="rounded-lg shadow-md mt-4">
+    </ seção >
+
+    < seção >
+      < h2 class = "text-2xl font-semibold mb-2" > Como importar dados </ h2 > 
+      < ol class = "lista-decimal lista-dentro espaço-y-2 texto-cinza-700" > 
+        <li>No sistema, clique em <strong>Importar Planilha</strong>.</li>
+        <li>Selecione o arquivo baixado e confirme.</li>
+        <li>Verifique a mensagem de sucesso no topo da página.</li>
+      </ ol >
+      <img src="imagens/placeholder2.jpg" alt="Importar planilha" class="rounded-lg shadow-md mt-4">
+    </ seção >
+
+    < seção >
+      < h2 class = "text-2xl font-semibold mb-2" > Principais Características </ h2 > 
+      < ul class = "lista-disco lista-dentro espaço-y-2 texto-cinza-700" > 
+        < li > < strong > Bulk Editor </ strong > para alterar vários anúncios de uma vez. </ li >
+        <li><strong>Precificação automática</strong> baseada em regras personalizadas.</li>
+        <li><strong>Anúncios e Ads</strong> para analisar desempenho e otimizar campanhas.</li>
+        <li><strong>Controle de Estoque</strong> com alertas de baixo volume.</li>
+      </ul>​​
+      <img src="imagens/placeholder3.jpg" alt="Recursos principais" class="rounded-lg shadow-md mt-4">
+    </ seção >
+
+    < seção >
+      < h2 class = "text-2xl font-semibold mb-2" > Dicas de uso </ h2 > 
+      < ul class = "lista-disco lista-dentro espaço-y-2 texto-cinza-700" > 
+        <li>Mantenha suas planilhas atualizadas para melhores resultados.</li>
+        <li>Revise preços regularmente utilizando o módulo de precificação.</li>
+        <li>Acompanhe métricas de anúncios para otimizar investimentos.</li>
+      </ul>​​
+    </ seção >
+
+    < seção >
+      <h2 class="text-2xl font-semibold mb-2">Fluxo Rápido</h2>
+      < ol class = "lista-decimal lista-dentro espaço-y-2 texto-cinza-700" > 
+        <li>Baixe planilhas do Seller Center.</li>
+        < li > Importe-os para o sistema. </ li >
+        <li>Edite produtos em massa.</li>
+        <li>Monitore resultados na área de anúncios.</li>
+      </ ol >
+    </ seção >
+  </ principal >
+
+  <!-- Script opcional para carregar o manual em abas -->
+  < script >
+    function carregarManualEm ( tabId ) {
+ 
+      buscar ( 'manual.html' )
+        . então ( r => r. texto ())
+        . então ( html => {
+          const cont = documento . getElementById (tabId);
+          se (continuação) cont. innerHTML = html;
+        });
+    }
+  </ script >
+
+  < script src = "shared.js" > </ script > 
+</ corpo >
+</ html >
