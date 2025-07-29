@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Shopee Ads - Análise e Estratégia</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script defer src="script.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">📊 Shopee Ads - Análise Estratégica</h1>
+    <div class="mb-6">
+      <input type="file" id="adsFileInput" accept=".xlsx,.xls" class="border p-2 rounded bg-white">
+      <button onclick="importarShopeeAds()" class="ml-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Importar Planilha</button>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+      <canvas id="graficoDesempenho" height="100"></canvas>
+    </div>
+  </div>
+</body>
+</html>
