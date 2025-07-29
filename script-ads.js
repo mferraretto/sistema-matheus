@@ -47,7 +47,13 @@ async function importarShopeeAds() {
       const campanha = linha[pos.campanha] || "Campanha Desconhecida";
       const produto = linha[pos.produto] || "";
 
-      const ref = db.doc(`ads/${campanha}/desempenho/${dataFormatada}`);
+if (!dataFormatada) continue;
+
+const ref = db
+  .collection("ads")
+  .doc(campanha)
+  .collection("desempenho")
+  .doc(dataFormatada);
       await ref.set({
         produto,
         impressoes: parseInt(linha[pos.impressoes]) || 0,
