@@ -80,6 +80,19 @@
       });
     }
   };
+// Check elements for text color matching background color
+  window.checkColorContrast = function() {
+    var all = document.querySelectorAll('*');
+    all.forEach(function(el) {
+      var style = window.getComputedStyle(el);
+      var color = style.color.replace(/\s+/g, '');
+      var bg = style.backgroundColor.replace(/\s+/g, '');
+      if (color && bg && color === bg) {
+        console.warn('Low contrast text detected:', el);
+        el.style.outline = '2px dashed red';
+      }
+    });
+  };
 
   document.addEventListener('DOMContentLoaded', function() {
     window.loadSidebar().then(function() {
@@ -87,5 +100,6 @@
     });
     window.loadNavbar();
     window.loadAuthModals();
+        window.checkColorContrast();
   });
 })();
