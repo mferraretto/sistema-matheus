@@ -3,21 +3,22 @@ if (!firebase.apps.length) {
 }
 // Avoid clashing with a global `db` from other scripts
 const dbListaPrecos = firebase.firestore();
+const authListaPrecos = firebase.auth();
 let produtos = [];
 let viewMode = 'cards';
 
 function carregarProdutos() {
-  const user = firebase.auth().currentUser;
-  if (!user) {
-    firebase.auth().onAuthStateChanged(u => {
-      if (u) carregarProdutos();
-    });
-    return;
-  }
+  const uid = firebase.auth().currentUser?.uid;
+  const isAdmin = window.sistema?.isAdmin;
+
   let query = dbListaPrecos.collection('products').orderBy('createdAt', 'desc');
-  if (!window.sistema?.isAdmin) {
-    query = query.where('userId', '==', user.uid);
+  if (!isAdmin && uid) {
+    query = dbListaPrecos
+      .collection('products')
+      .where('userId', '==', uid)
+      .orderBy('createdAt', 'desc');
   }
+
   query.get().then(snap => {
     produtos = [];
     snap.forEach(doc => {
@@ -263,11 +264,14 @@ function setupListeners() {
 
 if (document.readyState !== 'loading') {
   setupListeners();
-  carregarProdutos();
 } else {
-  document.addEventListener('DOMContentLoaded', () => {
-    setupListeners();
-    carregarProdutos();
-  });
-}
+    document.addEventListener('DOMContentLoaded', setupListeners);
 
+}
+authListaPrecos.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'index.html?login=1';
+    return;
+  }
+  carregarProdutos();
+});
