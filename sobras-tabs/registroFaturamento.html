@@ -1,17 +1,21 @@
-  <div class="card">
-          <div class="card-header">
-            <i class="fas fa-calendar-alt"></i>
-            <h3>Registros de Faturamento Diário</h3>
-          </div>
-          <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
-            <div class="flex items-center gap-2">
-              <label for="filtroMesRegistro" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-2"
-                onchange="carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')" />
-            </div>
-<button onclick="exportarFaturamentoExcel()">Exportar</button>
-              <i class="fas fa-file-excel"></i> Exportar Excel
-            </button>
-          </div>
-          <div id="listaFaturamentoRegistro" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
-        </div>
+<div class="card">
+  <div class="card-header">
+    <i class="fas fa-calendar-alt"></i>
+    <h3>Registros de Faturamento Diário</h3>
+    <div class="tooltip ml-2">
+      <i class="fas fa-question-circle text-blue-600"></i>
+      <span class="tooltip-text" style="width: 250px; white-space: normal;">Esta aba exibe os faturamentos diários importados. Utilize o filtro por mês para selecionar o período desejado. Cada card mostra o valor bruto, o valor líquido e a quantidade de vendas de cada dia. É possível ver detalhes por loja, excluir registros e exportar tudo para Excel.</span>
+    </div>
+  </div>
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+    <div class="flex items-center gap-2">
+      <label for="filtroMesRegistro" class="font-medium">Filtrar por mês:</label>
+      <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-2"
+        onchange="carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')" />
+    </div>
+    <button onclick="exportarFaturamentoExcel()" class="btn-success">
+      <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+    </button>
+  </div>
+  <div id="listaFaturamentoRegistro" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+</div>
