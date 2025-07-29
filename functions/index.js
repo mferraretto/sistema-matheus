@@ -21,7 +21,7 @@ const origin = req.headers.origin;
   if (!q) return res.status(400).json({ error: 'Missing q param' });
 
   try {
-    const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=${encodeURIComponent(q)}&limit=10`;
+    const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=${encodeURIComponent(q)}&limit=10&newest=0&page_type=search&scenario=PAGE_GLOBAL_SEARCH`;
     const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     const data = await response.json();
 
