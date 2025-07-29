@@ -264,7 +264,7 @@ function setupListeners() {
 
 function init() {
   setupListeners();
-   firebase.auth().onAuthStateChanged(carregarProdutos);
+  // Aguardamos o evento de autenticação abaixo para carregar os produtos
 }
 
 if (document.readyState !== 'loading') {
