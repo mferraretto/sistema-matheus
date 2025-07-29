@@ -1,16 +1,30 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-async function carregarAds() {
+onAuthStateChanged(auth, async (user) => {
   const tbody = document.querySelector('#tabelaAds tbody');
+  if (!user) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-red-600">Usuário não autenticado</td></tr>';
+    return;
+  }
+
   tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">Carregando...</td></tr>';
+
   try {
     const campanhasSnap = await getDocs(collection(db, 'ads'));
     tbody.innerHTML = '';
-   for (const campDoc of campanhasSnap.docs) {
+
+    for (const campDoc of campanhasSnap.docs) {
+      const dadosCampanha = campDoc.data();
+
+      // 🛡️ Filtra apenas as campanhas do usuário logado
+      if (dadosCampanha.uid !== user.uid) continue;
+
       const desempenhoSnap = await getDocs(collection(db, `ads/${campDoc.id}/desempenho`));
       desempenhoSnap.forEach(doc => {
         const d = doc.data();
@@ -28,10 +42,14 @@ async function carregarAds() {
         tbody.appendChild(tr);
       });
     }
+
+    if (tbody.innerHTML === '') {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhum dado encontrado</td></tr>';
+    }
+
   } catch (e) {
     console.error('Erro ao carregar ads', e);
     tbody.innerHTML = '<tr><td colspan="9" class="text-center text-red-500 py-4">Erro ao carregar dados</td></tr>';
   }
-}
+});
 
-document.addEventListener('DOMContentLoaded', carregarAds);
