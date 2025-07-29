@@ -2,6 +2,7 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+const { doc, setDoc } = firebase.firestore;
 
 // Função no script-ads.js
 async function importarShopeeAds() {
