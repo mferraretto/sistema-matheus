@@ -1421,7 +1421,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
 
           // Salvar SKUs vendidos
           const refSku = db.collection("skusVendidos").doc(dataReferencia);
-          await refSku.set({ data: dataReferencia }); // garante doc pai
+          await refSku.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true }); // garante doc pai e marca usuário
 
           for (const [sku, total] of Object.entries(skusVendidos)) {
             const skuId = String(sku).replace(/[.#$/\[\]]/g, "_");
@@ -1731,7 +1731,11 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           if (anoFiltro !== anoDoc || mesFiltro !== mesDoc) continue;
         }
 
-        const listaSnap = await db.collection(`skusVendidos/${dataDoc}/lista`).get();
+ let listaRef = db.collection(`skusVendidos/${dataDoc}/lista`);
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          listaRef = listaRef.where('uid', '==', usuarioLogado.uid);
+        }
+        const listaSnap = await listaRef.get();
         if (listaSnap.empty) continue;
 
         let htmlSKUs = "";
@@ -1764,7 +1768,10 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       }
     }
     window.verDetalhesDia = async function (dataDoc) {
-      const ref = db.collection(`skusVendidos/${dataDoc}/lista`);
+ let ref = db.collection(`skusVendidos/${dataDoc}/lista`);
+      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+        ref = ref.where('uid', '==', usuarioLogado.uid);
+      }
       const snap = await ref.get();
 
       const agrupadoPorLoja = {};
@@ -1792,7 +1799,11 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
       // 🔍 Somar valor líquido de todas as lojas do dia
       let valorLiquido = 0;
       try {
-        const lojasSnap = await db.collection(`faturamento/${dataDoc}/lojas`).get();
+ let lojasRef = db.collection(`faturamento/${dataDoc}/lojas`);
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          lojasRef = lojasRef.where('uid', '==', usuarioLogado.uid);
+        }
+        const lojasSnap = await lojasRef.get();
         lojasSnap.forEach(lojaDoc => {
           const dados = lojaDoc.data();
           valorLiquido += Number(dados.valorLiquido || 0);
@@ -1823,11 +1834,19 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
     };
 
     async function exportarFaturamentoExcel() {
-      const snap = await db.collection("faturamento").get();
+let ref = db.collection("faturamento");
+      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+        ref = ref.where('uid', '==', usuarioLogado.uid);
+      }
+      const snap = await ref.get();
       const dataExport = [];
 
       for (const docData of snap.docs) {
-        const subSnap = await db.collection(`faturamento/${docData.id}/lojas`).get();
+ let subRef = db.collection(`faturamento/${docData.id}/lojas`);
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          subRef = subRef.where('uid', '==', usuarioLogado.uid);
+        }
+        const subSnap = await subRef.get();
         subSnap.forEach(sub => {
           const d = sub.data();
           dataExport.push({
