@@ -262,10 +262,15 @@ function setupListeners() {
 }
 
 
-if (document.readyState !== 'loading') {
+function init() {
   setupListeners();
+   firebase.auth().onAuthStateChanged(carregarProdutos);
+}
+
+if (document.readyState !== 'loading') {
+  init();
 } else {
-    document.addEventListener('DOMContentLoaded', setupListeners);
+     document.addEventListener('DOMContentLoaded', init);
 
 }
 authListaPrecos.onAuthStateChanged(user => {
