@@ -64,33 +64,48 @@ async function importarShopeeAds() {
       ctr: getIndex("ctr")
     };
 
-    for (const linha of dados) {
-      const ref = db
-        .collection("ads")
-        .doc(nomeProduto)
-        .collection("desempenho")
-        .doc(dataFormatada);
+    const user = firebase.auth().currentUser;
+if (!user) {
+  alert("⚠️ Você precisa estar logado para importar.");
+  return;
+}
 
-      const registro = {
-        produto: nomeProdutoRaw,
-        data: dataFormatada,
-        impressoes: parseInt(linha[pos.impressoes]) || 0,
-        cliques: parseInt(linha[pos.cliques]) || 0,
-        gasto: parseFloat(linha[pos.gasto]?.replace(",", ".")) || 0,
-        receita: parseFloat(linha[pos.receita]?.replace(",", ".")) || 0,
-        vendas: parseInt(linha[pos.vendas]) || 0,
-        roas: parseFloat(linha[pos.roas]?.replace(",", ".")) || 0,
-        cpc: parseFloat(linha[pos.cpc]?.replace(",", ".")) || 0,
-        ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
-      };
+// 🔐 Cria ou atualiza o documento da campanha com o UID
+await db.collection("ads").doc(nomeProduto).set({
+  uid: user.uid,
+  produto: nomeProdutoRaw,
+  ultimaImportacao: new Date().toISOString()
+}, { merge: true });
 
-      try {
-        await ref.set(registro, { merge: true });
-        console.log("✅ Salvo:", nomeProduto, dataFormatada);
-      } catch (erro) {
-        console.error("❌ Erro ao salvar:", erro);
-      }
-    }
+// 🔁 Agora salva o desempenho por data
+for (const linha of dados) {
+  const ref = db
+    .collection("ads")
+    .doc(nomeProduto)
+    .collection("desempenho")
+    .doc(dataFormatada);
+
+  const registro = {
+    produto: nomeProdutoRaw,
+    data: dataFormatada,
+    impressoes: parseInt(linha[pos.impressoes]) || 0,
+    cliques: parseInt(linha[pos.cliques]) || 0,
+    gasto: parseFloat(linha[pos.gasto]?.replace(",", ".")) || 0,
+    receita: parseFloat(linha[pos.receita]?.replace(",", ".")) || 0,
+    vendas: parseInt(linha[pos.vendas]) || 0,
+    roas: parseFloat(linha[pos.roas]?.replace(",", ".")) || 0,
+    cpc: parseFloat(linha[pos.cpc]?.replace(",", ".")) || 0,
+    ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
+  };
+
+  try {
+    await ref.set(registro, { merge: true });
+    console.log("✅ Salvo:", nomeProduto, dataFormatada);
+  } catch (erro) {
+    console.error("❌ Erro ao salvar:", erro);
+  }
+}
+
 
     alert("✅ Planilha importada com sucesso.");
   };
