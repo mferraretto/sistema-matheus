@@ -261,9 +261,21 @@ function setupListeners() {
   document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
 }
 
+function initTooltips() {
+  document.querySelectorAll('.tooltip').forEach(el => {
+    const text = el.getAttribute('data-tooltip');
+    if (text && !el.querySelector('.tooltip-text')) {
+      const span = document.createElement('span');
+      span.className = 'tooltip-text';
+      span.textContent = text;
+      el.appendChild(span);
+    }
+  });
+}
 
 function init() {
   setupListeners();
+    initTooltips();
   // Aguardamos o evento de autenticação abaixo para carregar os produtos
 }
 
