@@ -21,6 +21,9 @@ async function importarShopeeAds() {
     const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
       .map(l => l.split(","))
       .filter(l => l.length === cabecalho.length);
+    console.log("📄 Cabeçalho detectado:", cabecalho);
+console.log("🔢 Total de linhas de dados:", dados.length);
+console.log("📌 Primeira linha lida:", dados[0]);
 
     const getIndex = (termo) =>
       cabecalho.findIndex(c => c.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/gi, "").includes(termo));
@@ -65,7 +68,11 @@ async function importarShopeeAds() {
         ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
         data: dataFormatada
       };
-
+console.log("📥 Dados lidos para salvar:", {
+  campanha,
+  dataFormatada,
+  registro
+});
       try {
         await ref.set(registro, { merge: true });
         console.log("✅ Salvo:", campanha, dataFormatada, registro);
