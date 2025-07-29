@@ -9,17 +9,25 @@ const auth = getAuth(app);
 const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
- try {
+  try {
     const res = await fetch(
-      `https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=${encodeURIComponent(term)}`,
-      { mode: 'cors' }
+      "https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ termo: term })
+      }
     );
+
     if (!res.ok) {
       console.error('Erro ao buscar Shopee:', res.status);
       return [];
     }
+
     const data = await res.json();
-    return data.items || [];
+    return data.items || data.data?.items || []; // depende do formato da API da Shopee
   } catch (err) {
     console.error('Falha na requisição Shopee:', err);
     return [];
