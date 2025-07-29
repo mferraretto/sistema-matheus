@@ -15,18 +15,18 @@ async function importarShopeeAds() {
 
   // 🟡 Captura nome do produto (linha com "Nome do Produto / Anúncio")
 const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
+// 🟡 Captura nome do produto corretamente
 let nomeProdutoRaw = "Campanha_Desconhecida";
-
-if (linhaProdutoIndex !== -1 && todasLinhas[linhaProdutoIndex + 1]) {
-  const linhaDados = todasLinhas[linhaProdutoIndex + 1].split(",");
-  nomeProdutoRaw = linhaDados[1]?.trim() || "Campanha_Desconhecida";
+const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
+if (linhaProdutoIndex !== -1) {
+  const linhaProduto = todasLinhas[linhaProdutoIndex];
+  const partes = linhaProduto.split(",");
+  nomeProdutoRaw = partes[1]?.replace(/^"|"$/g, "").trim() || nomeProdutoRaw;
 }
-
 const nomeProduto = nomeProdutoRaw
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-zA-Z0-9]/g, "_")
-  .slice(0, 60); // Limita tamanho para segurança
+  .replace(/[^a-zA-Z0-9]/g, "_");
 
     // 🗓️ Captura a data final do período
     const linhaPeriodoIndex = todasLinhas.findIndex(l => l.startsWith("Período"));
