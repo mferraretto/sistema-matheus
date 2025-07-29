@@ -44,20 +44,27 @@ async function monitorar() {
     alert('Necessário login');
     return;
   }
+
   let qAnuncios = collection(db, 'anuncios');
   if (user.email !== ADMIN_EMAIL) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
   }
+
   const snap = await getDocs(qAnuncios);
   for (const docSnap of snap.docs) {
     const dados = docSnap.data();
-    const termo = dados.skuVariante || dados.nome || '';
+    const termo = (dados.nome || '').trim();  // <- CORRIGIDO
     if (!termo) continue;
+
+    console.log("Buscando por:", termo);
+
     const resultados = await buscarShopee(termo);
     if (!resultados.length) continue;
+
     const item = resultados[0];
     const ref = doc(db, 'monitoramento', docSnap.id);
     const antigaSnap = await getDoc(ref);
+
     const dadosNovos = {
       nome: item.name,
       preco: item.price,
@@ -66,6 +73,7 @@ async function monitorar() {
       itemId: item.itemid,
       imagem: item.image
     };
+
     if (antigaSnap.exists()) {
       const antigos = antigaSnap.data();
       const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
@@ -78,8 +86,10 @@ async function monitorar() {
       await registrarHistorico(docSnap.id, {}, dadosNovos);
     }
   }
+
   alert('Monitoramento concluído');
 }
+
 
 window.executarMonitoramento = monitorar;
 async function pesquisarShopee() {
