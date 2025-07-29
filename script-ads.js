@@ -3,6 +3,7 @@ if (!firebase.apps.length) {
 }
 const db = firebase.firestore();
 
+// Função no script-ads.js
 async function importarShopeeAds() {
   const fileInput = document.getElementById('adsFileInput');
   const file = fileInput.files[0];
@@ -10,24 +11,27 @@ async function importarShopeeAds() {
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const linhas = e.target.result.split(/\\r?\\n/).slice(10); // Pula cabeçalho Shopee
+    const linhas = e.target.result.split(/\\r?\\n/).slice(10); // Pula cabeçalho da Shopee
     if (!linhas.length) return alert("❌ Planilha vazia ou inválida.");
 
     const cabecalho = linhas[0].split(",");
-    const dados = linhas.slice(1).map(linha => linha.split(",")).filter(c => c.length === cabecalho.length);
+    const dados = linhas.slice(1).map(l => l.split(",")).filter(l => l.length === cabecalho.length);
+
+    const getIndex = (termo) =>
+      cabecalho.findIndex(c => c.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/gi, "").includes(termo));
 
     const pos = {
-      data: cabecalho.findIndex(c => c.toLowerCase().includes("data")),
-      campanha: cabecalho.findIndex(c => c.toLowerCase().includes("campanha")),
-      produto: cabecalho.findIndex(c => c.toLowerCase().includes("produto")),
-      impressoes: cabecalho.findIndex(c => c.toLowerCase().includes("impress")),
-      cliques: cabecalho.findIndex(c => c.toLowerCase().includes("clique")),
-      gasto: cabecalho.findIndex(c => c.toLowerCase().includes("gasto")),
-      receita: cabecalho.findIndex(c => c.toLowerCase().includes("receita")),
-      vendas: cabecalho.findIndex(c => c.toLowerCase().includes("venda")),
-      roas: cabecalho.findIndex(c => c.toLowerCase().includes("roas")),
-      cpc: cabecalho.findIndex(c => c.toLowerCase().includes("cpc")),
-      ctr: cabecalho.findIndex(c => c.toLowerCase().includes("ctr"))
+      data: getIndex("data"),
+      campanha: getIndex("campanha"),
+      produto: getIndex("produto"),
+      impressoes: getIndex("impressoes"),
+      cliques: getIndex("cliques"),
+      gasto: getIndex("gasto"),
+      receita: getIndex("receita"),
+      vendas: getIndex("vendas"),
+      roas: getIndex("roas"),
+      cpc: getIndex("cpc"),
+      ctr: getIndex("ctr")
     };
 
     for (const linha of dados) {
@@ -41,20 +45,20 @@ async function importarShopeeAds() {
         produto,
         impressoes: parseInt(linha[pos.impressoes]) || 0,
         cliques: parseInt(linha[pos.cliques]) || 0,
-        gasto: parseFloat(linha[pos.gasto]) || 0,
-        receita: parseFloat(linha[pos.receita]) || 0,
+        gasto: parseFloat(linha[pos.gasto].replace(",", ".")) || 0,
+        receita: parseFloat(linha[pos.receita].replace(",", ".")) || 0,
         vendas: parseInt(linha[pos.vendas]) || 0,
-        roas: parseFloat(linha[pos.roas]) || 0,
-        cpc: parseFloat(linha[pos.cpc]) || 0,
-        ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "")) / 100 || 0,
+        roas: parseFloat(linha[pos.roas].replace(",", ".")) || 0,
+        cpc: parseFloat(linha[pos.cpc].replace(",", ".")) || 0,
+        ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "").replace(",", ".")) / 100 || 0,
         data: dataFormatada
       }, { merge: true });
     }
 
-    alert("✅ Importação concluída com sucesso.");
+    alert("✅ Planilha importada com sucesso.");
   };
 
-  reader.readAsText(file);
+  reader.readAsText(file, "UTF-8");
 }
 
 
