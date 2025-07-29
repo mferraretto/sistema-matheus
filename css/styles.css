@@ -1413,7 +1413,7 @@ tr:hover td {
 }
 body.dark-mode {
   --background: #1a202c;
-  --secondary: #2d3748;
+  --secondary: #e2e8f0;
   --bg: #1E293B;
   --card: #2D3748;
   --card-bg: #2D3748;
@@ -1503,7 +1503,7 @@ body.dark-mode .card-header {
   --text: #F3F4F6;
   --text-light: #94A3B8;
   --border: #475569;
-  --secondary: #2d3748
+  --secondary: #e2e8f0
 }
   * {
   transition: background-color .3s,border-color .3s
