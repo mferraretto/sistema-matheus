@@ -1,3 +1,4 @@
+const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -12,13 +13,20 @@ async function importarShopeeAds() {
   reader.onload = async (e) => {
     const todasLinhas = e.target.result.split(/\r?\n/).filter(l => l.trim());
 
-    // 🟡 Captura nome do produto (linha com "Nome do Produto / Anúncio")
-    const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
-    const nomeProdutoRaw = todasLinhas[linhaProdutoIndex + 1]?.split(",")[1]?.trim() || "Campanha_Desconhecida";
-    const nomeProduto = nomeProdutoRaw
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9]/g, "_");
+  // 🟡 Captura nome do produto (linha com "Nome do Produto / Anúncio")
+const linhaProdutoIndex = todasLinhas.findIndex(l => l.includes("Nome do Produto / Anúncio"));
+let nomeProdutoRaw = "Campanha_Desconhecida";
+
+if (linhaProdutoIndex !== -1 && todasLinhas[linhaProdutoIndex + 1]) {
+  const linhaDados = todasLinhas[linhaProdutoIndex + 1].split(",");
+  nomeProdutoRaw = linhaDados[1]?.trim() || "Campanha_Desconhecida";
+}
+
+const nomeProduto = nomeProdutoRaw
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[^a-zA-Z0-9]/g, "_")
+  .slice(0, 60); // Limita tamanho para segurança
 
     // 🗓️ Captura a data final do período
     const linhaPeriodoIndex = todasLinhas.findIndex(l => l.startsWith("Período"));
