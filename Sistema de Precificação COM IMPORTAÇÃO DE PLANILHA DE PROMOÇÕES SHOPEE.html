@@ -707,8 +707,11 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
               <i class="fas fa-edit"></i>
             </button>
             ${user.email !== 'admin@empresa.com' ? `
-            <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete">
+            <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete mr-2">
               <i class="fas fa-trash"></i>
+            </button>
+            <button onclick="deleteAllProducts('${user.id}')" class="btn-action btn-delete">
+              <i class="fas fa-box-open"></i>
             </button>
             ` : ''}
           </td>
@@ -864,6 +867,31 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       } catch (error) {
         console.error("Erro ao remover usuário:", error);
         showToast('Erro ao remover usuário!', 'error');
+      }
+    }
+ async function deleteAllProducts(userId) {
+      const user = sistema.usuarios.find(u => u.id === userId);
+      if (!user) return;
+
+      if (!confirm(`Excluir TODOS os produtos do usuário ${user.email}?`)) {
+        return;
+      }
+
+      try {
+        const snap = await db.collection('products').where('userId', '==', userId).get();
+        let removed = 0;
+        for (const doc of snap.docs) {
+          await db.collection('products').doc(doc.id).delete();
+          sistema.produtos = sistema.produtos.filter(p => p.id !== doc.id);
+          removed++;
+        }
+
+        atualizarLista();
+        showToast(`Produtos removidos: ${removed}`, 'success');
+        addHistoryEntry('product_delete', `Todos os produtos de ${user.email} removidos`);
+      } catch (error) {
+        console.error('Erro ao excluir produtos do usuário', error);
+        showToast('Erro ao excluir produtos!', 'error');
       }
     }
 
