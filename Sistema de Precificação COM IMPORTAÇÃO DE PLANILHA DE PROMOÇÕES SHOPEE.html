@@ -75,6 +75,7 @@
     <div id="configuracoes" class="tab-content p-4"></div>
 
   <!-- Modais -->
+  <div id="auth-modals-container"></div>
 
 
   <div id="addUserModal" class="modal">
@@ -153,10 +154,7 @@
       importedShopeeData: null,
       originalShopeeData: null,
 produtoEditando: null,
- duplicados: [],
-      isAdmin: false,
-      currentUserId: null,
-      currentUserEmail: null
+      duplicados: []
     };
 
   // Inicialização
@@ -186,7 +184,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
            content.classList.add('active');
          }
        }
-       
+       if (params.get('login') === '1') {
+         openModal('loginModal');
+       }
        const darkToggle = document.getElementById('darkModeToggle');
       if (darkToggle) {
         darkToggle.addEventListener('change', () => {
@@ -223,11 +223,10 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
 });
 
     // Funções principais do sistema
-       async function loadSystem() {
-      const user = auth.currentUser;
+    async function loadSystem() {
+       const user = auth.currentUser;
       if (!user) return;
- sistema.currentUserId = user.uid;
-      sistema.currentUserEmail = user.email;
+
       let isAdmin = false;
       try {
         const userDoc = await db.collection("users").doc(user.uid).get();
@@ -237,8 +236,6 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       } catch (error) {
         console.error("Erro ao verificar perfil do usuário:", error);
       }
-               sistema.isAdmin = isAdmin;
-
       // Carrega configurações do Firestore
       try {
         const configDoc = await db.collection("config").doc("systemConfig").get();
@@ -250,19 +247,16 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         console.error("Erro ao carregar configurações:", error);
       }
       
-      // Carrega usuários
+      // Carrega usuários somente se admin
       try {
-        if (isAdmin) {
+         if (isAdmin) {
           const usersSnapshot = await db.collection("users").get();
           sistema.usuarios = [];
           usersSnapshot.forEach(doc => {
             sistema.usuarios.push({ id: doc.id, ...doc.data() });
           });
           loadUsers();
-            } else {
-          sistema.usuarios = [{ id: user.uid, email: user.email }];
         }
-                populateDeleteUserSelect();
       } catch (error) {
         console.error("Erro ao carregar usuários:", error);
       }
@@ -405,14 +399,32 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
     function checkLogin() {
       auth.onAuthStateChanged(user => {
         if (user) {
+          // Usuário logado
           showUserArea(user);
         } else {
-       window.location.href = 'index.html?login=1';
+          // Usuário não logado
+          hideUserArea();
         }
       });
     }
 
-   
+    function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          showUserArea(user);
+          closeModal('loginModal');
+          addHistoryEntry('login', `Usuário ${user.email} fez login`);
+          showToast('Login realizado com sucesso!', 'success');
+        })
+        .catch((error) => {
+          alert('Credenciais inválidas! ' + error.message);
+          showToast('Erro ao fazer login!', 'error');
+        });
+    }
 
     function logout() {
       const user = auth.currentUser;
@@ -692,67 +704,46 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
 
     // Funções de usuários
     async function loadUsers() {
-  const usersTable = document.getElementById('usersTableBody');
-  usersTable.innerHTML = '';
-  
-  // Atualiza filtro de usuários no histórico
-  const userFilter = document.getElementById('filterHistoryUser');
-  userFilter.innerHTML = '<option value="all">Todos os usuários</option>';
-  
-  sistema.usuarios.forEach(user => {
-    // Adiciona à tabela
-    const row = document.createElement('tr');
-    row.className = 'border-b';
-    row.innerHTML = `
-      <td class="p-3">${user.nome || user.email}</td>
-      <td class="p-3">${user.email}</td>
-      <td class="p-3">
-        <span class="${user.perfil === 'admin' ? 'admin-badge' : user.perfil === 'operador' ? 'operator-badge' : 'viewer-badge'} profile-badge">
-          ${user.perfil}
-        </span>
-      </td>
-      <td class="p-3">
-        <button onclick="editUser('${user.id}')" class="btn-action btn-edit mr-2">
-          <i class="fas fa-edit"></i>
-        </button>
-        ${user.email !== 'admin@empresa.com' ? `
-        <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete mr-2">
-          <i class="fas fa-trash"></i>
-        </button>
-        <button onclick="deleteAllProducts('${user.id}')" class="btn-action btn-delete">
-          <i class="fas fa-box-open"></i>
-        </button>
-        ` : ''}
-      </td>
-    `;
-    usersTable.appendChild(row);
-    
-    // Adiciona ao filtro
-    const option = document.createElement('option');
-    option.value = user.email;
-    option.textContent = user.email;
-    userFilter.appendChild(option);
-  });
-}
-
-populateDeleteUserSelect(); // OK fora da função
-
-
-    function populateDeleteUserSelect() {
-      const select = document.getElementById('deleteAllProductsSelect');
-      if (!select) return;
-      select.innerHTML = '';
-      sistema.usuarios.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.id;
-        opt.textContent = u.email;
-        select.appendChild(opt);
+      const usersTable = document.getElementById('usersTableBody');
+      usersTable.innerHTML = '';
+      
+      // Atualiza filtro de usuários no histórico
+      const userFilter = document.getElementById('filterHistoryUser');
+      userFilter.innerHTML = '<option value="all">Todos os usuários</option>';
+      
+      sistema.usuarios.forEach(user => {
+        // Adiciona à tabela
+        const row = document.createElement('tr');
+        row.className = 'border-b';
+        row.innerHTML = `
+          <td class="p-3">${user.nome || user.email}</td>
+          <td class="p-3">${user.email}</td>
+          <td class="p-3">
+            <span class="${user.perfil === 'admin' ? 'admin-badge' : user.perfil === 'operador' ? 'operator-badge' : 'viewer-badge'} profile-badge">
+              ${user.perfil}
+            </span>
+          </td>
+          <td class="p-3">
+            <button onclick="editUser('${user.id}')" class="btn-action btn-edit mr-2">
+              <i class="fas fa-edit"></i>
+            </button>
+            ${user.email !== 'admin@empresa.com' ? `
+            <button onclick="deleteUser('${user.id}')" class="btn-action btn-delete">
+              <i class="fas fa-trash"></i>
+            </button>
+            ` : ''}
+          </td>
+        `;
+        usersTable.appendChild(row);
+        
+        // Adiciona ao filtro
+        const option = document.createElement('option');
+        option.value = user.email;
+        option.textContent = user.email;
+        userFilter.appendChild(option);
       });
-      if (!sistema.isAdmin) {
-        select.style.display = 'none';
-      } else {
-        select.style.display = '';
-      }
+    }
+
     function openAddUserModal() {
       document.getElementById('newUserName').value = '';
       document.getElementById('newUserEmail').value = '';
@@ -896,71 +887,7 @@ populateDeleteUserSelect(); // OK fora da função
         showToast('Erro ao remover usuário!', 'error');
       }
     }
- async function deleteAllProducts(userId) {
-      const user = sistema.usuarios.find(u => u.id === userId);
-      if (!user) return;
 
-      if (!confirm(`Excluir TODOS os produtos do usuário ${user.email}?`)) {
-        return;
-      }
-
-      try {
-        const snap = await db.collection('products').where('userId', '==', userId).get();
-        let removed = 0;
-        for (const doc of snap.docs) {
-          await db.collection('products').doc(doc.id).delete();
-          sistema.produtos = sistema.produtos.filter(p => p.id !== doc.id);
-          removed++;
-        }
-
-        atualizarLista();
-        showToast(`Produtos removidos: ${removed}`, 'success');
-        addHistoryEntry('product_delete', `Todos os produtos de ${user.email} removidos`);
-      } catch (error) {
-        console.error('Erro ao excluir produtos do usuário', error);
-        showToast('Erro ao excluir produtos!', 'error');
-      }
-    }
- async function deleteAllProducts(userId) {
-      const current = auth.currentUser;
-      if (!current) return;
-
-      if (!sistema.isAdmin && current.uid !== userId) {
-        showToast('Ação não permitida!', 'error');
-        return;
-      }
-
-      const user = sistema.usuarios.find(u => u.id === userId) || { email: current.email };
-
-      if (!confirm(`Excluir TODOS os produtos do usuário ${user.email}?`)) {
-        return;
-      }
-
-      try {
-        const snap = await db.collection('products').where('userId', '==', userId).get();
-        let removed = 0;
-        for (const doc of snap.docs) {
-          await db.collection('products').doc(doc.id).delete();
-          sistema.produtos = sistema.produtos.filter(p => p.id !== doc.id);
-          removed++;
-        }
-
-        atualizarLista();
-        showToast(`Produtos removidos: ${removed}`, 'success');
-        addHistoryEntry('product_delete', `Todos os produtos de ${user.email} removidos`);
-      } catch (error) {
-        console.error('Erro ao excluir produtos do usuário', error);
-        showToast('Erro ao excluir produtos!', 'error');
-      }
-    }
-
-    function handleBulkDelete() {
-      const select = document.getElementById('deleteAllProductsSelect');
-      const userId = select ? select.value : sistema.currentUserId;
-      if (userId) {
-        deleteAllProducts(userId);
-      }
-    }
     // Funções de precificação
     function calcular(plataforma) {
       const custo = parseFloat(document.getElementById("custo").value) || 0;
@@ -1890,6 +1817,23 @@ function applyPriceUpdate(type) {
       document.getElementById(modalId).style.display = 'block';
     }
 
+    function openRecoverModal() {
+      closeModal('loginModal');
+      openModal('recoverModal');
+    }
+
+    function sendRecovery() {
+      const email = document.getElementById('recoverEmail').value;
+      if (!email.includes('@')) {
+        showToast('E-mail inválido!', 'warning');
+        return;
+      }
+      
+      // Simulação de envio
+      showToast(`Link de recuperação enviado para ${email}`, 'success');
+      closeModal('recoverModal');
+      addHistoryEntry('recovery', `Solicitação de recuperação de senha para ${email}`);
+    }
   function verificarProdutosDuplicados() {
       const skuMap = {};
       sistema.produtos.forEach(p => {
@@ -2074,7 +2018,6 @@ function applyPriceUpdate(type) {
         }
       }
     }, 300000); // 5 minutos
-      }
   </script>
  <script src="shared.js"></script>
 
