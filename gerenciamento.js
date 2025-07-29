@@ -22,15 +22,22 @@ for (const t of tabs) {
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
-        const ADMIN_EMAIL = 'admin@empresa.com';
+const auth = getAuth(app);
+let isAdmin = false;
 
-
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = 'index.html?login=1';
-      }
-    });
+   onAuthStateChanged(auth, async user => {
+  if (!user) {
+    window.location.href = 'index.html?login=1';
+    return;
+  }
+  try {
+    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
+  } catch (err) {
+    console.error('Erro ao verificar perfil do usuário:', err);
+    isAdmin = false;
+  }
+});
 
     // Global products object
     window.produtos = {};
@@ -215,7 +222,7 @@ window.salvarNoFirebase = async () => {
 
       if (snapshot.exists()) {
         dadosAntigos = snapshot.data();
-        if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && user.email !== ADMIN_EMAIL) {
+        if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && !isAdmin) {
           continue;
         }
 
@@ -336,7 +343,7 @@ window.carregarAnuncios = async function () {
   try {
     const user = auth.currentUser;
     let q = collection(db, "anuncios");
-    if (user.email !== ADMIN_EMAIL) {
+    if (!isAdmin) {
       q = query(q, where("uid", "==", user.uid));
     }
 
@@ -521,7 +528,7 @@ window.verDetalhesAnuncio = async function (id) {
 
     const data = docSnap.data();
     const user = auth.currentUser;
-    if (user.email !== ADMIN_EMAIL && data.uid && data.uid !== user.uid) {
+    if (!isAdmin && data.uid && data.uid !== user.uid) {
       showNotification("❌ Acesso negado", "error");
       return;
     }
@@ -747,7 +754,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
       try {
   const user = auth.currentUser;
         let qRef = collection(db, "atualizacoes");
-        if (user.email !== ADMIN_EMAIL) {
+        if (!isAdmin) {
           qRef = query(qRef, where("uid", "==", user.uid));
         }
         const q = await getDocs(qRef);
@@ -801,7 +808,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
       try {
  const user = auth.currentUser;
         let q = collection(db, "anuncios");
-        if (user.email !== ADMIN_EMAIL) {
+        if (!isAdmin) {
           q = query(q, where("uid", "==", user.uid));
         }
         const querySnapshot = await getDocs(q);
@@ -931,7 +938,7 @@ window.carregarEvolucao = async function () {
     let qAnuncios = collection(db, "anuncios");
     let qHistorico = collection(db, "atualizacoes");
 
-    if (user.email !== ADMIN_EMAIL) {
+    if (!isAdmin) {
       qAnuncios = query(qAnuncios, where("uid", "==", user.uid));
       qHistorico = query(qHistorico, where("uid", "==", user.uid));
     }
