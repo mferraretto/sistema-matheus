@@ -1,5 +1,7 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
+import { encryptString, decryptString } from './crypto.js';
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -42,13 +44,15 @@ const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComp
 
 
 async function registrarHistorico(id, dadosAntigos, dadosNovos) {
-  await addDoc(collection(db, 'monitoramento_historico'), {
+  const payload = {
     id,
     dataHora: new Date().toISOString(),
     dadosAntigos,
     dadosNovos,
     uid: auth.currentUser.uid
-  });
+   };
+  const encrypted = await encryptString(JSON.stringify(payload), window.sistema.passphrase);
+  await addDoc(collection(db, 'monitoramento_historico'), { encrypted });
 }
 
 async function monitorar() {
@@ -65,7 +69,7 @@ async function monitorar() {
 
   const snap = await getDocs(qAnuncios);
   for (const docSnap of snap.docs) {
-    const dados = docSnap.data();
+    const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, window.sistema.passphrase) || {};
     const termo = (dados.nome || '').trim();  // <- CORRIGIDO
     if (!termo) continue;
 
@@ -77,7 +81,14 @@ async function monitorar() {
     const item = resultados[0];
     const ref = doc(db, 'monitoramento', docSnap.id);
     const antigaSnap = await getDoc(ref);
-
+ let antigos = {};
+    if (antigaSnap.exists()) {
+      const enc = antigaSnap.data().encrypted;
+      if (enc) {
+        const txt = await decryptString(enc, window.sistema.passphrase);
+        antigos = JSON.parse(txt);
+      }
+    }
     const dadosNovos = {
       nome: item.name,
       preco: item.price,
@@ -88,14 +99,13 @@ async function monitorar() {
     };
 
     if (antigaSnap.exists()) {
-      const antigos = antigaSnap.data();
       const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
       if (mudou) {
-        await setDoc(ref, dadosNovos);
+        await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
         await registrarHistorico(docSnap.id, antigos, dadosNovos);
       }
     } else {
-      await setDoc(ref, dadosNovos);
+      await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
       await registrarHistorico(docSnap.id, {}, dadosNovos);
     }
   }
@@ -147,7 +157,13 @@ async function carregarHistorico() {
     qHist = query(qHist, where('uid', '==', user.uid));
   }
   const snap = await getDocs(qHist);
-  const registros = snap.docs.map(d => d.data());
+ const registros = [];
+  for (const d of snap.docs) {
+    const enc = d.data().encrypted;
+    if (!enc) continue;
+    const txt = await decryptString(enc, window.sistema.passphrase);
+    registros.push(JSON.parse(txt));
+  }
   const linhas = registros.map(r => {
     return `<tr><td>${r.id}</td><td>${new Date(r.dataHora).toLocaleDateString()}</td><td>R$ ${r.dadosNovos.preco}</td><td>${r.dadosNovos.vendas}</td></tr>`;
   }).join('');
