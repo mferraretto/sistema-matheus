@@ -113,6 +113,17 @@ async function pesquisarShopee() {
 }
 
 window.pesquisarShopee = pesquisarShopee;
+// Permitir que o Enter no campo de busca acione a pesquisa
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('termoPesquisaShopee');
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        pesquisarShopee();
+      }
+    });
+  }
+});
 
 async function carregarHistorico() {
   const container = document.getElementById('historicoMonitoramento');
