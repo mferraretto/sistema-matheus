@@ -1,62 +1,58 @@
-const functions = require('firebase-functions');
-const fetch = require('node-fetch');
+const functions = require("firebase-functions");
+const fetch = require("node-fetch");
 
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGIN || 'https://mferraretto.github.io')
-  .split(',')
-  .map(o => o.trim());
-exports.proxyShopeeSearch = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    const q = req.query.q;
-    if (!q) {
-      res.status(400).json({ error: 'Missing q param' });
-      return;
-    }
+// 🚀 Função para buscar anúncios da Shopee
+exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
+  const q = req.method === 'POST' ? req.body.q : req.query.q;
 
+  if (!q) {
+    console.debug("❌ Parâmetro 'q' ausente.");
+    return res.status(400).json({ error: 'Missing q param' });
+  }
+
+  console.debug("🔍 Buscando por:", q);
+
+  const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&limit=5&keyword=${encodeURIComponent(q)}&newest=0&order=desc&page_type=search`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`status ${response.status}`);
+
+    const data = await response.json();
+
+    const items = (data?.items || []).map(({ item_basic: p }) => ({
+      name: p.name,
+      price: p.price / 100000,
+      sold: p.sold,
+      image: p.image,
+      itemid: p.itemid,
+      shopid: p.shopid
+    }));
+
+    res.json({ items });
+  } catch (err) {
+    console.error('Erro ao buscar Shopee:', err);
+    // fallback opcional com dummyjson
     try {
-      const url = `https://shopee.com.br/api/v4/search/search_items?by=relevancy&keyword=${encodeURIComponent(q)}&limit=10&newest=0&page_type=search&scenario=PAGE_GLOBAL_SEARCH`;
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'X-Requested-With': 'XMLHttpRequest',
-          Referer: 'https://shopee.com.br/'
-        }
-      });
-
-      if (!response.ok) throw new Error(`status ${response.status}`);
-      const data = await response.json();
-
-      const items = (data?.items || []).map(({ item_basic: p }) => ({
-        name: p.name,
-        price: p.price / 100000,
-        sold: p.sold,
-        image: p.image,
-        itemid: p.itemid,
-        shopid: p.shopid
+      const fRes = await fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(q)}`);
+      const data = await fRes.json();
+      const items = (data.products || []).map(p => ({
+        name: p.title,
+        price: p.price,
+        sold: p.stock,
+        image: Array.isArray(p.images) ? p.images[0] : '',
+        itemid: p.id,
+        shopid: p.brand || ''
       }));
-
       res.json({ items });
-    } catch (err) {
-      console.error('Erro ao buscar Shopee:', err);
-      try {
-        const fRes = await fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(q)}`);
-        const data = await fRes.json();
-        const items = (data.products || []).map(p => ({
-          name: p.title,
-          price: p.price,
-          sold: p.stock,
-          image: Array.isArray(p.images) ? p.images[0] : '',
-          itemid: p.id,
-          shopid: p.brand || ''
-        }));
-        res.json({ items });
-      } catch (fallbackErr) {
-        console.error('Fallback error:', fallbackErr);
-        res.json({ items: [] });
-      }
+    } catch (fallbackErr) {
+      console.error('Fallback error:', fallbackErr);
+      res.json({ items: [] });
     }
-  });
+  }
 });
 
+// 🤖 Função para encaminhar mensagens à IA DeepSeek
 exports.proxyDeepSeek = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
