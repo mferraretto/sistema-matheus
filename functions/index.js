@@ -3,6 +3,17 @@ const fetch = require("node-fetch");
 
 // 🚀 Função para buscar anúncios da Shopee
 exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
+  // HABILITAR CORS:
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+
+  // Resposta rápida para pré-flight (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   const q = req.method === 'POST' ? req.body.q : req.query.q;
 
   if (!q) {
@@ -51,6 +62,7 @@ exports.proxyShopeeSearch = functions.https.onRequest(async (req, res) => {
     }
   }
 });
+
 
 // 🤖 Função para encaminhar mensagens à IA DeepSeek
 exports.proxyDeepSeek = functions.https.onRequest(async (req, res) => {
