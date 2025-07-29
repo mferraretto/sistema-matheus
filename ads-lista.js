@@ -9,7 +9,7 @@ const auth = getAuth(app);
 onAuthStateChanged(auth, async (user) => {
   const tbody = document.querySelector('#tabelaAds tbody');
   if (!user) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-red-600">Usuário não autenticado</td></tr>';
+    window.location.href = 'index.html?login=1';
     return;
   }
 
