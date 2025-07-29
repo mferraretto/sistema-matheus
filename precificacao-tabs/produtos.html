@@ -73,6 +73,15 @@
             <option value="SHEIN">SHEIN</option>
           </select>
         </div>
+    <div id="bulkDeleteWrapper" class="mb-6">
+          <label class="block text-sm font-medium mb-2">Excluir todos os produtos:</label>
+          <div class="flex flex-wrap gap-4 items-end">
+            <select id="deleteAllProductsSelect" class="border p-3 w-full md:w-1/3"></select>
+            <button onclick="handleBulkDelete()" class="btn-danger">
+              <i class="fas fa-trash mr-2"></i> Excluir Tudo
+            </button>
+          </div>
+        </div>
         <div class="mb-6">
   <label class="block text-sm font-medium mb-2">Buscar por SKU:</label>
   <input type="text" id="filtroSKU" placeholder="Digite o SKU ou parte dele" class="border p-3 w-full md:w-1/3">
