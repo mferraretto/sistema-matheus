@@ -3,19 +3,31 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Etiquetas Shopee com OCR</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
-<body>
-  <h2>Gerador de Etiquetas com SKU</h2>
-  <input type="file" id="pdfInput" accept="application/pdf" />
-  <input type="file" id="excelInput" accept=".xlsx,.xls" />
-  <button onclick="processar()">Gerar PDF com Rodapé</button>
-  <p id="status"></p>
-  <canvas id="pdfCanvas" style="display:none;"></canvas>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4 space-y-4">
+    <h2 class="text-2xl font-bold mb-4"><i class="fas fa-barcode mr-2"></i>Gerador de Etiquetas com SKU</h2>
+    <div class="card p-4 space-y-4">
+      <input type="file" id="pdfInput" accept="application/pdf" class="border p-2 rounded bg-white" />
+      <input type="file" id="excelInput" accept=".xlsx,.xls" class="border p-2 rounded bg-white" />
+      <button onclick="processar()" class="btn-primary"><i class="fas fa-cog mr-1"></i>Gerar PDF com Rodapé</button>
+      <p id="status" class="text-sm"></p>
+    </div>
+    <canvas id="pdfCanvas" style="display:none;"></canvas>
+  </div>
   <script>
 function distanciaLevenshtein(a, b) {
     const matriz = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
@@ -224,5 +236,6 @@ pag.drawText(rodape, {
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 </script>
+  <script src="shared.js"></script>
 </body>
 </html>
