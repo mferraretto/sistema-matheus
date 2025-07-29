@@ -10,20 +10,42 @@ const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
   try {
-   const url =
+    const url =
       "https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=" +
       encodeURIComponent(term);
     const res = await fetch(url);
 
-    if (!res.ok) {
-      console.error('Erro ao buscar Shopee:', res.status);
-      return [];
+if (res.ok) {
+      const data = await res.json();
+      if (data.items && data.items.length) {
+        return data.items;
+      }
+    } else {
+  console.error('Erro ao buscar Shopee:', res.status);
     }
-
-    const data = await res.json();
-    return data.items || data.data?.items || []; // depende do formato da API da Shopee
   } catch (err) {
     console.error('Falha na requisição Shopee:', err);
+     }
+
+  // Fallback em caso de falha ou sem resultados
+  try {
+    const url2 =
+      'https://dummyjson.com/products/search?q=' + encodeURIComponent(term);
+    const res2 = await fetch(url2);
+    if (!res2.ok) {
+      return [];
+    }
+    const data2 = await res2.json();
+    return (data2.products || []).map(p => ({
+      name: p.title,
+      price: p.price,
+      sold: p.stock,
+      image: Array.isArray(p.images) ? p.images[0] : '',
+      itemid: p.id,
+      shopid: p.brand || ''
+    }));
+  } catch (err2) {
+    console.error('Fallback erro:', err2);
     return [];
   }
 }
