@@ -1957,6 +1957,12 @@ select:focus {
   visibility: visible;
   opacity: 1
 }
+.tooltip-lg .tooltip-text {
+  width: 280px;
+  margin-left: -140px;
+  text-align: left;
+  white-space: normal;
+}
 .dark-mode-toggle {
   position: relative;
   display: inline-block;
