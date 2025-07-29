@@ -6,37 +6,57 @@ const db = firebase.firestore();
 async function importarShopeeAds() {
   const fileInput = document.getElementById('adsFileInput');
   const file = fileInput.files[0];
-  if (!file) return alert('Selecione uma planilha.');
+  if (!file) return alert('Selecione uma planilha Shopee Ads (.csv)');
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const workbook = XLSX.read(e.target.result, { type: 'binary' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const linhas = e.target.result.split(/\\r?\\n/).slice(10); // Pula cabeçalho Shopee
+    if (!linhas.length) return alert("❌ Planilha vazia ou inválida.");
 
-    for (const row of data) {
-      const campanha = row['Campanha'] || 'Desconhecida';
-      const dataRef = (row['Data'] || '').split(' ')[0].replaceAll('/', '-');
-      if (!dataRef) continue;
-      await db.collection("ads").doc(campanha).collection("desempenho").doc(dataRef).set({
-        produto: row['Produto'] || '',
-        impressoes: Number(row['Impressões']) || 0,
-        cliques: Number(row['Cliques']) || 0,
-        gasto: Number(row['Gasto (R$)']) || 0,
-        receita: Number(row['Receita (R$)']) || 0,
-        vendas: Number(row['Vendas']) || 0,
-        ctr: parseFloat((row['CTR'] || '').toString().replace('%', '')) / 100 || 0,
-        cpc: Number(row['CPC']) || 0,
-        roas: Number(row['ROAS']) || 0,
-        data: dataRef,
+    const cabecalho = linhas[0].split(",");
+    const dados = linhas.slice(1).map(linha => linha.split(",")).filter(c => c.length === cabecalho.length);
+
+    const pos = {
+      data: cabecalho.findIndex(c => c.toLowerCase().includes("data")),
+      campanha: cabecalho.findIndex(c => c.toLowerCase().includes("campanha")),
+      produto: cabecalho.findIndex(c => c.toLowerCase().includes("produto")),
+      impressoes: cabecalho.findIndex(c => c.toLowerCase().includes("impress")),
+      cliques: cabecalho.findIndex(c => c.toLowerCase().includes("clique")),
+      gasto: cabecalho.findIndex(c => c.toLowerCase().includes("gasto")),
+      receita: cabecalho.findIndex(c => c.toLowerCase().includes("receita")),
+      vendas: cabecalho.findIndex(c => c.toLowerCase().includes("venda")),
+      roas: cabecalho.findIndex(c => c.toLowerCase().includes("roas")),
+      cpc: cabecalho.findIndex(c => c.toLowerCase().includes("cpc")),
+      ctr: cabecalho.findIndex(c => c.toLowerCase().includes("ctr"))
+    };
+
+    for (const linha of dados) {
+      const dataRaw = linha[pos.data] || "";
+      const dataFormatada = dataRaw.split(" ")[0]?.replaceAll("/", "-");
+      const campanha = linha[pos.campanha] || "Campanha Desconhecida";
+      const produto = linha[pos.produto] || "";
+
+      const ref = doc(db, "ads", campanha, "desempenho", dataFormatada);
+      await setDoc(ref, {
+        produto,
+        impressoes: parseInt(linha[pos.impressoes]) || 0,
+        cliques: parseInt(linha[pos.cliques]) || 0,
+        gasto: parseFloat(linha[pos.gasto]) || 0,
+        receita: parseFloat(linha[pos.receita]) || 0,
+        vendas: parseInt(linha[pos.vendas]) || 0,
+        roas: parseFloat(linha[pos.roas]) || 0,
+        cpc: parseFloat(linha[pos.cpc]) || 0,
+        ctr: parseFloat((linha[pos.ctr] || "0").replace("%", "")) / 100 || 0,
+        data: dataFormatada
       }, { merge: true });
     }
 
-    alert("✅ Dados importados com sucesso.");
-    carregarGrafico();
+    alert("✅ Importação concluída com sucesso.");
   };
-  reader.readAsBinaryString(file);
+
+  reader.readAsText(file);
 }
+
 
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
