@@ -24,6 +24,11 @@ window.login = () => {
     .then((cred) => {
       showUserArea(cred.user);
       closeModal('loginModal');
+      window.sistema = window.sistema || {};
+      const pass = prompt('Senha de visualização (não será enviada ao servidor)');
+      if (pass) {
+        window.sistema.passphrase = pass;
+      }
     })
     .catch(err => alert('Credenciais inválidas! ' + err.message));
 };
@@ -52,6 +57,10 @@ function showUserArea(user) {
    // Expose user information globally for other scripts
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
+   if (!window.sistema.passphrase) {
+    const pass = prompt('Senha de visualização (não será enviada ao servidor)');
+    if (pass) window.sistema.passphrase = pass;
+  }
 }
 
 function hideUserArea() {
