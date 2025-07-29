@@ -10,16 +10,10 @@ const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
   try {
-    const res = await fetch(
-      "https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ termo: term })
-      }
-    );
+   const url =
+      "https://us-central1-matheus-35023.cloudfunctions.net/proxyShopeeSearch?q=" +
+      encodeURIComponent(term);
+    const res = await fetch(url);
 
     if (!res.ok) {
       console.error('Erro ao buscar Shopee:', res.status);
