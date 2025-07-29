@@ -2,6 +2,11 @@ if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'index.html?login=1';
+  }
+});
 
 async function importarShopeeAds() {
   const fileInput = document.getElementById('adsFileInput');
