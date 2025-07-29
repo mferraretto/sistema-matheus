@@ -74,292 +74,38 @@
 
       <!-- Aba de Importação/Conferência -->
       <div id="importar" class="tab-content active">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-info-circle"></i>
-            <h3>Como usar</h3>
-          </div>
-          <p>Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas.</p>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-file-import"></i>
-            <h3>Importar Planilha</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
-            </div>
-            <button onclick="processarPlanilha()" class="btn btn-primary" id="btnProcessar">
-              <span id="btnProcessarText"><i class="fas fa-cogs"></i> Processar Planilha</span>
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-filter"></i>
-            <h3>Filtrar Resultados</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <select id="tipoFiltro" class="form-control">
-                <option value="exata">Correspondência Exata</option>
-                <option value="comeca">Começa com</option>
-                <option value="contem">Contém</option>
-              </select>
-            </div>
-            <div class="form-group input-with-icon">
-              <i class="fas fa-search"></i>
-              <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
-            </div>
-            <div class="form-group">
-   <select id="filtroStatus" class="form-control">
-      <option value="">Todos os Status</option>
-      <option value="Crítico">Crítico</option>
-      <option value="Atenção">Atenção</option>
-      <option value="Bom">Bom</option>
-      <option value="Normal">Normal</option>
-      <option value="Sem meta">Sem meta</option>
-    </select>
-  </div>
-
-
-            <button onclick="limparFiltros()" class="btn btn-outline">
-              <i class="fas fa-times"></i> Limpar Filtros
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-table"></i>
-            <h3>Resultados da Conferência</h3>
-          </div>
-          <div class="table-container">
-            <table id="resultado">
-              <thead>
-                <tr>
-                  <th>ID do Pedido</th>
-                  <th>SKU</th>
-                  <th>Subtotal</th>
-                  <th>Reembolso</th>
-                  <th>Cupom</th>
-                  <th>Comissão</th>
-                  <th>Serviço</th>
-                  <th>Sobra</th>
-                  <th>% vs Meta</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="mt-4">
-            <button onclick="analisarSobrasIA()" class="btn btn-primary">
-              <i class="fas fa-robot"></i> Analisar Sobras com IA
-            </button>
-            <input type="hidden" id="dadosSobrasIA">
-            <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
-          </div>
-          <div id="totalSobra" style="margin-top: 1.5rem;"></div>
-          
-          <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-            <button onclick="exportarCSV()" class="btn btn-primary">
-              <i class="fas fa-file-export"></i> Exportar CSV
-            </button>
-            <button onclick="exportarJSON()" class="btn btn-outline">
-              <i class="fas fa-file-code"></i> Exportar JSON
-            </button>
-          </div>
-        </div>
+ 
       </div>
 
       <!-- Aba de Metas -->
       <div id="metas" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-bullseye"></i>
-            <h3>Metas de Sobra por SKU</h3>
           </div>
-          <p>Cadastre metas de sobra para cada SKU. O sistema irá comparar automaticamente o desempenho real com a meta estabelecida.</p>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-plus-circle"></i>
-            <h3>Adicionar Nova Meta</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <input type="text" id="metaSku" list="listaSkus" placeholder="SKU do Produto" class="form-control" />
-              <datalist id="listaSkus"></datalist>
-              <div id="precoMinimoInfo" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
-            </div>
-            <div class="form-group">
-              <input type="number" id="metaValor" placeholder="Sobra Esperada (R$)" step="0.01" class="form-control" />
-            </div>
-            <button onclick="adicionarMeta()" class="btn btn-primary" id="btnAdicionarMeta">
-              <i class="fas fa-plus"></i> Adicionar Meta
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-list"></i>
-            <h3>Metas Cadastradas</h3>
-          </div>
-          <div class="table-container">
-            <table id="tabelaMetas">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Preço Mínimo</th>
-                  <th>Meta R$</th>
-                  <th>Última Atualização</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+
+      
 
       <!-- Aba de Gráficos -->
       <div id="graficos" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-chart-bar"></i>
-            <h3>Gráficos de Desempenho</h3>
-          </div>
-          <p>Visualize gráficos comparativos entre o desempenho real e as metas estabelecidas.</p>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-sliders-h"></i>
-            <h3>Configurações do Gráfico</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <select id="filtroGrafico" class="form-control">
-                <option value="top10">Top 10 SKUs com maior diferença</option>
-                <option value="bottom10">Top 10 SKUs com menor diferença</option>
-                <option value="all">Todos os SKUs</option>
-              </select>
-            </div>
-            <button onclick="atualizarGraficos()" class="btn btn-primary">
-              <i class="fas fa-sync-alt"></i> Atualizar Gráficos
-            </button>
-          </div>
-        </div>
-        
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title">Comparação entre Sobra Real e Meta por SKU</div>
-          </div>
-          <canvas id="graficoBarras" height="300"></canvas>
-        </div>
-        
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title">Desempenho vs Meta por SKU (%)</div>
-          </div>
-          <canvas id="graficoPizza" height="300"></canvas>
-        </div>
+     
       </div>
 
       <!-- Aba de Histórico -->
       <div id="historico" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-history"></i>
-            <h3>Histórico de Alterações</h3>
-          </div>
-          <p>Registro de todas as alterações nas metas de sobra.</p>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-filter"></i>
-            <h3>Filtrar Histórico</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group input-with-icon">
-              <i class="fas fa-search"></i>
-              <input type="text" id="filtroHistorico" placeholder="Filtrar por SKU..." class="form-control" />
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-list"></i>
-            <h3>Registros Recentes</h3>
-          </div>
-          <div id="listaHistorico" style="max-height: 500px; overflow-y: auto;"></div>
-        </div>
+    
       </div>
       
       <!-- Aba de Faturamento -->
       <div id="faturamento" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-file-import"></i>
-            <h3>Importar Planilha de Vendas</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="form-control" />
-            </div>
-            <button onclick="importarFaturamento()" class="btn btn-primary">
-              <i class="fas fa-upload"></i> Importar
-            </button>
-          </div>
-          <div id="resultadoFaturamento" class="mt-4"></div>
-        </div>
+       
       </div>
 
       <!-- Aba de Registro de Faturamento -->
       <div id="registroFaturamento" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-calendar-alt"></i>
-            <h3>Registros de Faturamento Diário</h3>
-          </div>
-          <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
-            <div class="flex items-center gap-2">
-              <label for="filtroMesRegistro" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesRegistro" class="border border-gray-300 rounded px-2 py-2"
-                onchange="carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')" />
-            </div>
-<button onclick="exportarFaturamentoExcel()">Exportar</button>
-              <i class="fas fa-file-excel"></i> Exportar Excel
-            </button>
-          </div>
-          <div id="listaFaturamentoRegistro" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
-        </div>
+       
       </div>
 
       <!-- Aba de Controle de Vendas -->
       <div id="controleVendas" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-boxes"></i>
-            <h3>Controle de Vendas por SKU</h3>
-          </div>
-          <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
-            <div class="flex items-center gap-2">
-              <label for="filtroMesVendas" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-2"
-                onchange="carregarControleVendas()" />
-            </div>
-          </div>
-          <div id="listaControleVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
-        </div>
+       
       </div>
     </div>
   </div>
@@ -385,6 +131,13 @@
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
+ const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas'];
+    const tabsLoaded = Promise.all(
+      tabIds.map(t => fetch(`sobras-tabs/${t}.html`).then(res => res.text()).then(html => {
+        const el = document.getElementById(t);
+        if (el) el.innerHTML = html;
+      }))
+    );
 
     // =============================================
     // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
@@ -408,6 +161,7 @@
         } catch (e) {
           console.error('Erro ao obter perfil do usuário:', e);
         }
+        await tabsLoaded;
 
         await carregarProdutos();
         await carregarMetas();
