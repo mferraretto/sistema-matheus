@@ -11,11 +11,19 @@ async function importarShopeeAds() {
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const linhas = e.target.result.split(/\\r?\\n/).slice(10); // Pula cabeçalho da Shopee
-    if (!linhas.length) return alert("❌ Planilha vazia ou inválida.");
+  const todasLinhas = e.target.result.split(/\r?\n/);
 
-    const cabecalho = linhas[0].split(",");
-    const dados = linhas.slice(1).map(l => l.split(",")).filter(l => l.length === cabecalho.length);
+// Detecta a linha onde está o cabeçalho da Shopee Ads: "#,Palavra-chave,..."
+const linhaCabecalhoIndex = todasLinhas.findIndex(l => l.startsWith("#,"));
+
+if (linhaCabecalhoIndex === -1) {
+  return alert("❌ Cabeçalho da tabela não encontrado. Verifique a planilha.");
+}
+
+const cabecalho = todasLinhas[linhaCabecalhoIndex].split(",");
+const dados = todasLinhas.slice(linhaCabecalhoIndex + 1)
+  .map(l => l.split(","))
+  .filter(l => l.length === cabecalho.length);
 
     const getIndex = (termo) =>
       cabecalho.findIndex(c => c.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/gi, "").includes(termo));
