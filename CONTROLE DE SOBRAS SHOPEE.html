@@ -332,8 +332,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     function atualizarPrecoMinimo() {
       const sku = document.getElementById('metaSku').value.trim();
       const custo = produtos[sku]; // usa o campo `custo`
-            const info = document.getElementById('custoProdutoInfo');
-      const info = document.getElementById('precoMinimoInfo');
+          const info = document.getElementById('custoProdutoInfo');
       const metaInput = document.getElementById('metaValor');
 
       if (!info || !metaInput) return;
