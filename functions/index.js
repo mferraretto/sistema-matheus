@@ -84,7 +84,7 @@ exports.proxyDeepSeek = onRequest(async (req, res) => {
 });
 
 // 🔄 Bling Proxy (v2)
-exports.proxyBling = onRequest(async (req, res) => {
+exports.proxyBling = onRequest((req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -106,12 +106,11 @@ exports.proxyBling = onRequest(async (req, res) => {
 
   const url = `https://bling.com.br/Api/v2/${endpoint}/json/?apikey=${apiKey}${parametros}`;
 
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    console.error('Erro no proxy Bling:', err);
-    res.status(500).json({ error: 'Erro ao acessar Bling' });
-  }
+  fetch(url)
+    .then(response => response.json())
+    .then(data => res.json(data))
+    .catch(err => {
+      console.error('Erro no proxy Bling:', err);
+      res.status(500).json({ error: 'Erro ao acessar Bling' });
+    });
 });
