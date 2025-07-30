@@ -8,6 +8,7 @@
   if (currentScript && currentScript.src) {
     BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
   }
+  
   // Toggle submenu visibility
   window.toggleMenu = function(menuId) {
     var el = document.getElementById(menuId);
