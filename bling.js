@@ -92,7 +92,8 @@ function atualizarTabelaPedidos(pedidos) {
   }
 }
 
-// Expose function globally for inline button handler
+// Expose functions globally for inline handlers
 if (typeof window !== 'undefined') {
   window.importarPedidosBling = importarPedidosBling;
+  window.atualizarTabelaPedidos = atualizarTabelaPedidos;
 }
