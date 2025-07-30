@@ -37,7 +37,7 @@ async function saveApiKey(key) {
   }
 }
 export async function importarPedidosBling() {
- let apiKey = await getStoredApiKey();
+  let apiKey = await getStoredApiKey();
   if (!apiKey) {
     apiKey = prompt('Informe sua API Key do Bling:');
     if (!apiKey) return;
@@ -45,18 +45,20 @@ export async function importarPedidosBling() {
   }
 
 const url = 'https://proxybling-g6u4niudyq-uc.a.run.app/';
-let res = await fetch(url, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    apiKey: apiKey,
-    endpoint: 'pedidos',
-    parametros: ''
-  })
-});
+ let json;
+
 
   try {
-  let res = await fetch(url);
+  const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey,
+        endpoint: 'pedidos',
+        parametros: ''
+      })
+    });
+
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
