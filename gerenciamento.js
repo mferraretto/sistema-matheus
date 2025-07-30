@@ -34,8 +34,7 @@ onAuthStateChanged(auth, async user => {
   }
 
   // ✅ DEFINIR A PASSPHRASE
-  window.sistema = window.sistema || {};
-  window.sistema.passphrase = `chave-${user.uid}`;
+   setPassphrase(`chave-${user.uid}`);
 
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
