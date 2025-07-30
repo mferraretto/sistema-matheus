@@ -49,11 +49,12 @@ window.openRecoverModal = () => {
 window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
+    const passphrase = document.getElementById('loginPassphrase').value;
   signInWithEmailAndPassword(auth, email, password)
     .then((cred) => {
     
       window.sistema = window.sistema || {};
-        if (passphrase) {
+      if (passphrase) {
         window.sistema.passphrase = passphrase;
       }
    showUserArea(cred.user);
