@@ -119,7 +119,7 @@ exports.proxyBling = onRequest(
       return;
     }
 
-    const apiKey = process.env.BLING_API_KEY;
+    const apiKey = req.query.apiKey || req.get('X-API-Key') || process.env.BLING_API_KEY;
     if (!apiKey) {
       res.status(500).json({ error: 'Missing API key' });
       return;
