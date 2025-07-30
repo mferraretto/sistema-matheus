@@ -332,6 +332,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     function atualizarPrecoMinimo() {
       const sku = document.getElementById('metaSku').value.trim();
       const custo = produtos[sku]; // usa o campo `custo`
+            const info = document.getElementById('custoProdutoInfo');
       const info = document.getElementById('precoMinimoInfo');
       const metaInput = document.getElementById('metaValor');
 
@@ -422,7 +423,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         
         return await executarComRetry(async () => {
           metas = {};
-          // Carrega SKUs e preço mínimo da coleção de produtos
+          // Carrega SKUs e custo dos produtos cadastrados
           let produtosSnapQuery = db.collection("products");
           if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
             produtosSnapQuery = produtosSnapQuery.where('uid', '==', usuarioLogado.uid);
@@ -692,7 +693,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         
         skuInput.value = '';
         valorInput.value = '';
-        document.getElementById('precoMinimoInfo').textContent = '';
+        document.getElementById('custoProdutoInfo').textContent = '';
         
         mostrarSucesso(`Meta para o SKU ${sku} adicionada com sucesso!`);
         
