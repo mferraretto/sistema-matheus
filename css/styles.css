@@ -2047,3 +2047,27 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   padding-right: 1rem;
 }
+@media print {
+  #sidebar-container,
+  #navbar-container,
+  #connectionStatus,
+  .btn-success,
+  .btn-danger,
+  .btn-secondary,
+  .card-header,
+  .tab-btn {
+    display: none !important;
+  }
+  .main-content {
+    margin: 0;
+  }
+  .table-container {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  #tabelaAcompanhamento th,
+  #tabelaAcompanhamento td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+  }
+}
