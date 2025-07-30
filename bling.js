@@ -44,8 +44,17 @@ export async function importarPedidosBling() {
     await saveApiKey(apiKey);
   }
 
-  const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyBling?apiKey=${encodeURIComponent(apiKey)}`;
-    let json;
+ const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyBling`;
+let res = await fetch(url, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    apiKey: apiKey,
+    endpoint: 'pedidos',
+    parametros: ''
+  })
+});
+
   try {
   let res = await fetch(url);
     if (!res.ok) {
