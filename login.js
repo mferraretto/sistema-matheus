@@ -3,6 +3,35 @@ import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, o
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  if (!container) {
+    alert(message);
+    return;
+  }
+  const color = type === 'success' ? 'bg-green-500'
+               : type === 'error' ? 'bg-red-500'
+               : type === 'warning' ? 'bg-yellow-500'
+               : 'bg-blue-500';
+  const toast = document.createElement('div');
+  toast.className = `${color} text-white px-4 py-3 rounded shadow-lg flex items-center justify-between min-w-[250px] animate-fadeIn`;
+  toast.innerHTML = `<span class="mr-4">${message}</span><button onclick="this.parentElement.remove()" class="text-white font-bold">×</button>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+window.savePassphrase = () => {
+  const input = document.getElementById('passphraseInput');
+  const pass = input.value.trim();
+  if (pass) {
+    window.sistema = window.sistema || {};
+    window.sistema.passphrase = pass;
+    input.value = '';
+    closeModal('passphraseModal');
+  } else {
+    showToast('Digite uma senha', 'warning');
+  }
+};
 
 window.openModal = (id) => {
   document.getElementById(id).style.display = 'block';
@@ -22,15 +51,16 @@ window.login = () => {
   const password = document.getElementById('loginPassword').value;
   signInWithEmailAndPassword(auth, email, password)
     .then((cred) => {
-      showUserArea(cred.user);
-      closeModal('loginModal');
+    
       window.sistema = window.sistema || {};
-      const pass = prompt('Senha de visualização (não será enviada ao servidor)');
-      if (pass) {
-        window.sistema.passphrase = pass;
+        if (passphrase) {
+        window.sistema.passphrase = passphrase;
       }
+   showUserArea(cred.user);
+      closeModal('loginModal');
+      document.getElementById('loginPassphrase').value = '';
     })
-    .catch(err => alert('Credenciais inválidas! ' + err.message));
+    .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
 };
 
 window.logout = () => {
@@ -40,15 +70,15 @@ window.logout = () => {
 window.sendRecovery = () => {
   const email = document.getElementById('recoverEmail').value;
   if (!email.includes('@')) {
-    alert('E-mail inválido!');
+    showToast('E-mail inválido!', 'warning');
     return;
   }
   sendPasswordResetEmail(auth, email)
     .then(() => {
-      alert('E-mail de recuperação enviado!');
+      showToast('E-mail de recuperação enviado!', 'success');
       closeModal('recoverModal');
     })
-    .catch(err => alert('Erro ao enviar recuperação: ' + err.message));
+    .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
 function showUserArea(user) {
@@ -58,8 +88,7 @@ function showUserArea(user) {
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
    if (!window.sistema.passphrase) {
-    const pass = prompt('Senha de visualização (não será enviada ao servidor)');
-    if (pass) window.sistema.passphrase = pass;
+    openModal('passphraseModal');
   }
 }
 
