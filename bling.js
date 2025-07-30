@@ -36,9 +36,8 @@ async function saveApiKey(key) {
     console.error('Erro ao salvar chave do Bling:', err);
   }
 }
-
 export async function importarPedidosBling() {
-  let apiKey = await getStoredApiKey();
+ let apiKey = await getStoredApiKey();
   if (!apiKey) {
     apiKey = prompt('Informe sua API Key do Bling:');
     if (!apiKey) return;
@@ -95,5 +94,6 @@ function atualizarTabelaPedidos(pedidos) {
 // Expose functions globally for inline handlers
 if (typeof window !== 'undefined') {
   window.importarPedidosBling = importarPedidosBling;
-  window.atualizarTabelaPedidos = atualizarTabelaPedidos;
+  window.saveBlingApiKey = saveApiKey;
+  window.getBlingApiKey = getStoredApiKey;
 }
