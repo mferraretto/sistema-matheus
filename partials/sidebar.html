@@ -16,10 +16,15 @@
     </a>
 
     <!-- Vendas -->
-    <button onclick="toggleMenu('menuVendas')" class="sidebar-link">
-      <i class="fas fa-shopping-cart"></i>
-      <span class="link-text">📦 Vendas</span>
-    </button>
+   <div class="sidebar-item">
+      <a href="/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=importar" class="sidebar-link">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="link-text">📦 Vendas</span>
+      </a>
+      <button class="submenu-toggle" onclick="toggleMenu('menuVendas')">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </div>
     <div id="menuVendas" class="pl-8 space-y-2 hidden">
          <a href="/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=importar" class="sidebar-link">Conferir Pedidos</a>
       <a href="/sistema-matheus/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas" class="sidebar-link">Metas</a>
@@ -32,10 +37,15 @@
     </div>
 
    <!-- Precificação -->
-    <button onclick="toggleMenu('menuPrecificacao')" class="sidebar-link">
-      <i class="fas fa-tags"></i>
-      <span class="link-text">🧮 Precificação</span>
-    </button>
+    <div class="sidebar-item">
+      <a href="/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=dashboard" class="sidebar-link">
+        <i class="fas fa-tags"></i>
+        <span class="link-text">🧮 Precificação</span>
+      </a>
+      <button class="submenu-toggle" onclick="toggleMenu('menuPrecificacao')">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </div>
     <div id="menuPrecificacao" class="pl-8 space-y-2 hidden">
    <a href="/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=dashboard" class="sidebar-link">Dashboard</a>
       <a href="/sistema-matheus/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=precificacao" class="sidebar-link">Precificação</a>
@@ -48,10 +58,15 @@
     </div>
 
     <!-- Anúncios -->
-    <button onclick="toggleMenu('menuAnuncios')" class="sidebar-link">
-      <i class="fas fa-bullhorn"></i>
-      <span class="link-text">📣 Anúncios</span>
-    </button>
+    <div class="sidebar-item">
+      <a href="/sistema-matheus/anuncios-tabs/cadastro.html" class="sidebar-link">
+        <i class="fas fa-bullhorn"></i>
+        <span class="link-text">📣 Anúncios</span>
+      </a>
+      <button class="submenu-toggle" onclick="toggleMenu('menuAnuncios')">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </div>
   <div id="menuAnuncios" class="pl-8 space-y-2 hidden">
  <a href="/sistema-matheus/anuncios-tabs/cadastro.html" class="sidebar-link">Cadastro / Atualização</a>
   <a href="/sistema-matheus/anuncios-tabs/anuncios.html" class="sidebar-link">Anúncios</a>
