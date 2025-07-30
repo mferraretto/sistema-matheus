@@ -1,12 +1,51 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-
+import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const auth = getAuth(app);
+
+async function getStoredApiKey() {
+  const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
+  if (!uid) return null;
+  if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
+  try {
+    const data = await loadSecureDoc(db, 'blingKeys', uid, window.sistema?.passphrase || `chave-${uid}`);
+    if (data && data.key) {
+      window.sistema = window.sistema || {};
+      window.sistema.blingApiKey = data.key;
+      return data.key;
+    }
+  } catch (err) {
+    console.error('Erro ao carregar chave do Bling:', err);
+  }
+  return null;
+}
+
+async function saveApiKey(key) {
+  const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
+  if (!uid) return;
+  try {
+    await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, window.sistema?.passphrase || `chave-${uid}`);
+    window.sistema = window.sistema || {};
+    window.sistema.blingApiKey = key;
+  } catch (err) {
+    console.error('Erro ao salvar chave do Bling:', err);
+  }
+}
+
 export async function importarPedidosBling() {
-  const url = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyBling';
+  let apiKey = await getStoredApiKey();
+  if (!apiKey) {
+    apiKey = prompt('Informe sua API Key do Bling:');
+    if (!apiKey) return;
+    await saveApiKey(apiKey);
+  }
+
+  const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyBling?apiKey=${encodeURIComponent(apiKey)}`;
   try {
     const res = await fetch(url);
     const json = await res.json();
