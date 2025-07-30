@@ -98,6 +98,7 @@ exports.proxyDeepSeek = onRequest(
 );
 
 // 🔄 Proxy to fetch Bling orders
+// 🔄 Proxy para acessar API do Bling com chave fornecida pelo usuário
 exports.proxyBling = onRequest(
   {
     region: 'us-central1',
@@ -107,33 +108,32 @@ exports.proxyBling = onRequest(
   async (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
-    res.set('Access-Control-Allow-Methods', 'GET');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
 
     if (req.method === 'OPTIONS') {
       res.status(204).send('');
       return;
     }
 
-    if (req.method !== 'GET') {
-      res.status(405).json({ error: 'Method Not Allowed' });
-      return;
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const apiKey = req.query.apiKey || req.get('X-API-Key') || process.env.BLING_API_KEY;
+    const { apiKey, endpoint = 'pedidos', parametros = '' } = req.body;
+
     if (!apiKey) {
-      res.status(500).json({ error: 'Missing API key' });
-      return;
+      return res.status(400).json({ error: 'API key obrigatória' });
     }
 
-    const url = `https://bling.com.br/Api/v2/pedidos/json/?apikey=${apiKey}`;
+    const url = `https://bling.com.br/Api/v2/${endpoint}/json/?apikey=${apiKey}${parametros}`;
 
     try {
       const response = await fetch(url);
       const data = await response.json();
       res.json(data);
     } catch (err) {
-      console.error('Proxy error:', err);
-      res.status(500).json({ error: 'Proxy error' });
+      console.error('Erro no proxy Bling:', err);
+      res.status(500).json({ error: 'Erro ao acessar Bling' });
     }
   }
 );
