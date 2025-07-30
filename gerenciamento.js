@@ -27,11 +27,16 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let isAdmin = false;
 
-   onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
+
+  // ✅ DEFINIR A PASSPHRASE
+  window.sistema = window.sistema || {};
+  window.sistema.passphrase = `chave-${user.uid}`;
+
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
     isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
