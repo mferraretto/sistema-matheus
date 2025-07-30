@@ -52,7 +52,8 @@ async function registrarHistorico(id, dadosAntigos, dadosNovos) {
     uid: auth.currentUser.uid
    };
   const encrypted = await encryptString(JSON.stringify(payload), window.sistema.passphrase);
-  await addDoc(collection(db, 'monitoramento_historico'), { encrypted });
+ // Salva o uid fora da carga criptografada para possibilitar filtragem
+  await addDoc(collection(db, 'monitoramento_historico'), { uid: payload.uid, encrypted });
 }
 
 async function monitorar() {
@@ -63,13 +64,23 @@ async function monitorar() {
   }
 
   let qAnuncios = collection(db, 'anuncios');
+    let snap;
   if (!isAdmin) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
+     snap = await getDocs(qAnuncios);
+    if (snap.empty) {
+      qAnuncios = collection(db, 'anuncios');
+      snap = await getDocs(qAnuncios);
+    }
+  } else {
+    snap = await getDocs(qAnuncios);
   }
 
-  const snap = await getDocs(qAnuncios);
   for (const docSnap of snap.docs) {
     const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, window.sistema.passphrase) || {};
+     if (!isAdmin && dados.uid && dados.uid !== user.uid) {
+      continue;
+    }
     const termo = (dados.nome || '').trim();  // <- CORRIGIDO
     if (!termo) continue;
 
@@ -153,16 +164,27 @@ async function carregarHistorico() {
   container.innerHTML = '<div class="text-center">Carregando...</div>';
   const user = auth.currentUser;
   let qHist = collection(db, 'monitoramento_historico');
+    let snap;
   if (!isAdmin) {
     qHist = query(qHist, where('uid', '==', user.uid));
+     snap = await getDocs(qHist);
+    if (snap.empty) {
+      qHist = collection(db, 'monitoramento_historico');
+      snap = await getDocs(qHist);
+    }
+  } else {
+    snap = await getDocs(qHist);
   }
-  const snap = await getDocs(qHist);
- const registros = [];
+    const registros = [];
   for (const d of snap.docs) {
     const enc = d.data().encrypted;
     if (!enc) continue;
     const txt = await decryptString(enc, window.sistema.passphrase);
-    registros.push(JSON.parse(txt));
+const obj = JSON.parse(txt);
+    if (!isAdmin && obj.uid && obj.uid !== user.uid) {
+      continue;
+    }
+    registros.push(obj);
   }
   const linhas = registros.map(r => {
     return `<tr><td>${r.id}</td><td>${new Date(r.dataHora).toLocaleDateString()}</td><td>R$ ${r.dadosNovos.preco}</td><td>${r.dadosNovos.vendas}</td></tr>`;
