@@ -123,14 +123,45 @@
               <p class="text-gray-600 text-sm">Controle de acessos e permissões</p>
             </div>
           </div>
-          <div class="card-body">
-            <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
+           <div class="card-body">
+          <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
+            <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
+          </a>
+        </div>
+      </div>
+
+      <!-- Importar Pedidos do Bling -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-icon">
+            <i class="fas fa-shopping-cart text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Pedidos do Bling</h2>
+            <p class="text-gray-600 text-sm">Importe pedidos sincronizados</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <button onclick="importarPedidosBling()" class="btn-primary inline-block">
+            <i class="fas fa-download mr-2"></i>Importar Pedidos do Bling
+          </button>
+          <div class="overflow-x-auto mt-4">
+            <table id="tabelaPedidosBling" class="data-table">
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>SKU</th>
+                  <th>Valor Pago</th>
+                  <th>Valor Líquido</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
-      
+          </div>
+
       <!-- Tabela de exemplo -->
       <div class="card mb-6">
         <div class="card-header">
@@ -229,7 +260,8 @@
 
 
   <script src="firebase-config.js"></script>
-    <script type="module" src="login.js"></script>
+ <script type="module" src="login.js"></script>
+  <script type="module" src="bling.js"></script>
   <script type="module">
   
     
