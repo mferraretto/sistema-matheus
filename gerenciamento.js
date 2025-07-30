@@ -246,7 +246,7 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), window.sistema.passphrase);
+        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), getPassphrase());
         if (registrarHistorico) {
           await addDoc(collection(db, "atualizacoes"), {
             id,
@@ -370,7 +370,7 @@ window.carregarAnuncios = async function () {
 
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
-      const data = await loadSecureDoc(db, 'anuncios', id, window.sistema.passphrase) || {};
+      const data = await loadSecureDoc(db, 'anuncios', id, getPassphrase()) || {};
        if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
