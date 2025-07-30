@@ -96,3 +96,44 @@ exports.proxyDeepSeek = onRequest(
     }
   }
 );
+
+// 🔄 Proxy to fetch Bling orders
+exports.proxyBling = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.set('Access-Control-Allow-Methods', 'GET');
+
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    if (req.method !== 'GET') {
+      res.status(405).json({ error: 'Method Not Allowed' });
+      return;
+    }
+
+    const apiKey = process.env.BLING_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: 'Missing API key' });
+      return;
+    }
+
+    const url = `https://bling.com.br/Api/v2/pedidos/json/?apikey=${apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      res.json(data);
+    } catch (err) {
+      console.error('Proxy error:', err);
+      res.status(500).json({ error: 'Proxy error' });
+    }
+  }
+);
