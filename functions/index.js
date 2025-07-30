@@ -6,7 +6,21 @@ const fetch = require('node-fetch');
 
 // Bling (resolvido com v1 + express)
 const appBling = express();
-appBling.use(cors({ origin: true }));
+
+// Explicit CORS middleware so Cloud Run/Functions send the
+// headers needed for browser requests.
+appBling.use((req, res, next) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  next();
+});
 appBling.use(express.json());
 
 appBling.post('/', async (req, res) => {
