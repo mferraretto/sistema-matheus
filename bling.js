@@ -1,13 +1,12 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
-const BLING_API_KEY = 'f9c9f25ac92629f5e6ea58cbeb0ab499e51046118d68fbe87a097f03802e87c093b7e9b3';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export async function importarPedidosBling() {
-  const url = `https://bling.com.br/Api/v2/pedidos/json/?apikey=${BLING_API_KEY}`;
+  const url = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyBling';
   try {
     const res = await fetch(url);
     const json = await res.json();
