@@ -69,7 +69,10 @@
         </button>
         <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
           <i class="fas fa-boxes"></i> Controle de Vendas
-        </button>  
+         </button>
+        <button class="tab-btn" onclick="trocarAba('acompanhamento'); carregarAcompanhamento()">
+          <i class="fas fa-chart-line"></i> Acompanhamento
+        </button> 
       </div>
 
       <!-- Aba de Importação/Conferência -->
@@ -107,6 +110,11 @@
       <div id="controleVendas" class="tab-content">
        
       </div>
+
+      <!-- Aba de Acompanhamento -->
+      <div id="acompanhamento" class="tab-content">
+
+      </div>
     </div>
   </div>
 
@@ -131,7 +139,7 @@
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
- const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas'];
+ const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento'];
     const tabsLoaded = Promise.all(
       tabIds.map(t => fetch(`sobras-tabs/${t}.html`).then(res => res.text()).then(html => {
         const el = document.getElementById(t);
@@ -1870,6 +1878,82 @@ let ref = db.collection("faturamento");
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
       XLSX.writeFile(wb, "faturamento.xlsx");
+    }
+    
+    async function carregarAcompanhamento() {
+      const tbody = document.querySelector('#tabelaAcompanhamento tbody');
+      const resumoEl = document.getElementById('resumoAcompanhamento');
+      tbody.innerHTML = '<tr><td colspan="4">🔄 Carregando...</td></tr>';
+      resumoEl.innerHTML = '';
+
+      let ref = db.collection('faturamento');
+      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+        ref = ref.where('uid', '==', usuarioLogado.uid);
+      }
+      const snap = await ref.get();
+
+      const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value;
+      let dados = [];
+      let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
+
+      for (const doc of snap.docs) {
+        if (filtroMes) {
+          const [anoFiltro, mesFiltro] = filtroMes.split('-');
+          const [ano, mes] = doc.id.split('-');
+          if (ano !== anoFiltro || mes !== mesFiltro) continue;
+        }
+
+        let subRef = db.collection(`faturamento/${doc.id}/lojas`);
+        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          subRef = subRef.where('uid', '==', usuarioLogado.uid);
+        }
+        const subSnap = await subRef.get();
+        let bruto = 0, liquido = 0, vendas = 0;
+        subSnap.forEach(s => {
+          const d = s.data();
+          bruto += d.valorBruto || 0;
+          liquido += d.valorLiquido || 0;
+          vendas += d.qtdVendas || 0;
+        });
+
+        let sobraDia = 0;
+        try {
+          let listaRef = db.collection(`skusVendidos/${doc.id}/lista`);
+          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+            listaRef = listaRef.where('uid', '==', usuarioLogado.uid);
+          }
+          const listaSnap = await listaRef.get();
+          listaSnap.forEach(item => {
+            const { sku, total } = item.data();
+            const custo = Number(produtos[sku] || 0);
+            sobraDia += (total || 0) * custo;
+          });
+        } catch (e) {
+          console.warn('Erro ao calcular sobra esperada do dia', e);
+        }
+
+        dados.push({ data: doc.id, bruto, liquido, vendas, sobra: sobraDia });
+        totalBruto += bruto;
+        totalLiquido += liquido;
+        totalVendas += vendas;
+        totalSobra += sobraDia;
+      }
+
+      tbody.innerHTML = '';
+      dados.sort((a,b) => a.data.localeCompare(b.data));
+      dados.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${d.data}</td><td>R$ ${d.bruto.toLocaleString('pt-BR')}</td><td>R$ ${d.liquido.toLocaleString('pt-BR')}</td><td>${d.vendas}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      const ticket = totalVendas ? totalLiquido / totalVendas : 0;
+      resumoEl.innerHTML = `
+        <div><strong>Total Bruto:</strong> R$ ${totalBruto.toLocaleString('pt-BR')}</div>
+        <div><strong>Total Líquido:</strong> R$ ${totalLiquido.toLocaleString('pt-BR')}</div>
+        <div><strong>Total Vendido:</strong> ${totalVendas}</div>
+        <div><strong>Total Sobra Esperada:</strong> R$ ${totalSobra.toLocaleString('pt-BR')}</div>
+        <div><strong>Ticket Médio:</strong> R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>`;
     }
    function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
