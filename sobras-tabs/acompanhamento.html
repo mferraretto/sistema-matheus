@@ -7,6 +7,17 @@
     <label for="filtroMesAcompanhamento" class="font-medium">Filtrar por mês:</label>
     <input type="month" id="filtroMesAcompanhamento" class="border border-gray-300 rounded px-2 py-2" onchange="carregarAcompanhamento()" />
   </div>
+  <div class="flex flex-wrap gap-3 mb-4 px-4">
+    <button onclick="exportarAcompanhamentoExcel()" class="btn-success">
+      <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+    </button>
+    <button onclick="exportarAcompanhamentoPDF()" class="btn-danger">
+      <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
+    </button>
+    <button onclick="printAcompanhamento()" class="btn-secondary">
+      <i class="fas fa-print mr-2"></i> Imprimir
+    </button>
+  </div>
   <div class="table-container">
     <table id="tabelaAcompanhamento">
       <thead>
