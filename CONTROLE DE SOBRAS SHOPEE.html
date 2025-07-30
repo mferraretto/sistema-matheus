@@ -15,6 +15,7 @@
   <!-- Bibliotecas JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -136,6 +137,7 @@
     let metas = {};
     let historico = [];
     let produtos = {};
+        let dadosAcompanhamento = [];
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
@@ -1894,6 +1896,7 @@ let ref = db.collection("faturamento");
 
       const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value;
       let dados = [];
+            dadosAcompanhamento = [];
       let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
 
       for (const doc of snap.docs) {
@@ -1941,6 +1944,7 @@ let ref = db.collection("faturamento");
 
       tbody.innerHTML = '';
       dados.sort((a,b) => a.data.localeCompare(b.data));
+            dadosAcompanhamento = dados.slice();
       dados.forEach(d => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${d.data}</td><td>R$ ${d.bruto.toLocaleString('pt-BR')}</td><td>R$ ${d.liquido.toLocaleString('pt-BR')}</td><td>${d.vendas}</td>`;
@@ -1954,6 +1958,24 @@ let ref = db.collection("faturamento");
         <div><strong>Total Vendido:</strong> ${totalVendas}</div>
         <div><strong>Total Sobra Esperada:</strong> R$ ${totalSobra.toLocaleString('pt-BR')}</div>
         <div><strong>Ticket Médio:</strong> R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>`;
+    }
+     function exportarAcompanhamentoExcel() {
+      if (!dadosAcompanhamento.length) return;
+      const ws = XLSX.utils.json_to_sheet(dadosAcompanhamento);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Acompanhamento');
+      XLSX.writeFile(wb, 'acompanhamento.xlsx');
+    }
+
+    function exportarAcompanhamentoPDF() {
+      const element = document.getElementById('acompanhamento');
+      if (!element) return;
+      const opt = { margin: 1, filename: 'acompanhamento.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' } };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function printAcompanhamento() {
+      window.print();
     }
    function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
