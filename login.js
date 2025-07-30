@@ -24,8 +24,8 @@ window.savePassphrase = () => {
   const input = document.getElementById('passphraseInput');
   const pass = input.value.trim();
   if (pass) {
-    window.sistema = window.sistema || {};
-    window.sistema.passphrase = pass;
+       setPassphrase(pass);
+
     input.value = '';
     closeModal('passphraseModal');
   } else {
@@ -49,13 +49,12 @@ window.openRecoverModal = () => {
 window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
-    const passphrase = document.getElementById('loginPassphrase').value;
+  const passphrase = document.getElementById('loginPassphrase').value;
   signInWithEmailAndPassword(auth, email, password)
     .then((cred) => {
     
-      window.sistema = window.sistema || {};
       if (passphrase) {
-        window.sistema.passphrase = passphrase;
+        setPassphrase(passphrase);
       }
    showUserArea(cred.user);
       closeModal('loginModal');
@@ -88,7 +87,7 @@ function showUserArea(user) {
    // Expose user information globally for other scripts
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
-   if (!window.sistema.passphrase) {
+   if (!getPassphrase()) {
     openModal('passphraseModal');
   }
 }
@@ -97,6 +96,7 @@ function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
     if (window.sistema) delete window.sistema.currentUserId;
+      clearPassphrase();
 }
 
 window.requireLogin = (event) => {
