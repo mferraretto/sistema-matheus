@@ -2033,3 +2033,17 @@ input:checked + .toggle-slider:before {
     transform: translateX(0)
   }
 }
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.submenu-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding-right: 1rem;
+}
