@@ -148,7 +148,8 @@
         backupFrequency: "daily",
         apiConfig: {
           ml: { clientId: "", clientSecret: "", connected: false },
-          shopee: { apiKey: "", partnerId: "", connected: false }
+    shopee: { apiKey: "", partnerId: "", connected: false },
+          bling: { apiKey: "", connected: false }
         }
       },
       importedShopeeData: null,
@@ -242,6 +243,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         if (configDoc.exists) {
           sistema.config = configDoc.data();
           updateUI();
+           if (window.getBlingApiKey) {
+            window.getBlingApiKey();
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar configurações:", error);
@@ -574,7 +578,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       // Verifica conexões com APIs e atualiza UI
       sistema.config.apiConfig.ml.connected = sistema.config.apiConfig.ml.clientId !== "";
       sistema.config.apiConfig.shopee.connected = sistema.config.apiConfig.shopee.apiKey !== "";
-      
+            sistema.config.apiConfig.bling.connected = (window.sistema?.blingApiKey || sistema.config.apiConfig.bling.apiKey) !== "";
+
       updateApiStatusUI();
       updateKPIs();
     }
@@ -582,8 +587,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
     function updateApiStatusUI() {
       // Atualiza indicadores de status na UI
       document.querySelectorAll('.api-status').forEach(el => {
-        const platform = el.parentElement.textContent.includes('Mercado') ? 'ml' : 
-                       el.parentElement.textContent.includes('Shopee') ? 'shopee' : 'magalu';
+      const platform = el.parentElement.textContent.includes('Mercado') ? 'ml' :
+                       el.parentElement.textContent.includes('Shopee') ? 'shopee' :
+                       el.parentElement.textContent.includes('Magalu') ? 'magalu' : 'bling';
         
         el.classList.toggle('api-connected', sistema.config.apiConfig[platform]?.connected);
         el.classList.toggle('api-disconnected', !sistema.config.apiConfig[platform]?.connected);
@@ -615,7 +621,17 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         showToast('Falha na conexão com Shopee!', 'error');
       }
     }
-
+ async function testBlingConnection() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        showToast('Conexão com Bling testada com sucesso!', 'success');
+        sistema.config.apiConfig.bling.connected = true;
+        updateApiStatusUI();
+        addHistoryEntry('api_config', 'Teste de conexão com Bling realizado');
+      } catch (error) {
+        showToast('Falha na conexão com Bling!', 'error');
+      }
+    }
     async function saveApiConfig() {
       sistema.config.apiConfig.ml = {
         clientId: document.getElementById('mlClientId').value,
@@ -628,7 +644,14 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         partnerId: document.getElementById('shopeePartnerId').value,
         connected: sistema.config.apiConfig.shopee.connected
       };
-      
+      sistema.config.apiConfig.bling = {
+        apiKey: document.getElementById('blingApiKey').value,
+        connected: sistema.config.apiConfig.bling.connected
+      };
+
+      if (window.saveBlingApiKey) {
+        window.saveBlingApiKey(sistema.config.apiConfig.bling.apiKey);
+      }
       try {
         await saveSystem();
         updateApiStatusUI();
@@ -683,7 +706,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
             backupAuto: true,
             apiConfig: {
               ml: { clientId: "", clientSecret: "", connected: false },
-              shopee: { apiKey: "", partnerId: "", connected: false }
+   shopee: { apiKey: "", partnerId: "", connected: false },
+              bling: { apiKey: "", connected: false }
             }
           };
           
@@ -1965,7 +1989,7 @@ function applyPriceUpdate(type) {
       
       document.getElementById('totalProducts').textContent = totalProducts;
       document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-      document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
+      document.getElementById('activeConnections').textContent = `${activeConnections}/4`;
       document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
     
@@ -2019,6 +2043,7 @@ function applyPriceUpdate(type) {
       }
     }, 300000); // 5 minutos
   </script>
+      <script type="module" src="bling.js"></script>
  <script src="shared.js"></script>
 <script>
    document.querySelectorAll('.tooltip').forEach(el => {
