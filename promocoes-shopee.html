@@ -12,6 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body class="bg-gray-100">
@@ -108,7 +109,7 @@
         window.location.href = 'index.html?login=1';
       }
     });
-    let importedProducts = [];
+    var importedProducts = [];
     const sistema = {
   produtos: [],
   importedShopeeData: [],
