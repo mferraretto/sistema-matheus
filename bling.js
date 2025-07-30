@@ -44,7 +44,8 @@ export async function importarPedidosBling() {
     await saveApiKey(apiKey);
   }
 
-const url = `https://proxybling-g6u4niudyq-uc.a.run.app`;let res = await fetch(url, {
+const url = 'https://proxybling-g6u4niudyq-uc.a.run.app/';
+let res = await fetch(url, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
