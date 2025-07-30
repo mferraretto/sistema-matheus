@@ -487,7 +487,8 @@ tr:hover {
     min-height: 100vh
   }
   .sidebar {
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: #1c2b36;
     width: 250px;
     min-height: 100vh;
