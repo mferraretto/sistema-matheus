@@ -31,7 +31,7 @@ export async function encryptString(str, password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await deriveKey(password, salt);
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    {name: 'AES-GCM', iv},
     key,
     enc.encode(str)
   );
@@ -39,71 +39,26 @@ export async function encryptString(str, password) {
   function toBase64(arr) {
     return btoa(String.fromCharCode(...arr));
   }
-
-  // ✅ Retornar objeto em vez de string
-  return {
+  return JSON.stringify({
     iv: toBase64(iv),
     salt: toBase64(salt),
     data: toBase64(buffer)
-  };
-}
-export async function encryptString(str, password) {
-  const enc = new TextEncoder();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await deriveKey(password, salt);
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc.encode(str)
-  );
-  const buffer = new Uint8Array(ciphertext);
-  function toBase64(arr) {
-    return btoa(String.fromCharCode(...arr));
-  }
-
-  // ✅ Retornar objeto em vez de string
-  return {
-    iv: toBase64(iv),
-    salt: toBase64(salt),
-    data: toBase64(buffer)
-  };
+  });
 }
 
 
-export async function decryptString(encryptedObj, password) {
+export async function decryptString(jsonStr, password) {
   const enc = new TextEncoder();
-  const obj = encryptedObj; // já é objeto
-
+  const obj = JSON.parse(jsonStr);
   function fromBase64(b64) {
     return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   }
-
   const iv = fromBase64(obj.iv);
   const salt = fromBase64(obj.salt);
   const data = fromBase64(obj.data);
   const key = await deriveKey(password, salt);
   const plaintext = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    data
-  );
-  return new TextDecoder().decode(plaintext);
-}
-export async function decryptString(encryptedObj, password) {
-  const enc = new TextEncoder();
-  const obj = encryptedObj; // já é objeto
-
-  function fromBase64(b64) {
-    return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  }
-
-  const iv = fromBase64(obj.iv);
-  const salt = fromBase64(obj.salt);
-  const data = fromBase64(obj.data);
-  const key = await deriveKey(password, salt);
-  const plaintext = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
+    {name: 'AES-GCM', iv},
     key,
     data
   );
