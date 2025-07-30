@@ -45,9 +45,13 @@ export async function importarPedidosBling() {
   }
 
   const url = `https://us-central1-matheus-35023.cloudfunctions.net/proxyBling?apiKey=${encodeURIComponent(apiKey)}`;
+    let json;
   try {
-    const res = await fetch(url);
-    const json = await res.json();
+  let res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    json = await res.json();
     if (json.retorno && json.retorno.erros) {
       console.error('Erro ao obter pedidos do Bling:', json.retorno.erros);
       alert('Erro ao importar pedidos do Bling');
@@ -64,8 +68,25 @@ export async function importarPedidosBling() {
     atualizarTabelaPedidos(pedidos);
     alert(`${pedidos.length} pedidos importados`);
   } catch (err) {
-    console.error('Falha ao importar pedidos do Bling:', err);
-    alert('Falha ao importar pedidos do Bling');
+   console.warn('Proxy falhou, tentando acesso direto:', err);
+    try {
+      const directUrl = `https://corsproxy.io/https://bling.com.br/Api/v2/pedidos/json/?apikey=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(directUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      json = await res.json();
+      const pedidos = json.retorno?.pedidos || [];
+      for (const obj of pedidos) {
+        const pedido = obj.pedido || obj;
+        const numero = String(pedido.numero);
+        await setDoc(doc(db, 'pedidosBling', numero), pedido);
+      }
+
+      atualizarTabelaPedidos(pedidos);
+      alert(`${pedidos.length} pedidos importados (direto)`);
+    } catch (err2) {
+      console.error('Falha ao importar pedidos do Bling:', err2);
+      alert('Falha ao importar pedidos do Bling');
+    }
   }
 }
 
