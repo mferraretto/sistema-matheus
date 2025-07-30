@@ -44,8 +44,8 @@ export async function importarPedidosBling() {
     await saveApiKey(apiKey);
   }
 
-const url = 'https://proxybling-g6u4niudyq-uc.a.run.app/';
- let json;
+const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
+  let json;
 
 
   try {
