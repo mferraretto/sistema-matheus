@@ -349,11 +349,19 @@ window.carregarAnuncios = async function () {
   try {
     const user = auth.currentUser;
     let q = collection(db, "anuncios");
+        let querySnapshot;
     if (!isAdmin) {
       q = query(q, where("uid", "==", user.uid));
+      querySnapshot = await getDocs(q);
+      // Fallback para anúncios legados sem campo uid fora do payload
+      if (querySnapshot.empty) {
+        q = collection(db, "anuncios");
+        querySnapshot = await getDocs(q);
+      }
+    } else {
+      querySnapshot = await getDocs(q);
     }
 
-    const querySnapshot = await getDocs(q);
     tbody.innerHTML = '';
 
     if (querySnapshot.empty) {
@@ -364,6 +372,9 @@ window.carregarAnuncios = async function () {
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
       const data = await loadSecureDoc(db, 'anuncios', id, window.sistema.passphrase) || {};
+       if (!isAdmin && data.uid && data.uid !== user.uid) {
+        continue;
+      }
 
       // 🔄 Buscar subcoleção de variantes
       const variantesRef = collection(db, `anuncios/${id}/variantes`);
