@@ -2048,26 +2048,75 @@ input:checked + .toggle-slider:before {
   padding-right: 1rem;
 }
 @media print {
-  #sidebar-container,
-  #navbar-container,
-  #connectionStatus,
-  .btn-success,
-  .btn-danger,
-  .btn-secondary,
-  .card-header,
-  .tab-btn {
+  body {
+    font-family: "Arial", sans-serif;
+    padding: 2cm;
+    background: white;
+    color: #000;
+  }
+
+  #areaImpressao {
+    max-width: 100%;
+  }
+
+  #areaImpressao .card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #areaImpressao h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  #areaImpressao .table-container {
+    margin-top: 20px;
+  }
+
+  #areaImpressao table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  #areaImpressao th,
+  #areaImpressao td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  #areaImpressao th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+  }
+
+  #areaImpressao #resumoAcompanhamento {
+    margin-top: 20px;
+    font-size: 15px;
+  }
+
+  #areaImpressao .card-header,
+  #areaImpressao .flex,
+  #areaImpressao .btn-success,
+  #areaImpressao .btn-danger,
+  #areaImpressao .btn-secondary {
     display: none !important;
   }
-  .main-content {
-    margin: 0;
+
+  /* Oculta tudo que estiver fora da área de impressão */
+  body * {
+    visibility: hidden;
   }
-  .table-container {
-    box-shadow: none;
-    border: 1px solid #ccc;
+
+  #areaImpressao, #areaImpressao * {
+    visibility: visible;
   }
-  #tabelaAcompanhamento th,
-  #tabelaAcompanhamento td {
-    border: 1px solid #ddd;
-    padding: 8px 12px;
+
+  #areaImpressao {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
   }
 }
