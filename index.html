@@ -43,12 +43,16 @@
         </p>
       </div>
       
-     
+       <div class="max-w-6xl w-full mb-6 text-sm">
+        <label class="mr-4"><input type="checkbox" id="toggleResumoFaturamento" class="mr-1">Faturamento do Mês</label>
+        <label class="mr-4"><input type="checkbox" id="toggleTopSkus" class="mr-1">Top 5 SKUs do Mês</label>
+        <label class="mr-4"><input type="checkbox" id="toggleAtualizacoes" class="mr-1">Atualizações da Shopee</label>
+      </div>
 
       <!-- Resumo Faturamento e Top SKUs -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div id="resumoFaturamento"></div>
-        <div class="card">
+        <div class="card" id="topSkusCard">
           <div class="card-header">
            <div class="card-header-icon">
               <i class="fas fa-star text-xl"></i>
@@ -62,7 +66,7 @@
         
          </div>
 
-      <div class="card mb-6">
+      <div class="card mb-6" id="atualizacoesCard">
         <div class="card-header">
           <div class="card-header-icon">
             <i class="fas fa-newspaper text-xl"></i>
