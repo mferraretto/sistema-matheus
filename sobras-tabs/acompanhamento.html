@@ -3,10 +3,12 @@
     <i class="fas fa-chart-line"></i>
     <h3>Acompanhamento Mensal</h3>
   </div>
+  
   <div class="flex flex-col md:flex-row items-center gap-2 mb-4 px-4">
     <label for="filtroMesAcompanhamento" class="font-medium">Filtrar por mês:</label>
     <input type="month" id="filtroMesAcompanhamento" class="border border-gray-300 rounded px-2 py-2" onchange="carregarAcompanhamento()" />
   </div>
+  
   <div class="flex flex-wrap gap-3 mb-4 px-4">
     <button onclick="exportarAcompanhamentoExcel()" class="btn-success">
       <i class="fas fa-file-excel mr-2"></i> Exportar Excel
@@ -18,19 +20,24 @@
       <i class="fas fa-print mr-2"></i> Imprimir
     </button>
   </div>
+
+  <!-- INÍCIO DA ÁREA DE IMPRESSÃO -->
   <div id="areaImpressao">
-  <div class="table-container">
-    <table id="tabelaAcompanhamento" class="data-table">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Bruto</th>
-          <th>Líquido</th>
-          <th>Vendas</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="resumoAcompanhamento" class="p-4 text-sm"></div>
-</div>
+    <div class="table-container">
+      <table id="tabelaAcompanhamento" class="data-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Bruto</th>
+            <th>Líquido</th>
+            <th>Vendas</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    
+    <div id="resumoAcompanhamento" class="p-4 text-sm"></div>
+  </div> <!-- ✅ AGORA FECHOU CORRETAMENTE o #areaImpressao -->
+
+</div> <!-- fecha .card -->
