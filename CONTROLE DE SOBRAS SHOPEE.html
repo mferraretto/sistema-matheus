@@ -1986,7 +1986,25 @@ let ref = db.collection("faturamento");
     }
 
     function printAcompanhamento() {
-      window.print();
+ const element = document.getElementById('areaImpressao');
+      if (!element) return;
+      const printWindow = window.open('', '', 'width=900,height=650');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Imprimir Acompanhamento</title>
+            <link rel="stylesheet" href="css/styles.css">
+            <link rel="stylesheet" href="css/components.css">
+          </head>
+          <body>
+            ${element.innerHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
     }
 function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
