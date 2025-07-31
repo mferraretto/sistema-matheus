@@ -52,7 +52,7 @@
       <!-- Resumo Faturamento e Top SKUs -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div id="resumoFaturamento"></div>
-        <div class="card" id="topSkusCard">
+        <div class="card" id="topSkusCard" data-blur-id="topSkusCard">
           <div class="card-header">
            <div class="card-header-icon">
               <i class="fas fa-star text-xl"></i>
@@ -60,13 +60,16 @@
             <div>
               <h2 class="text-xl font-bold text-gray-800">Top 5 SKUs do Mês</h2>
             </div>
+            <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard">
+              <i class="fas fa-eye-slash"></i>
+            </button>
           </div>
           <div class="card-body" id="topSkus"></div>
         </div>
         
          </div>
 
-      <div class="card mb-6" id="atualizacoesCard">
+      <div class="card mb-6" id="atualizacoesCard" data-blur-id="atualizacoesCard">
         <div class="card-header">
           <div class="card-header-icon">
             <i class="fas fa-newspaper text-xl"></i>
@@ -74,6 +77,9 @@
           <div>
             <h2 class="text-xl font-bold text-gray-800">Atualizações da Shopee</h2>
           </div>
+          <button type="button" class="ml-auto toggle-blur" data-card="atualizacoesCard">
+            <i class="fas fa-eye-slash"></i>
+          </button>
         </div>
         <div class="card-body">
           <div id="atualizacoesShopee" class="space-y-4 max-h-60 overflow-y-auto">
