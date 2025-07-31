@@ -2049,74 +2049,54 @@ input:checked + .toggle-slider:before {
 }
 @media print {
   body {
-    font-family: "Arial", sans-serif;
+    font-family: "Inter", sans-serif;
+    margin: 0;
     padding: 2cm;
     background: white;
     color: #000;
   }
 
-  #areaImpressao {
-    max-width: 100%;
+  /* Oculta elementos de navegação e botões */
+  .sidebar,
+  .navbar,
+  .tab-bar,
+  .tab-btn,
+  .btn,
+  .connection-status,
+  .no-print {
+    display: none !important;
   }
 
-  #areaImpressao .card {
-    box-shadow: none !important;
-    border: none !important;
+  /* Exibe apenas a aba ativa */
+  .tab-content {
+    display: none !important;
   }
 
-  #areaImpressao h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
+  .tab-content.active {
+    display: block !important;
   }
 
-  #areaImpressao .table-container {
+  /* Formata a tabela */
+  #tabelaAcompanhamento {
+    width: 100%;
+    border-collapse: collapse;
     margin-top: 20px;
   }
 
-  #areaImpressao table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  #areaImpressao th,
-  #areaImpressao td {
+  #tabelaAcompanhamento th,
+  #tabelaAcompanhamento td {
     border: 1px solid #ccc;
     padding: 10px;
     font-size: 14px;
     text-align: left;
   }
 
-  #areaImpressao th {
-    background-color: #f0f0f0;
-    font-weight: bold;
+  #tabelaAcompanhamento th {
+    background: #f0f0f0;
   }
 
-  #areaImpressao #resumoAcompanhamento {
+  #resumoAcompanhamento {
     margin-top: 20px;
     font-size: 15px;
-  }
-
-  #areaImpressao .card-header,
-  #areaImpressao .flex,
-  #areaImpressao .btn-success,
-  #areaImpressao .btn-danger,
-  #areaImpressao .btn-secondary {
-    display: none !important;
-  }
-
-  /* Oculta tudo que estiver fora da área de impressão */
-  body * {
-    visibility: hidden;
-  }
-
-  #areaImpressao, #areaImpressao * {
-    visibility: visible;
-  }
-
-  #areaImpressao {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
   }
 }
