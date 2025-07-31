@@ -5,38 +5,39 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-function applyCardVisibility() {
-  const showResumo = localStorage.getItem('showResumoFaturamento') !== 'false';
-  const showTop = localStorage.getItem('showTopSkus') !== 'false';
-  const showAtual = localStorage.getItem('showAtualizacoes') !== 'false';
-  const resumoEl = document.getElementById('resumoFaturamento');
-  const topEl = document.getElementById('topSkusCard');
-  const atuEl = document.getElementById('atualizacoesCard');
-  if (resumoEl) resumoEl.classList.toggle('hidden', !showResumo);
-  if (topEl) topEl.classList.toggle('hidden', !showTop);
-  if (atuEl) atuEl.classList.toggle('hidden', !showAtual);
-  const chkResumo = document.getElementById('toggleResumoFaturamento');
-  const chkTop = document.getElementById('toggleTopSkus');
-  const chkAtual = document.getElementById('toggleAtualizacoes');
-  if (chkResumo) chkResumo.checked = showResumo;
-  if (chkTop) chkTop.checked = showTop;
-  if (chkAtual) chkAtual.checked = showAtual;
+function toggleBlur(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const body = card.querySelector('.card-body');
+  if (!body) return;
+  const icon = card.querySelector('.toggle-blur i');
+  const blurred = body.classList.toggle('blurred');
+  if (icon) {
+    icon.classList.toggle('fa-eye-slash', !blurred);
+    icon.classList.toggle('fa-eye', blurred);
+  }
+  localStorage.setItem('blur_' + cardId, blurred);
 }
 
-document.getElementById('toggleResumoFaturamento')?.addEventListener('change', e => {
-  localStorage.setItem('showResumoFaturamento', e.target.checked);
-  applyCardVisibility();
-});
-document.getElementById('toggleTopSkus')?.addEventListener('change', e => {
-  localStorage.setItem('showTopSkus', e.target.checked);
-  applyCardVisibility();
-});
-document.getElementById('toggleAtualizacoes')?.addEventListener('change', e => {
-  localStorage.setItem('showAtualizacoes', e.target.checked);
-  applyCardVisibility();
-});
+function applyBlurStates() {
+  document.querySelectorAll('[data-blur-id]').forEach(card => {
+    const cardId = card.getAttribute('data-blur-id');
+    const body = card.querySelector('.card-body');
+    const icon = card.querySelector('.toggle-blur i');
+    const blurred = localStorage.getItem('blur_' + cardId) === 'true';
+    if (body) body.classList.toggle('blurred', blurred);
+    if (icon) {
+      icon.classList.toggle('fa-eye-slash', !blurred);
+      icon.classList.toggle('fa-eye', blurred);
+    }
+    const btn = card.querySelector('.toggle-blur');
+    if (btn) btn.addEventListener('click', () => toggleBlur(cardId));
+  });
+}
 
-applyCardVisibility();
+// apply saved blur settings for static cards immediately
+applyBlurStates();
+
 
 async function carregarResumoFaturamento(uid, isAdmin) {
   const el = document.getElementById('resumoFaturamento');
@@ -62,13 +63,16 @@ async function carregarResumoFaturamento(uid, isAdmin) {
     });
   }
   el.innerHTML = `
-    <div class="card">
+    <div class="card" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
       <div class="card-header">
         <div class="card-header-icon"><i class="fas fa-chart-line text-xl"></i></div>
         <div>
           <h2 class="text-xl font-bold text-gray-800">Faturamento do Mês</h2>
           <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
         </div>
+         <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard">
+          <i class="fas fa-eye-slash"></i>
+        </button>
       </div>
       <div class="card-body">
         <div class="text-3xl font-bold text-green-600">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
@@ -123,7 +127,7 @@ async function iniciarPainel(user) {
     carregarResumoFaturamento(uid, isAdmin),
     carregarTopSkus(uid, isAdmin)
   ]);
-    applyCardVisibility();
+  applyBlurStates();
 }
 
 onAuthStateChanged(auth, user => {
