@@ -398,6 +398,33 @@ button:hover {
   box-shadow: 0 5px 15px rgba(0,0,0,.05);
   margin-top: 20px
 }
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.resumo-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.resumo-card h4 {
+  margin-bottom: .25rem;
+  font-size: .9rem;
+  color: var(--secondary);
+}
+
+.resumo-card p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary);
+}
 table {
   margin: 20px 0;
   box-shadow: 0 4px 6px rgba(0,0,0,.05);
@@ -2098,5 +2125,16 @@ input:checked + .toggle-slider:before {
   #resumoAcompanhamento {
     margin-top: 20px;
     font-size: 15px;
+  }
+  
+  .resumo-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .resumo-card {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
   }
 }
