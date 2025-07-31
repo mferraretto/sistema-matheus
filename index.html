@@ -162,96 +162,43 @@
       </div>
           </div>
 
-      <!-- Tabela de exemplo -->
+      <!-- Resumo Faturamento e Top SKUs -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div id="resumoFaturamento"></div>
+        <div class="card">
+          <div class="card-header">
+           <div class="card-header-icon">
+              <i class="fas fa-star text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">Top 5 SKUs do Mês</h2>
+            </div>
+          </div>
+          <div class="card-body" id="topSkus"></div>
+        </div>
+        
+         </div>
+
       <div class="card mb-6">
         <div class="card-header">
-          <h2 class="text-xl font-bold text-gray-800">Últimos Produtos Adicionados</h2>
+          <div class="card-header-icon">
+            <i class="fas fa-newspaper text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Atualizações da Shopee</h2>
+          </div>
         </div>
         <div class="card-body">
-          <div class="overflow-x-auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>SKU</th>
-                  <th>Status</th>
-                  <th>Preço</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Camiseta Básica Branca</td>
-                  <td>CT-001</td>
-                  <td><span class="px-2 py-2 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
-                  <td>R$ 49,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2 tooltip" data-tooltip="Editar">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700 tooltip" data-tooltip="Excluir">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Calça Jeans Slim</td>
-                  <td>CJ-205</td>
-                  <td><span class="px-2 py-2 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pausado</span></td>
-                  <td>R$ 129,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Tênis Esportivo</td>
-                  <td>TE-780</td>
-                  <td><span class="px-2 py-2 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
-                  <td>R$ 199,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div id="atualizacoesShopee" class="space-y-4 max-h-60 overflow-y-auto">
+            <div class="border-b pb-2">
+              <div class="font-semibold">Exemplo de Atualização</div>
+              <p class="text-sm text-gray-600">Breve descrição da novidade.</p>
+            </div>
           </div>
+          <a href="https://shopee.com.br" target="_blank" class="text-blue-600 underline block mt-2">Ver Mais</a>
         </div>
       </div>
       
-      <!-- Gráficos Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="text-xl font-bold text-gray-800">Desempenho de Vendas</h2>
-          </div>
-          <div class="card-body">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
-              Gráfico de Linhas - Visitas, Cliques e Vendas
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <h2 class="text-xl font-bold text-gray-800">Distribuição de Categorias</h2>
-          </div>
-          <div class="card-body">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
-              Gráfico de Pizza - Categorias de Produtos
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -262,6 +209,7 @@
   <script src="firebase-config.js"></script>
  <script type="module" src="login.js"></script>
   <script type="module" src="bling.js"></script>
+    <script type="module" src="index.js"></script>
   <script type="module">
   
     
