@@ -5,6 +5,38 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+function applyCardVisibility() {
+  const showResumo = localStorage.getItem('showResumoFaturamento') !== 'false';
+  const showTop = localStorage.getItem('showTopSkus') !== 'false';
+  const showAtual = localStorage.getItem('showAtualizacoes') !== 'false';
+  const resumoEl = document.getElementById('resumoFaturamento');
+  const topEl = document.getElementById('topSkusCard');
+  const atuEl = document.getElementById('atualizacoesCard');
+  if (resumoEl) resumoEl.classList.toggle('hidden', !showResumo);
+  if (topEl) topEl.classList.toggle('hidden', !showTop);
+  if (atuEl) atuEl.classList.toggle('hidden', !showAtual);
+  const chkResumo = document.getElementById('toggleResumoFaturamento');
+  const chkTop = document.getElementById('toggleTopSkus');
+  const chkAtual = document.getElementById('toggleAtualizacoes');
+  if (chkResumo) chkResumo.checked = showResumo;
+  if (chkTop) chkTop.checked = showTop;
+  if (chkAtual) chkAtual.checked = showAtual;
+}
+
+document.getElementById('toggleResumoFaturamento')?.addEventListener('change', e => {
+  localStorage.setItem('showResumoFaturamento', e.target.checked);
+  applyCardVisibility();
+});
+document.getElementById('toggleTopSkus')?.addEventListener('change', e => {
+  localStorage.setItem('showTopSkus', e.target.checked);
+  applyCardVisibility();
+});
+document.getElementById('toggleAtualizacoes')?.addEventListener('change', e => {
+  localStorage.setItem('showAtualizacoes', e.target.checked);
+  applyCardVisibility();
+});
+
+applyCardVisibility();
 
 async function carregarResumoFaturamento(uid, isAdmin) {
   const el = document.getElementById('resumoFaturamento');
@@ -91,6 +123,7 @@ async function iniciarPainel(user) {
     carregarResumoFaturamento(uid, isAdmin),
     carregarTopSkus(uid, isAdmin)
   ]);
+    applyCardVisibility();
 }
 
 onAuthStateChanged(auth, user => {
