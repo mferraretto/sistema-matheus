@@ -1988,7 +1988,7 @@ let ref = db.collection("faturamento");
     function printAcompanhamento() {
       window.print();
     }
-   function aplicarEstiloCritico() {
+function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
 
   linhas.forEach(linha => {
@@ -2009,6 +2009,12 @@ let ref = db.collection("faturamento");
     }
   });
 }
+ window.toggleInfoFaturamento = function() {
+    const card = document.getElementById('infoFaturamento');
+    if (card) {
+      card.classList.toggle('hidden');
+    }
+  };
 
 
 function filtrarPorSKU() {
