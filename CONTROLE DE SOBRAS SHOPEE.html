@@ -1953,11 +1953,11 @@ let ref = db.collection("faturamento");
 
       const ticket = totalVendas ? totalLiquido / totalVendas : 0;
       resumoEl.innerHTML = `
-        <div><strong>Total Bruto:</strong> R$ ${totalBruto.toLocaleString('pt-BR')}</div>
-        <div><strong>Total Líquido:</strong> R$ ${totalLiquido.toLocaleString('pt-BR')}</div>
-        <div><strong>Total Vendido:</strong> ${totalVendas}</div>
-        <div><strong>Total Sobra Esperada:</strong> R$ ${totalSobra.toLocaleString('pt-BR')}</div>
-        <div><strong>Ticket Médio:</strong> R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>`;
+        <div class="resumo-card"><h4>Total Bruto</h4><p>R$ ${totalBruto.toLocaleString('pt-BR')}</p></div>
+        <div class="resumo-card"><h4>Total Líquido</h4><p>R$ ${totalLiquido.toLocaleString('pt-BR')}</p></div>
+        <div class="resumo-card"><h4>Total Vendido</h4><p>${totalVendas}</p></div>
+        <div class="resumo-card"><h4>Total Sobra Esperada</h4><p>R$ ${totalSobra.toLocaleString('pt-BR')}</p></div>
+        <div class="resumo-card"><h4>Ticket Médio</h4><p>R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p></div>`;
     }
      function exportarAcompanhamentoExcel() {
       if (!dadosAcompanhamento.length) return;
@@ -1968,7 +1968,7 @@ let ref = db.collection("faturamento");
     }
 
     function exportarAcompanhamentoPDF() {
-      const element = document.getElementById('acompanhamento');
+      const element = document.getElementById('areaImpressao');
       if (!element) return;
       const opt = { margin: 1, filename: 'acompanhamento.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' } };
       html2pdf().set(opt).from(element).save();
