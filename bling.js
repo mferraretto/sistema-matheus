@@ -13,7 +13,7 @@ async function getStoredApiKey() {
   if (!uid) return null;
   if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
   try {
-    const data = await loadSecureDoc(db, 'blingKeys', uid, getPassphrase() || `chave-${uid}`);
+    const data = await loadSecureDoc(db, 'blingKeys', uid, window.sistema?.passphrase || `chave-${uid}`);
     if (data && data.key) {
       window.sistema = window.sistema || {};
       window.sistema.blingApiKey = data.key;
@@ -29,7 +29,7 @@ async function saveApiKey(key) {
   const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
   if (!uid) return;
   try {
-    await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, getPassphrase() || `chave-${uid}`);
+    await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, window.sistema?.passphrase || `chave-${uid}`);
     window.sistema = window.sistema || {};
     window.sistema.blingApiKey = key;
   } catch (err) {
