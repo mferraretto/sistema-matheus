@@ -75,50 +75,9 @@
     <div id="configuracoes" class="tab-content p-4"></div>
 
   <!-- Modais -->
-  <div id="auth-modals-container"></div>
 
 
-  <div id="addUserModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <span class="btn-close" onclick="closeModal('addUserModal')">&times;</span>
-      <h3 class="text-xl font-bold mb-4">Adicionar Novo Usuário</h3>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Nome Completo</label>
-          <input type="text" id="newUserName" class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">E-mail</label>
-          <input type="email" id="newUserEmail" class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Senha</label>
-          <input type="password" id="newUserPassword" class="w-full p-2 border rounded">
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Perfil</label>
-          <select id="newUserProfile" class="w-full p-2 border rounded">
-            <option value="admin">Administrador</option>
-            <option value="operador">Operador</option>
-            <option value="visualizador">Visualizador</option>
-          </select>
-        </div>
-        <button onclick="addNewUser()" class="w-full btn-primary">
-          <i class="fas fa-save mr-2"></i> Salvar Usuário
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <div id="detalhesModal" class="modal">
-    <div class="modal-content">
-      <span class="btn-close" onclick="fecharModal()">&times;</span>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <!-- Toast Container -->
-  <div id="toastContainer"></div>
 
   <script>
     // Configuração do Firebase
