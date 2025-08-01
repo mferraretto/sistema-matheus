@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Shopee Sync</title>
+  <style>
+    body { font-family: Arial, sans-serif; width: 300px; padding: 10px; }
+    input { width: 100%; margin-bottom: 5px; }
+    button { width: 100%; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div id="loginSection">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Senha" />
+    <input type="password" id="passphrase" placeholder="Senha para criptografia" />
+    <button id="loginBtn">Login</button>
+  </div>
+  <div id="userSection" style="display:none;">
+    <p id="userInfo"></p>
+    <button id="collectBtn">Coletar pedidos</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
