@@ -35,192 +35,58 @@
       
       <!-- Hero Section -->
       <div class="max-w-6xl w-full text-center mb-6">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-          <span class="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-orange-600">Sistemas de Gestão</span> para sua Loja
-        </h1>
+       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+  <span class="text-orange-600 font-extrabold">Sistemas de Gestão</span> para sua Loja
+</h1>
         <p class="text-gray-600 max-w-2xl mx-auto mb-8">
           Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
         </p>
       </div>
       
-      <!-- Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl w-full mb-6">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-calculator text-xl"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800">Sistema de Precificação Shopee</h2>
-              <p class="text-gray-600 text-sm">Calculadora de preços com importação de planilhas</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <a href="./Sistema%20de%20Precificação%20COM%20IMPORTAÇÃO%20DE%20PLANILHA%20DE%20PROMOÇÕES%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
-          </div>
-        </div>
 
-        <div class="card">
+      <!-- Resumo Faturamento e Top SKUs -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div id="resumoFaturamento"></div>
+        <div class="card" id="topSkusCard" data-blur-id="topSkusCard">
           <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-bullhorn text-xl"></i>
+           <div class="card-header-icon">
+              <i class="fas fa-star text-xl"></i>
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-800">Gerenciamento de Anúncios</h2>
-              <p class="text-gray-600 text-sm">Gerencie produtos e analise desempenho com IA</p>
+              <h2 class="text-xl font-bold text-gray-800">Top 5 SKUs do Mês</h2>
             </div>
+           <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard">
+              <i class="fas fa-eye-slash"></i>
+            </button>
           </div>
-          <div class="card-body">
-            <a href="./Gerenciamento%20de%20ANUNCIOS%20E%20DESEMPENHO.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-box-open text-xl"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800">Controle de Sobras Shopee</h2>
-              <p class="text-gray-600 text-sm">Importe relatórios e controle sobras com gráficos</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <a href="./CONTROLE%20DE%20SOBRAS%20SHOPEE.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-industry text-xl"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800">Custeio de Produção</h2>
-              <p class="text-gray-600 text-sm">Calcule custos de produção por peça</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <a href="./SISTEMA%20DE%20CUSTEIO%20DE%20PRODUÇÃO%20E%20PRODUTOS.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
-          </div>
+          <div class="card-body" id="topSkus"></div>
         </div>
         
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-users text-xl"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800">Gerenciamento de Usuários</h2>
-              <p class="text-gray-600 text-sm">Controle de acessos e permissões</p>
-            </div>
-          </div>
-          <div class="card-body">
-            <a href="./painel-usuarios.html" onclick="return requireLogin(event)" target="_blank" class="btn-primary inline-block">
-              <i class="fas fa-external-link-alt mr-2"></i>Acessar Sistema
-            </a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Tabela de exemplo -->
-      <div class="card mb-6">
+         </div>
+
+      <div class="card mb-6" id="atualizacoesCard" data-blur-id="atualizacoesCard">
         <div class="card-header">
-          <h2 class="text-xl font-bold text-gray-800">Últimos Produtos Adicionados</h2>
+          <div class="card-header-icon">
+            <i class="fas fa-newspaper text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Atualizações da Shopee</h2>
+          </div>
+          <button type="button" class="ml-auto toggle-blur" data-card="atualizacoesCard">
+            <i class="fas fa-eye-slash"></i>
+          </button>
         </div>
         <div class="card-body">
-          <div class="overflow-x-auto">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Produto</th>
-                  <th>SKU</th>
-                  <th>Status</th>
-                  <th>Preço</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Camiseta Básica Branca</td>
-                  <td>CT-001</td>
-                  <td><span class="px-2 py-2 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
-                  <td>R$ 49,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2 tooltip" data-tooltip="Editar">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700 tooltip" data-tooltip="Excluir">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Calça Jeans Slim</td>
-                  <td>CJ-205</td>
-                  <td><span class="px-2 py-2 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pausado</span></td>
-                  <td>R$ 129,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Tênis Esportivo</td>
-                  <td>TE-780</td>
-                  <td><span class="px-2 py-2 bg-green-100 text-green-800 rounded-full text-xs">Ativo</span></td>
-                  <td>R$ 199,90</td>
-                  <td>
-                    <button class="text-blue-500 hover:text-blue-700 mr-2">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div id="atualizacoesShopee" class="space-y-4 max-h-60 overflow-y-auto">
+            <div class="border-b pb-2">
+              <div class="font-semibold">Exemplo de Atualização</div>
+              <p class="text-sm text-gray-600">Breve descrição da novidade.</p>
+            </div>
           </div>
+          <a href="https://shopee.com.br" target="_blank" class="text-blue-600 underline block mt-2">Ver Mais</a>
         </div>
       </div>
       
-      <!-- Gráficos Section -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="text-xl font-bold text-gray-800">Desempenho de Vendas</h2>
-          </div>
-          <div class="card-body">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
-              Gráfico de Linhas - Visitas, Cliques e Vendas
-            </div>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <h2 class="text-xl font-bold text-gray-800">Distribuição de Categorias</h2>
-          </div>
-          <div class="card-body">
-            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center text-gray-500">
-              Gráfico de Pizza - Categorias de Produtos
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -229,7 +95,9 @@
 
 
   <script src="firebase-config.js"></script>
-    <script type="module" src="login.js"></script>
+ <script type="module" src="login.js"></script>
+  <script type="module" src="bling.js"></script>
+    <script type="module" src="index.js"></script>
   <script type="module">
   
     
@@ -246,6 +114,7 @@
   </script>
    <script src="shared.js"></script>
 
+<script src="expose-uid.js"></script>
 
 </body>
 </html>

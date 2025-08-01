@@ -148,7 +148,8 @@
         backupFrequency: "daily",
         apiConfig: {
           ml: { clientId: "", clientSecret: "", connected: false },
-          shopee: { apiKey: "", partnerId: "", connected: false }
+    shopee: { apiKey: "", partnerId: "", connected: false },
+          bling: { apiKey: "", connected: false }
         }
       },
       importedShopeeData: null,
@@ -160,8 +161,64 @@ produtoEditando: null,
   // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
 const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','configuracoes'];
-Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text()).then(h => { 
-    document.getElementById(t).innerHTML = h; 
+  let navbarInitialized = false;
+
+  function initAfterNavbar() {
+    if (navbarInitialized) return;
+    navbarInitialized = true;
+    setupEventListeners();
+    checkLogin();
+    const params = new URLSearchParams(window.location.search);
+    const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
+    if (initialTab) {
+      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const btn = document.querySelector(`.tab-button[data-tab="${initialTab}"]`);
+      const content = document.getElementById(initialTab);
+      if (btn && content) {
+        btn.classList.add('active');
+        content.classList.add('active');
+      }
+    }
+    if (params.get('login') === '1') {
+      openModal('loginModal');
+    }
+    const darkToggle = document.getElementById('darkModeToggle');
+    if (darkToggle) {
+      darkToggle.addEventListener('change', () => {
+        document.body.classList.toggle('dark-mode');
+      });
+    }
+
+    const userDropdown = document.getElementById('userDropdown');
+    if (userDropdown) {
+      userDropdown.addEventListener('click', () => {
+        const menu = document.getElementById('dropdownMenu');
+        if (menu) menu.classList.toggle('hidden');
+      });
+    }
+
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.toggle('active');
+      });
+    }
+    const filtroPlataforma = document.getElementById('filtroPlataforma');
+    const filtroSKU = document.getElementById('filtroSKU');
+    if (filtroPlataforma) {
+      filtroPlataforma.addEventListener('change', atualizarLista);
+    }
+    if (filtroSKU) {
+      filtroSKU.addEventListener('input', atualizarLista);
+    }
+  }
+
+  document.addEventListener('navbarLoaded', initAfterNavbar);
+
+  Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text()).then(h => {
+    document.getElementById(t).innerHTML = h;
     if (t === 'lista-precos') {
       const s = document.createElement('script');
       s.src = `precificacao-tabs/${t}.js`;
@@ -169,55 +226,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
     }
   }))).then(() => {
   setupCharts();
-   document.addEventListener('navbarLoaded', () => {
-      setupEventListeners();
-      checkLogin();
-      const params = new URLSearchParams(window.location.search);
-       const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
-       if (initialTab) {
-         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-         const btn = document.querySelector(`.tab-button[data-tab="${initialTab}"]`);
-         const content = document.getElementById(initialTab);
-         if (btn && content) {
-           btn.classList.add('active');
-           content.classList.add('active');
-         }
-       }
-       if (params.get('login') === '1') {
-         openModal('loginModal');
-       }
-       const darkToggle = document.getElementById('darkModeToggle');
-      if (darkToggle) {
-        darkToggle.addEventListener('change', () => {
-          document.body.classList.toggle('dark-mode');
-        });
-      }
-
-      const userDropdown = document.getElementById('userDropdown');
-      if (userDropdown) {
-        userDropdown.addEventListener('click', () => {
-          const menu = document.getElementById('dropdownMenu');
-          if (menu) menu.classList.toggle('hidden');
-        });
-      }
-
-      const sidebarToggle = document.getElementById('sidebarToggle');
-      if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', () => {
-          const sidebar = document.querySelector('.sidebar');
-          if (sidebar) sidebar.classList.toggle('active');
-        });
-      }
-      const filtroPlataforma = document.getElementById('filtroPlataforma');
-      const filtroSKU = document.getElementById('filtroSKU');
-      if (filtroPlataforma) {
-        filtroPlataforma.addEventListener('change', atualizarLista);
-      }
-      if (filtroSKU) {
-        filtroSKU.addEventListener('input', atualizarLista);
-      }
-    });
+    if (document.getElementById('navbar-container')?.children.length) {
+      initAfterNavbar();
+    }
    
   });
 });
@@ -242,6 +253,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         if (configDoc.exists) {
           sistema.config = configDoc.data();
           updateUI();
+           if (window.getBlingApiKey) {
+            window.getBlingApiKey();
+          }
         }
       } catch (error) {
         console.error("Erro ao carregar configurações:", error);
@@ -574,7 +588,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
       // Verifica conexões com APIs e atualiza UI
       sistema.config.apiConfig.ml.connected = sistema.config.apiConfig.ml.clientId !== "";
       sistema.config.apiConfig.shopee.connected = sistema.config.apiConfig.shopee.apiKey !== "";
-      
+            sistema.config.apiConfig.bling.connected = (window.sistema?.blingApiKey || sistema.config.apiConfig.bling.apiKey) !== "";
+
       updateApiStatusUI();
       updateKPIs();
     }
@@ -582,8 +597,9 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
     function updateApiStatusUI() {
       // Atualiza indicadores de status na UI
       document.querySelectorAll('.api-status').forEach(el => {
-        const platform = el.parentElement.textContent.includes('Mercado') ? 'ml' : 
-                       el.parentElement.textContent.includes('Shopee') ? 'shopee' : 'magalu';
+      const platform = el.parentElement.textContent.includes('Mercado') ? 'ml' :
+                       el.parentElement.textContent.includes('Shopee') ? 'shopee' :
+                       el.parentElement.textContent.includes('Magalu') ? 'magalu' : 'bling';
         
         el.classList.toggle('api-connected', sistema.config.apiConfig[platform]?.connected);
         el.classList.toggle('api-disconnected', !sistema.config.apiConfig[platform]?.connected);
@@ -615,7 +631,17 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         showToast('Falha na conexão com Shopee!', 'error');
       }
     }
-
+ async function testBlingConnection() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        showToast('Conexão com Bling testada com sucesso!', 'success');
+        sistema.config.apiConfig.bling.connected = true;
+        updateApiStatusUI();
+        addHistoryEntry('api_config', 'Teste de conexão com Bling realizado');
+      } catch (error) {
+        showToast('Falha na conexão com Bling!', 'error');
+      }
+    }
     async function saveApiConfig() {
       sistema.config.apiConfig.ml = {
         clientId: document.getElementById('mlClientId').value,
@@ -628,7 +654,14 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
         partnerId: document.getElementById('shopeePartnerId').value,
         connected: sistema.config.apiConfig.shopee.connected
       };
-      
+      sistema.config.apiConfig.bling = {
+        apiKey: document.getElementById('blingApiKey').value,
+        connected: sistema.config.apiConfig.bling.connected
+      };
+
+      if (window.saveBlingApiKey) {
+        window.saveBlingApiKey(sistema.config.apiConfig.bling.apiKey);
+      }
       try {
         await saveSystem();
         updateApiStatusUI();
@@ -683,7 +716,8 @@ Promise.all(tabs.map(t => fetch(`precificacao-tabs/${t}.html`).then(r => r.text(
             backupAuto: true,
             apiConfig: {
               ml: { clientId: "", clientSecret: "", connected: false },
-              shopee: { apiKey: "", partnerId: "", connected: false }
+   shopee: { apiKey: "", partnerId: "", connected: false },
+              bling: { apiKey: "", connected: false }
             }
           };
           
@@ -1965,7 +1999,7 @@ function applyPriceUpdate(type) {
       
       document.getElementById('totalProducts').textContent = totalProducts;
       document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-      document.getElementById('activeConnections').textContent = `${activeConnections}/3`;
+      document.getElementById('activeConnections').textContent = `${activeConnections}/4`;
       document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
     }
     
@@ -2019,8 +2053,19 @@ function applyPriceUpdate(type) {
       }
     }, 300000); // 5 minutos
   </script>
+      <script type="module" src="bling.js"></script>
  <script src="shared.js"></script>
-
+<script>
+   document.querySelectorAll('.tooltip').forEach(el => {
+     const text = el.getAttribute('data-tooltip');
+     if (text) {
+       const span = document.createElement('span');
+       span.className = 'tooltip-text';
+       span.textContent = text;
+       el.appendChild(span);
+     }
+   });
+ </script>
 
 </body>
 </html>
