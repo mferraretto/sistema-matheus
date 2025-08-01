@@ -113,7 +113,11 @@
       window.initDarkMode();
     });
     window.loadNavbar();
-    window.loadAuthModals();
-        window.checkColorContrast();
+ window.loadAuthModals().then(function() {
+      import(BASE_PATH + 'login.js').catch(function(err) {
+        console.error('Erro ao carregar login.js', err);
+      });
+    });
+    window.checkColorContrast();
   });
 })();
