@@ -82,14 +82,22 @@ window.sendRecovery = () => {
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
-function showUserArea(user) {
+async function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
-   // Expose user information globally for other scripts
+  // Expose user information globally for other scripts
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
-   if (!getPassphrase()) {
-    openModal('passphraseModal');
+ if (!getPassphrase()) {
+    if (!document.getElementById('passphraseModal') &&
+        typeof window.loadAuthModals === 'function') {
+      try {
+        await window.loadAuthModals();
+      } catch (e) {
+        console.error('Erro ao carregar modais de autenticação', e);
+      }
+    }
+   openModal('passphraseModal');
   }
 }
 
