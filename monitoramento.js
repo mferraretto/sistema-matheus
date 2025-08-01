@@ -5,22 +5,8 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-let isAdmin = false;
 
-onAuthStateChanged(auth, async user => {
-
-  if (!user) {
-    window.location.href = 'index.html?login=1';
-     return;
-  }
-  try {
-    const snap = await getDoc(doc(db, 'usuarios', user.uid));
-    isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
-  } catch (err) {
-    console.error('Erro ao verificar perfil do usuário:', err);
-    isAdmin = false;
-  }
-});
+const ADMIN_EMAIL = 'admin@empresa.com';
 
 async function buscarShopee(term) {
   try {
@@ -59,7 +45,7 @@ async function monitorar() {
   }
 
   let qAnuncios = collection(db, 'anuncios');
-  if (!isAdmin) {
+  if (user.email !== ADMIN_EMAIL) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
   }
 
@@ -143,7 +129,7 @@ async function carregarHistorico() {
   container.innerHTML = '<div class="text-center">Carregando...</div>';
   const user = auth.currentUser;
   let qHist = collection(db, 'monitoramento_historico');
-  if (!isAdmin) {
+  if (user.email !== ADMIN_EMAIL) {
     qHist = query(qHist, where('uid', '==', user.uid));
   }
   const snap = await getDocs(qHist);
