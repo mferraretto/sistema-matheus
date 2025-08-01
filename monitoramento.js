@@ -1,7 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
-import { encryptString, decryptString } from './crypto.js';
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -44,16 +42,13 @@ const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComp
 
 
 async function registrarHistorico(id, dadosAntigos, dadosNovos) {
-  const payload = {
+  await addDoc(collection(db, 'monitoramento_historico'), {
     id,
     dataHora: new Date().toISOString(),
     dadosAntigos,
     dadosNovos,
     uid: auth.currentUser.uid
-   };
-  const encrypted = await encryptString(JSON.stringify(payload), window.sistema.passphrase);
- // Salva o uid fora da carga criptografada para possibilitar filtragem
-  await addDoc(collection(db, 'monitoramento_historico'), { uid: payload.uid, encrypted });
+  });
 }
 
 async function monitorar() {
@@ -64,23 +59,13 @@ async function monitorar() {
   }
 
   let qAnuncios = collection(db, 'anuncios');
-    let snap;
   if (!isAdmin) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
-     snap = await getDocs(qAnuncios);
-    if (snap.empty) {
-      qAnuncios = collection(db, 'anuncios');
-      snap = await getDocs(qAnuncios);
-    }
-  } else {
-    snap = await getDocs(qAnuncios);
   }
 
+  const snap = await getDocs(qAnuncios);
   for (const docSnap of snap.docs) {
-    const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, window.sistema.passphrase) || {};
-     if (!isAdmin && dados.uid && dados.uid !== user.uid) {
-      continue;
-    }
+    const dados = docSnap.data();
     const termo = (dados.nome || '').trim();  // <- CORRIGIDO
     if (!termo) continue;
 
@@ -92,14 +77,7 @@ async function monitorar() {
     const item = resultados[0];
     const ref = doc(db, 'monitoramento', docSnap.id);
     const antigaSnap = await getDoc(ref);
- let antigos = {};
-    if (antigaSnap.exists()) {
-      const enc = antigaSnap.data().encrypted;
-      if (enc) {
-        const txt = await decryptString(enc, window.sistema.passphrase);
-        antigos = JSON.parse(txt);
-      }
-    }
+
     const dadosNovos = {
       nome: item.name,
       preco: item.price,
@@ -110,13 +88,14 @@ async function monitorar() {
     };
 
     if (antigaSnap.exists()) {
+      const antigos = antigaSnap.data();
       const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
       if (mudou) {
-        await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
+        await setDoc(ref, dadosNovos);
         await registrarHistorico(docSnap.id, antigos, dadosNovos);
       }
     } else {
-      await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
+      await setDoc(ref, dadosNovos);
       await registrarHistorico(docSnap.id, {}, dadosNovos);
     }
   }
@@ -164,28 +143,11 @@ async function carregarHistorico() {
   container.innerHTML = '<div class="text-center">Carregando...</div>';
   const user = auth.currentUser;
   let qHist = collection(db, 'monitoramento_historico');
-    let snap;
   if (!isAdmin) {
     qHist = query(qHist, where('uid', '==', user.uid));
-     snap = await getDocs(qHist);
-    if (snap.empty) {
-      qHist = collection(db, 'monitoramento_historico');
-      snap = await getDocs(qHist);
-    }
-  } else {
-    snap = await getDocs(qHist);
   }
-    const registros = [];
-  for (const d of snap.docs) {
-    const enc = d.data().encrypted;
-    if (!enc) continue;
-    const txt = await decryptString(enc, window.sistema.passphrase);
-const obj = JSON.parse(txt);
-    if (!isAdmin && obj.uid && obj.uid !== user.uid) {
-      continue;
-    }
-    registros.push(obj);
-  }
+  const snap = await getDocs(qHist);
+  const registros = snap.docs.map(d => d.data());
   const linhas = registros.map(r => {
     return `<tr><td>${r.id}</td><td>${new Date(r.dataHora).toLocaleDateString()}</td><td>R$ ${r.dadosNovos.preco}</td><td>${r.dadosNovos.vendas}</td></tr>`;
   }).join('');

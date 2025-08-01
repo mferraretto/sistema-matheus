@@ -4,8 +4,6 @@ import {
   getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs,
   query, where, orderBy, limit
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
-
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const BASE_PATH = new URL('.', import.meta.url);
@@ -27,15 +25,11 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let isAdmin = false;
 
-onAuthStateChanged(auth, async user => {
+   onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
-
-  // ✅ DEFINIR A PASSPHRASE
- window.sistema = window.sistema || {};
-  window.sistema.passphrase = `chave-${user.uid}`;
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
     isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
@@ -246,7 +240,8 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), window.sistema.passphrase);
+await setDoc(ref, limparUndefined(dadosCompletos));
+
         if (registrarHistorico) {
           await addDoc(collection(db, "atualizacoes"), {
             id,
@@ -348,19 +343,11 @@ window.carregarAnuncios = async function () {
   try {
     const user = auth.currentUser;
     let q = collection(db, "anuncios");
-        let querySnapshot;
     if (!isAdmin) {
       q = query(q, where("uid", "==", user.uid));
-      querySnapshot = await getDocs(q);
-      // Fallback para anúncios legados sem campo uid fora do payload
-      if (querySnapshot.empty) {
-        q = collection(db, "anuncios");
-        querySnapshot = await getDocs(q);
-      }
-    } else {
-      querySnapshot = await getDocs(q);
     }
 
+    const querySnapshot = await getDocs(q);
     tbody.innerHTML = '';
 
     if (querySnapshot.empty) {
@@ -369,11 +356,8 @@ window.carregarAnuncios = async function () {
     }
 
     for (const doc of querySnapshot.docs) {
+      const data = doc.data();
       const id = doc.id;
-      const data = await loadSecureDoc(db, 'anuncios', id, window.sistema.passphrase) || {};
-       if (!isAdmin && data.uid && data.uid !== user.uid) {
-        continue;
-      }
 
       // 🔄 Buscar subcoleção de variantes
       const variantesRef = collection(db, `anuncios/${id}/variantes`);

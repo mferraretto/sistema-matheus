@@ -15,7 +15,6 @@
   <!-- Bibliotecas JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -70,10 +69,7 @@
         </button>
         <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
           <i class="fas fa-boxes"></i> Controle de Vendas
-         </button>
-        <button class="tab-btn" onclick="trocarAba('acompanhamento'); carregarAcompanhamento()">
-          <i class="fas fa-chart-line"></i> Acompanhamento
-        </button> 
+        </button>  
       </div>
 
       <!-- Aba de Importação/Conferência -->
@@ -111,11 +107,6 @@
       <div id="controleVendas" class="tab-content">
        
       </div>
-
-      <!-- Aba de Acompanhamento -->
-      <div id="acompanhamento" class="tab-content">
-
-      </div>
     </div>
   </div>
 
@@ -137,11 +128,10 @@
     let metas = {};
     let historico = [];
     let produtos = {};
-        let dadosAcompanhamento = [];
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
- const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento'];
+ const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas'];
     const tabsLoaded = Promise.all(
       tabIds.map(t => fetch(`sobras-tabs/${t}.html`).then(res => res.text()).then(html => {
         const el = document.getElementById(t);
@@ -172,15 +162,10 @@
           console.error('Erro ao obter perfil do usuário:', e);
         }
         await tabsLoaded;
-        window.initTooltips && window.initTooltips();
 
         await carregarProdutos();
         await carregarMetas();
         carregarHistorico();
-        const dataField = document.getElementById('dataFaturamento');
-        if (dataField) {
-          dataField.value = new Date().toISOString().slice(0,10);
-        }
 
         document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
         document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
@@ -346,7 +331,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
     function atualizarPrecoMinimo() {
       const sku = document.getElementById('metaSku').value.trim();
       const custo = produtos[sku]; // usa o campo `custo`
-          const info = document.getElementById('custoProdutoInfo');
+      const info = document.getElementById('precoMinimoInfo');
       const metaInput = document.getElementById('metaValor');
 
       if (!info || !metaInput) return;
@@ -436,7 +421,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         
         return await executarComRetry(async () => {
           metas = {};
-          // Carrega SKUs e custo dos produtos cadastrados
+          // Carrega SKUs e preço mínimo da coleção de produtos
           let produtosSnapQuery = db.collection("products");
           if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
             produtosSnapQuery = produtosSnapQuery.where('uid', '==', usuarioLogado.uid);
@@ -706,7 +691,7 @@ document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
         
         skuInput.value = '';
         valorInput.value = '';
-        document.getElementById('custoProdutoInfo').textContent = '';
+        document.getElementById('precoMinimoInfo').textContent = '';
         
         mostrarSucesso(`Meta para o SKU ${sku} adicionada com sucesso!`);
         
@@ -1374,14 +1359,12 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(sheet);
 
-const dataInput = document.getElementById("dataFaturamento");
-          const lojaInput = document.getElementById("lojaFaturamento");
-          const dataReferencia = dataInput?.value;
-          const loja = lojaInput?.value?.trim();
+          let dataReferencia = prompt("Informe a data da planilha (formato YYYY-MM-DD):");
           if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
             return mostrarErro("Data inválida.");
           }
 
+          let loja = prompt("Informe o nome da loja:");
           if (!loja || loja.length < 2) {
             return mostrarErro("Nome da loja inválido.");
           }
@@ -1460,10 +1443,7 @@ const dataInput = document.getElementById("dataFaturamento");
             });
           }
 
- const { encryptString } = await import('./crypto.js');
-          const pass = getPassphrase() || usuarioLogado.uid;
-
-          const lojaPayload = {
+          await ref.set({
             valorBruto: bruto,
             taxasPlataforma: taxas,
             valorLiquido: liquido,
@@ -1471,20 +1451,16 @@ const dataInput = document.getElementById("dataFaturamento");
             loja: loja,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-         };
-          const encLoja = await encryptString(JSON.stringify(lojaPayload), pass);
-          await ref.set({ encrypted: encLoja, uid: usuarioLogado.uid });
+          });
 
-          const resumoPayload = {
+          await db.collection("faturamento").doc(dataReferencia).set({
             valorBruto: bruto,
             valorLiquido: liquido,
             taxasPlataforma: taxas,
             vendas: qtdVendas,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-        };
-          const encResumo = await encryptString(JSON.stringify(resumoPayload), pass);
-          await db.collection("faturamento").doc(dataReferencia).set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
+          }, { merge: true });
 
           document.getElementById("resultadoFaturamento").innerHTML = `
             <div class="alert alert-success">
@@ -1562,22 +1538,14 @@ const dataInput = document.getElementById("dataFaturamento");
           subRef = subRef.where('uid', '==', usuarioLogado.uid);
         }
         const subSnap = await subRef.get();
-                const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, qtd = 0;
 
-        for (const sub of subSnap.docs) {
-          const dataSub = sub.data();
-          let d = dataSub;
-          if (dataSub.encrypted) {
-            try {
-              const txt = await decryptString(dataSub.encrypted, getPassphrase() || usuarioLogado.uid);
-              d = JSON.parse(txt);
-            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-          }
+        subSnap.forEach(sub => {
+          const d = sub.data();
           bruto += d.valorBruto || 0;
           liquido += d.valorLiquido || 0;
           qtd += d.qtdVendas || 0;
-        }
+        });
 
         const card = document.createElement("div");
         card.className = "bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition";
@@ -1625,17 +1593,10 @@ const dataInput = document.getElementById("dataFaturamento");
         ref = ref.where('uid', '==', usuarioLogado.uid);
       }
       const snap = await ref.get();
-      const { decryptString } = await import('./crypto.js');
 
       let html = "";
-     for (const doc of snap.docs) {
-        let d = doc.data();
-        if (d.encrypted) {
-          try {
-            const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
-            d = JSON.parse(txt);
-          } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-        }
+      snap.forEach(doc => {
+        const d = doc.data();
         const loja = d.loja || "Desconhecida";
         const bruto = d.valorBruto?.toLocaleString("pt-BR") || "0,00";
         const liquido = d.valorLiquido?.toLocaleString("pt-BR") || "0,00";
@@ -1646,7 +1607,7 @@ const dataInput = document.getElementById("dataFaturamento");
             <strong>${loja}</strong>: Bruto R$ ${bruto} | Líquido R$ ${liquido} | Vendas: ${vendas}
           </div>
         `;
-     }
+      });
 
       detalhesEl.innerHTML = html;
     }
@@ -1843,17 +1804,10 @@ const dataInput = document.getElementById("dataFaturamento");
           lojasRef = lojasRef.where('uid', '==', usuarioLogado.uid);
         }
         const lojasSnap = await lojasRef.get();
-          const { decryptString } = await import('./crypto.js');
-        for (const lojaDoc of lojasSnap.docs) {
-          let dados = lojaDoc.data();
-          if (dados.encrypted) {
-            try {
-              const txt = await decryptString(dados.encrypted, getPassphrase() || usuarioLogado.uid);
-              dados = JSON.parse(txt);
-            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-          }
+        lojasSnap.forEach(lojaDoc => {
+          const dados = lojaDoc.data();
           valorLiquido += Number(dados.valorLiquido || 0);
-           }
+        });
       } catch (e) {
         console.warn("Erro ao buscar valor líquido por loja:", e);
       }
@@ -1885,7 +1839,7 @@ let ref = db.collection("faturamento");
         ref = ref.where('uid', '==', usuarioLogado.uid);
       }
       const snap = await ref.get();
-      const { decryptString } = await import('./crypto.js');
+      const dataExport = [];
 
       for (const docData of snap.docs) {
  let subRef = db.collection(`faturamento/${docData.id}/lojas`);
@@ -1893,14 +1847,8 @@ let ref = db.collection("faturamento");
           subRef = subRef.where('uid', '==', usuarioLogado.uid);
         }
         const subSnap = await subRef.get();
-       for (const sub of subSnap.docs) {
-          let d = sub.data();
-          if (d.encrypted) {
-            try {
-              const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
-              d = JSON.parse(txt);
-            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-          }
+        subSnap.forEach(sub => {
+          const d = sub.data();
           dataExport.push({
             Data: docData.id,
             Loja: d.loja || "Desconhecida",
@@ -1909,7 +1857,7 @@ let ref = db.collection("faturamento");
             Líquido: d.valorLiquido || 0,
             Vendas: d.qtdVendas || 0
           });
-       }
+        });
       }
 
       if (dataExport.length === 0) {
@@ -1922,139 +1870,7 @@ let ref = db.collection("faturamento");
       XLSX.utils.book_append_sheet(wb, ws, "Faturamento");
       XLSX.writeFile(wb, "faturamento.xlsx");
     }
-    
-    async function carregarAcompanhamento() {
-      const tbody = document.querySelector('#tabelaAcompanhamento tbody');
-      const resumoEl = document.getElementById('resumoAcompanhamento');
-      tbody.innerHTML = '<tr><td colspan="4">🔄 Carregando...</td></tr>';
-      resumoEl.innerHTML = '';
-
-      let ref = db.collection('faturamento');
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
-      }
-      const snap = await ref.get();
-
-      const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value;
-      let dados = [];
-            dadosAcompanhamento = [];
-      let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
-
-      for (const doc of snap.docs) {
-        if (filtroMes) {
-          const [anoFiltro, mesFiltro] = filtroMes.split('-');
-          const [ano, mes] = doc.id.split('-');
-          if (ano !== anoFiltro || mes !== mesFiltro) continue;
-        }
-
-        let subRef = db.collection(`faturamento/${doc.id}/lojas`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          subRef = subRef.where('uid', '==', usuarioLogado.uid);
-        }
-        const subSnap = await subRef.get();
-                const { decryptString } = await import('./crypto.js');
-        let bruto = 0, liquido = 0, vendas = 0;
-         for (const s of subSnap.docs) {
-          let d = s.data();
-          if (d.encrypted) {
-            try {
-              const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
-              d = JSON.parse(txt);
-            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-          }
-          bruto += d.valorBruto || 0;
-          liquido += d.valorLiquido || 0;
-          vendas += d.qtdVendas || 0;
-        }
-
-        let sobraDia = 0;
-        try {
-          let listaRef = db.collection(`skusVendidos/${doc.id}/lista`);
-          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-            listaRef = listaRef.where('uid', '==', usuarioLogado.uid);
-          }
-          const listaSnap = await listaRef.get();
-          listaSnap.forEach(item => {
-            const { sku, total } = item.data();
-            const custo = Number(produtos[sku] || 0);
-            sobraDia += (total || 0) * custo;
-          });
-        } catch (e) {
-          console.warn('Erro ao calcular sobra esperada do dia', e);
-        }
-
-        dados.push({ data: doc.id, bruto, liquido, vendas, sobra: sobraDia });
-        totalBruto += bruto;
-        totalLiquido += liquido;
-        totalVendas += vendas;
-        totalSobra += sobraDia;
-      }
-
-      tbody.innerHTML = '';
-      dados.sort((a,b) => a.data.localeCompare(b.data));
-      dadosAcompanhamento = dados.slice();
-      dados.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${d.data}</td><td>R$ ${d.bruto.toLocaleString('pt-BR')}</td><td>R$ ${d.liquido.toLocaleString('pt-BR')}</td><td>${d.vendas}</td>`;
-        tbody.appendChild(tr);
-      });
-
- // Calcula totais a partir de dadosAcompanhamento
-      const totais = dadosAcompanhamento.reduce((acc, item) => {
-        acc.bruto += item.bruto || 0;
-        acc.liquido += item.liquido || 0;
-        acc.vendas += item.vendas || 0;
-        acc.sobra += item.sobra || 0;
-        return acc;
-      }, { bruto: 0, liquido: 0, vendas: 0, sobra: 0 });
-      const ticket = totais.vendas ? totais.liquido / totais.vendas : 0;
-
-      resumoEl.classList.add('resumo-grid');
-      resumoEl.innerHTML = `
-        <div class="resumo-card"><h4>Total Bruto</h4><p>R$ ${totais.bruto.toLocaleString('pt-BR')}</p></div>
-        <div class="resumo-card"><h4>Total Líquido</h4><p>R$ ${totais.liquido.toLocaleString('pt-BR')}</p></div>
-        <div class="resumo-card"><h4>Total Vendido</h4><p>${totais.vendas}</p></div>
-        <div class="resumo-card"><h4>Total Sobra Esperada</h4><p>R$ ${totais.sobra.toLocaleString('pt-BR')}</p></div>
-        <div class="resumo-card"><h4>Ticket Médio</h4><p>R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>`;
-    }
-
-     function exportarAcompanhamentoExcel() {
-      if (!dadosAcompanhamento.length) return;
-      const ws = XLSX.utils.json_to_sheet(dadosAcompanhamento);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Acompanhamento');
-      XLSX.writeFile(wb, 'acompanhamento.xlsx');
-    }
-
-    function exportarAcompanhamentoPDF() {
-      const element = document.getElementById('areaImpressao');
-      if (!element) return;
-      const opt = { margin: 1, filename: 'acompanhamento.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' } };
-      html2pdf().set(opt).from(element).save();
-    }
-
-    function printAcompanhamento() {
- const element = document.getElementById('areaImpressao');
-      if (!element) return;
-      const printWindow = window.open('', '', 'width=900,height=650');
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Imprimir Acompanhamento</title>
-            <link rel="stylesheet" href="css/styles.css">
-            <link rel="stylesheet" href="css/components.css">
-          </head>
-          <body>
-            ${element.innerHTML}
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }
-function aplicarEstiloCritico() {
+   function aplicarEstiloCritico() {
   const linhas = document.querySelectorAll("#resultado tbody tr");
 
   linhas.forEach(linha => {
@@ -2075,12 +1891,6 @@ function aplicarEstiloCritico() {
     }
   });
 }
- window.toggleInfoFaturamento = function() {
-    const card = document.getElementById('infoFaturamento');
-    if (card) {
-      card.classList.toggle('hidden');
-    }
-  };
 
 
 function filtrarPorSKU() {

@@ -8,17 +8,15 @@ const firebaseConfig = {
       messagingSenderId: "1011113149395",
       appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
       databaseURL: "https://matheus-35023.firebaseio.com"
- };
+    };
+    
 
 // Expose to global scope for inline scripts
 if (typeof window !== 'undefined') {
   window.firebaseConfig = firebaseConfig;
-     
 }
 
 // Export for module environments
 if (typeof module !== 'undefined') {
   module.exports = { firebaseConfig };
-
-  };
 }
