@@ -46,36 +46,42 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   el.innerHTML = 'Carregando...';
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7); // YYYY-MM
-let totalLiquido = 0;
+  let totalLiquido = 0;
   let totalBruto = 0;
   let pedidos = 0;
-  const snap = await getDocs(collection(db, 'faturamento'));
-  for (const docSnap of snap.docs) {
-    const [ano, mes] = docSnap.id.split('-');
-    if (`${ano}-${mes}` !== mesAtual) continue;
-    let subRef = collection(db, `faturamento/${docSnap.id}/lojas`);
-    if (!isAdmin && uid) {
-      subRef = query(subRef, where('uid', '==', uid));
-    }
-    const subSnap = await getDocs(subRef);
-    for (const s of subSnap.docs) {
-      let d = s.data();
-      if (d.encrypted) {
-        try {
-   const pass = (typeof window !== 'undefined' && window.getPassphrase)
-            ? window.getPassphrase()
-            : null;
-          const txt = await decryptString(d.encrypted, pass || uid);
-          d = JSON.parse(txt);
- } catch (e) {
-          console.error('Erro ao descriptografar faturamento', e);
-        }
+   try {
+    const snap = await getDocs(collection(db, 'faturamento'));
+    for (const docSnap of snap.docs) {
+      const [ano, mes] = docSnap.id.split('-');
+      if (`${ano}-${mes}` !== mesAtual) continue;
+      let subRef = collection(db, `faturamento/${docSnap.id}/lojas`);
+      if (!isAdmin && uid) {
+        subRef = query(subRef, where('uid', '==', uid));
       }
- totalLiquido += d.valorLiquido || 0;
-      totalBruto += d.valorBruto || 0;
-      pedidos += d.qtdVendas || 0;
+      const subSnap = await getDocs(subRef);
+      for (const s of subSnap.docs) {
+        let d = s.data();
+        if (d.encrypted) {
+          try {
+            const pass = (typeof window !== 'undefined' && window.getPassphrase)
+              ? window.getPassphrase()
+              : null;
+            const txt = await decryptString(d.encrypted, pass || uid);
+            d = JSON.parse(txt);
+          } catch (e) {
+            console.error('Erro ao descriptografar faturamento', e);
+          }
+        }
+        totalLiquido += d.valorLiquido || 0;
+        totalBruto += d.valorBruto || 0;
+        pedidos += d.qtdVendas || 0;
+      }
     }
-  }
+  } catch (e) {
+    console.error('Erro ao carregar faturamento', e);
+    el.innerHTML = '<p class="text-red-500">Erro ao carregar faturamento</p>';
+    return;
+      }
   el.innerHTML = `
     <div class="card" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
       <div class="card-header">
@@ -102,20 +108,26 @@ async function carregarTopSkus(uid, isAdmin) {
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7);
   const mapa = {};
-  const snap = await getDocs(collection(db, 'skusVendidos'));
-  for (const docSnap of snap.docs) {
-    const [ano, mes] = docSnap.id.split('-');
-    if (`${ano}-${mes}` !== mesAtual) continue;
-    let listaRef = collection(db, `skusVendidos/${docSnap.id}/lista`);
-    if (!isAdmin && uid) {
-      listaRef = query(listaRef, where('uid', '==', uid));
+ try {
+    const snap = await getDocs(collection(db, 'skusVendidos'));
+    for (const docSnap of snap.docs) {
+      const [ano, mes] = docSnap.id.split('-');
+      if (`${ano}-${mes}` !== mesAtual) continue;
+      let listaRef = collection(db, `skusVendidos/${docSnap.id}/lista`);
+      if (!isAdmin && uid) {
+        listaRef = query(listaRef, where('uid', '==', uid));
+      }
+      const listaSnap = await getDocs(listaRef);
+      listaSnap.forEach(s => {
+        const d = s.data();
+        const chave = `${d.sku}||${d.loja || ''}`;
+        mapa[chave] = (mapa[chave] || 0) + (d.total || 0);
+      });
     }
-    const listaSnap = await getDocs(listaRef);
-    listaSnap.forEach(s => {
-      const d = s.data();
-      const chave = `${d.sku}||${d.loja || ''}`;
-      mapa[chave] = (mapa[chave] || 0) + (d.total || 0);
-    });
+   } catch (e) {
+    console.error('Erro ao carregar SKUs', e);
+    el.innerHTML = '<p class="text-red-500">Erro ao carregar SKUs</p>';
+    return;
   }
   const ordenado = Object.entries(mapa).sort((a,b) => b[1]-a[1]).slice(0,5);
   if (ordenado.length === 0) {
