@@ -27,7 +27,10 @@
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fas fa-lock text-gray-400"></i>
           </div>
-          <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
+ <input type="password" id="loginPassword" class="w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
+          <button type="button" onclick="togglePassword('loginPassword', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <i class="fas fa-eye text-gray-400"></i>
+          </button>
         </div>
       </div>
 <div>
@@ -36,7 +39,10 @@
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <i class="fas fa-eye text-gray-400"></i>
           </div>
-          <input type="password" id="loginPassphrase" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
+  <input type="password" id="loginPassphrase" class="w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
+          <button type="button" onclick="togglePassword('loginPassphrase', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <i class="fas fa-eye text-gray-400"></i>
+          </button>
         </div>
       </div>
       <button onclick="login()" class="btn-primary w-full py-3.5">
@@ -93,12 +99,17 @@
       <p class="text-gray-600 mt-2">Digite a senha para acessar dados criptografados</p>
     </div>
 
-    <div class="space-y-6">
-      <input type="password" id="passphraseInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
-      <button onclick="savePassphrase()" class="btn-primary w-full py-3.5">
-        <i class="fas fa-check mr-2"></i> Confirmar
-      </button>
-    </div>
+   <div class="space-y-6">
+        <div class="relative">
+          <input type="password" id="passphraseInput" class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
+          <button type="button" onclick="togglePassword('passphraseInput', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <i class="fas fa-eye text-gray-400"></i>
+          </button>
+        </div>
+        <button onclick="savePassphrase()" class="btn-primary w-full py-3.5">
+          <i class="fas fa-check mr-2"></i> Confirmar
+        </button>
+      </div>
   </div>
 </div>
 
