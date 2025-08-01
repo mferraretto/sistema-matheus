@@ -46,7 +46,8 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   el.innerHTML = 'Carregando...';
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7); // YYYY-MM
-  let total = 0;
+let totalLiquido = 0;
+  let totalBruto = 0;
   let pedidos = 0;
   const snap = await getDocs(collection(db, 'faturamento'));
   for (const docSnap of snap.docs) {
@@ -65,7 +66,8 @@ async function carregarResumoFaturamento(uid, isAdmin) {
           d = JSON.parse(txt);
         } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
       }
-      total += d.valorLiquido || 0;
+ totalLiquido += d.valorLiquido || 0;
+      totalBruto += d.valorBruto || 0;
       pedidos += d.qtdVendas || 0;
     }
   }
@@ -82,8 +84,9 @@ async function carregarResumoFaturamento(uid, isAdmin) {
         </button>
       </div>
       <div class="card-body">
-        <div class="text-3xl font-bold text-green-600">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-      </div>
+<div class="text-3xl font-bold text-green-600">Líquido: R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+        <div class="text-xl font-semibold text-blue-600 mt-1">Bruto: R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+        </div>
     </div>`;
 }
 
