@@ -51,7 +51,7 @@ async function registrarHistorico(id, dadosAntigos, dadosNovos) {
     dadosNovos,
     uid: auth.currentUser.uid
    };
-  const encrypted = await encryptString(JSON.stringify(payload), getPassphrase());
+  const encrypted = await encryptString(JSON.stringify(payload), window.sistema.passphrase);
  // Salva o uid fora da carga criptografada para possibilitar filtragem
   await addDoc(collection(db, 'monitoramento_historico'), { uid: payload.uid, encrypted });
 }
@@ -77,7 +77,7 @@ async function monitorar() {
   }
 
   for (const docSnap of snap.docs) {
-    const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, getPassphrase()) || {};
+    const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, window.sistema.passphrase) || {};
      if (!isAdmin && dados.uid && dados.uid !== user.uid) {
       continue;
     }
@@ -96,7 +96,7 @@ async function monitorar() {
     if (antigaSnap.exists()) {
       const enc = antigaSnap.data().encrypted;
       if (enc) {
-        const txt = await decryptString(enc, getPassphrase());
+        const txt = await decryptString(enc, window.sistema.passphrase);
         antigos = JSON.parse(txt);
       }
     }
@@ -112,11 +112,11 @@ async function monitorar() {
     if (antigaSnap.exists()) {
       const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
       if (mudou) {
-        await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, getPassphrase());
+        await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
         await registrarHistorico(docSnap.id, antigos, dadosNovos);
       }
     } else {
-      await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, getPassphrase());
+      await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, window.sistema.passphrase);
       await registrarHistorico(docSnap.id, {}, dadosNovos);
     }
   }
@@ -179,7 +179,7 @@ async function carregarHistorico() {
   for (const d of snap.docs) {
     const enc = d.data().encrypted;
     if (!enc) continue;
-    const txt = await decryptString(enc, getPassphrase());
+    const txt = await decryptString(enc, window.sistema.passphrase);
 const obj = JSON.parse(txt);
     if (!isAdmin && obj.uid && obj.uid !== user.uid) {
       continue;
