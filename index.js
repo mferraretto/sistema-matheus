@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { decryptString } from './crypto.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -56,11 +57,17 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       subRef = query(subRef, where('uid', '==', uid));
     }
     const subSnap = await getDocs(subRef);
-    subSnap.forEach(s => {
-      const d = s.data();
+    for (const s of subSnap.docs) {
+      let d = s.data();
+      if (d.encrypted) {
+        try {
+          const txt = await decryptString(d.encrypted, getPassphrase() || uid);
+          d = JSON.parse(txt);
+        } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+      }
       total += d.valorLiquido || 0;
       pedidos += d.qtdVendas || 0;
-    });
+    }
   }
   el.innerHTML = `
     <div class="card" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
