@@ -115,6 +115,12 @@
    <script src="shared.js"></script>
 
 <script src="expose-uid.js"></script>
-
+<script>
+  fetch('components/auth-modals.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('auth-modals-container').innerHTML = html;
+    });
+</script>
 </body>
 </html>
