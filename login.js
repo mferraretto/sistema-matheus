@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -50,13 +50,14 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-  signInWithEmailAndPassword(auth, email, password)
-    .then((cred) => {
+setPersistence(auth, browserSessionPersistence)
+    .then(() => signInWithEmailAndPassword(auth, email, password))
+  .then((cred) => {
     
       if (passphrase) {
         setPassphrase(passphrase);
       }
-   showUserArea(cred.user);
+      showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
     })
@@ -114,6 +115,10 @@ function checkLogin() {
       showUserArea(user);
     } else {
       hideUserArea();
+       const onIndex = /index\.html?$/.test(window.location.pathname);
+      if (onIndex && document.getElementById('loginModal')) {
+        openModal('loginModal');
+      }
     }
   });
 }
