@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Sync",
+  "version": "1.0",
+  "description": "Coleta pedidos da Shopee Seller Central e salva no Firebase",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://seller.shopee.com.br/*",
+    "https://*.firebaseio.com/*",
+    "https://*.gstatic.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [{"resources": ["content.js"], "matches": ["https://seller.shopee.com.br/*"]}],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
