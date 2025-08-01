@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Saques de Marketplace</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <main class="main-content p-4 space-y-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-bold">💸 Registrar Saque</h2>
+      </div>
+      <div class="card-body space-y-4">
+        <div class="form-row">
+          <div class="form-group">
+            <input type="date" id="dataSaque" class="form-control">
+          </div>
+          <div class="form-group">
+            <input type="text" id="lojaSaque" placeholder="Loja" class="form-control">
+          </div>
+          <div class="form-group">
+            <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control">
+          </div>
+          <button onclick="registrarSaque()" class="btn btn-primary">
+            <i class="fas fa-plus mr-1"></i> Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-bold">📑 Saques Registrados</h2>
+      </div>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+        <div class="flex items-center gap-2">
+          <label for="filtroMesSaques" class="font-medium">Filtrar por mês:</label>
+          <input type="month" id="filtroMesSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
+        </div>
+      </div>
+      <div id="listaSaques" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+    </div>
+  </main>
+  <script src="firebase-config.js"></script>
+  <script type="module" src="saques.js"></script>
+  <script src="shared.js"></script>
+</body>
+</html>
