@@ -3,11 +3,9 @@
   "description": "Cloud Functions for Shopee monitoring proxy",
   "main": "index.js",
   "engines": {
-    "node": "20"
+    "node": "18"
   },
   "dependencies": {
-    "firebase-functions": "^4.0.0",
-    "firebase-admin": "^11.0.0",
     "node-fetch": "^2.6.7",
     "cors": "^2.8.5"
   }
