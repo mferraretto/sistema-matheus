@@ -4,6 +4,20 @@ import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, o
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+window.setPassphrase = (senha) => {
+  sessionStorage.setItem('userPassphrase', senha);
+};
+
+// Recupera a senha (caso já tenha sido definida nesta aba)
+window.getPassphrase = () => {
+  return sessionStorage.getItem('userPassphrase');
+};
+
+// Limpa a senha quando o usuário sair
+window.clearPassphrase = () => {
+  sessionStorage.removeItem('userPassphrase');
+};
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) {
@@ -123,20 +137,22 @@ window.requireLogin = (event) => {
 };
 
 function checkLogin() {
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      showUserArea(user);
-    } else {
-      hideUserArea();
-      // Só mostra o modal se estivermos no index.html
-      const path = window.location.pathname.toLowerCase();
-      const file = path.substring(path.lastIndexOf('/') + 1);
-     if ((file === '' || file === 'index.html') && window.location.search.includes('login=1')) {
+onAuthStateChanged(auth, user => {
+  if (user) {
+    showUserArea(user);
+  } else {
+    hideUserArea();
+
+    // Sempre exibe o modal se estiver no index.html
+    const path = window.location.pathname.toLowerCase();
+    const file = path.substring(path.lastIndexOf('/') + 1);
+    if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
   openModal('loginModal');
+  sessionStorage.setItem('loginModalMostrado', 'true');
 }
 
-    }
-  });
+  }
+});
 }
 
 document.addEventListener('navbarLoaded', () => {
