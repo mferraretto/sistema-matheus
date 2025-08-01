@@ -34,8 +34,8 @@ onAuthStateChanged(auth, async user => {
   }
 
   // ✅ DEFINIR A PASSPHRASE
-   setPassphrase(`chave-${user.uid}`);
-
+ window.sistema = window.sistema || {};
+  window.sistema.passphrase = `chave-${user.uid}`;
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
     isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
@@ -246,7 +246,7 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), getPassphrase());
+        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), window.sistema.passphrase);
         if (registrarHistorico) {
           await addDoc(collection(db, "atualizacoes"), {
             id,
@@ -370,7 +370,7 @@ window.carregarAnuncios = async function () {
 
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
-      const data = await loadSecureDoc(db, 'anuncios', id, getPassphrase()) || {};
+      const data = await loadSecureDoc(db, 'anuncios', id, window.sistema.passphrase) || {};
        if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
