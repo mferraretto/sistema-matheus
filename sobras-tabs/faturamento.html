@@ -10,7 +10,8 @@
     Importe a planilha de pedidos exportada da Shopee. Acesse
     <strong>Home &gt; Meus Pedidos &gt; Todos</strong>, clique em
     <strong>Exportar</strong> e selecione o período desejado. Sempre
-    exporte <strong>um único dia</strong> por vez.
+exporte <strong>um único dia</strong> por vez. Em seguida selecione
+    a data e informe a loja nos campos abaixo antes de importar.
   </p>
 </div>
 
@@ -23,6 +24,14 @@
           <div class="form-row">
             <div class="form-group">
               <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="form-control" />
+            </div>
+            <div class="form-group input-with-icon">
+              <i class="fas fa-calendar-alt"></i>
+              <input type="date" id="dataFaturamento" class="form-control" />
+            </div>
+            <div class="form-group input-with-icon">
+              <i class="fas fa-store"></i>
+              <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="form-control" />
             </div>
             <button onclick="importarFaturamento()" class="btn btn-primary">
               <i class="fas fa-upload"></i> Importar
