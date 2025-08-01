@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { decryptString } from './crypto.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
@@ -42,7 +42,10 @@ export async function registrarSaque() {
     total += obj.valor || 0;
   }
 
-  await saveSecureDoc(db, `usuarios/${uid}/saques`, data, { data, valorTotal: total, uid }, pass);
+  const existente = await loadSecureDoc(db, `usuarios/${uid}/saques`, data, pass);
+  const pago = existente?.pago || false;
+
+  await saveSecureDoc(db, `usuarios/${uid}/saques`, data, { data, valorTotal: total, pago, uid }, pass);
 
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
@@ -55,10 +58,15 @@ export async function carregarSaques() {
   container.innerHTML = '<p>Carregando...</p>';
 
   const filtroMes = document.getElementById('filtroMesSaques')?.value;
+  const modo = document.getElementById('modoVisualizacaoSaques')?.value || 'cards';
   const uid = auth.currentUser.uid;
   const pass = getPassphrase() || `chave-${uid}`;
   const snap = await getDocs(collection(db, `usuarios/${uid}/saques`));
   container.innerHTML = '';
+  container.className = modo === 'cards'
+    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4'
+    : 'p-4 space-y-2';
+
   for (const docSnap of snap.docs) {
     const dados = await loadSecureDoc(db, `usuarios/${uid}/saques`, docSnap.id, pass);
     if (!dados) continue;
@@ -68,22 +76,52 @@ export async function carregarSaques() {
       if (ano !== anoF || mes !== mesF) continue;
     }
     const total = dados.valorTotal || 0;
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition';
-    card.innerHTML = `
-      <div class="text-sm text-gray-500 mb-2 flex items-center gap-2">
-        <i class="fas fa-calendar-alt text-blue-600"></i>
-        <span class="font-semibold">${docSnap.id}</span>
-      </div>
-      <div class="text-xl font-bold text-green-600 mb-2">R$ ${total.toLocaleString('pt-BR')}</div>
-      <div class="flex justify-between items-center">
-        <button onclick="mostrarDetalhesSaque('${docSnap.id}')" class="btn btn-outline">
-          <i class="fas fa-eye"></i> Ver Detalhes
-        </button>
-      </div>
-      <div id="detalhes-${docSnap.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
-    `;
-    container.appendChild(card);
+    const pago = !!dados.pago;
+
+    let elem;
+    if (modo === 'cards') {
+      elem = document.createElement('div');
+      elem.className = 'bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition';
+      elem.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+          <div class="text-sm text-gray-500 flex items-center gap-2">
+            <i class="fas fa-calendar-alt text-blue-600"></i>
+            <span class="font-semibold">${docSnap.id}</span>
+          </div>
+          <label class="inline-flex items-center text-sm">
+            <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
+            <span class="ml-1">Pago</span>
+          </label>
+        </div>
+        <div class="text-xl font-bold text-green-600 mb-2">R$ ${total.toLocaleString('pt-BR')}</div>
+        <div class="flex justify-between items-center">
+          <button onclick="mostrarDetalhesSaque('${docSnap.id}')" class="btn btn-outline">
+            <i class="fas fa-eye"></i> Ver Detalhes
+          </button>
+        </div>
+        <div id="detalhes-${docSnap.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
+      `;
+    } else {
+      elem = document.createElement('div');
+      elem.className = 'bg-white rounded-lg p-3 border';
+      elem.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div class="text-sm text-gray-500 flex items-center gap-2 font-semibold">
+            <i class="fas fa-calendar-alt text-blue-600"></i>${docSnap.id}
+          </div>
+          <label class="inline-flex items-center text-sm">
+            <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
+            <span class="ml-1">Pago</span>
+          </label>
+        </div>
+        <div class="flex justify-between items-center mt-1">
+          <div class="text-lg font-bold text-green-600">R$ ${total.toLocaleString('pt-BR')}</div>
+          <button onclick="mostrarDetalhesSaque('${docSnap.id}')" class="btn btn-outline text-sm"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="detalhes-${docSnap.id}" class="mt-2 text-sm text-gray-700" style="display:none;"></div>
+      `;
+    }
+    container.appendChild(elem);
   }
   if (!container.children.length) {
     container.innerHTML = '<p class="text-gray-500">Nenhum saque encontrado</p>';
@@ -115,8 +153,19 @@ export async function mostrarDetalhesSaque(dataRef) {
   detalhesEl.innerHTML = html || '<p class="text-gray-500">Sem detalhes</p>';
 }
 
+export async function alternarPago(dataRef) {
+  const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
+  const dados = await loadSecureDoc(db, `usuarios/${uid}/saques`, dataRef, pass);
+  if (!dados) return;
+  dados.pago = !dados.pago;
+  await saveSecureDoc(db, `usuarios/${uid}/saques`, dataRef, { ...dados, uid }, pass);
+  await carregarSaques();
+}
+
 if (typeof window !== 'undefined') {
   window.registrarSaque = registrarSaque;
   window.carregarSaques = carregarSaques;
   window.mostrarDetalhesSaque = mostrarDetalhesSaque;
+  window.alternarPago = alternarPago;
 }
