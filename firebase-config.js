@@ -12,20 +12,20 @@ const firebaseConfig = {
 
 // Utility functions for storing the passphrase securely
 function setPassphrase(pass) {
- if (typeof localStorage !== 'undefined' && pass) {
-    localStorage.setItem('sistemaPassphrase', pass);
+  if (typeof sessionStorage !== 'undefined' && pass) {
+    sessionStorage.setItem('sistemaPassphrase', pass);
   }
 }
 
 function getPassphrase() {
-  return typeof localStorage !== 'undefined'
-    ? localStorage.getItem('sistemaPassphrase')
+  return typeof sessionStorage !== 'undefined'
+    ? sessionStorage.getItem('sistemaPassphrase')
     : null;
 }
 
 function clearPassphrase() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('sistemaPassphrase');
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem('sistemaPassphrase');
   }
 }
 

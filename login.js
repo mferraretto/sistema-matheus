@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -45,39 +45,22 @@ window.openRecoverModal = () => {
   closeModal('loginModal');
   openModal('recoverModal');
 };
-window.togglePassword = (id, btn) => {
-  const input = document.getElementById(id);
-  if (!input) return;
-  const icon = btn.querySelector('i');
-  const isHidden = input.type === 'password';
-  input.type = isHidden ? 'text' : 'password';
-  if (icon) {
-    icon.classList.toggle('fa-eye', !isHidden);
-    icon.classList.toggle('fa-eye-slash', isHidden);
-  }
-};
+
 window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-setPersistence(auth, browserLocalPersistence)
-    .then(() => signInWithEmailAndPassword(auth, email, password))
-  .then((cred) => {
+  signInWithEmailAndPassword(auth, email, password)
+    .then((cred) => {
     
       if (passphrase) {
         setPassphrase(passphrase);
       }
-      showUserArea(cred.user);
+   showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
     })
- .catch(err => {
-      let message = 'Credenciais inválidas!';
-      if (err && err.code === 'auth/wrong-password') {
-        message = 'Senha incorreta. <a href="#" onclick="openRecoverModal()">Recuperar senha?</a>';
-      }
-      showToast(message, 'error');
-    });
+    .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
 };
 
 window.logout = () => {
@@ -98,29 +81,21 @@ window.sendRecovery = () => {
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
-async function showUserArea(user) {
+function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
-  // Expose user information globally for other scripts
+   // Expose user information globally for other scripts
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
- if (!getPassphrase()) {
-    if (!document.getElementById('passphraseModal') &&
-        typeof window.loadAuthModals === 'function') {
-      try {
-        await window.loadAuthModals();
-      } catch (e) {
-        console.error('Erro ao carregar modais de autenticação', e);
-      }
-    }
-   openModal('passphraseModal');
+   if (!getPassphrase()) {
+    openModal('passphraseModal');
   }
 }
 
 function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
-if (window.sistema) delete window.sistema.currentUserId;
+    if (window.sistema) delete window.sistema.currentUserId;
       clearPassphrase();
 }
 
@@ -139,10 +114,6 @@ function checkLogin() {
       showUserArea(user);
     } else {
       hideUserArea();
-       const onIndex = /index\.html?$/.test(window.location.pathname);
-      if (onIndex && document.getElementById('loginModal')) {
-        openModal('loginModal');
-      }
     }
   });
 }

@@ -3,21 +3,6 @@ import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 
-function loadKeyFromLocal() {
-  try {
-    return localStorage.getItem('blingApiKey');
-  } catch {
-    return null;
-  }
-}
-
-function saveKeyToLocal(key) {
-  try {
-    localStorage.setItem('blingApiKey', key);
-  } catch {
-    // ignore
-  }
-}
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -27,12 +12,6 @@ async function getStoredApiKey() {
   const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
   if (!uid) return null;
   if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
-  const localKey = loadKeyFromLocal();
-  if (localKey) {
-    window.sistema = window.sistema || {};
-    window.sistema.blingApiKey = localKey;
-    return localKey;
-  }
   try {
     const data = await loadSecureDoc(db, 'blingKeys', uid, getPassphrase() || `chave-${uid}`);
     if (data && data.key) {
@@ -52,7 +31,7 @@ async function saveApiKey(key) {
   try {
     await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, getPassphrase() || `chave-${uid}`);
     window.sistema = window.sistema || {};
-    saveKeyToLocal(key);
+    window.sistema.blingApiKey = key;
   } catch (err) {
     console.error('Erro ao salvar chave do Bling:', err);
   }
