@@ -118,6 +118,12 @@ function checkLogin() {
       showUserArea(user);
     } else {
       hideUserArea();
+      // Só mostra o modal se estivermos no index.html
+      const path = window.location.pathname.toLowerCase();
+      const file = path.substring(path.lastIndexOf('/') + 1);
+      if (file === '' || file === 'index.html') {
+        openModal('loginModal');
+      }
     }
   });
 }
@@ -127,8 +133,12 @@ document.addEventListener('navbarLoaded', () => {
   document.getElementById('logoutBtn').addEventListener('click', logout);
 
   if (window.location.search.includes('login=1')) {
-    openModal('loginModal');
-  }
-
+  // Espera o estado do Firebase para decidir se deve abrir
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      openModal('loginModal');
+    }
+  });
+}
   checkLogin();
 });
