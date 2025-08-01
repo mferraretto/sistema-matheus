@@ -6,7 +6,6 @@ const dbListaPrecos = firebase.firestore();
 const authListaPrecos = firebase.auth();
 let produtos = [];
 let viewMode = 'cards';
-let selecionados = new Set();
 
 function carregarProdutos() {
   const uid = firebase.auth().currentUser?.uid;
@@ -22,9 +21,6 @@ function carregarProdutos() {
 
   query.get().then(snap => {
     produtos = [];
-     selecionados.clear();
-    const selectAll = document.getElementById('selectAll');
-    if (selectAll) selectAll.checked = false;
     snap.forEach(doc => {
       produtos.push({ id: doc.id, ...doc.data() });
     });
@@ -59,12 +55,9 @@ function renderLista(lista) {
       card.className = 'bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition duration-200';
       card.innerHTML = `
         <div class="flex justify-between items-start">
-          <div class="flex items-start">
-            <input type="checkbox" class="mr-2 selecionar-produto" onchange="toggleSelecionado('${data.id}', this.checked)" ${selecionados.has(data.id) ? 'checked' : ''}>
-            <div>
-              <h3 class="font-bold text-lg">${data.produto}</h3>
-              ${data.sku ? `<div class="text-sm text-gray-500">SKU: ${data.sku}</div>` : ''}
-            </div>
+          <div>
+            <h3 class="font-bold text-lg">${data.produto}</h3>
+            ${data.sku ? `<div class="text-sm text-gray-500">SKU: ${data.sku}</div>` : ''}
           </div>
           <div class="text-right">
             <div class="text-gray-500 text-sm">Preço mínimo</div>
@@ -73,28 +66,27 @@ function renderLista(lista) {
         </div>
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
           <div class="text-sm text-gray-500"><i class="far fa-calendar-alt"></i> ${new Date(data.createdAt).toLocaleDateString('pt-BR')}</div>
-          <div class="flex space-x-2">
-            <button onclick="verDetalhes('${data.id}')" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
-              <i class='fas fa-eye mr-1'></i> Ver
-            </button>
-            <button onclick="editarProduto('${data.id}')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
-              <i class='fas fa-edit mr-1'></i> Editar
-            </button>
-            <button onclick="excluirProduto('${data.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
-              <i class='fas fa-trash mr-1'></i> Excluir
-            </button>
-          </div>
+         <div class="flex space-x-2">
+  <button onclick="verDetalhes('${data.id}')" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+    <i class='fas fa-eye mr-1'></i> Ver
+  </button>
+  <button onclick="editarProduto('${data.id}')" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+    <i class='fas fa-edit mr-1'></i> Editar
+  </button>
+  <button onclick="excluirProduto('${data.id}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+    <i class='fas fa-trash mr-1'></i> Excluir
+  </button>
+</div>
 
         </div>`;
       cards.appendChild(card);
     });
-  } else {
+} else {
     cards.classList.add('hidden');
     table.classList.remove('hidden');
     lista.forEach(data => {
       const row = document.createElement('tr');
       row.innerHTML = `
-       <td><input type="checkbox" class="selecionar-produto" onchange="toggleSelecionado('${data.id}', this.checked)" ${selecionados.has(data.id) ? 'checked' : ''}></td>
         <td>${data.produto}</td>
         <td>${data.sku || ''}</td>
         <td>${data.plataforma}</td>
@@ -106,10 +98,6 @@ function renderLista(lista) {
         </td>`;
       tbody.appendChild(row);
     });
-  }
-  const selectAll = document.getElementById('selectAll');
-  if (selectAll) {
-    selectAll.checked = produtos.length > 0 && selecionados.size === produtos.length;
   }
 }
 
@@ -182,30 +170,7 @@ function excluirProduto(id) {
   if (!confirm('Excluir este produto?')) return;
   dbListaPrecos.collection('products').doc(id).delete().then(carregarProdutos);
 }
-function toggleSelecionado(id, checked) {
-  if (checked) selecionados.add(id); else selecionados.delete(id);
-}
 
-function selecionarTodos(checked) {
-  selecionados = new Set(checked ? produtos.map(p => p.id) : []);
-  document.querySelectorAll('.selecionar-produto').forEach(el => { el.checked = checked; });
-}
-
-async function excluirSelecionados() {
-  if (!selecionados.size) return;
-  if (!confirm('Excluir produtos selecionados?')) return;
-  await Promise.all(Array.from(selecionados).map(id => dbListaPrecos.collection('products').doc(id).delete()));
-  selecionados.clear();
-  carregarProdutos();
-}
-
-async function excluirTodos() {
-  if (!produtos.length) return;
-  if (!confirm('Excluir todos os produtos?')) return;
-  await Promise.all(produtos.map(p => dbListaPrecos.collection('products').doc(p.id).delete()));
-  selecionados.clear();
-  carregarProdutos();
-}
 function fecharModal() {
   if (typeof closeModal === 'function') {
     closeModal('detalhesModal');
@@ -294,31 +259,13 @@ function setupListeners() {
   document.getElementById('filtroBusca')?.addEventListener('input', aplicarFiltros);
   document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
   document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
-    document.getElementById('selectAll')?.addEventListener('change', e => selecionarTodos(e.target.checked));
 }
 
-function initTooltips() {
-  document.querySelectorAll('.tooltip').forEach(el => {
-    const text = el.getAttribute('data-tooltip');
-    if (text && !el.querySelector('.tooltip-text')) {
-      const span = document.createElement('span');
-      span.className = 'tooltip-text';
-      span.textContent = text;
-      el.appendChild(span);
-    }
-  });
-}
-
-function init() {
-  setupListeners();
-    initTooltips();
-  // Aguardamos o evento de autenticação abaixo para carregar os produtos
-}
 
 if (document.readyState !== 'loading') {
-  init();
+  setupListeners();
 } else {
-     document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', setupListeners);
 
 }
 authListaPrecos.onAuthStateChanged(user => {
