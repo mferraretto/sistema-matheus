@@ -177,6 +177,10 @@
         await carregarProdutos();
         await carregarMetas();
         carregarHistorico();
+        const dataField = document.getElementById('dataFaturamento');
+        if (dataField) {
+          dataField.value = new Date().toISOString().slice(0,10);
+        }
 
         document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
         document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
@@ -1370,12 +1374,14 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(sheet);
 
-          let dataReferencia = prompt("Informe a data da planilha (formato YYYY-MM-DD):");
+const dataInput = document.getElementById("dataFaturamento");
+          const lojaInput = document.getElementById("lojaFaturamento");
+          const dataReferencia = dataInput?.value;
+          const loja = lojaInput?.value?.trim();
           if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
             return mostrarErro("Data inválida.");
           }
 
-          let loja = prompt("Informe o nome da loja:");
           if (!loja || loja.length < 2) {
             return mostrarErro("Nome da loja inválido.");
           }
@@ -1454,7 +1460,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
             });
           }
 
-const { encryptString } = await import('./crypto.js');
+ const { encryptString } = await import('./crypto.js');
           const pass = getPassphrase() || usuarioLogado.uid;
 
           const lojaPayload = {
@@ -1465,7 +1471,7 @@ const { encryptString } = await import('./crypto.js');
             loja: loja,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-           };
+         };
           const encLoja = await encryptString(JSON.stringify(lojaPayload), pass);
           await ref.set({ encrypted: encLoja, uid: usuarioLogado.uid });
 
@@ -1476,7 +1482,7 @@ const { encryptString } = await import('./crypto.js');
             vendas: qtdVendas,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-         };
+        };
           const encResumo = await encryptString(JSON.stringify(resumoPayload), pass);
           await db.collection("faturamento").doc(dataReferencia).set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
 
