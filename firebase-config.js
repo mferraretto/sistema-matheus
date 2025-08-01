@@ -8,41 +8,17 @@ const firebaseConfig = {
       messagingSenderId: "1011113149395",
       appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
       databaseURL: "https://matheus-35023.firebaseio.com"
-   };
-
-// Utility functions for storing the passphrase securely
-function setPassphrase(pass) {
-  if (typeof sessionStorage !== 'undefined' && pass) {
-    sessionStorage.setItem('sistemaPassphrase', pass);
-  }
-}
-
-function getPassphrase() {
-  return typeof sessionStorage !== 'undefined'
-    ? sessionStorage.getItem('sistemaPassphrase')
-    : null;
-}
-
-function clearPassphrase() {
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.removeItem('sistemaPassphrase');
-  }
-}
+ };
 
 // Expose to global scope for inline scripts
 if (typeof window !== 'undefined') {
   window.firebaseConfig = firebaseConfig;
-      window.setPassphrase = setPassphrase;
-  window.getPassphrase = getPassphrase;
-  window.clearPassphrase = clearPassphrase;
+     
 }
 
 // Export for module environments
 if (typeof module !== 'undefined') {
- module.exports = {
-    firebaseConfig,
-    setPassphrase,
-    getPassphrase,
-    clearPassphrase
+  module.exports = { firebaseConfig };
+
   };
 }
