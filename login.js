@@ -88,19 +88,29 @@ window.sendRecovery = () => {
 function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
-   // Expose user information globally for other scripts
+
   window.sistema = window.sistema || {};
   window.sistema.currentUserId = user.uid;
-   if (!getPassphrase()) {
-    openModal('passphraseModal');
+
+  const senha = getPassphrase();
+  if (!senha) {
+    const jaExibiuModal = sessionStorage.getItem('passphraseModalShown');
+    if (!jaExibiuModal) {
+      openModal('passphraseModal');
+      sessionStorage.setItem('passphraseModalShown', 'true');
+    }
   }
 }
+
 
 function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
-    if (window.sistema) delete window.sistema.currentUserId;
-      clearPassphrase();
+  if (window.sistema) delete window.sistema.currentUserId;
+  clearPassphrase();
+
+  // ⚠️ Reseta para mostrar o modal novamente no próximo login
+  sessionStorage.removeItem('passphraseModalShown');
 }
 
 window.requireLogin = (event) => {
