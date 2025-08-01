@@ -1454,7 +1454,10 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
             });
           }
 
-          await ref.set({
+const { encryptString } = await import('./crypto.js');
+          const pass = getPassphrase() || usuarioLogado.uid;
+
+          const lojaPayload = {
             valorBruto: bruto,
             taxasPlataforma: taxas,
             valorLiquido: liquido,
@@ -1462,16 +1465,20 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
             loja: loja,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-          });
+           };
+          const encLoja = await encryptString(JSON.stringify(lojaPayload), pass);
+          await ref.set({ encrypted: encLoja, uid: usuarioLogado.uid });
 
-          await db.collection("faturamento").doc(dataReferencia).set({
+          const resumoPayload = {
             valorBruto: bruto,
             valorLiquido: liquido,
             taxasPlataforma: taxas,
             vendas: qtdVendas,
             atualizadoEm: new Date(),
             uid: usuarioLogado.uid
-          }, { merge: true });
+         };
+          const encResumo = await encryptString(JSON.stringify(resumoPayload), pass);
+          await db.collection("faturamento").doc(dataReferencia).set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
 
           document.getElementById("resultadoFaturamento").innerHTML = `
             <div class="alert alert-success">
@@ -1549,14 +1556,22 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           subRef = subRef.where('uid', '==', usuarioLogado.uid);
         }
         const subSnap = await subRef.get();
+                const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, qtd = 0;
 
-        subSnap.forEach(sub => {
-          const d = sub.data();
+        for (const sub of subSnap.docs) {
+          const dataSub = sub.data();
+          let d = dataSub;
+          if (dataSub.encrypted) {
+            try {
+              const txt = await decryptString(dataSub.encrypted, getPassphrase() || usuarioLogado.uid);
+              d = JSON.parse(txt);
+            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+          }
           bruto += d.valorBruto || 0;
           liquido += d.valorLiquido || 0;
           qtd += d.qtdVendas || 0;
-        });
+        }
 
         const card = document.createElement("div");
         card.className = "bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition";
@@ -1604,10 +1619,17 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
         ref = ref.where('uid', '==', usuarioLogado.uid);
       }
       const snap = await ref.get();
+      const { decryptString } = await import('./crypto.js');
 
       let html = "";
-      snap.forEach(doc => {
-        const d = doc.data();
+     for (const doc of snap.docs) {
+        let d = doc.data();
+        if (d.encrypted) {
+          try {
+            const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
+            d = JSON.parse(txt);
+          } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+        }
         const loja = d.loja || "Desconhecida";
         const bruto = d.valorBruto?.toLocaleString("pt-BR") || "0,00";
         const liquido = d.valorLiquido?.toLocaleString("pt-BR") || "0,00";
@@ -1618,7 +1640,7 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
             <strong>${loja}</strong>: Bruto R$ ${bruto} | Líquido R$ ${liquido} | Vendas: ${vendas}
           </div>
         `;
-      });
+     }
 
       detalhesEl.innerHTML = html;
     }
@@ -1815,10 +1837,17 @@ Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
           lojasRef = lojasRef.where('uid', '==', usuarioLogado.uid);
         }
         const lojasSnap = await lojasRef.get();
-        lojasSnap.forEach(lojaDoc => {
-          const dados = lojaDoc.data();
+          const { decryptString } = await import('./crypto.js');
+        for (const lojaDoc of lojasSnap.docs) {
+          let dados = lojaDoc.data();
+          if (dados.encrypted) {
+            try {
+              const txt = await decryptString(dados.encrypted, getPassphrase() || usuarioLogado.uid);
+              dados = JSON.parse(txt);
+            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+          }
           valorLiquido += Number(dados.valorLiquido || 0);
-        });
+           }
       } catch (e) {
         console.warn("Erro ao buscar valor líquido por loja:", e);
       }
@@ -1850,7 +1879,7 @@ let ref = db.collection("faturamento");
         ref = ref.where('uid', '==', usuarioLogado.uid);
       }
       const snap = await ref.get();
-      const dataExport = [];
+      const { decryptString } = await import('./crypto.js');
 
       for (const docData of snap.docs) {
  let subRef = db.collection(`faturamento/${docData.id}/lojas`);
@@ -1858,8 +1887,14 @@ let ref = db.collection("faturamento");
           subRef = subRef.where('uid', '==', usuarioLogado.uid);
         }
         const subSnap = await subRef.get();
-        subSnap.forEach(sub => {
-          const d = sub.data();
+       for (const sub of subSnap.docs) {
+          let d = sub.data();
+          if (d.encrypted) {
+            try {
+              const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
+              d = JSON.parse(txt);
+            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+          }
           dataExport.push({
             Data: docData.id,
             Loja: d.loja || "Desconhecida",
@@ -1868,7 +1903,7 @@ let ref = db.collection("faturamento");
             Líquido: d.valorLiquido || 0,
             Vendas: d.qtdVendas || 0
           });
-        });
+       }
       }
 
       if (dataExport.length === 0) {
@@ -1911,13 +1946,20 @@ let ref = db.collection("faturamento");
           subRef = subRef.where('uid', '==', usuarioLogado.uid);
         }
         const subSnap = await subRef.get();
+                const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, vendas = 0;
-        subSnap.forEach(s => {
-          const d = s.data();
+         for (const s of subSnap.docs) {
+          let d = s.data();
+          if (d.encrypted) {
+            try {
+              const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
+              d = JSON.parse(txt);
+            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+          }
           bruto += d.valorBruto || 0;
           liquido += d.valorLiquido || 0;
           vendas += d.qtdVendas || 0;
-        });
+        }
 
         let sobraDia = 0;
         try {
