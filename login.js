@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -50,13 +51,16 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-  signInWithEmailAndPassword(auth, email, password)
+
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+      return signInWithEmailAndPassword(auth, email, password);
+    })
     .then((cred) => {
-    
       if (passphrase) {
         setPassphrase(passphrase);
       }
-   showUserArea(cred.user);
+      showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
     })
