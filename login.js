@@ -131,9 +131,10 @@ function checkLogin() {
       // Só mostra o modal se estivermos no index.html
       const path = window.location.pathname.toLowerCase();
       const file = path.substring(path.lastIndexOf('/') + 1);
-      if (file === '' || file === 'index.html') {
-        openModal('loginModal');
-      }
+     if ((file === '' || file === 'index.html') && window.location.search.includes('login=1')) {
+  openModal('loginModal');
+}
+
     }
   });
 }
