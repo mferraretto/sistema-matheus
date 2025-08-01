@@ -44,8 +44,15 @@
           <label for="filtroMesSaques" class="font-medium">Filtrar por mês:</label>
           <input type="month" id="filtroMesSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
         </div>
+        <div class="flex items-center gap-2">
+          <label for="modoVisualizacaoSaques" class="font-medium">Visualizar:</label>
+          <select id="modoVisualizacaoSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
+            <option value="cards">Cards</option>
+            <option value="lista">Lista</option>
+          </select>
+        </div>
       </div>
-      <div id="listaSaques" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+      <div id="listaSaques" class="p-4"></div>
     </div>
   </main>
   <script src="firebase-config.js"></script>
