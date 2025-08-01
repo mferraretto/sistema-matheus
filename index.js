@@ -54,6 +54,31 @@ async function carregarResumoFaturamento(uid, isAdmin) {
     for (const docSnap of snap.docs) {
       const [ano, mes] = docSnap.id.split('-');
       if (`${ano}-${mes}` !== mesAtual) continue;
+       // Primeiro tenta usar o resumo criptografado salvo diretamente no documento
+      let dadosResumo = docSnap.data();
+      if (dadosResumo && dadosResumo.encrypted) {
+        try {
+          const pass = (typeof window !== 'undefined' && window.getPassphrase)
+            ? window.getPassphrase()
+            : null;
+          const txt = await decryptString(dadosResumo.encrypted, pass || uid);
+          dadosResumo = JSON.parse(txt);
+        } catch (e) {
+          console.error('Erro ao descriptografar resumo de faturamento', e);
+          dadosResumo = null;
+        }
+      } else {
+        dadosResumo = null;
+      }
+
+      if (dadosResumo) {
+        totalLiquido += dadosResumo.valorLiquido || 0;
+        totalBruto += dadosResumo.valorBruto || 0;
+        pedidos += dadosResumo.vendas || dadosResumo.qtdVendas || 0;
+        continue;
+      }
+
+      // Estrutura antiga: buscar nos registros de lojas
       let subRef = collection(db, `faturamento/${docSnap.id}/lojas`);
       if (!isAdmin && uid) {
         subRef = query(subRef, where('uid', '==', uid));
@@ -74,7 +99,7 @@ async function carregarResumoFaturamento(uid, isAdmin) {
         }
         totalLiquido += d.valorLiquido || 0;
         totalBruto += d.valorBruto || 0;
-        pedidos += d.qtdVendas || 0;
+        pedidos += d.qtdVendas || d.vendas || 0;
       }
     }
   } catch (e) {
