@@ -1,5 +1,9 @@
 import { encryptString, decryptString } from './crypto.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+function buildRef(db, collectionPath, id) {
+  const segments = collectionPath.split('/').filter(Boolean);
+  return doc(db, ...segments, id);
+}
 
 export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
  // Store the UID outside the encrypted payload so we can query by owner
@@ -7,12 +11,12 @@ export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
   const encrypted = await encryptString(JSON.stringify(rest), passphrase);
   const payload = { encrypted };
   if (uid) payload.uid = uid;
-  const ref = doc(db, collectionName, id);
+  const ref = buildRef(db, collectionName, id);
   await setDoc(ref, payload);
 }
 
 export async function loadSecureDoc(db, collectionName, id, passphrase) {
-  const ref = doc(db, collectionName, id);
+  const ref = buildRef(db, collectionName, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
   const { encrypted, uid } = snap.data();
