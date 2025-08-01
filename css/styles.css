@@ -1259,9 +1259,11 @@ tr:hover td {
     padding: .6rem 1rem;
     font-size: .9rem
   }
+    /* Ensure form inputs remain side by side on smaller screens */
   .form-row {
-    flex-direction: column;
-    gap: .8rem
+ flex-direction: row;
+    flex-wrap: wrap;
+    gap: .8rem;
   }
   .chart-container {
     padding: 1rem
