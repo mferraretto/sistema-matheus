@@ -1,5 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, doc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { decryptString } from './crypto.js';
+import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -25,13 +27,22 @@ export async function registrarSaque() {
   }
 
   const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
   const lojaId = loja.replace(/[.#$/\[\]]/g, '_');
-  await setDoc(doc(db, `saques/${data}/lojas/${lojaId}`), { loja, valor, uid }, { merge: true });
 
-  const snap = await getDocs(collection(db, `saques/${data}/lojas`));
+  await saveSecureDoc(db, `usuarios/${uid}/saques/${data}/lojas`, lojaId, { loja, valor, uid }, pass);
+
+  const snap = await getDocs(collection(db, `usuarios/${uid}/saques/${data}/lojas`));
   let total = 0;
-  snap.forEach(d => { total += d.data().valor || 0; });
-  await setDoc(doc(db, 'saques', data), { data, valorTotal: total, uid }, { merge: true });
+  for (const d of snap.docs) {
+    const enc = d.data().encrypted;
+    if (!enc) continue;
+    const txt = await decryptString(enc, pass);
+    const obj = JSON.parse(txt);
+    total += obj.valor || 0;
+  }
+
+  await saveSecureDoc(db, `usuarios/${uid}/saques`, data, { data, valorTotal: total, uid }, pass);
 
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
@@ -44,15 +55,18 @@ export async function carregarSaques() {
   container.innerHTML = '<p>Carregando...</p>';
 
   const filtroMes = document.getElementById('filtroMesSaques')?.value;
-  const snap = await getDocs(collection(db, 'saques'));
+  const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
+  const snap = await getDocs(collection(db, `usuarios/${uid}/saques`));
   container.innerHTML = '';
   for (const docSnap of snap.docs) {
+    const dados = await loadSecureDoc(db, `usuarios/${uid}/saques`, docSnap.id, pass);
+    if (!dados) continue;
     if (filtroMes) {
       const [anoF, mesF] = filtroMes.split('-');
       const [ano, mes] = docSnap.id.split('-');
       if (ano !== anoF || mes !== mesF) continue;
     }
-    const dados = docSnap.data();
     const total = dados.valorTotal || 0;
     const card = document.createElement('div');
     card.className = 'bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition';
@@ -85,14 +99,19 @@ export async function mostrarDetalhesSaque(dataRef) {
   detalhesEl.innerHTML = '<div class="text-sm text-gray-500">Carregando...</div>';
   detalhesEl.style.display = 'block';
 
-  const snap = await getDocs(collection(db, `saques/${dataRef}/lojas`));
+  const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
+  const snap = await getDocs(collection(db, `usuarios/${uid}/saques/${dataRef}/lojas`));
   let html = '';
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
+  for (const docSnap of snap.docs) {
+    const enc = docSnap.data().encrypted;
+    if (!enc) continue;
+    const txt = await decryptString(enc, pass);
+    const d = JSON.parse(txt);
     const loja = d.loja || 'Loja';
     const valor = d.valor || 0;
     html += `<div class="mt-1 text-sm text-gray-800 border-t pt-1"><strong>${loja}</strong>: R$ ${valor.toLocaleString('pt-BR')}</div>`;
-  });
+  }
   detalhesEl.innerHTML = html || '<p class="text-gray-500">Sem detalhes</p>';
 }
 
