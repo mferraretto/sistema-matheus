@@ -45,7 +45,17 @@ window.openRecoverModal = () => {
   closeModal('loginModal');
   openModal('recoverModal');
 };
-
+window.togglePassword = (id, btn) => {
+  const input = document.getElementById(id);
+  if (!input) return;
+  const icon = btn.querySelector('i');
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  if (icon) {
+    icon.classList.toggle('fa-eye', !isHidden);
+    icon.classList.toggle('fa-eye-slash', isHidden);
+  }
+};
 window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
