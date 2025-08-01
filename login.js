@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -60,7 +60,7 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-setPersistence(auth, browserSessionPersistence)
+setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
   .then((cred) => {
     
@@ -71,7 +71,13 @@ setPersistence(auth, browserSessionPersistence)
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
     })
-    .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
+ .catch(err => {
+      let message = 'Credenciais inválidas!';
+      if (err && err.code === 'auth/wrong-password') {
+        message = 'Senha incorreta. <a href="#" onclick="openRecoverModal()">Recuperar senha?</a>';
+      }
+      showToast(message, 'error');
+    });
 };
 
 window.logout = () => {
