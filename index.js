@@ -62,9 +62,14 @@ let totalLiquido = 0;
       let d = s.data();
       if (d.encrypted) {
         try {
-          const txt = await decryptString(d.encrypted, getPassphrase() || uid);
+   const pass = (typeof window !== 'undefined' && window.getPassphrase)
+            ? window.getPassphrase()
+            : null;
+          const txt = await decryptString(d.encrypted, pass || uid);
           d = JSON.parse(txt);
-        } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+ } catch (e) {
+          console.error('Erro ao descriptografar faturamento', e);
+        }
       }
  totalLiquido += d.valorLiquido || 0;
       totalBruto += d.valorBruto || 0;
