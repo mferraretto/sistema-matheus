@@ -108,12 +108,20 @@
     });
   };
 
-  document.addEventListener('DOMContentLoaded', function() {
-    window.loadSidebar().then(function() {
-      window.initDarkMode();
-    });
-    window.loadNavbar();
-    window.loadAuthModals();
-        window.checkColorContrast();
+document.addEventListener('DOMContentLoaded', function () {
+  window.loadSidebar().then(function () {
+    window.initDarkMode();
   });
+  window.loadNavbar();
+
+  // ✅ Só carrega os modais de login se estiver na index.html
+  const pathname = window.location.pathname.toLowerCase();
+  const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
+  if (filename === '' || filename === 'index.html') {
+    window.loadAuthModals();
+  }
+
+  window.checkColorContrast();
+});
+
 })();
