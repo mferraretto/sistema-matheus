@@ -95,10 +95,8 @@ function showUserArea(user) {
 function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
-  if (window.sistema) delete window.sistema.currentUserId;
-  // Do not clear the visualization password here so it persists during the
-  // browsing session. The passphrase will remain stored in sessionStorage and
-  // will only be cleared when the browser session ends.
+if (window.sistema) delete window.sistema.currentUserId;
+      clearPassphrase();
 }
 
 window.requireLogin = (event) => {
