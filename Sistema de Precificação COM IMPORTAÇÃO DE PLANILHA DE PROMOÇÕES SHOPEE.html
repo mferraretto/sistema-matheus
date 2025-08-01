@@ -1937,7 +1937,10 @@ function applyPriceUpdate(type) {
     }
     function setupEventListeners() {
       // Login/logout
-      document.getElementById('logoutBtn').addEventListener('click', logout);
+const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+      }
       
       // Tabs
       document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1950,27 +1953,44 @@ function applyPriceUpdate(type) {
       });
       
       // Filtros
-      document.getElementById('filterHistoryType').addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
-      document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
+    const filterHistoryType = document.getElementById('filterHistoryType');
+      if (filterHistoryType) filterHistoryType.addEventListener('change', loadHistory);
+
+      const filterHistoryUser = document.getElementById('filterHistoryUser');
+      if (filterHistoryUser) filterHistoryUser.addEventListener('change', loadHistory);
+
+      const filterHistoryDate = document.getElementById('filterHistoryDate');
+      if (filterHistoryDate) filterHistoryDate.addEventListener('change', loadHistory);
+
+      const filtroPlataforma = document.getElementById('filtroPlataforma');
+      if (filtroPlataforma) filtroPlataforma.addEventListener('change', atualizarLista);
+
       
       // Configurações
-      document.getElementById('autoBackup').addEventListener('change', function() {
-        sistema.config.backupAuto = this.checked;
-        saveSystem();
-      });
-      
-      document.getElementById('backupFrequency').addEventListener('change', function() {
-        sistema.config.backupFrequency = this.value;
-        saveSystem();
-      });
+         const autoBackup = document.getElementById('autoBackup');
+      if (autoBackup) {
+        autoBackup.addEventListener('change', function() {
+          sistema.config.backupAuto = this.checked;
+          saveSystem();
+        });
+      }
+
+      const backupFrequency = document.getElementById('backupFrequency');
+      if (backupFrequency) {
+        backupFrequency.addEventListener('change', function() {
+          sistema.config.backupFrequency = this.value;
+          saveSystem();
+        });
+      }
     }
 
     function updateUI() {
       // Atualiza checkbox de backup automático
-      document.getElementById('autoBackup').checked = sistema.config.backupAuto;
-      document.getElementById('backupFrequency').value = sistema.config.backupFrequency || 'daily';
+     const autoBackupChk = document.getElementById('autoBackup');
+      if (autoBackupChk) autoBackupChk.checked = sistema.config.backupAuto;
+
+      const backupFreq = document.getElementById('backupFrequency');
+      if (backupFreq) backupFreq.value = sistema.config.backupFrequency || 'daily';
       
       // Atualiza status de conexão
       updateApiStatusUI();
