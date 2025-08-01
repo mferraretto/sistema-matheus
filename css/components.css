@@ -1,47 +1,78 @@
-@layer components {
-  .card {
-    @apply bg-white border border-gray-200 rounded-xl shadow transition hover:shadow-lg;
-  }
-
-  .card-header {
-    @apply flex items-center border-b border-gray-200 px-5 py-4;
-  }
-
-  .card-body {
-    @apply p-5;
-  }
-.blurred {
-    filter: blur(4px);
-  }
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 font-medium transition;
-  }
-
-  .btn-primary {
-    @apply bg-orange-500 text-white shadow hover:bg-orange-600;
-  }
-
-  .data-table {
-    @apply w-full border-collapse;
-  }
-
-  .data-table th {
-    @apply bg-gray-100 px-4 py-3 text-left font-semibold sticky top-0;
-  }
-
-  .data-table td {
-    @apply px-4 py-3 border-b;
-  }
-
-  .data-table tr:nth-child(even) {
-    @apply bg-gray-50;
-  }
-
-  .modal {
-    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm;
-  }
-
-  .modal-content {
-    @apply bg-white rounded-xl p-6 max-w-lg w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto shadow-lg;
-  }
+/* Consolidated component styles without Tailwind's @apply */
+.card {
+  background-color: #fff;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.75rem; /* rounded-xl */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: box-shadow .2s;
 }
+.card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  padding: 1rem 1.25rem; /* px-5 py-4 */
+}
+.card-body {
+  padding: 1.25rem; /* p-5 */
+}
+ filter: blur(4px);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; /* gap-2 */
+  border-radius: 9999px; /* rounded-full */
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  font-weight: 500; /* font-medium */
+  transition: background-color .2s, color .2s, box-shadow .2s;
+}
+.btn-primary {
+  background-color: var(--primary, #f97316);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.btn-primary:hover {
+  background-color: var(--primary-dark, #ea580c);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  background-color: #f3f4f6; /* bg-gray-100 */
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+.data-table td {
+  padding: 0.75rem 1rem; /* px-4 py-3 */
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.data-table tr:nth-child(even) {
+  background-color: #f9fafb; /* bg-gray-50 */
+}
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+.modal-content {
+  background-color: #fff;
+  border-radius: 0.75rem;
+  padding: 1.5rem; /* p-6 */
+  max-width: 32rem; /* max-w-lg */
+  width: 90%; /* w-11/12 */
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
