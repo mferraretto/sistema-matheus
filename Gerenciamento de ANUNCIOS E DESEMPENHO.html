@@ -64,14 +64,15 @@
 <script type="module">
   import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
   import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-  import { firebaseConfig } from './firebase-config.js';
 
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  // pega do global
+  const cfg = window.firebaseConfig;
+  const app = getApps().length ? getApps()[0] : initializeApp(cfg);
   const auth = getAuth(app);
 
   onAuthStateChanged(auth, user => {
     if (!user) {
-      window.location.href = 'index.html?login=1';
+      location.href = 'index.html?login=1';
     } else {
       window.sistema = window.sistema || {};
       window.sistema.currentUserId = user.uid;
