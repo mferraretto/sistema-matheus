@@ -4,26 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MENTORIA FERRARETTO | Sistema de Precificação</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 1) Bibliotecas de terceiros -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Firebase SDK -->
+
+  <!-- 2) Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
-      <script src="firebase-config.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- 3) Config global do Firebase (não-module) -->
+  <script src="scripts/firebase-config.js"></script>
+
+  <!-- 4) CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
-  
 </head>
 <body class="bg-gray-50">
   <!-- Sidebar -->
@@ -2020,19 +2023,23 @@ function applyPriceUpdate(type) {
       }
     }, 300000); // 5 minutos
   </script>
-      <script type="module" src="bling.js"></script>
- <script src="shared.js"></script>
-<script>
-   document.querySelectorAll('.tooltip').forEach(el => {
-     const text = el.getAttribute('data-tooltip');
-     if (text) {
-       const span = document.createElement('span');
-       span.className = 'tooltip-text';
-       span.textContent = text;
-       el.appendChild(span);
-     }
-   });
- </script>
+        <script type="module" src="scripts/bling.js"></script>
+
+  <!-- 7) Helpers compartilhados -->
+  <script src="scripts/shared.js"></script>
+
+  <!-- 8) Tooltip init, event listeners genéricos, etc. -->
+  <script>
+    document.querySelectorAll('.tooltip').forEach(el => {
+      const text = el.getAttribute('data-tooltip');
+      if (text) {
+        const span = document.createElement('span');
+        span.className = 'tooltip-text';
+        span.textContent = text;
+        el.appendChild(span);
+      }
+    });
+  </script>
 
 </body>
 </html>
