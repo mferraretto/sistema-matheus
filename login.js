@@ -5,6 +5,19 @@ import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, o
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+window.setPassphrase = (senha) => {
+  sessionStorage.setItem('userPassphrase', senha);
+};
+
+// Recupera a senha (caso já tenha sido definida nesta aba)
+window.getPassphrase = () => {
+  return sessionStorage.getItem('userPassphrase');
+};
+
+// Limpa a senha quando o usuário sair
+window.clearPassphrase = () => {
+  sessionStorage.removeItem('userPassphrase');
+};
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) {
