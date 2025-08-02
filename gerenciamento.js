@@ -812,10 +812,9 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
     }
 
     // Close modal
-    window.fecharModal = function(modalId) {
-      document.getElementById(modalId).style.display = "none";
-    }
-
+   window.closeModal = (modalId) => {
+  document.getElementById(modalId).style.display = "none";
+};
     // Generate suggestions
     window.gerarSugestoes = async function () {
       const container = document.getElementById("sugestoesIA");
