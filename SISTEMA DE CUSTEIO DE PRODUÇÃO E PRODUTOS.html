@@ -4,17 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mentoria Ferraretto - Cálculo de Produção</title>
+ <!-- 1) Bibliotecas de terceiros -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <!-- Firebase SDK -->
+
+  <!-- 2) Firebase Compat SDKs (não-module) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-      <script src="firebase-config.js"></script>
 
+  <!-- 3) Config global do Firebase (define window.firebaseConfig) -->
+  <script src="scripts/firebase-config.js"></script>
 
-  <!-- Google Fonts -->
+  <!-- 4) Fontes e CSS -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
