@@ -1,3 +1,5 @@
+import { encryptString, decryptString } from './crypto.js';
+
 function toggleSidebar() {
      const sidebar = document.getElementById('sidebar') ||
                   document.querySelector('.sidebar');
@@ -137,15 +139,20 @@ function toggleSidebar() {
       }
 
       try {
-        await db.collection('chapasMDF').add({
-          comprimento,
-          largura,
-          espessura,
-          tipo,
-          preco,
-          uid: currentUser.uid,
-          createdAt: new Date().toISOString()
-        });
+        const pass = getPassphrase() || `chave-${currentUser.uid}`;
+        const createdAt = new Date().toISOString();
+        await db
+          .collection('uid')
+          .doc(currentUser.uid)
+          .collection('chapasMDF')
+          .add({
+            uid: currentUser.uid,
+            createdAt,
+            encrypted: await encryptString(
+              JSON.stringify({ comprimento, largura, espessura, tipo, preco, createdAt, uid: currentUser.uid }),
+              pass
+            )
+          });
         listarChapas();
         preencherSelectChapas();
         alert('✅ Chapa cadastrada com sucesso!');
@@ -157,14 +164,20 @@ function toggleSidebar() {
 
     async function listarChapas() {
       if (!currentUser) return;
-      const snapshot = await db.collection('chapasMDF')
-        .where('uid', '==', currentUser.uid)
+     const pass = getPassphrase() || `chave-${currentUser.uid}`;
+      const snapshot = await db
+        .collection('uid')
+        .doc(currentUser.uid)
+        .collection('chapasMDF')
         .orderBy('createdAt', 'desc')
         .get();
       chapas = [];
-      snapshot.forEach(doc => {
-        chapas.push({ id: doc.id, ...doc.data() });
-      });
+       for (const doc of snapshot.docs) {
+        const enc = doc.data().encrypted;
+        if (!enc) continue;
+        const data = JSON.parse(await decryptString(enc, pass));
+        chapas.push({ id: doc.id, ...data });
+      }
       const tabela = document.getElementById('tabelaChapas');
       tabela.innerHTML = '';
 
@@ -196,8 +209,13 @@ function toggleSidebar() {
     async function excluirChapa(id) {
       if (!confirm('Tem certeza que deseja excluir esta chapa?')) return;
         try {
-        await db.collection('chapasMDF').doc(id).delete();
-        listarChapas();
+    await db
+          .collection('uid')
+          .doc(currentUser.uid)
+          .collection('chapasMDF')
+          .doc(id)
+          .delete();
+             listarChapas();
         preencherSelectChapas();
         alert('✅ Chapa excluída com sucesso!');
       } catch (e) {
@@ -334,8 +352,17 @@ function toggleSidebar() {
       };
 
       try {
-        await db.collection('calculos').add(resumo);
-        listarCalculos();
+  const pass = getPassphrase() || `chave-${currentUser.uid}`;
+        await db
+          .collection('uid')
+          .doc(currentUser.uid)
+          .collection('calculos')
+          .add({
+            uid: currentUser.uid,
+            timestamp: resumo.timestamp,
+            encrypted: await encryptString(JSON.stringify(resumo), pass)
+          });
+           listarCalculos();
         alert('✅ Resumo salvo com sucesso!');
       } catch (e) {
         console.error('Erro ao salvar resumo', e);
@@ -345,8 +372,11 @@ function toggleSidebar() {
 
     async function listarCalculos() {
       if (!currentUser) return;
-      const snapshot = await db.collection('calculos')
-        .where('uid', '==', currentUser.uid)
+        const pass = getPassphrase() || `chave-${currentUser.uid}`;
+      const snapshot = await db
+        .collection('uid')
+        .doc(currentUser.uid)
+        .collection('calculos')
         .orderBy('timestamp', 'desc')
         .get();
       const tabela = document.getElementById('tabelaCalculos');
@@ -355,8 +385,10 @@ function toggleSidebar() {
         tabela.innerHTML = `<tr><td colspan="4" style="text-align:center;">Nenhum cálculo salvo</td></tr>`;
         return;
       }
-      snapshot.forEach(doc => {
-        const c = doc.data();
+     for (const doc of snapshot.docs) {
+        const enc = doc.data().encrypted;
+        if (!enc) continue;
+        const c = JSON.parse(await decryptString(enc, pass));
         const linha = document.createElement('tr');
         linha.innerHTML = `
           <td>${c.nomeProduto}</td>
@@ -365,14 +397,19 @@ function toggleSidebar() {
           <td><button class="btn-danger" onclick="excluirCalculo('${doc.id}')">🗑 Excluir</button></td>
         `;
         tabela.appendChild(linha);
-      });
+   }
     }
 
     async function excluirCalculo(id) {
       if (!confirm('Tem certeza que deseja excluir este cálculo?')) return;
       try {
-        await db.collection('calculos').doc(id).delete();
-        listarCalculos();
+ await db
+          .collection('uid')
+          .doc(currentUser.uid)
+          .collection('calculos')
+          .doc(id)
+          .delete();
+           listarCalculos();
         alert('✅ Cálculo excluído com sucesso!');
       } catch (e) {
         console.error('Erro ao excluir cálculo', e);
