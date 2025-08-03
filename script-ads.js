@@ -1,3 +1,5 @@
+import { encryptString, decryptString } from './crypto.js';
+
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -80,12 +82,28 @@ if (!user) {
   return;
 }
 
-// 🔐 Cria ou atualiza o documento da campanha com o UID
-await db.collection("uid").doc(user.uid).collection("ads").doc(nomeProduto).set({
+const pass = getPassphrase() || `chave-${user.uid}`;
 
-  produto: nomeProdutoRaw,
-  ultimaImportacao: new Date().toISOString()
-}, { merge: true });
+
+ // 🔐 Cria ou atualiza o documento da campanha com o UID
+await db
+  .collection("uid")
+  .doc(user.uid)
+  .collection("ads")
+  .doc(nomeProduto)
+  .set(
+    {
+      uid: user.uid,
+      encrypted: await encryptString(
+        JSON.stringify({
+          produto: nomeProdutoRaw,
+          ultimaImportacao: new Date().toISOString(),
+        }),
+        pass
+      ),
+    },
+    { merge: true }
+  );
 
 // 🔁 Agora salva o desempenho por data
 for (const linha of dados) {
@@ -111,7 +129,13 @@ for (const linha of dados) {
   };
 
   try {
-    await ref.set(registro, { merge: true });
+ await ref.set(
+      {
+        uid: user.uid,
+        encrypted: await encryptString(JSON.stringify(registro), pass),
+      },
+      { merge: true }
+    );
     console.log("✅ Salvo:", nomeProduto, dataFormatada);
   } catch (erro) {
     console.error("❌ Erro ao salvar:", erro);
@@ -129,18 +153,25 @@ for (const linha of dados) {
 // 🔽 Aqui fora da função importarShopeeAds()
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
- const user = firebase.auth().currentUser;
+  const user = firebase.auth().currentUser;
   if (!user) return;
-  const campanhasSnap = await db.collection('uid').doc(user.uid).collection('ads').get();
+const pass = getPassphrase() || `chave-${user.uid}`;
+  const campanhasSnap = await db
+    .collection('uid')
+    .doc(user.uid)
+    .collection('ads')
+    .get();
   const dadosPorData = {};
   for (const campDoc of campanhasSnap.docs) {
     const desempenhoSnap = await campDoc.ref.collection('desempenho').get();
-    desempenhoSnap.forEach(doc => {
-      const d = doc.data();
+   for (const doc of desempenhoSnap.docs) {
+      const enc = doc.data().encrypted;
+      if (!enc) continue;
+      const d = JSON.parse(await decryptString(enc, pass));
       if (!dadosPorData[d.data]) dadosPorData[d.data] = { gasto: 0, receita: 0 };
       dadosPorData[d.data].gasto += d.gasto;
       dadosPorData[d.data].receita += d.receita;
-    });
+     }
   }
 
   const labels = Object.keys(dadosPorData).sort();
