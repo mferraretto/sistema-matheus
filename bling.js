@@ -9,7 +9,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function getStoredApiKey() {
-  const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
+  const uid = auth.currentUser?.uid || window.sistema?.uid;
   if (!uid) return null;
   if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
   try {
@@ -26,7 +26,7 @@ async function getStoredApiKey() {
 }
 
 async function saveApiKey(key) {
-  const uid = auth.currentUser?.uid || window.sistema?.currentUserId;
+  const uid = auth.currentUser?.uid || window.sistema?.uid;
   if (!uid) return;
   try {
     await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, getPassphrase() || `chave-${uid}`);
