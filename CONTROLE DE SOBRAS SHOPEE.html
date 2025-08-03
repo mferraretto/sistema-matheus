@@ -157,7 +157,7 @@
     // Inicialização mais robusta do Firebase
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const app = firebase.initializeApp(firebaseConfig);
+        const app = firebase.initializeApp(window.firebaseConfig);
         db = firebase.firestore(app);
         const auth = firebase.auth();
 
