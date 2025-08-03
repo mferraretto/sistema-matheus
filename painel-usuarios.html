@@ -53,8 +53,13 @@
       }
 
       try {
-        const doc = await db.collection('uid').doc(user.uid).get();
-        if (!doc.exists || doc.data().perfil !== 'ADM') {
+        const snap = await db.collection('uid').doc(user.uid).get();
+        const enc = snap.data()?.encrypted;
+        if (!enc) throw new Error('Sem dados');
+        const { decryptString } = await import('./crypto.js');
+        const pass = getPassphrase() || `chave-${user.uid}`;
+        const data = JSON.parse(await decryptString(enc, pass));
+        if (data.perfil !== 'ADM') {
           alert('Acesso permitido apenas para administradores.');
           window.location.href = 'index.html';
         }
@@ -73,7 +78,12 @@
       const perfil = document.getElementById("perfil").value;
 
       if (uid && nome) {
-        await db.collection("uid").doc(uid).set({ nome, perfil });
+const { encryptString } = await import('./crypto.js');
+        const pass = getPassphrase() || `chave-${uid}`;
+        await db.collection('uid').doc(uid).set({
+          uid,
+          encrypted: await encryptString(JSON.stringify({ nome, perfil }), pass)
+        });
         alert("Usuário salvo com sucesso!");
         carregarUsuarios();
       }
@@ -81,14 +91,18 @@
 
     async function carregarUsuarios() {
       lista.innerHTML = "";
+            const { decryptString } = await import('./crypto.js');
       const snapshot = await db.collection("uid").get();
-      snapshot.forEach(doc => {
-        const data = doc.data();
+       for (const doc of snapshot.docs) {
+        const enc = doc.data().encrypted;
+        if (!enc) continue;
+        const pass = getPassphrase() || `chave-${doc.id}`;
+        const data = JSON.parse(await decryptString(enc, pass));
         const item = document.createElement("li");
         item.className = "p-2 bg-gray-50 border rounded";
         item.innerText = `UID: ${doc.id} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
         lista.appendChild(item);
-      });
+    }
     }
 
     carregarUsuarios();
