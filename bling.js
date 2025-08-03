@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 
@@ -13,7 +13,7 @@ async function getStoredApiKey() {
   if (!uid) return null;
   if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
   try {
-    const data = await loadSecureDoc(db, 'blingKeys', uid, getPassphrase() || `chave-${uid}`);
+    const data = await loadSecureDoc(db, `uid/${uid}/blingKeys`, 'apiKey', getPassphrase() || `chave-${uid}`);
     if (data && data.key) {
       window.sistema = window.sistema || {};
       window.sistema.blingApiKey = data.key;
@@ -29,7 +29,7 @@ async function saveApiKey(key) {
   const uid = auth.currentUser?.uid || window.sistema?.uid;
   if (!uid) return;
   try {
-    await saveSecureDoc(db, 'blingKeys', uid, { key, uid }, getPassphrase() || `chave-${uid}`);
+    await saveSecureDoc(db, `uid/${uid}/blingKeys`, 'apiKey', { key, uid }, getPassphrase() || `chave-${uid}`);
     window.sistema = window.sistema || {};
     window.sistema.blingApiKey = key;
   } catch (err) {
@@ -37,6 +37,11 @@ async function saveApiKey(key) {
   }
 }
 export async function importarPedidosBling() {
+   const uid = auth.currentUser?.uid || window.sistema?.uid;
+  if (!uid) {
+    alert('Usuário não autenticado');
+    return;
+  }
   let apiKey = await getStoredApiKey();
   if (!apiKey) {
     apiKey = prompt('Informe sua API Key do Bling:');
@@ -73,7 +78,7 @@ const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
     for (const obj of pedidos) {
       const pedido = obj.pedido || obj;
       const numero = String(pedido.numero);
-      await setDoc(doc(db, 'pedidosBling', numero), pedido);
+  await saveSecureDoc(db, `uid/${uid}/pedidosBling`, numero, { ...pedido, uid }, getPassphrase() || `chave-${uid}`);
     }
 
     atualizarTabelaPedidos(pedidos);
@@ -89,7 +94,7 @@ const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
       for (const obj of pedidos) {
         const pedido = obj.pedido || obj;
         const numero = String(pedido.numero);
-        await setDoc(doc(db, 'pedidosBling', numero), pedido);
+        await saveSecureDoc(db, `uid/${uid}/pedidosBling`, numero, { ...pedido, uid }, getPassphrase() || `chave-${uid}`);
       }
 
       atualizarTabelaPedidos(pedidos);
