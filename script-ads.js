@@ -81,8 +81,8 @@ if (!user) {
 }
 
 // 🔐 Cria ou atualiza o documento da campanha com o UID
-await db.collection("ads").doc(nomeProduto).set({
-  uid: user.uid,
+await db.collection("uid").doc(user.uid).collection("ads").doc(nomeProduto).set({
+
   produto: nomeProdutoRaw,
   ultimaImportacao: new Date().toISOString()
 }, { merge: true });
@@ -90,6 +90,8 @@ await db.collection("ads").doc(nomeProduto).set({
 // 🔁 Agora salva o desempenho por data
 for (const linha of dados) {
   const ref = db
+    .collection("uid")
+    .doc(user.uid)
     .collection("ads")
     .doc(nomeProduto)
     .collection("desempenho")
@@ -127,8 +129,9 @@ for (const linha of dados) {
 // 🔽 Aqui fora da função importarShopeeAds()
 async function carregarGrafico() {
   const ctx = document.getElementById('graficoDesempenho').getContext('2d');
-  const campanhasSnap = await db.collection('ads').get();
-
+ const user = firebase.auth().currentUser;
+  if (!user) return;
+  const campanhasSnap = await db.collection('uid').doc(user.uid).collection('ads').get();
   const dadosPorData = {};
   for (const campDoc of campanhasSnap.docs) {
     const desempenhoSnap = await campDoc.ref.collection('desempenho').get();
