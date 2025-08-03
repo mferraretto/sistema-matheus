@@ -123,15 +123,19 @@
 };
 
 async function carregarProdutosSistema() {
- const user = firebase.auth().currentUser;
+  const user = firebase.auth().currentUser;
   if (!user) return;
-  const snap = await db.collection('uid').doc(user.uid).collection("products").get();
-  snap.forEach(doc => {
-    const data = doc.data();
+ const pass = getPassphrase() || `chave-${user.uid}`;
+  const { decryptString } = await import('./crypto.js');
+  const snap = await db.collection('uid').doc(user.uid).collection('products').get();
+  for (const doc of snap.docs) {
+    const enc = doc.data().encrypted;
+    if (!enc) continue;
+    const data = JSON.parse(await decryptString(enc, pass));
     if (data?.sku) {
       sistema.produtos.push(data);
     }
-  });
+  }
 }
 
 
@@ -218,12 +222,19 @@ await checkProducts();
     }
 
     async function checkProducts() {
-      const snap = await db.collection('products').get();
+ const user = firebase.auth().currentUser;
+      if (!user) return;
+      const pass = getPassphrase() || `chave-${user.uid}`;
+      const { decryptString } = await import('./crypto.js');
+      const snap = await db.collection('uid').doc(user.uid).collection('products').get();
       const systemSkus = new Set();
-      snap.forEach(doc => {
-        const sku = doc.data().sku;
+      for (const doc of snap.docs) {
+        const enc = doc.data().encrypted;
+        if (!enc) continue;
+        const data = JSON.parse(await decryptString(enc, pass));
+        const sku = data.sku;
         if (sku) systemSkus.add(String(sku).trim());
-      });
+      }
       const rows = document.querySelectorAll('#importedProductsTableBody tr');
       importedProducts.forEach((prod, idx) => {
         const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
