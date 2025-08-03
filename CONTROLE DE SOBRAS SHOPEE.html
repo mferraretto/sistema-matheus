@@ -370,7 +370,7 @@
     // FUNÇÕES DE NAVEGAÇÃO E INTERFACE
     // =============================================
     
-    function trocarAba(id) {
+    window.trocarAba = function trocarAba(id) {
       // Remove a classe 'active' de todas as abas
       document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
       
@@ -400,7 +400,8 @@
       if (id === 'graficos') {
         setTimeout(atualizarGraficos, 100);
       }
-    }
+        };
+
 
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE METAS
@@ -1610,7 +1611,7 @@ const dataInput = document.getElementById("dataFaturamento");
         console.error("Erro ao exportar JSON:", error);
       }
     }
-    async function analisarSobrasComIA() {
+    window.analisarSobrasComIA = async function analisarSobrasComIA() {
       try {
         const linhas = document.querySelectorAll("#tabelaSobras tbody tr");
         let dados = [];
@@ -1649,7 +1650,7 @@ const dataInput = document.getElementById("dataFaturamento");
         console.error("Erro IA sobras:", erro);
         document.getElementById("resultadoIA").innerText = "Erro ao analisar sobras com IA.";
       }
-    }
+   };
     async function analisarSobrasIA() {
       const prompt = `
     Sou um sistema de controle de sobras da Shopee. Com base nos dados abaixo, analise se os SKUs estão performando bem, identifique padrões incomuns e sugira ações como promoções, reposição ou atenção especial.
@@ -2037,14 +2038,12 @@ function filtrarPorSKU() {
   linha.style.display = corresponde && statusCorresponde ? '' : 'none';
   });
 }
-window.trocarAba = trocarAba;
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
 window.carregarControleVendas = carregarControleVendas;
 window.carregarAcompanhamento = carregarAcompanhamento;
 window.mostrarDetalhesFaturamento = mostrarDetalhesFaturamento;
 window.excluirFaturamento = excluirFaturamento;
 window.analisarSobrasIA = analisarSobrasIA;
-window.analisarSobrasComIA = analisarSobrasComIA;
 window.exportarJSON = exportarJSON;
 window.verificarConexao = verificarConexao;
 window.editarMeta = editarMeta;
