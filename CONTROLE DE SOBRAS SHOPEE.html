@@ -1043,84 +1043,7 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
         atualizarGraficos();
       }
     
-    async function analisarSobrasComIA() {
-        const btn = document.getElementById('btnAnalisarIA');
-        const originalText = btn.innerHTML;
-        
-        try {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analisando...';
-            btn.disabled = true;
 
-            // Preparar prompt com dados resumidos
-    const prompt = `### ANALISAR DESEMPENHO DE SKUs SHOPEE
-
-Abaixo estão os dados de performance de estoque da Shopee:
-${JSON.stringify(window.dadosParaAnalise, null, 2)}
-
-Quero que você atue como um analista profissional de vendas.
-
-**Objetivo:** Gerar um relatório claro, estruturado e com aparência profissional para orientar decisões de estoque e promoção.
-
-**Regras de resposta:**
-- Use **títulos e subtítulos claros** em Markdown.
-- Agrupe os SKUs em 3 seções: 
-  1. SKUs com Alta Performance
-  2. SKUs Próximos à Meta
-  3. SKUs com Baixa Performance
-- Dê **ações sugeridas** para cada grupo.
-- Crie um bloco final com **Resumo das Ações Recomendadas**.
-- Ao final, inclua a **data da análise** e um rodapé como "*Relatório gerado automaticamente por IA de Estoque Shopee*".
-
-**Exemplo de estilo desejado:**
-
-### 📈 Análise de Performance de SKUs - Shopee  
-**📅 Data:** [coloque data aqui]
-
-#### ✅ 1. SKUs com Alta Performance
-- SKU123: descrição...
-- Ações: ...
-
-#### 🟡 2. SKUs Próximos à Meta
-- SKU456: descrição...
-- Ações: ...
-
-#### 🔴 3. SKUs com Baixa Performance
-- SKU789: descrição...
-- Ações: ...
-
-#### 🧠 Resumo de Ações Prioritárias
-1. Ação 1...
-2. Ação 2...
-
-**Próxima revisão sugerida:** daqui a 7 dias
-
----
-
-Gere a resposta nesse formato. Seja objetivo, mas estratégico.`;
-
-            const resposta = await consultarDeepSeek(prompt);
-            
-            // Exibir resultado
-            document.getElementById('totalSobra').innerHTML += `
-      <div class="card" style="margin-top: 1.5rem;">
-        <div class="card-header">
-          <i class="fas fa-robot"></i>
-          <h3>Análise Preditiva de Estoque</h3>
-        </div>
-        <div style="padding: 1.5rem; background: #f8f9fa; border-radius: 0 0 12px 12px;">
-          ${resposta}
-        </div>
-      </div>
-    `;
-        } catch (error) {
-            mostrarErro(`Erro na análise: ${error.message}`);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-    
-    
     function limparFiltros() {
       document.getElementById("filtroSKU").value = "";
       document.getElementById("filtroStatus").value = "";
@@ -2111,10 +2034,22 @@ function filtrarPorSKU() {
 
     const statusCorresponde = !filtroStatus || status === filtroStatus;
 
-    linha.style.display = corresponde && statusCorresponde ? '' : 'none';
+  linha.style.display = corresponde && statusCorresponde ? '' : 'none';
   });
 }
-
+window.trocarAba = trocarAba;
+window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
+window.carregarControleVendas = carregarControleVendas;
+window.carregarAcompanhamento = carregarAcompanhamento;
+window.mostrarDetalhesFaturamento = mostrarDetalhesFaturamento;
+window.excluirFaturamento = excluirFaturamento;
+window.analisarSobrasIA = analisarSobrasIA;
+window.analisarSobrasComIA = analisarSobrasComIA;
+window.exportarJSON = exportarJSON;
+window.verificarConexao = verificarConexao;
+window.editarMeta = editarMeta;
+window.excluirMeta = excluirMeta;
+window.analisarTendenciasIA = analisarTendenciasIA;
 </script>
 <script src="shared.js"></script>
 <script>
