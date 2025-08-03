@@ -29,3 +29,12 @@ const data = JSON.parse(plaintext);
 
   return data;
 }
+
+// Helpers enforcing the standard `uid/<uid>/collection` pattern
+export async function saveUserDoc(db, uid, collection, id, data, passphrase) {
+  return saveSecureDoc(db, `uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
+}
+
+export async function loadUserDoc(db, uid, collection, id, passphrase) {
+  return loadSecureDoc(db, `uid/${uid}/${collection}`, id, passphrase);
+}
