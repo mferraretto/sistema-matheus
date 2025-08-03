@@ -16,22 +16,23 @@ onAuthStateChanged(auth, async (user) => {
   tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">Carregando...</td></tr>';
 
   try {
+        const pass = getPassphrase() || `chave-${user.uid}`;
     const campanhasSnap = await getDocs(collection(db, `uid/${user.uid}/ads`));
     tbody.innerHTML = '';
 
     for (const campDoc of campanhasSnap.docs) {
-      const dadosCampanha = campDoc.data();
-
-      // 🛡️ Filtra apenas as campanhas do usuário logado
-      if (dadosCampanha.uid && dadosCampanha.uid !== user.uid) continue;
+     const dadosCampanha = await loadUserDoc(db, user.uid, 'ads', campDoc.id, pass);
+      if (!dadosCampanha) continue;
 
       const desempenhoSnap = await getDocs(collection(db, `uid/${user.uid}/ads/${campDoc.id}/desempenho`));
-      desempenhoSnap.forEach(doc => {
-        const d = doc.data();
+      for (const docSnap of desempenhoSnap.docs) {
+        const enc = docSnap.data().encrypted;
+        if (!enc) continue;
+        const d = JSON.parse(await decryptString(enc, pass));
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-2">${d.data || doc.id}</td>
-          <td class="px-4 py-2">${campDoc.id}</td>
+<td class="px-4 py-2">${d.data || docSnap.id}</td>
+<td class="px-4 py-2">${campDoc.id}</td>
           <td class="px-4 py-2">${d.produto || ''}</td>
           <td class="px-4 py-2">${d.impressoes || 0}</td>
           <td class="px-4 py-2">${d.cliques || 0}</td>
@@ -40,7 +41,7 @@ onAuthStateChanged(auth, async (user) => {
           <td class="px-4 py-2">${d.vendas || 0}</td>
           <td class="px-4 py-2">${(parseFloat(d.roas) || 0).toFixed(2)}</td>`;
         tbody.appendChild(tr);
-      });
+   }
     }
 
     if (tbody.innerHTML === '') {
