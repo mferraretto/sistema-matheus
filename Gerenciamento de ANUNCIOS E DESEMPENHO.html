@@ -74,7 +74,8 @@
       window.location.href = 'index.html?login=1';
     } else {
       window.sistema = window.sistema || {};
-      window.sistema.currentUserId = user.uid;
+  // Mantém o UID disponível globalmente para reutilização
+      window.sistema.uid = user.uid;
       console.log('Usuário logado:', user.email);
     }
   });
