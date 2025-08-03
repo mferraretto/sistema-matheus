@@ -30,9 +30,9 @@ export async function registrarSaque() {
   const pass = getPassphrase() || `chave-${uid}`;
   const lojaId = loja.replace(/[.#$/\[\]]/g, '_');
 
-  await saveSecureDoc(db, `usuarios/${uid}/saques/${data}/lojas`, lojaId, { loja, valor, uid }, pass);
+  await saveSecureDoc(db, `uid/${uid}/saques/${data}/lojas`, lojaId, { loja, valor, uid }, pass);
 
-  const snap = await getDocs(collection(db, `usuarios/${uid}/saques/${data}/lojas`));
+  const snap = await getDocs(collection(db, `uid/${uid}/saques/${data}/lojas`));
   let total = 0;
   for (const d of snap.docs) {
     const enc = d.data().encrypted;
@@ -42,10 +42,10 @@ export async function registrarSaque() {
     total += obj.valor || 0;
   }
 
-  const existente = await loadSecureDoc(db, `usuarios/${uid}/saques`, data, pass);
+  const existente = await loadSecureDoc(db, `uid/${uid}/saques`, data, pass);
   const pago = existente?.pago || false;
 
-  await saveSecureDoc(db, `usuarios/${uid}/saques`, data, { data, valorTotal: total, pago, uid }, pass);
+  await saveSecureDoc(db, `uid/${uid}/saques`, data, { data, valorTotal: total, pago, uid }, pass);
 
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
@@ -61,14 +61,14 @@ export async function carregarSaques() {
   const modo = document.getElementById('modoVisualizacaoSaques')?.value || 'cards';
   const uid = auth.currentUser.uid;
   const pass = getPassphrase() || `chave-${uid}`;
-  const snap = await getDocs(collection(db, `usuarios/${uid}/saques`));
+  const snap = await getDocs(collection(db, `uid/${uid}/saques`));
   container.innerHTML = '';
   container.className = modo === 'cards'
     ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4'
     : 'p-4 space-y-2';
 
   for (const docSnap of snap.docs) {
-    const dados = await loadSecureDoc(db, `usuarios/${uid}/saques`, docSnap.id, pass);
+    const dados = await loadSecureDoc(db, `uid/${uid}/saques`, docSnap.id, pass);
     if (!dados) continue;
     if (filtroMes) {
       const [anoF, mesF] = filtroMes.split('-');
@@ -139,7 +139,7 @@ export async function mostrarDetalhesSaque(dataRef) {
 
   const uid = auth.currentUser.uid;
   const pass = getPassphrase() || `chave-${uid}`;
-  const snap = await getDocs(collection(db, `usuarios/${uid}/saques/${dataRef}/lojas`));
+  const snap = await getDocs(collection(db, `uid/${uid}/saques/${dataRef}/lojas`));
   let html = '';
   for (const docSnap of snap.docs) {
     const enc = docSnap.data().encrypted;
@@ -156,10 +156,10 @@ export async function mostrarDetalhesSaque(dataRef) {
 export async function alternarPago(dataRef) {
   const uid = auth.currentUser.uid;
   const pass = getPassphrase() || `chave-${uid}`;
-  const dados = await loadSecureDoc(db, `usuarios/${uid}/saques`, dataRef, pass);
+  const dados = await loadSecureDoc(db, `uid/${uid}/saques`, dataRef, pass);
   if (!dados) return;
   dados.pago = !dados.pago;
-  await saveSecureDoc(db, `usuarios/${uid}/saques`, dataRef, { ...dados, uid }, pass);
+  await saveSecureDoc(db, `uid/${uid}/saques`, dataRef, { ...dados, uid }, pass);
   await carregarSaques();
 }
 
