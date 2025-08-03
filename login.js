@@ -5,19 +5,8 @@ import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, o
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-window.setPassphrase = (senha) => {
-  sessionStorage.setItem('userPassphrase', senha);
-};
-
-// Recupera a senha (caso já tenha sido definida nesta aba)
-window.getPassphrase = () => {
-  return sessionStorage.getItem('userPassphrase');
-};
-
-// Limpa a senha quando o usuário sair
-window.clearPassphrase = () => {
-  sessionStorage.removeItem('userPassphrase');
-};
+// Delegates passphrase helpers to firebase-config.js implementations
+const { setPassphrase, getPassphrase, clearPassphrase } = window;
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) {
@@ -108,10 +97,10 @@ function showUserArea(user) {
 
   const senha = getPassphrase();
   if (!senha) {
-    const jaExibiuModal = sessionStorage.getItem('passphraseModalShown');
+    const jaExibiuModal = localStorage.getItem('passphraseModalShown');
     if (!jaExibiuModal) {
       openModal('passphraseModal');
-      sessionStorage.setItem('passphraseModalShown', 'true');
+      localStorage.setItem('passphraseModalShown', 'true');
     }
   }
 }
@@ -124,7 +113,7 @@ function hideUserArea() {
   clearPassphrase();
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
-  sessionStorage.removeItem('passphraseModalShown');
+  localStorage.removeItem('passphraseModalShown');
 }
 
 window.requireLogin = (event) => {
