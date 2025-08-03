@@ -19,7 +19,8 @@ export async function carregarPedidos() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
-    const snap = await getDocs(collection(db, 'pedidosBling'));
+const uid = auth.currentUser.uid;
+    const snap = await getDocs(collection(db, `uid/${uid}/pedidosBling`));
     const pedidos = snap.docs.map(d => d.data());
     tbody.innerHTML = '';
     if (window.atualizarTabelaPedidos) {
