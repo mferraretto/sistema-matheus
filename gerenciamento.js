@@ -2,7 +2,7 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs,
-  query, where, orderBy, limit
+  query, where, orderBy, limit, collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 
@@ -37,7 +37,7 @@ onAuthStateChanged(auth, async user => {
    setPassphrase(`chave-${user.uid}`);
 
   try {
-    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    const snap = await getDoc(doc(db, 'uid', user.uid));
     isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
   } catch (err) {
     console.error('Erro ao verificar perfil do usuário:', err);
@@ -214,7 +214,7 @@ window.salvarNoFirebase = async () => {
     const user = auth.currentUser;
 
     for (const [id, produto] of Object.entries(window.produtos)) {
-      const ref = doc(db, "anuncios", id);
+      const ref = doc(db, "uid", user.uid, "anuncios", id);
       const snapshot = await getDoc(ref);
 
       let dadosAntigos = {};
@@ -246,9 +246,9 @@ window.salvarNoFirebase = async () => {
       // 🔹 Salvar documento principal
       if (salvarPai) {
         dadosCompletos.uid = dadosCompletos.uid || user.uid;
-        await saveSecureDoc(db, 'anuncios', id, limparUndefined(dadosCompletos), getPassphrase());
+       await saveSecureDoc(db, `uid/${user.uid}/anuncios`, id, limparUndefined(dadosCompletos), getPassphrase());
         if (registrarHistorico) {
-          await addDoc(collection(db, "atualizacoes"), {
+          await addDoc(collection(db, `uid/${user.uid}/atualizacoes`), {
             id,
             uid: dadosCompletos.uid,
             dataHora: new Date().toISOString(),
@@ -262,12 +262,12 @@ window.salvarNoFirebase = async () => {
 
   // 🔸 Salvar variações
 for (const [varianteId, variante] of Object.entries(variantes)) {
-  const varianteRef = doc(db, `anuncios/${id}/variantes/${varianteId}`);
+  const varianteRef = doc(db, `uid/${user.uid}/anuncios/${id}/variantes/${varianteId}`);
 
   if (variante.dataReferencia) {
     // Só salva desempenho se o anúncio já existir
     if (snapshot.exists()) {
-      const desempenhoRef = doc(db, `anuncios/${id}/desempenho/${variante.dataReferencia}`);
+      const desempenhoRef = doc(db, `uid/${user.uid}/anuncios/${id}/desempenho/${variante.dataReferencia}`);
       const { dataReferencia, ...metricas } = variante;
       await setDoc(desempenhoRef, limparUndefined(metricas));
     } else {
@@ -347,18 +347,11 @@ window.carregarAnuncios = async function () {
 
   try {
     const user = auth.currentUser;
-    let q = collection(db, "anuncios");
-        let querySnapshot;
+  let querySnapshot;
     if (!isAdmin) {
-      q = query(q, where("uid", "==", user.uid));
-      querySnapshot = await getDocs(q);
-      // Fallback para anúncios legados sem campo uid fora do payload
-      if (querySnapshot.empty) {
-        q = collection(db, "anuncios");
-        querySnapshot = await getDocs(q);
-      }
+      querySnapshot = await getDocs(collection(db, `uid/${user.uid}/anuncios`));
     } else {
-      querySnapshot = await getDocs(q);
+      querySnapshot = await getDocs(collectionGroup(db, 'anuncios'));
     }
 
     tbody.innerHTML = '';
@@ -370,13 +363,13 @@ window.carregarAnuncios = async function () {
 
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
-      const data = await loadSecureDoc(db, 'anuncios', id, getPassphrase()) || {};
+      const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, getPassphrase()) || {};
        if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
 
       // 🔄 Buscar subcoleção de variantes
-      const variantesRef = collection(db, `anuncios/${id}/variantes`);
+      const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
       const snap = await getDocs(variantesRef);
       const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
 
@@ -387,7 +380,7 @@ for (const v of variantes) {
   if (!sku) continue;
 
   try {
-    const refProd = collection(db, "products");
+    const refProd = collection(db, `uid/${user.uid}/products`);
     const qProd = query(refProd, where("sku", "==", sku));
     const snapshotProd = await getDocs(qProd);
 
@@ -421,7 +414,7 @@ for (const v of variantes) {
 
 
       // 🔄 Buscar últimos 7 dias da subcoleção desempenho
-      const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
+      const desempenhoRef = collection(db, `uid/${user.uid}/anuncios/${id}/desempenho`);
       const desempenhoQuery = query(desempenhoRef, orderBy("__name__", "desc"), limit(7));
       const desempenhoSnap = await getDocs(desempenhoQuery);
 
@@ -535,7 +528,7 @@ tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
 
 window.verDetalhesAnuncio = async function (id) {
   try {
-    const docRef = doc(db, "anuncios", id);
+    const docRef = doc(db, "uid", auth.currentUser.uid, "anuncios", id);
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) {
       showNotification("❌ Anúncio não encontrado", "error");
@@ -550,12 +543,12 @@ window.verDetalhesAnuncio = async function (id) {
     }
 
     // 🔍 Buscar variantes
-    const variantesRef = collection(db, `anuncios/${id}/variantes`);
+    const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
     const variantesSnap = await getDocs(variantesRef);
     const variantes = variantesSnap.docs.map(doc => doc.data());
 
     // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
-const desempenhoRef = collection(db, `anuncios/${id}/desempenho`);
+const desempenhoRef = collection(db, `uid/${user.uid}/anuncios/${id}/desempenho`);
 const desempenhoSnap = await getDocs(desempenhoRef);
 let desempenho = {};
 
@@ -769,9 +762,11 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
 
       try {
   const user = auth.currentUser;
-        let qRef = collection(db, "atualizacoes");
+        let qRef;
         if (!isAdmin) {
-          qRef = query(qRef, where("uid", "==", user.uid));
+          qRef = collection(db, `uid/${user.uid}/atualizacoes`);
+        } else {
+          qRef = collectionGroup(db, 'atualizacoes');
         }
         const q = await getDocs(qRef);
         const historico = [];
@@ -823,9 +818,11 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
       
       try {
  const user = auth.currentUser;
-        let q = collection(db, "anuncios");
+       let q;
         if (!isAdmin) {
-          q = query(q, where("uid", "==", user.uid));
+          q = collection(db, `uid/${user.uid}/anuncios`);
+        } else {
+          q = collectionGroup(db, 'anuncios');
         }
         const querySnapshot = await getDocs(q);
         const sugestoes = [];
@@ -951,12 +948,15 @@ window.carregarEvolucao = async function () {
 
   try {
     const user = auth.currentUser;
-    let qAnuncios = collection(db, "anuncios");
-    let qHistorico = collection(db, "atualizacoes");
+    let qAnuncios;
+    let qHistorico;
 
     if (!isAdmin) {
-      qAnuncios = query(qAnuncios, where("uid", "==", user.uid));
-      qHistorico = query(qHistorico, where("uid", "==", user.uid));
+      qAnuncios = collection(db, `uid/${user.uid}/anuncios`);
+      qHistorico = collection(db, `uid/${user.uid}/atualizacoes`);
+    } else {
+      qAnuncios = collectionGroup(db, 'anuncios');
+      qHistorico = collectionGroup(db, 'atualizacoes');
     }
 
     const [anunciosSnap, historicoSnap] = await Promise.all([
@@ -981,7 +981,8 @@ window.carregarEvolucao = async function () {
       const vendas = a.vendasPago || 0;
       const conversao = a.conversaoPago || 0;
 
-      const variantesSnap = await getDocs(collection(db, `anuncios/${doc.id}/variantes`));
+const ownerUid = doc.ref.parent.parent.id;
+      const variantesSnap = await getDocs(collection(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`));
       const variantes = variantesSnap.docs.map(v => v.data());
 
       const historico = (historicoPorId[id] || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
