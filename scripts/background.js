@@ -12,7 +12,7 @@ chrome.runtime.onMessage.addListener(async (msg) => {
 
     for (const pedido of pedidos) {
       try {
-        const ref = doc(collection(db, `usuarios/${uid}/pedidosShopee`), pedido.id);
+        const ref = doc(collection(db, `uid/${uid}/pedidosShopee`), pedido.id);
         const encrypted = await encryptString(JSON.stringify(pedido), passphrase);
         await setDoc(ref, { encrypted });
       } catch (e) {
