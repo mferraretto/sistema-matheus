@@ -189,6 +189,7 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
     document.getElementById(t).innerHTML = h;
     if (t === 'lista-precos') {
       const s = document.createElement('script');
+            s.type = 'module';
       s.src = `precificacao-tabs/${t}.js`;
       document.body.appendChild(s);
     }
