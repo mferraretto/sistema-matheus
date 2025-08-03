@@ -16,16 +16,16 @@ onAuthStateChanged(auth, async (user) => {
   tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">Carregando...</td></tr>';
 
   try {
-    const campanhasSnap = await getDocs(collection(db, 'ads'));
+    const campanhasSnap = await getDocs(collection(db, `uid/${user.uid}/ads`));
     tbody.innerHTML = '';
 
     for (const campDoc of campanhasSnap.docs) {
       const dadosCampanha = campDoc.data();
 
       // 🛡️ Filtra apenas as campanhas do usuário logado
-      if (dadosCampanha.uid !== user.uid) continue;
+      if (dadosCampanha.uid && dadosCampanha.uid !== user.uid) continue;
 
-      const desempenhoSnap = await getDocs(collection(db, `ads/${campDoc.id}/desempenho`));
+      const desempenhoSnap = await getDocs(collection(db, `uid/${user.uid}/ads/${campDoc.id}/desempenho`));
       desempenhoSnap.forEach(doc => {
         const d = doc.data();
         const tr = document.createElement('tr');
