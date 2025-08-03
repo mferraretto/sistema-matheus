@@ -47,7 +47,10 @@ window.openModal = (id) => {
 };
 
 window.closeModal = (id) => {
-  document.getElementById(id).style.display = 'none';
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'none';
+  }
 };
 
 window.openRecoverModal = () => {
