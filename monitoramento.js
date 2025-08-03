@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { encryptString, decryptString } from './crypto.js';
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -16,7 +16,7 @@ onAuthStateChanged(auth, async user => {
      return;
   }
   try {
-    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    const snap = await getDoc(doc(db, 'uid', user.uid));
     isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
   } catch (err) {
     console.error('Erro ao verificar perfil do usuário:', err);
@@ -43,17 +43,16 @@ const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComp
 }
 
 
-async function registrarHistorico(id, dadosAntigos, dadosNovos) {
+async function registrarHistorico(uid, id, dadosAntigos, dadosNovos) {
   const payload = {
     id,
     dataHora: new Date().toISOString(),
     dadosAntigos,
     dadosNovos,
-    uid: auth.currentUser.uid
-   };
+  uid
+  };
   const encrypted = await encryptString(JSON.stringify(payload), getPassphrase());
- // Salva o uid fora da carga criptografada para possibilitar filtragem
-  await addDoc(collection(db, 'monitoramento_historico'), { uid: payload.uid, encrypted });
+ await addDoc(collection(db, `uid/${uid}/monitoramento_historico`), { encrypted });;
 }
 
 async function monitorar() {
@@ -63,22 +62,19 @@ async function monitorar() {
     return;
   }
 
-  let qAnuncios = collection(db, 'anuncios');
-    let snap;
+   let snap;
+
   if (!isAdmin) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
-     snap = await getDocs(qAnuncios);
-    if (snap.empty) {
-      qAnuncios = collection(db, 'anuncios');
-      snap = await getDocs(qAnuncios);
-    }
+      snap = await getDocs(collection(db, `uid/${user.uid}/anuncios`));
   } else {
-    snap = await getDocs(qAnuncios);
+    snap = await getDocs(collectionGroup(db, 'anuncios'));
   }
 
   for (const docSnap of snap.docs) {
-    const dados = await loadSecureDoc(db, 'anuncios', docSnap.id, getPassphrase()) || {};
-     if (!isAdmin && dados.uid && dados.uid !== user.uid) {
+  const ownerUid = docSnap.ref.parent.parent.id;
+    const dados = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, docSnap.id, getPassphrase()) || {};
+    if (!isAdmin && ownerUid !== user.uid) {
       continue;
     }
     const termo = (dados.nome || '').trim();  // <- CORRIGIDO
@@ -90,7 +86,7 @@ async function monitorar() {
     if (!resultados.length) continue;
 
     const item = resultados[0];
-    const ref = doc(db, 'monitoramento', docSnap.id);
+    const ref = doc(db, 'uid', ownerUid, 'monitoramento', docSnap.id);
     const antigaSnap = await getDoc(ref);
  let antigos = {};
     if (antigaSnap.exists()) {
@@ -112,12 +108,12 @@ async function monitorar() {
     if (antigaSnap.exists()) {
       const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
       if (mudou) {
-        await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, getPassphrase());
-        await registrarHistorico(docSnap.id, antigos, dadosNovos);
+         await saveSecureDoc(db, `uid/${ownerUid}/monitoramento`, docSnap.id, dadosNovos, getPassphrase());
+        await registrarHistorico(ownerUid, docSnap.id, antigos, dadosNovos);
       }
     } else {
-      await saveSecureDoc(db, 'monitoramento', docSnap.id, dadosNovos, getPassphrase());
-      await registrarHistorico(docSnap.id, {}, dadosNovos);
+      await saveSecureDoc(db, `uid/${ownerUid}/monitoramento`, docSnap.id, dadosNovos, getPassphrase());
+      await registrarHistorico(ownerUid, docSnap.id, {}, dadosNovos);
     }
   }
 
@@ -163,17 +159,11 @@ async function carregarHistorico() {
   const container = document.getElementById('historicoMonitoramento');
   container.innerHTML = '<div class="text-center">Carregando...</div>';
   const user = auth.currentUser;
-  let qHist = collection(db, 'monitoramento_historico');
-    let snap;
+  let snap;
   if (!isAdmin) {
-    qHist = query(qHist, where('uid', '==', user.uid));
-     snap = await getDocs(qHist);
-    if (snap.empty) {
-      qHist = collection(db, 'monitoramento_historico');
-      snap = await getDocs(qHist);
-    }
+    snap = await getDocs(collection(db, `uid/${user.uid}/monitoramento_historico`));
   } else {
-    snap = await getDocs(qHist);
+    snap = await getDocs(collectionGroup(db, 'monitoramento_historico'));
   }
     const registros = [];
   for (const d of snap.docs) {
@@ -181,9 +171,7 @@ async function carregarHistorico() {
     if (!enc) continue;
     const txt = await decryptString(enc, getPassphrase());
 const obj = JSON.parse(txt);
-    if (!isAdmin && obj.uid && obj.uid !== user.uid) {
-      continue;
-    }
+    if (isAdmin) obj.uid = d.ref.parent.parent.id;
     registros.push(obj);
   }
   const linhas = registros.map(r => {
