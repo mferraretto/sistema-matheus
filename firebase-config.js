@@ -1,6 +1,6 @@
 // Firebase configuration
 // Fill these values via environment variables or a protected configuration not checked into version control.
-const firebaseConfig = {
+export const firebaseConfig = {
       apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
       authDomain: "matheus-35023.firebaseapp.com",
       projectId: "matheus-35023",
@@ -11,19 +11,19 @@ const firebaseConfig = {
    };
 
 // Utility functions for storing the passphrase securely
-function setPassphrase(pass) {
+export function setPassphrase(pass) {
   if (typeof localStorage !== 'undefined' && pass) {
     localStorage.setItem('sistemaPassphrase', pass);
   }
 }
 
-function getPassphrase() {
+export function getPassphrase() {
   return typeof localStorage !== 'undefined'
     ? localStorage.getItem('sistemaPassphrase')
     : null;
 }
 
-function clearPassphrase() {
+export function clearPassphrase() {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('sistemaPassphrase');
   }
