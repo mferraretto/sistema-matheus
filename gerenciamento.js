@@ -1,7 +1,7 @@
 // Firebase configuration and initialization
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
-  getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs,
+  getFirestore, doc, getDoc, collection, addDoc, getDocs,
   query, where, orderBy, limit, collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
@@ -262,19 +262,29 @@ window.salvarNoFirebase = async () => {
 
   // 🔸 Salvar variações
 for (const [varianteId, variante] of Object.entries(variantes)) {
-  const varianteRef = doc(db, `uid/${user.uid}/anuncios/${id}/variantes/${varianteId}`);
 
   if (variante.dataReferencia) {
     // Só salva desempenho se o anúncio já existir
     if (snapshot.exists()) {
-      const desempenhoRef = doc(db, `uid/${user.uid}/anuncios/${id}/desempenho/${variante.dataReferencia}`);
       const { dataReferencia, ...metricas } = variante;
-      await setDoc(desempenhoRef, limparUndefined(metricas));
+await saveSecureDoc(
+        db,
+        `uid/${user.uid}/anuncios/${id}/desempenho`,
+        dataReferencia,
+        limparUndefined(metricas),
+        getPassphrase()
+      );
     } else {
       console.warn(`❌ Desempenho ignorado - anúncio ${id} não existe no Firebase.`);
     }
   } else {
-    await setDoc(varianteRef, limparUndefined(variante));
+ await saveSecureDoc(
+      db,
+      `uid/${user.uid}/anuncios/${id}/variantes`,
+      varianteId,
+      limparUndefined(variante),
+      getPassphrase()
+    );
   }
 }
 
