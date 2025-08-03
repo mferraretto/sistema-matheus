@@ -93,8 +93,8 @@ function showUserArea(user) {
   document.getElementById('logoutBtn').classList.remove('hidden');
 
   window.sistema = window.sistema || {};
-  window.sistema.currentUserId = user.uid;
-
+ // Guarda o UID de forma unificada para outras abas/extensões
+  window.sistema.uid = user.uid;
   const senha = getPassphrase();
   if (!senha) {
     const jaExibiuModal = localStorage.getItem('passphraseModalShown');
@@ -109,7 +109,7 @@ function showUserArea(user) {
 function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
-  if (window.sistema) delete window.sistema.currentUserId;
+  if (window.sistema) delete window.sistema.uid;
   clearPassphrase();
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
