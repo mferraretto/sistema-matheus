@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, collectionGroup } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { decryptString } from './crypto.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
@@ -49,14 +49,14 @@ async function carregarResumoFaturamento(uid, isAdmin) {
 let totalLiquido = 0;
   let totalBruto = 0;
   let pedidos = 0;
-  const snap = await getDocs(collection(db, 'faturamento'));
+ const snap = isAdmin
+    ? await getDocs(collectionGroup(db, 'faturamento'))
+    : await getDocs(collection(db, `uid/${uid}/faturamento`));
   for (const docSnap of snap.docs) {
     const [ano, mes] = docSnap.id.split('-');
     if (`${ano}-${mes}` !== mesAtual) continue;
-    let subRef = collection(db, `faturamento/${docSnap.id}/lojas`);
-    if (!isAdmin && uid) {
-      subRef = query(subRef, where('uid', '==', uid));
-    }
+  const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
     for (const s of subSnap.docs) {
       let d = s.data();
@@ -102,14 +102,14 @@ async function carregarTopSkus(uid, isAdmin) {
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7);
   const mapa = {};
-  const snap = await getDocs(collection(db, 'skusVendidos'));
+const snap = isAdmin
+    ? await getDocs(collectionGroup(db, 'skusVendidos'))
+    : await getDocs(collection(db, `uid/${uid}/skusVendidos`));
   for (const docSnap of snap.docs) {
     const [ano, mes] = docSnap.id.split('-');
     if (`${ano}-${mes}` !== mesAtual) continue;
-    let listaRef = collection(db, `skusVendidos/${docSnap.id}/lista`);
-    if (!isAdmin && uid) {
-      listaRef = query(listaRef, where('uid', '==', uid));
-    }
+     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const listaRef = collection(db, `uid/${ownerUid}/skusVendidos/${docSnap.id}/lista`);
     const listaSnap = await getDocs(listaRef);
     listaSnap.forEach(s => {
       const d = s.data();
@@ -134,7 +134,7 @@ async function iniciarPainel(user) {
   let isAdmin = false;
   if (uid) {
     try {
-      const snap = await getDoc(doc(db, 'usuarios', uid));
+      const snap = await getDoc(doc(db, 'uid', uid));
       isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
     } catch (e) { console.error(e); }
   }
