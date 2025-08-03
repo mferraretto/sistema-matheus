@@ -1,12 +1,12 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Delegates passphrase helpers to firebase-config.js implementations
-const { setPassphrase, getPassphrase, clearPassphrase } = window;
+
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) {
