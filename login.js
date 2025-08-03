@@ -6,6 +6,7 @@ import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from '.
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let wasLoggedIn = false;
+let authListenerRegistered = false;
 
 
 function showToast(message, type = 'success') {
@@ -39,7 +40,10 @@ window.savePassphrase = () => {
 };
 
 window.openModal = (id) => {
-  document.getElementById(id).style.display = 'block';
+ const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'block';
+  }
 };
 
 window.closeModal = (id) => {
@@ -126,7 +130,9 @@ window.requireLogin = (event) => {
 };
 
 function checkLogin() {
- onAuthStateChanged(auth, user => {
+ if (authListenerRegistered) return;
+  authListenerRegistered = true;
+  onAuthStateChanged(auth, user => {
     if (user) {
       showUserArea(user);
       wasLoggedIn = true;
@@ -141,8 +147,8 @@ function checkLogin() {
       const path = window.location.pathname.toLowerCase();
       const file = path.substring(path.lastIndexOf('/') + 1);
       if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
-        openModal('loginModal');
         sessionStorage.setItem('loginModalMostrado', 'true');
+                openModal('loginModal');
       }
     }
   });
