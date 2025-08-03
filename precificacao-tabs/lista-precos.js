@@ -1,3 +1,5 @@
+import { encryptString, decryptString } from '../crypto.js';
+
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -8,28 +10,44 @@ let produtos = [];
 let viewMode = 'cards';
 let selecionados = new Set();
 
-function carregarProdutos() {
-  const uid = firebase.auth().currentUser?.uid;
+async function carregarProdutos() {
+  const user = firebase.auth().currentUser;
+  const uid = user?.uid;
   const isAdmin = window.sistema?.isAdmin;
 
-  let query = dbListaPrecos.collection('products').orderBy('createdAt', 'desc');
-  if (!isAdmin && uid) {
-    query = dbListaPrecos
+ produtos = [];
+  selecionados.clear();
+  const selectAll = document.getElementById('selectAll');
+  if (selectAll) selectAll.checked = false;
+
+  if (isAdmin) {
+    const snap = await dbListaPrecos.collectionGroup('products').orderBy('createdAt', 'desc').get();
+    for (const doc of snap.docs) {
+      const owner = doc.ref.parent.parent.id;
+      const pass = getPassphrase() || `chave-${owner}`;
+      const enc = doc.data().encrypted;
+      if (!enc) continue;
+      const data = JSON.parse(await decryptString(enc, pass));
+      produtos.push({ id: doc.id, uid: owner, ...data });
+    }
+  } else if (uid) {
+    const pass = getPassphrase() || `chave-${uid}`;
+    const snap = await dbListaPrecos
+      .collection('uid')
+      .doc(uid)
       .collection('products')
-      .where('userId', '==', uid)
-      .orderBy('createdAt', 'desc');
+      .orderBy('createdAt', 'desc')
+      .get();
+    for (const doc of snap.docs) {
+      const enc = doc.data().encrypted;
+      if (!enc) continue;
+      const data = JSON.parse(await decryptString(enc, pass));
+      produtos.push({ id: doc.id, uid, ...data });
+    }
   }
 
-  query.get().then(snap => {
-    produtos = [];
-     selecionados.clear();
-    const selectAll = document.getElementById('selectAll');
-    if (selectAll) selectAll.checked = false;
-    snap.forEach(doc => {
-      produtos.push({ id: doc.id, ...doc.data() });
-    });
-    aplicarFiltros();
-  });
+   aplicarFiltros();
+
 }
 
 function aplicarFiltros() {
@@ -164,6 +182,8 @@ function editarProduto(id) {
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
   if (!editId) return;
+  const user = firebase.auth().currentUser;
+  if (!user) return;
   const data = {
     produto: document.getElementById('editNome').value,
     sku: document.getElementById('editSku').value,
@@ -173,14 +193,28 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     precoMedio: parseFloat(document.getElementById('editMedio').value) || 0,
     precoPromo: parseFloat(document.getElementById('editPromo').value) || 0
   };
-  await dbListaPrecos.collection('products').doc(editId).update(data);
+const pass = getPassphrase() || `chave-${user.uid}`;
+  await dbListaPrecos
+    .collection('uid')
+    .doc(user.uid)
+    .collection('products')
+    .doc(editId)
+    .set({ uid: user.uid, encrypted: await encryptString(JSON.stringify(data), pass) }, { merge: true });
   fecharModal();
   carregarProdutos();
 });
 
 function excluirProduto(id) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
   if (!confirm('Excluir este produto?')) return;
-  dbListaPrecos.collection('products').doc(id).delete().then(carregarProdutos);
+ dbListaPrecos
+    .collection('uid')
+    .doc(user.uid)
+    .collection('products')
+    .doc(id)
+    .delete()
+    .then(carregarProdutos);
 }
 function toggleSelecionado(id, checked) {
   if (checked) selecionados.add(id); else selecionados.delete(id);
@@ -192,9 +226,19 @@ function selecionarTodos(checked) {
 }
 
 async function excluirSelecionados() {
-  if (!selecionados.size) return;
+const user = firebase.auth().currentUser;
+  if (!user || !selecionados.size) return;
   if (!confirm('Excluir produtos selecionados?')) return;
-  await Promise.all(Array.from(selecionados).map(id => dbListaPrecos.collection('products').doc(id).delete()));
+ await Promise.all(
+    Array.from(selecionados).map(id =>
+      dbListaPrecos
+        .collection('uid')
+        .doc(user.uid)
+        .collection('products')
+        .doc(id)
+        .delete()
+    )
+  );
   selecionados.clear();
   carregarProdutos();
 }
