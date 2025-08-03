@@ -53,7 +53,7 @@
       }
 
       try {
-        const doc = await db.collection('usuarios').doc(user.uid).get();
+        const doc = await db.collection('uid').doc(user.uid).get();
         if (!doc.exists || doc.data().perfil !== 'ADM') {
           alert('Acesso permitido apenas para administradores.');
           window.location.href = 'index.html';
@@ -73,7 +73,7 @@
       const perfil = document.getElementById("perfil").value;
 
       if (uid && nome) {
-        await db.collection("usuarios").doc(uid).set({ nome, perfil });
+        await db.collection("uid").doc(uid).set({ nome, perfil });
         alert("Usuário salvo com sucesso!");
         carregarUsuarios();
       }
@@ -81,7 +81,7 @@
 
     async function carregarUsuarios() {
       lista.innerHTML = "";
-      const snapshot = await db.collection("usuarios").get();
+      const snapshot = await db.collection("uid").get();
       snapshot.forEach(doc => {
         const data = doc.data();
         const item = document.createElement("li");
