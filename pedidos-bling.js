@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { loadUserDoc } from './secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -19,9 +20,14 @@ export async function carregarPedidos() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
-const uid = auth.currentUser.uid;
+ const uid = auth.currentUser.uid;
+    const pass = getPassphrase() || `chave-${uid}`;
     const snap = await getDocs(collection(db, `uid/${uid}/pedidosBling`));
-    const pedidos = snap.docs.map(d => d.data());
+const pedidos = [];
+    for (const d of snap.docs) {
+      const pedido = await loadUserDoc(db, uid, 'pedidosBling', d.id, pass);
+      if (pedido) pedidos.push(pedido);
+    }
     tbody.innerHTML = '';
     if (window.atualizarTabelaPedidos) {
       window.atualizarTabelaPedidos(pedidos);
