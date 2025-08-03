@@ -115,23 +115,7 @@
    <script src="shared.js"></script>
 
 <script src="expose-uid.js"></script>
-<script type="module">
-  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-  import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  onAuthStateChanged(auth, user => {
-    if (!user || window.location.search.includes('login=1')) {
-      fetch('components/auth-modals.html')
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('auth-modals-container').innerHTML = html;
-        });
-    }
-  });
-</script>
 
 </body>
 </html>
