@@ -154,64 +154,66 @@
     // =============================================
     
     // Inicialização mais robusta do Firebase
-    try {
-      const app = firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore(app);
-      const auth = firebase.auth();
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const app = firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore(app);
+        const auth = firebase.auth();
 
-      auth.onAuthStateChanged(async user => {
-        if (!user) {
-          window.location.href = 'index.html?login=1';
-          return;
-        }
-        usuarioLogado.uid = user.uid;
-        try {
-          const perfilDoc = await db.collection('usuarios').doc(user.uid).get();
-          usuarioLogado.perfil = perfilDoc.exists ? (perfilDoc.data().perfil || '') : '';
-        } catch (e) {
-          console.error('Erro ao obter perfil do usuário:', e);
-        }
-        await tabsLoaded;
-        window.initTooltips && window.initTooltips();
-
-        await carregarProdutos();
-        await carregarMetas();
-        carregarHistorico();
-        const dataField = document.getElementById('dataFaturamento');
-        if (dataField) {
-          dataField.value = new Date().toISOString().slice(0,10);
-        }
-
-        document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
-        document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
-        document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
-        document.getElementById('filtroStatus').addEventListener('change', filtrarPorSKU);
-document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
-        document.getElementById('btnLimparFiltros')?.addEventListener('click', limparFiltros);
-      });
-      
-      // Configurações importantes para a conexão
-      db.settings({
-        experimentalForceLongPolling: true
-      });
-      
-      // Habilita persistência offline
-      firebase.firestore().enablePersistence()
-        .catch((err) => {
-          if (err.code == 'failed-precondition') {
-            console.warn("Persistência offline não suportada em múltiplas abas");
-          } else if (err.code == 'unimplemented') {
-            console.warn("Persistência offline não disponível no navegador");
+        auth.onAuthStateChanged(async user => {
+          if (!user) {
+            window.location.href = 'index.html?login=1';
+            return;
           }
+          usuarioLogado.uid = user.uid;
+          try {
+            const perfilDoc = await db.collection('usuarios').doc(user.uid).get();
+            usuarioLogado.perfil = perfilDoc.exists ? (perfilDoc.data().perfil || '') : '';
+          } catch (e) {
+            console.error('Erro ao obter perfil do usuário:', e);
+          }
+          await tabsLoaded;
+          window.initTooltips && window.initTooltips();
+
+          await carregarProdutos();
+          await carregarMetas();
+          carregarHistorico();
+          const dataField = document.getElementById('dataFaturamento');
+          if (dataField) {
+            dataField.value = new Date().toISOString().slice(0,10);
+          }
+
+          document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
+          document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
+          document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
+          document.getElementById('filtroStatus').addEventListener('change', filtrarPorSKU);
+          document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
+          document.getElementById('btnLimparFiltros')?.addEventListener('click', limparFiltros);
         });
-      
-      // Verifica conexão
-      verificarConexao();
-      
-    } catch (error) {
-      console.error("Erro ao inicializar Firebase:", error);
-      mostrarErroFirebase(error);
-    }
+
+        // Configurações importantes para a conexão
+        db.settings({
+          experimentalForceLongPolling: true
+        });
+
+        // Habilita persistência offline
+        firebase.firestore().enablePersistence()
+          .catch((err) => {
+            if (err.code == 'failed-precondition') {
+              console.warn("Persistência offline não suportada em múltiplas abas");
+            } else if (err.code == 'unimplemented') {
+              console.warn("Persistência offline não disponível no navegador");
+            }
+          });
+
+        // Verifica conexão
+        verificarConexao();
+
+      } catch (error) {
+        console.error("Erro ao inicializar Firebase:", error);
+        mostrarErroFirebase(error);
+      }
+    });
 
  // Eventos dependentes do carregamento da navbar
     document.addEventListener('navbarLoaded', () => {
