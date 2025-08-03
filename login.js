@@ -5,6 +5,7 @@ import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from '.
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+let wasLoggedIn = false;
 
 
 function showToast(message, type = 'success') {
@@ -71,7 +72,7 @@ window.login = () => {
 };
 
 window.logout = () => {
-  signOut(auth).then(hideUserArea);
+  signOut(auth).catch(err => showToast('Erro ao sair: ' + err.message, 'error'));
 };
 
 window.sendRecovery = () => {
@@ -110,7 +111,6 @@ function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
   document.getElementById('logoutBtn').classList.add('hidden');
   if (window.sistema) delete window.sistema.uid;
-  clearPassphrase();
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
   localStorage.removeItem('passphraseModalShown');
@@ -126,22 +126,26 @@ window.requireLogin = (event) => {
 };
 
 function checkLogin() {
-onAuthStateChanged(auth, user => {
-  if (user) {
-    showUserArea(user);
-  } else {
-    hideUserArea();
+ onAuthStateChanged(auth, user => {
+    if (user) {
+      showUserArea(user);
+      wasLoggedIn = true;
+    } else {
+      if (wasLoggedIn) {
+        clearPassphrase();
+      }
+      wasLoggedIn = false;
+      hideUserArea();
 
-    // Sempre exibe o modal se estiver no index.html
-    const path = window.location.pathname.toLowerCase();
-    const file = path.substring(path.lastIndexOf('/') + 1);
-    if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
-  openModal('loginModal');
-  sessionStorage.setItem('loginModalMostrado', 'true');
-}
-
-  }
-});
+      // Sempre exibe o modal se estiver no index.html
+      const path = window.location.pathname.toLowerCase();
+      const file = path.substring(path.lastIndexOf('/') + 1);
+      if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
+        openModal('loginModal');
+        sessionStorage.setItem('loginModalMostrado', 'true');
+      }
+    }
+  });
 }
 
 document.addEventListener('navbarLoaded', () => {
