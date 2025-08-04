@@ -263,9 +263,15 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       
       // Carrega produtos
       try {
-   let productsQuery = db.collection("products").orderBy("createdAt", "desc");
-        if (!isAdmin) {
-          productsQuery = db.collection("products").where("userId", "==", user.uid).orderBy("createdAt", "desc");
+   let productsQuery;
+        if (isAdmin) {
+          productsQuery = db.collectionGroup('produtos').orderBy('createdAt', 'desc');
+        } else {
+          productsQuery = db
+            .collection('uid')
+            .doc(user.uid)
+            .collection('produtos')
+            .orderBy('createdAt', 'desc');
         }
         const productsSnapshot = await productsQuery.get();
         sistema.produtos = [];
@@ -989,15 +995,21 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       };
 
       try {
-   const querySnapshot = await db.collection("products")
-          .where("sku", "==", sku)
-          .where("userId", "==", user.uid)
+ const querySnapshot = await db
+          .collection('uid')
+          .doc(user.uid)
+          .collection('produtos')
+          .where('sku', '==', sku)
           .get();
 
         if (!querySnapshot.empty) {
           const docId = querySnapshot.docs[0].id;
-          await db.collection("products").doc(docId).update(novoProduto);
-
+await db
+            .collection('uid')
+            .doc(user.uid)
+            .collection('produtos')
+            .doc(docId)
+            .update(novoProduto);
           const index = sistema.produtos.findIndex(item => item.id === docId);
           if (index !== -1) {
             sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
@@ -1009,8 +1021,11 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
           showToast("Produto atualizado com sucesso!", "success");
           addHistoryEntry('product_edit', `Produto "${produto}" atualizado`);
         } else {
-          const docRef = await db.collection("products").add(novoProduto);
-
+ const docRef = await db
+            .collection('uid')
+            .doc(user.uid)
+            .collection('produtos')
+            .add(novoProduto);
           sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
           atualizarLista();
 
@@ -1031,8 +1046,13 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       }
 
       try {
-        await db.collection("products").doc(sistema.produtoEditando.id).update({
-          produto,
+ await db
+          .collection('uid')
+          .doc(user.uid)
+          .collection('produtos')
+          .doc(sistema.produtoEditando.id)
+          .update({
+            produto,
           sku,
           plataforma,
           precoMinimo,
@@ -1309,7 +1329,15 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       }
       
       try {
-        await db.collection("products").doc(id).delete();
+const prod = sistema.produtos.find(p => p.id === id);
+        const owner = prod?.userId || auth.currentUser?.uid;
+        if (!owner) return;
+        await db
+          .collection('uid')
+          .doc(owner)
+          .collection('produtos')
+          .doc(id)
+          .delete();
         
         // Atualizar lista local
         sistema.produtos = sistema.produtos.filter(item => item.id !== id);
@@ -1363,7 +1391,14 @@ function mostrarDuplicados() {
     async function excluirDuplicado(id) {
       if (!confirm('Excluir este produto duplicado?')) return;
       try {
-        await db.collection('products').doc(id).delete();
+const prod = sistema.produtos.find(p => p.id === id);
+        if (!prod) return;
+        await db
+          .collection('uid')
+          .doc(prod.userId)
+          .collection('produtos')
+          .doc(id)
+          .delete();
         sistema.produtos = sistema.produtos.filter(p => p.id !== id);
         mostrarDuplicados();
         atualizarLista();
@@ -1598,9 +1633,12 @@ function downloadPricingTemplate() {
           const precoIdeal = (precoMinimo * 1.10).toFixed(2);
 
   // Verifica se já existe produto com o mesmo SKU e plataforma
-          const existing = await db.collection("products")
-            .where("sku", "==", sku)
-            .where("plataforma", "==", plataforma)
+  const existing = await db
+            .collection('uid')
+            .doc(auth.currentUser.uid)
+            .collection('produtos')
+            .where('sku', '==', sku)
+            .where('plataforma', '==', plataforma)
             .limit(1)
             .get();
 
@@ -1881,7 +1919,14 @@ function applyPriceUpdate(type) {
       for (const chk of checks) {
         const id = chk.dataset.id;
         try {
-          await db.collection('products').doc(id).delete();
+ const prod = sistema.produtos.find(p => p.id === id);
+          if (!prod) continue;
+          await db
+            .collection('uid')
+            .doc(prod.userId)
+            .collection('produtos')
+            .doc(id)
+            .delete();
           sistema.produtos = sistema.produtos.filter(p => p.id !== id);
           removidos++;
         } catch (err) {
