@@ -165,6 +165,8 @@ async function carregarProdutosSistema() {
   }
 
   console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
+    console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku));
+
 }
 
 
