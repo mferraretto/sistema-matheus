@@ -7,15 +7,20 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-async function chamarIA(prompt) {
-  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
+async function chamarIA(prompt, { json = false } = {}) {
+  const body = {
+    model: 'deepseek-chat',
+    messages: [{ role: 'user', content: prompt }]
+  };
+  if (json) body.response_format = { type: 'json_object' };  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }]
-    })
+       body: JSON.stringify(body)
   });
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`IA request failed: ${resp.status} ${text}`);
+  }
   const data = await resp.json();
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
@@ -24,18 +29,15 @@ window.gerarAnuncioIA = async function() {
   const nome = document.getElementById('nomeProduto').value;
   const preco = document.getElementById('precoBase').value;
   const caracteristicas = document.getElementById('caracteristicas').value;
-  const prompt = `Crie um anúncio otimizado para Shopee com base nas seguintes informações:\nProduto: ${nome}\nPreço: ${preco}\nCaracterísticas: ${caracteristicas}\nSugira um título atrativo, uma descrição com bullet points, a melhor categoria possível e palavras-chave relacionadas.`;
+  const prompt = `Você é um assistente de marketing da Shopee. Gere um anúncio em formato JSON com as chaves titulo, descricao, categoria e palavras_chave (lista).\nProduto: ${nome}\nPreço: ${preco}\nCaracterísticas: ${caracteristicas}`;
   try {
-    const texto = await chamarIA(prompt);
+const texto = await chamarIA(prompt, { json: true });
+    const dados = JSON.parse(texto);
     document.getElementById('sugestoes').classList.remove('hidden');
-    const titulo = /T[íi]tulo:\s*(.*)/i.exec(texto)?.[1] || '';
-    const descMatch = /Descri[cç][ãa]o:\s*([\s\S]*?)Categoria:/i.exec(texto);
-    const categoria = /Categoria:\s*(.*)/i.exec(texto)?.[1] || '';
-    const palavras = /Palavras-chave:\s*(.*)/i.exec(texto)?.[1] || '';
-    document.getElementById('tituloIA').value = titulo.trim();
-    document.getElementById('descricaoIA').value = descMatch ? descMatch[1].trim() : '';
-    document.getElementById('categoriaIA').value = categoria.trim();
-    document.getElementById('palavrasChaveIA').value = palavras.trim();
+    document.getElementById('tituloIA').value = dados.titulo || '';
+    document.getElementById('descricaoIA').value = dados.descricao || '';
+    document.getElementById('categoriaIA').value = dados.categoria || '';
+    document.getElementById('palavrasChaveIA').value = (dados.palavras_chave || []).join(', ');
   } catch (e) {
     alert('Erro ao gerar anúncio: ' + e.message);
   }
@@ -43,18 +45,14 @@ window.gerarAnuncioIA = async function() {
 
 window.buscarPalavrasChave = async function() {
   const termo = document.getElementById('buscaKeyword').value;
-  const prompt = `Liste 10 palavras-chave relevantes para o produto "${termo}", com volume de busca (alto/médio/baixo), concorrência e sugestão de onde usá-la no anúncio (título, descrição ou tags).`;
+  const prompt = `Retorne um array JSON com 10 objetos contendo as chaves palavra, volume, concorrencia e uso para o produto "${termo}".`;
   try {
-    const texto = await chamarIA(prompt);
+ const texto = await chamarIA(prompt, { json: true });
+    const lista = JSON.parse(texto);
     const tabela = document.getElementById('resultadoKeywords');
-    tabela.innerHTML = '';
-    const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
     let html = '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';
-    for (const l of linhas) {
-      const partes = l.split('-').map(p => p.trim());
-      if (partes.length >= 4) {
-        html += `<tr><td class="p-2">${partes[0]}</td><td class="p-2">${partes[1]}</td><td class="p-2">${partes[2]}</td><td class="p-2">${partes[3]}</td></tr>`;
-      }
+  for (const item of lista) {
+      html += `<tr><td class="p-2">${item.palavra}</td><td class="p-2">${item.volume}</td><td class="p-2">${item.concorrencia}</td><td class="p-2">${item.uso}</td></tr>`;
     }
     tabela.innerHTML = html;
   } catch (e) {
