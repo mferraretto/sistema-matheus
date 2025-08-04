@@ -252,7 +252,7 @@ async function checkProducts(isPromo = false) {
           <td>${prod['Nº de Ref. SKU. (Opcional)'] || ''}</td>
           <td>${prod['Preço original (opcional)'] || ''}</td>
           <td>${prod['Preço de desconto'] || ''}</td>
-          <td class="status">${statusText}</td>
+<td class="status-cell">${statusText}</td>
         `;
         body.appendChild(tr);
       });
@@ -351,7 +351,7 @@ async function checkProducts(isPromo = false) {
           <td>${sku}</td>
           <td>${prod['Preço original (opcional)'] || ''}</td>
           <td class="font-bold">${prod['Preço de desconto'] || ''}</td>
-          <td>${found ? 'Encontrado' : 'Não encontrado'}</td>
+<td class="status-cell">${found ? 'Encontrado' : 'Não encontrado'}</td>
         `;
         body.appendChild(row);
       });
