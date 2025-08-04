@@ -909,9 +909,10 @@ let consulta;
         const sobra = subtotal + reembolso - cupom - comissao - servico;
         const meta = metas[sku]?.valor || 0;
         const percentual = meta ? ((sobra - meta) / meta) * 100 : 0;
-        
+       const prazo = p['Prazo de coleta'] || p['Prazo de Coleta'] || '';
+
         const pedidoData = {
-          id, sku, subtotal, reembolso, cupom, comissao, servico, sobra, meta, percentual, status
+          id, sku, subtotal, reembolso, cupom, comissao, servico, sobra, meta, percentual, status, prazo
         };
         
         pedidosProcessados.push(pedidoData);
@@ -1042,6 +1043,7 @@ let consulta;
 document.getElementById("dadosSobrasIA").value = sobras.map(s => {
   return `SKU: ${s.sku}, Vendido: R$ ${s.vendido.toFixed(2)}, Sobra: R$ ${s.sobra.toFixed(2)}, Meta: R$ ${s.meta?.toFixed(2) || 0}, Data: ${s.data}`;
 }).join("\n");
+        renderizarTabelaLogistica();
 }
 
       // Atualizar gráficos se estiver na aba
@@ -1056,7 +1058,106 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
       document.getElementById("tipoFiltro").value = "exata";
       filtrarPorSKU();
     }
+// =============================================
+    // CONTROLE LOGÍSTICO DE PEDIDOS
+    // =============================================
 
+    function salvarLogistica() {
+      localStorage.setItem('controleLogistica', JSON.stringify(logistica));
+    }
+
+    function renderizarTabelaLogistica() {
+      const tbody = document.querySelector('#tabelaLogistica tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const hoje = new Date();
+
+      pedidosProcessados.forEach(p => {
+        if (!logistica[p.id]) {
+          logistica[p.id] = {
+            status: 'pendente',
+            rastreio: '',
+            checklist: { itens: false, etiqueta: false, lacre: false },
+            prazo: p.prazo || '',
+            dataPostagem: null
+          };
+        }
+        const item = logistica[p.id];
+        const prazoData = item.prazo ? new Date(item.prazo) : null;
+        const prazoProximo = prazoData && (prazoData - hoje) / (1000 * 60 * 60 * 24) <= 1 && item.status !== 'postado';
+        const statusLinha = prazoProximo ? 'prazo' : item.status;
+        const postadoPrazo = item.status === 'postado' && item.dataPostagem && prazoData ? new Date(item.dataPostagem) <= prazoData : null;
+
+        const tr = document.createElement('tr');
+        tr.dataset.status = statusLinha;
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td class="${statusLinha !== 'postado' ? 'text-red-600 font-bold' : ''}">
+            <select onchange="atualizarStatusLogistica('${p.id}', this.value)" class="form-control">
+              <option value="pendente"${item.status === 'pendente' ? ' selected' : ''}>Pendente</option>
+              <option value="postado"${item.status === 'postado' ? ' selected' : ''}>Postado</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control" value="${item.rastreio}" onchange="atualizarRastreio('${p.id}', this.value)" placeholder="Código" /></td>
+          <td>
+            <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','itens', this.checked)" ${item.checklist.itens ? 'checked' : ''}/> Itens</label><br>
+            <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','etiqueta', this.checked)" ${item.checklist.etiqueta ? 'checked' : ''}/> Etiqueta</label><br>
+            <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','lacre', this.checked)" ${item.checklist.lacre ? 'checked' : ''}/> Lacre</label>
+          </td>
+          <td>${postadoPrazo === null ? '-' : postadoPrazo ? 'Sim' : 'Não'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      salvarLogistica();
+      verificarAlertasLogistica();
+      aplicarFiltroLogistica();
+    }
+
+    function atualizarStatusLogistica(id, status) {
+      if (!logistica[id]) return;
+      logistica[id].status = status;
+      if (status === 'postado') {
+        logistica[id].dataPostagem = new Date().toISOString().split('T')[0];
+      }
+      salvarLogistica();
+      renderizarTabelaLogistica();
+    }
+
+    function atualizarRastreio(id, codigo) {
+      if (!logistica[id]) return;
+      logistica[id].rastreio = codigo;
+      salvarLogistica();
+    }
+
+    function atualizarChecklist(id, campo, valor) {
+      if (!logistica[id]) return;
+      logistica[id].checklist[campo] = valor;
+      salvarLogistica();
+    }
+
+    function aplicarFiltroLogistica() {
+      const filtro = document.getElementById('filtroStatusLogistica')?.value;
+      document.querySelectorAll('#tabelaLogistica tbody tr').forEach(tr => {
+        tr.style.display = !filtro || tr.dataset.status === filtro ? '' : 'none';
+      });
+    }
+
+    function verificarAlertasLogistica() {
+      const valores = Object.values(logistica);
+      const pendentes = valores.filter(v => v.status !== 'postado').length;
+      const prazoProximo = valores.filter(v => {
+        if (!v.prazo || v.status === 'postado') return false;
+        const diff = (new Date(v.prazo) - new Date()) / (1000 * 60 * 60 * 24);
+        return diff <= 1;
+      }).length;
+
+      const mensagens = [];
+      if (pendentes) mensagens.push(`${pendentes} pedidos pendentes de envio`);
+      if (prazoProximo) mensagens.push(`${prazoProximo} com prazo de coleta próximo`);
+      const alertaEl = document.getElementById('alertasLogistica');
+      if (alertaEl) alertaEl.textContent = mensagens.join(' | ');
+    }
     // =============================================
     // FUNÇÕES DE GRÁFICOS
     // =============================================
@@ -2107,6 +2208,10 @@ window.verificarConexao = verificarConexao;
 window.editarMeta = editarMeta;
 window.excluirMeta = excluirMeta;
 window.analisarTendenciasIA = analisarTendenciasIA;
+  window.atualizarStatusLogistica = atualizarStatusLogistica;
+window.atualizarRastreio = atualizarRastreio;
+window.atualizarChecklist = atualizarChecklist;
+window.aplicarFiltroLogistica = aplicarFiltroLogistica;
 </script>
 <script src="shared.js"></script>
 <script>
