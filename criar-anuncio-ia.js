@@ -75,6 +75,7 @@ window.buscarPalavrasChave = async function () {
   const termo = document.getElementById('buscaKeyword').value;
 
   const prompt = `Responda apenas com um array JSON. NÃO escreva nada fora disso.
+Formato:
 [
   { "palavra": "sapato confortável", "volume": "alto", "concorrencia": "baixa", "uso": "título" },
   ...
@@ -89,7 +90,7 @@ Produto: "${termo}"`;
     try {
       lista = typeof texto === 'string' ? JSON.parse(texto) : texto;
     } catch {
-      const match = texto.match(/\[\s*\{[\s\S]+?\}\s*\]/); // Regex para extrair array JSON
+      const match = texto.match(/\[\s*\{[\s\S]+?\}\s*\]/); // Extrai array JSON do meio do texto
       if (match) {
         lista = JSON.parse(match[0]);
       } else {
