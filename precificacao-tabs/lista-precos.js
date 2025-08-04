@@ -21,7 +21,7 @@ async function carregarProdutos() {
   if (selectAll) selectAll.checked = false;
 
   if (isAdmin) {
-    const snap = await dbListaPrecos.collectionGroup('products').orderBy('createdAt', 'desc').get();
+    const snap = await dbListaPrecos.collectionGroup('produtos').orderBy('createdAt', 'desc').get();
     for (const doc of snap.docs) {
       const owner = doc.ref.parent.parent.id;
       const pass = getPassphrase() || `chave-${owner}`;
@@ -35,7 +35,7 @@ async function carregarProdutos() {
     const snap = await dbListaPrecos
       .collection('uid')
       .doc(uid)
-      .collection('products')
+      .collection('produtos')
       .orderBy('createdAt', 'desc')
       .get();
     for (const doc of snap.docs) {
@@ -197,7 +197,7 @@ const pass = getPassphrase() || `chave-${user.uid}`;
   await dbListaPrecos
     .collection('uid')
     .doc(user.uid)
-    .collection('products')
+    .collection('produtos')
     .doc(editId)
     .set({ uid: user.uid, encrypted: await encryptString(JSON.stringify(data), pass) }, { merge: true });
   fecharModal();
@@ -207,11 +207,11 @@ const pass = getPassphrase() || `chave-${user.uid}`;
 function excluirProduto(id) {
   const user = firebase.auth().currentUser;
   if (!user) return;
-  if (!confirm('Excluir este produto?')) return;
+ if (!confirm('Excluir este produto?')) return;
  dbListaPrecos
     .collection('uid')
     .doc(user.uid)
-    .collection('products')
+    .collection('produtos')
     .doc(id)
     .delete()
     .then(carregarProdutos);
@@ -228,13 +228,13 @@ function selecionarTodos(checked) {
 async function excluirSelecionados() {
 const user = firebase.auth().currentUser;
   if (!user || !selecionados.size) return;
-  if (!confirm('Excluir produtos selecionados?')) return;
+ if (!confirm('Excluir produtos selecionados?')) return;
  await Promise.all(
     Array.from(selecionados).map(id =>
       dbListaPrecos
         .collection('uid')
         .doc(user.uid)
-        .collection('products')
+        .collection('produtos')
         .doc(id)
         .delete()
     )
@@ -246,8 +246,16 @@ const user = firebase.auth().currentUser;
 async function excluirTodos() {
   if (!produtos.length) return;
   if (!confirm('Excluir todos os produtos?')) return;
-  await Promise.all(produtos.map(p => dbListaPrecos.collection('products').doc(p.id).delete()));
-  selecionados.clear();
+ await Promise.all(
+    produtos.map(p =>
+      dbListaPrecos
+        .collection('uid')
+        .doc(p.uid)
+        .collection('produtos')
+        .doc(p.id)
+        .delete()
+    )
+  );  selecionados.clear();
   carregarProdutos();
 }
 function fecharModal() {
@@ -323,7 +331,12 @@ function importarExcelLista() {
       if (idxMedio !== -1 && row[idxMedio] !== undefined) updateData.precoMedio = parseFloat(row[idxMedio]) || 0;
       if (idxPromo !== -1 && row[idxPromo] !== undefined) updateData.precoPromo = parseFloat(row[idxPromo]) || 0;
       if (Object.keys(updateData).length) {
-        await dbListaPrecos.collection('products').doc(prod.id).update(updateData);
+   await dbListaPrecos
+          .collection('uid')
+          .doc(prod.uid)
+          .collection('produtos')
+          .doc(prod.id)
+          .update(updateData);
         Object.assign(prod, updateData);
         updated++;
       }
