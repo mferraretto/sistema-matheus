@@ -109,17 +109,20 @@
     </div>
   </div>
   <script>
- let db;
-    document.addEventListener('DOMContentLoaded', () => {
-      firebase.initializeApp(window.firebaseConfig);
-      db = firebase.firestore();
-      firebase.auth().onAuthStateChanged(user => {
-        if (!user) {
-          window.location.href = 'index.html?login=1';
-        }
-      });
-      carregarProdutosSistema();
-    });
+let db;
+document.addEventListener('DOMContentLoaded', () => {
+  firebase.initializeApp(window.firebaseConfig);
+  db = firebase.firestore();
+
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = 'index.html?login=1';
+    } else {
+      carregarProdutosSistema(); // ✅ Agora só é chamada após login
+    }
+  });
+});
+
     var importedProducts = [];
     const sistema = {
   produtos: [],
