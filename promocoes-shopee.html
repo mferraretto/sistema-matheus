@@ -258,52 +258,63 @@ function importShopeeFile() {
       });
     }
 
-  async function checkProducts() {
+  async function checkProducts(isPromo = false) {
   const user = firebase.auth().currentUser;
   if (!user) return;
 
-  try {
-    const snap = await db
-      .collection('uid')
-      .doc(user.uid)
-      .collection('produtos')
-      .get();
+  // 1) Buscando SKUs do sistema
+  const snap = await db
+    .collection('uid')
+    .doc(user.uid)
+    .collection('produtos')
+    .get();
 
-    const systemSkus = new Set();
-    for (const doc of snap.docs) {
-      const data = doc.data();
-      const sku = data.sku;
-      if (sku) {
-        systemSkus.add(String(sku).trim());
-      }
-    }
+  const systemSkus = new Set(
+    snap.docs
+      .map(d => d.data()?.sku)
+      .filter(Boolean)
+      .map(s => String(s).trim())
+  );
 
-    const rows = document.querySelectorAll('#importedProductsTableBody tr');
+  // 2) Definindo fonte de dados e seletores conforme o tipo
+  const lista   = isPromo
+    ? sistema.promoShopeeData
+    : sistema.importedShopeeData;
 
-    importedProducts.forEach((prod, idx) => {
-      const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
-                  (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
-      
-      const row = rows[idx];
-      const found = sku && systemSkus.has(sku);
+  const tableBodyId = isPromo
+    ? 'promoProductsTableBody'
+    : 'importedProductsTableBody';
 
-      prod.encontrado = found;
-      prod.status = found ? 'Encontrado' : 'Não encontrado';
+  const rows = document
+    .querySelectorAll(`#${tableBodyId} tr`);
 
-      if (found) {
-        row.classList.add('bg-green-100');
-        row.querySelector('.status').textContent = 'Encontrado';
-      } else {
-        row.classList.add('bg-red-100');
-        row.querySelector('.status').textContent = 'Não encontrado';
-      }
-    });
+  // 3) Itera e marca cada linha
+  let verifiedCount = 0;
+  lista.forEach((prod, idx) => {
+    const sku = (
+      prod['Nº de Ref. SKU. (Opcional)'] ||
+      prod['Nº de Ref. Parent SKU. (Opcional)'] ||
+      ''
+    ).toString().trim();
 
-    console.log(`🔍 Verificação finalizada: ${importedProducts.length} SKUs verificados.`);
-  } catch (error) {
-    console.error('Erro ao verificar produtos:', error);
-    showToast('Erro ao verificar produtos importados', 'error');
-  }
+    const found = sku && systemSkus.has(sku);
+    if (found) verifiedCount++;
+
+    // Atualiza o objeto e a célula
+    prod.encontrado = found;
+    prod.status    = found ? 'Encontrado' : 'Não encontrado';
+
+    const row      = rows[idx];
+    const statusTd = row?.querySelector('.status-cell');
+    if (statusTd) statusTd.textContent = prod.status;
+
+    // Ajusta o background conforme o resultado
+    row?.classList.toggle('bg-green-100', found);
+    row?.classList.toggle('bg-red-100',  !found);
+  });
+
+  console.log(`🔍 Verificação finalizada: ${verifiedCount} SKUs verificados.`);
+  return verifiedCount;
 }
 
   function importShopeePromoFile() {
