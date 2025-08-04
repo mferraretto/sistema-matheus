@@ -243,37 +243,54 @@ await checkProducts();
       });
     }
 
-    async function checkProducts() {
- const user = firebase.auth().currentUser;
-      if (!user) return;
-      const pass = getPassphrase() || `chave-${user.uid}`;
-      const { decryptString } = await import('./crypto.js');
-      const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
-      const systemSkus = new Set();
-      for (const doc of snap.docs) {
-        const enc = doc.data().encrypted;
-        if (!enc) continue;
-        const data = JSON.parse(await decryptString(enc, pass));
-        const sku = data.sku;
-        if (sku) systemSkus.add(String(sku).trim());
+  async function checkProducts() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  try {
+    const snap = await db
+      .collection('uid')
+      .doc(user.uid)
+      .collection('produtos')
+      .get();
+
+    const systemSkus = new Set();
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      const sku = data.sku;
+      if (sku) {
+        systemSkus.add(String(sku).trim());
       }
-      const rows = document.querySelectorAll('#importedProductsTableBody tr');
-      importedProducts.forEach((prod, idx) => {
-        const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
-                    (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
-        const row = rows[idx];
- const found = sku && systemSkus.has(sku);
-        prod.encontrado = found;
-        prod.status = found ? 'Encontrado' : 'Não encontrado';
-        if (found) {
-          row.classList.add('bg-green-100');
-          row.querySelector('.status').textContent = 'Encontrado';
-        } else {
-          row.classList.add('bg-red-100');
-          row.querySelector('.status').textContent = 'Não encontrado';
-        }
-      });
     }
+
+    const rows = document.querySelectorAll('#importedProductsTableBody tr');
+
+    importedProducts.forEach((prod, idx) => {
+      const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
+                  (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
+      
+      const row = rows[idx];
+      const found = sku && systemSkus.has(sku);
+
+      prod.encontrado = found;
+      prod.status = found ? 'Encontrado' : 'Não encontrado';
+
+      if (found) {
+        row.classList.add('bg-green-100');
+        row.querySelector('.status').textContent = 'Encontrado';
+      } else {
+        row.classList.add('bg-red-100');
+        row.querySelector('.status').textContent = 'Não encontrado';
+      }
+    });
+
+    console.log(`🔍 Verificação finalizada: ${importedProducts.length} SKUs verificados.`);
+  } catch (error) {
+    console.error('Erro ao verificar produtos:', error);
+    showToast('Erro ao verificar produtos importados', 'error');
+  }
+}
+
      function importShopeePromoFile() {
       const fileInput = document.getElementById('promoFileInput');
       const file = fileInput.files[0];
