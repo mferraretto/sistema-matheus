@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acompanhamento de Promoções</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div id="navbar-container"></div>
+
+    <div class="main-content p-6 space-y-6">
+      <h1 class="text-2xl font-bold flex items-center gap-2"><span>📢</span> Acompanhamento de Promoções</h1>
+
+      <!-- Filtros -->
+      <div class="card">
+        <div class="card-body grid md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Tipo de promoção</label>
+            <select id="filtroTipo" class="form-control">
+              <option value="">Todos</option>
+              <option>Desconto</option>
+              <option>Oferta Relâmpago</option>
+              <option>Cupom de Vendedor</option>
+              <option>Shopee Ads</option>
+              <option>Shopee Live</option>
+              <option>Moedas</option>
+              <option>Avaliação</option>
+              <option>Afiliação</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Período</label>
+            <div class="flex gap-2">
+              <input type="date" id="filtroInicio" class="form-control">
+              <input type="date" id="filtroFim" class="form-control">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">SKU / Produto</label>
+            <input type="text" id="filtroSku" class="form-control" placeholder="Buscar...">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Status</label>
+            <select id="filtroStatus" class="form-control">
+              <option value="">Todos</option>
+              <option>Ativa</option>
+              <option>Expirada</option>
+              <option>Agendada</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela de Promoções -->
+      <div class="card">
+        <div class="overflow-x-auto">
+          <table class="table" id="tabelaPromocoes">
+            <thead>
+              <tr>
+                <th>Promoção</th>
+                <th>Tipo</th>
+                <th>SKU</th>
+                <th>Produto</th>
+                <th>Data Início</th>
+                <th>Data Fim</th>
+                <th>Vendas</th>
+                <th>Cliques</th>
+                <th>Taxa de Conversão</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráfico de Desempenho -->
+      <div class="card" id="graficoContainer" style="display:none;">
+        <div class="card-header">
+          <h2 class="text-xl font-bold">Desempenho da Promoção</h2>
+        </div>
+        <div class="card-body">
+          <canvas id="graficoPromocao"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="firebase-config.js"></script>
+  <script src="shared.js"></script>
+  <script src="acompanhamento-promocoes.js"></script>
+</body>
+</html>
