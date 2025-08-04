@@ -8,18 +8,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function chamarIA(prompt) {
-  const apiKey = window.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY não definido');
-  }
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
+      model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }]
     })
   });
