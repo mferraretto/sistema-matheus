@@ -142,8 +142,9 @@ async function carregarProdutosSistema() {
 
 
      function importShopeeFile() {
-      const input = document.getElementById('shopeeFileInput');
-      const file = input.files[0];
+       const fileInput = document.getElementById('promoFileInput');
+      const file = fileInput.files[0];
+
       if (!file) {
         alert('Selecione um arquivo primeiro');
         return;
