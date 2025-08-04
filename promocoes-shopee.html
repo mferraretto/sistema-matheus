@@ -142,28 +142,27 @@ async function carregarProdutosSistema() {
 
 
      function importShopeeFile() {
-      const fileInput = document.getElementById('promoFileInput');
-      const file = fileInput.files[0];
-
+      const input = document.getElementById('shopeeFileInput');
+      const file = input.files[0];
       if (!file) {
-        showToast('Selecione um arquivo primeiro!', 'warning');
+        alert('Selecione um arquivo primeiro');
         return;
       }
-
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         if (jsonData.length < 2) {
-          showToast('Planilha vazia ou formato inválido!', 'warning');
+          alert('Planilha vazia ou formato inválido');
           return;
         }
-
         const headers = jsonData[0];
-        const products = [];
+        importedProducts = [];
+sistema.importedShopeeData = []; // ✅ adiciona aqui também
+sistema.originalShopeeData = []; // para exportar depois
+
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i];
           if (row.length === 0) continue;
@@ -171,19 +170,18 @@ async function carregarProdutosSistema() {
           for (let j = 0; j < headers.length; j++) {
             prod[headers[j]] = row[j];
           }
-          products.push(prod);
+          importedProducts.push(prod);
+          sistema.importedShopeeData.push(prod);
+sistema.originalShopeeData.push({ ...prod }); // salva a versão original
+
         }
-
-        sistema.promoShopeeData = products;
-                sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
-        displayPromoProducts(products);
-        document.getElementById('promoImportedProducts').style.display = 'block';
-                document.getElementById('acaoPromocoes').style.display = 'flex';
-        showToast(`${products.length} produtos importados!`, 'success');
+        displayImportedProducts(importedProducts);
+       document.getElementById('importedShopeeProducts').style.display = 'block';
+await checkProducts();
       };
-
       reader.readAsArrayBuffer(file);
     }
+
     function displayPromoProducts(products) {
       const body = document.getElementById('promoProductsTableBody');
       body.innerHTML = '';
@@ -222,6 +220,54 @@ async function carregarProdutosSistema() {
          const countEl = document.getElementById('promoChangesCount');
       if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
+     async function checkProducts() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  try {
+    const snap = await db
+      .collection('uid')
+      .doc(user.uid)
+      .collection('produtos')
+      .get();
+
+    const systemSkus = new Set();
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      const sku = data.sku;
+      if (sku) {
+        systemSkus.add(String(sku).trim());
+      }
+    }
+
+    const rows = document.querySelectorAll('#importedProductsTableBody tr');
+
+    importedProducts.forEach((prod, idx) => {
+      const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
+                  (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
+      
+      const row = rows[idx];
+      const found = sku && systemSkus.has(sku);
+
+      prod.encontrado = found;
+      prod.status = found ? 'Encontrado' : 'Não encontrado';
+
+      if (found) {
+        row.classList.add('bg-green-100');
+        row.querySelector('.status').textContent = 'Encontrado';
+      } else {
+        row.classList.add('bg-red-100');
+        row.querySelector('.status').textContent = 'Não encontrado';
+      }
+    });
+
+    console.log(`🔍 Verificação finalizada: ${importedProducts.length} SKUs verificados.`);
+  } catch (error) {
+    console.error('Erro ao verificar produtos:', error);
+    showToast('Erro ao verificar produtos importados', 'error');
+  }
+}
+
 async function applyPromoPriceUpdate(type) {
   if (!sistema.promoShopeeData) {
     showToast('Importe a planilha de promoções primeiro!', 'warning');
