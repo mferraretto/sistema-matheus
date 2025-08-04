@@ -1313,7 +1313,13 @@ const dataInput = document.getElementById("dataFaturamento");
             return mostrarErro("Nome da loja inválido.");
           }
 
-          const ref = db.collection("faturamento").doc(dataReferencia).collection("lojas").doc(loja);
+ const ref = db
+            .collection('uid')
+            .doc(usuarioLogado.uid)
+            .collection('faturamento')
+            .doc(dataReferencia)
+            .collection('lojas')
+            .doc(loja);
           const doc = await ref.get();
 
           let operacao = "salvar";
@@ -1364,12 +1370,22 @@ const dataInput = document.getElementById("dataFaturamento");
           });
 
           // Salvar SKUs vendidos
-          const refSku = db.collection("skusVendidos").doc(dataReferencia);
+ const refSku = db
+            .collection('uid')
+            .doc(usuarioLogado.uid)
+            .collection('skusVendidos')
+            .doc(dataReferencia);
           await refSku.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true }); // garante doc pai e marca usuário
 
           for (const [sku, total] of Object.entries(skusVendidos)) {
             const skuId = String(sku).replace(/[.#$/\[\]]/g, "_");
-            const docRef = db.collection("skusVendidos").doc(dataReferencia).collection("lista").doc(skuId);
+ const docRef = db
+              .collection('uid')
+              .doc(usuarioLogado.uid)
+              .collection('skusVendidos')
+              .doc(dataReferencia)
+              .collection('lista')
+              .doc(skuId);
             const docSnap = await docRef.get();
 
             let totalFinal = total;
@@ -1411,8 +1427,12 @@ const dataInput = document.getElementById("dataFaturamento");
             uid: usuarioLogado.uid
         };
           const encResumo = await encryptString(JSON.stringify(resumoPayload), pass);
-          await db.collection("faturamento").doc(dataReferencia).set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
-
+await db
+            .collection('uid')
+            .doc(usuarioLogado.uid)
+            .collection('faturamento')
+            .doc(dataReferencia)
+            .set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
           document.getElementById("resultadoFaturamento").innerHTML = `
             <div class="alert alert-success">
               <i class="fas fa-check-circle"></i>
@@ -1467,9 +1487,11 @@ const dataInput = document.getElementById("dataFaturamento");
       }
     }
     async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", idFiltroMes = "filtroMes") {
- let ref = db.collection("faturamento");
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
+ let ref;
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        ref = db.collectionGroup('faturamento');
+      } else {
+        ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
       }
       const snap = await ref.get();
       const container = document.getElementById(idContainer);
@@ -1484,10 +1506,10 @@ const dataInput = document.getElementById("dataFaturamento");
           if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
         }
 
- let subRef = db.collection(`faturamento/${docData.id}/lojas`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          subRef = subRef.where('uid', '==', usuarioLogado.uid);
-        }
+const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+          ? docData.ref.parent.parent.id
+          : usuarioLogado.uid;
+        const subRef = db.collection(`uid/${ownerUid}/faturamento/${docData.id}/lojas`);
         const subSnap = await subRef.get();
                 const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, qtd = 0;
@@ -1547,16 +1569,23 @@ const dataInput = document.getElementById("dataFaturamento");
       detalhesEl.innerHTML = `<div class="text-sm text-gray-500">🔄 Carregando...</div>`;
       detalhesEl.style.display = "block";
 
- let ref = db.collection("faturamento").doc(dataRef).collection("lojas");
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
-      }
-      const snap = await ref.get();
       const { decryptString } = await import('./crypto.js');
-
+ let refs = [];
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        const q = await db.collectionGroup('faturamento')
+          .where(firebase.firestore.FieldPath.documentId(), '==', dataRef)
+          .get();
+        q.forEach(doc => {
+          refs.push(db.collection(`uid/${doc.ref.parent.parent.id}/faturamento/${dataRef}/lojas`));
+        });
+      } else {
+        refs.push(db.collection(`uid/${usuarioLogado.uid}/faturamento/${dataRef}/lojas`));
+      }
       let html = "";
-     for (const doc of snap.docs) {
-        let d = doc.data();
+ for (const r of refs) {
+        const snap = await r.get();
+        for (const doc of snap.docs) {
+          let d = doc.data();
         if (d.encrypted) {
           try {
             const txt = await decryptString(d.encrypted, getPassphrase() || usuarioLogado.uid);
@@ -1573,17 +1602,27 @@ const dataInput = document.getElementById("dataFaturamento");
             <strong>${loja}</strong>: Bruto R$ ${bruto} | Líquido R$ ${liquido} | Vendas: ${vendas}
           </div>
         `;
-     }
+       }
+      }
 
       detalhesEl.innerHTML = html;
     }
 
     async function excluirFaturamento(data) {
-      if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
-      await db.collection("faturamento").doc(data).delete();
-      mostrarSucesso("Registro excluído com sucesso.");
-      carregarRegistrosFaturamento();
-    }
+        if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
+        if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+          const snap = await db.collectionGroup('faturamento')
+            .where(firebase.firestore.FieldPath.documentId(), '==', data)
+            .get();
+          for (const doc of snap.docs) {
+            await db.collection(`uid/${doc.ref.parent.parent.id}/faturamento`).doc(data).delete();
+          }
+        } else {
+          await db.collection('uid').doc(usuarioLogado.uid).collection('faturamento').doc(data).delete();
+        }
+        mostrarSucesso("Registro excluído com sucesso.");
+        carregarRegistrosFaturamento();
+      }
 
     function exportarJSON() {
       if (pedidosProcessados.length === 0) {
@@ -1684,7 +1723,12 @@ const dataInput = document.getElementById("dataFaturamento");
       const filtroMes = document.getElementById("filtroMesVendas")?.value;
       container.innerHTML = "🔄 Carregando...";
 
-      const ref = db.collection("skusVendidos");
+ let ref;
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        ref = db.collectionGroup('skusVendidos');
+      } else {
+        ref = db.collection('uid').doc(usuarioLogado.uid).collection('skusVendidos');
+      }
       const snap = await ref.get();
 
       container.innerHTML = "";
@@ -1697,10 +1741,10 @@ const dataInput = document.getElementById("dataFaturamento");
           if (anoFiltro !== anoDoc || mesFiltro !== mesDoc) continue;
         }
 
- let listaRef = db.collection(`skusVendidos/${dataDoc}/lista`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          listaRef = listaRef.where('uid', '==', usuarioLogado.uid);
-        }
+ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+          ? doc.ref.parent.parent.id
+          : usuarioLogado.uid;
+        const listaRef = db.collection(`uid/${ownerUid}/skusVendidos/${dataDoc}/lista`);
         const listaSnap = await listaRef.get();
         if (listaSnap.empty) continue;
 
@@ -1734,53 +1778,60 @@ const dataInput = document.getElementById("dataFaturamento");
       }
     }
     window.verDetalhesDia = async function (dataDoc) {
- let ref = db.collection(`skusVendidos/${dataDoc}/lista`);
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
+let uids = [];
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        const q = await db.collectionGroup('skusVendidos')
+          .where(firebase.firestore.FieldPath.documentId(), '==', dataDoc)
+          .get();
+        q.forEach(doc => uids.push(doc.ref.parent.parent.id));
+      } else {
+        uids.push(usuarioLogado.uid);
       }
-      const snap = await ref.get();
 
       const agrupadoPorLoja = {};
       let sobraEsperada = 0;
 
-      for (const doc of snap.docs) {
-        const { sku, total, loja } = doc.data();
-        if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
-        agrupadoPorLoja[loja].push({ sku, total });
+    for (const uid of uids) {
+        const ref = db.collection(`uid/${uid}/skusVendidos/${dataDoc}/lista`);
+        const snap = await ref.get();
+        for (const doc of snap.docs) {
+          const { sku, total, loja } = doc.data();
+          if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
+          agrupadoPorLoja[loja].push({ sku, total });
 
         // 🔍 Buscar CUSTO do SKU na coleção "products"
-        try {
-          const produtosRef = db.collection("products");
-          const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
-          if (!querySnap.empty) {
-            const dados = querySnap.docs[0].data();
-            const custo = Number(dados.custo || 0);
-            sobraEsperada += (total || 0) * custo;
+          try {
+            const produtosRef = db.collection("products");
+            const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
+            if (!querySnap.empty) {
+              const dados = querySnap.docs[0].data();
+              const custo = Number(dados.custo || 0);
+              sobraEsperada += (total || 0) * custo;
+            }
+          } catch (e) {
+            console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
           }
-        } catch (e) {
-          console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
         }
       }
 
       // 🔍 Somar valor líquido de todas as lojas do dia
       let valorLiquido = 0;
       try {
- let lojasRef = db.collection(`faturamento/${dataDoc}/lojas`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          lojasRef = lojasRef.where('uid', '==', usuarioLogado.uid);
-        }
-        const lojasSnap = await lojasRef.get();
-          const { decryptString } = await import('./crypto.js');
-        for (const lojaDoc of lojasSnap.docs) {
-          let dados = lojaDoc.data();
-          if (dados.encrypted) {
-            try {
-              const txt = await decryptString(dados.encrypted, getPassphrase() || usuarioLogado.uid);
-              dados = JSON.parse(txt);
-            } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+  const { decryptString } = await import('./crypto.js');
+        for (const uid of uids) {
+          const lojasRef = db.collection(`uid/${uid}/faturamento/${dataDoc}/lojas`);
+          const lojasSnap = await lojasRef.get();
+          for (const lojaDoc of lojasSnap.docs) {
+            let dados = lojaDoc.data();
+            if (dados.encrypted) {
+              try {
+                const txt = await decryptString(dados.encrypted, getPassphrase() || usuarioLogado.uid);
+                dados = JSON.parse(txt);
+              } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
+            }
+            valorLiquido += Number(dados.valorLiquido || 0);
           }
-          valorLiquido += Number(dados.valorLiquido || 0);
-           }
+          }
       } catch (e) {
         console.warn("Erro ao buscar valor líquido por loja:", e);
       }
@@ -1807,18 +1858,20 @@ const dataInput = document.getElementById("dataFaturamento");
     };
 
     async function exportarFaturamentoExcel() {
-let ref = db.collection("faturamento");
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
+ let ref;
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        ref = db.collectionGroup('faturamento');
+      } else {
+        ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
       }
       const snap = await ref.get();
       const { decryptString } = await import('./crypto.js');
 
       for (const docData of snap.docs) {
- let subRef = db.collection(`faturamento/${docData.id}/lojas`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          subRef = subRef.where('uid', '==', usuarioLogado.uid);
-        }
+ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+          ? docData.ref.parent.parent.id
+          : usuarioLogado.uid;
+        const subRef = db.collection(`uid/${ownerUid}/faturamento/${docData.id}/lojas`);
         const subSnap = await subRef.get();
        for (const sub of subSnap.docs) {
           let d = sub.data();
@@ -1856,9 +1909,11 @@ let ref = db.collection("faturamento");
       tbody.innerHTML = '<tr><td colspan="4">🔄 Carregando...</td></tr>';
       resumoEl.innerHTML = '';
 
-      let ref = db.collection('faturamento');
-      if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-        ref = ref.where('uid', '==', usuarioLogado.uid);
+    let ref;
+      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        ref = db.collectionGroup('faturamento');
+      } else {
+        ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
       }
       const snap = await ref.get();
 
@@ -1874,10 +1929,10 @@ let ref = db.collection("faturamento");
           if (ano !== anoFiltro || mes !== mesFiltro) continue;
         }
 
-        let subRef = db.collection(`faturamento/${doc.id}/lojas`);
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          subRef = subRef.where('uid', '==', usuarioLogado.uid);
-        }
+  const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+          ? doc.ref.parent.parent.id
+          : usuarioLogado.uid;
+        const subRef = db.collection(`uid/${ownerUid}/faturamento/${doc.id}/lojas`);
         const subSnap = await subRef.get();
                 const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, vendas = 0;
@@ -1896,10 +1951,8 @@ let ref = db.collection("faturamento");
 
         let sobraDia = 0;
         try {
-          let listaRef = db.collection(`skusVendidos/${doc.id}/lista`);
-          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-            listaRef = listaRef.where('uid', '==', usuarioLogado.uid);
-          }
+           let listaRef = db.collection(`uid/${ownerUid}/skusVendidos/${doc.id}/lista`);
+
           const listaSnap = await listaRef.get();
           listaSnap.forEach(item => {
             const { sku, total } = item.data();
