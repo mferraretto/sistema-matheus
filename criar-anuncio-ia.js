@@ -71,25 +71,30 @@ Características: ${caracteristicas}`;
 };
 
 
-window.buscarPalavrasChave = async function() {
+window.buscarPalavrasChave = async function () {
   const termo = document.getElementById('buscaKeyword').value;
 
- const prompt = `Apenas responda com um array JSON puro, com exatamente 10 objetos neste formato:
+  const prompt = `Responda apenas com um array JSON. NÃO escreva nada fora disso.
 [
-  { "palavra": "exemplo", "volume": "alto", "concorrencia": "média", "uso": "descrição da aplicação" },
+  { "palavra": "sapato confortável", "volume": "alto", "concorrencia": "baixa", "uso": "título" },
   ...
 ]
-Não inclua texto antes ou depois do JSON. Produto: "${termo}"`;
+Produto: "${termo}"`;
 
   try {
     const texto = await chamarIA(prompt, { json: true });
+    console.log("🧠 Resposta da IA (bruta):", texto);
 
     let lista;
     try {
       lista = typeof texto === 'string' ? JSON.parse(texto) : texto;
     } catch {
-      const match = texto.match(/\[.*\]/s);
-      lista = match ? JSON.parse(match[0]) : [];
+      const match = texto.match(/\[\s*\{[\s\S]+?\}\s*\]/); // Regex para extrair array JSON
+      if (match) {
+        lista = JSON.parse(match[0]);
+      } else {
+        throw new Error("Não foi possível extrair JSON da resposta.");
+      }
     }
 
     console.log("🔑 Palavras-chave:", lista);
@@ -100,10 +105,12 @@ Não inclua texto antes ou depois do JSON. Produto: "${termo}"`;
       html += `<tr><td class="p-2">${item.palavra}</td><td class="p-2">${item.volume}</td><td class="p-2">${item.concorrencia}</td><td class="p-2">${item.uso}</td></tr>`;
     }
     tabela.innerHTML = html;
+
   } catch (e) {
     alert('Erro ao buscar palavras-chave: ' + e.message);
   }
-};
+}
+
 
 window.salvarRascunho = async function() {
   const user = auth.currentUser;
