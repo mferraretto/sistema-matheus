@@ -32,17 +32,24 @@
           </button>
         </div>
       </div>
-      <div class="card mb-6">
-        <div class="flex flex-wrap gap-4 items-end">
-          <div class="flex-1">
-            <label class="block text-sm font-medium mb-2">Importar Planilha de Promoções:</label>
-            <input type="file" id="promoFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
-          </div>
-          <button onclick="()" class="btn-primary">
-            <i class="fas fa-upload mr-2"></i> Importar Promoções
-          </button>
-        </div>
-      </div>
+     <div class="card mb-6">
+  <div class="flex flex-wrap gap-4 items-end">
+    <div class="flex-1">
+      <label class="block text-sm font-medium mb-2">
+        Importar Planilha de Promoções:
+      </label>
+      <input type="file"
+             id="promoFileInput"
+             accept=".xlsx,.xls"
+             class="border p-2 rounded-lg w-full">
+    </div>
+    <!-- chama corretamente a função agora -->
+    <button onclick="importShopeePromoFile()" class="btn-primary">
+      <i class="fas fa-upload mr-2"></i> Importar Promoções
+    </button>
+  </div>
+</div>
+
       <div id="importedShopeeProducts" style="display:none;" class="mt-6">
         <div class="overflow-x-auto">
           <table class="table">
