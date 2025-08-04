@@ -393,11 +393,13 @@ async function checkProducts(isPromo = false) {
       if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
 async function applyPromoPriceUpdate(type) {
-  await carregarProdutosSistema();
-  if (!sistema.promoShopeeData) {
-    showToast('Importe a planilha de promoções primeiro!', 'warning');
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showToast('Usuário não autenticado', 'error');
     return;
   }
+
+  await carregarProdutosSistema();
 
   const systemProducts = sistema.produtos || [];
   const systemMap = new Map();
