@@ -127,7 +127,7 @@ async function carregarProdutosSistema() {
   if (!user) return;
  const pass = getPassphrase() || `chave-${user.uid}`;
   const { decryptString } = await import('./crypto.js');
-  const snap = await db.collection('uid').doc(user.uid).collection('products').get();
+  const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
   for (const doc of snap.docs) {
     const enc = doc.data().encrypted;
     if (!enc) continue;
@@ -226,7 +226,7 @@ await checkProducts();
       if (!user) return;
       const pass = getPassphrase() || `chave-${user.uid}`;
       const { decryptString } = await import('./crypto.js');
-      const snap = await db.collection('uid').doc(user.uid).collection('products').get();
+      const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
       const systemSkus = new Set();
       for (const doc of snap.docs) {
         const enc = doc.data().encrypted;
