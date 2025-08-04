@@ -366,10 +366,13 @@ function applyPromoPriceUpdate(type) {
 
   const systemProducts = sistema.produtos || [];
   const systemMap = new Map();
+
+  // ✅ Adiciona tanto o sku quanto o parentSku ao mapa
   systemProducts.forEach(p => {
-    if (p.sku) {
-      systemMap.set(String(p.sku).trim(), p);
-    }
+    const sku = p.sku ? String(p.sku).trim() : '';
+    const parentSku = p.parentSku ? String(p.parentSku).trim() : '';
+    if (sku) systemMap.set(sku, p);
+    if (parentSku && !systemMap.has(parentSku)) systemMap.set(parentSku, p);
   });
 
   let productsWithNoSku = 0;
@@ -392,7 +395,7 @@ function applyPromoPriceUpdate(type) {
       return;
     }
 
-    const systemProduct = systemMap.get(searchSku); // ✅ Aqui você busca corretamente
+    const systemProduct = systemMap.get(searchSku);
 
     if (!systemProduct) {
       productsNotFound++;
