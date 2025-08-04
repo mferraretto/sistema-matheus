@@ -159,11 +159,15 @@ async function carregarProdutosSistema() {
 
   for (const doc of snap.docs) {
     const data = doc.data();
-    if (data?.sku) {
+ const sku = data?.sku ? String(data.sku).trim().toUpperCase() : '';
+    const parentSku = data?.parentSku ? String(data.parentSku).trim().toUpperCase() : '';
+    if (sku || parentSku) {
+      data.sku = sku;
+      data.parentSku = parentSku;
       sistema.produtos.push(data);
     }
   }
-    console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku));
+  console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku || p.parentSku));
 
   console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
 
@@ -217,7 +221,6 @@ async function checkProducts(isPromo = false) {
     if (sku) systemSkus.add(sku);
     if (parentSku) systemSkus.add(parentSku);
   });
-
   // escolhe o array correto
   const lista = isPromo
     ? sistema.promoShopeeData
@@ -347,7 +350,7 @@ async function checkProducts(isPromo = false) {
             let modified = 0;
 
       products.forEach((prod, idx) => {
-   const sku = prod['Nº de Ref. SKU. (Opcional)']
+    const sku = prod['Nº de Ref. SKU. (Opcional)']
           ? String(prod['Nº de Ref. SKU. (Opcional)']).trim().toUpperCase()
           : '';
         const parentSku = prod['Nº de Ref. Parent SKU. (Opcional)']
@@ -356,9 +359,8 @@ async function checkProducts(isPromo = false) {
         const searchSku = sku || parentSku;
         const found = systemProducts.some(p => {
           const systemSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
-          return systemSku === searchSku;
-        });
-
+          const systemParentSku = p.parentSku ? String(p.parentSku).trim().toUpperCase() : '';
+          return systemSku === searchSku || systemParentSku === searchSku;
         const row = document.createElement('tr');
         const original = sistema.originalPromoShopeeData[idx] || {};
         const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
