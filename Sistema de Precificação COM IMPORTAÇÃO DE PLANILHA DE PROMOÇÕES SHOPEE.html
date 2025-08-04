@@ -1973,7 +1973,13 @@ function applyPriceUpdate(type) {
     }
     
     function showToast(message, type) {
-      const toastContainer = document.getElementById('toastContainer');
+  let toastContainer = document.getElementById('toastContainer');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'fixed bottom-5 right-5 z-50 space-y-2';
+        document.body.appendChild(toastContainer);
+      }
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `
