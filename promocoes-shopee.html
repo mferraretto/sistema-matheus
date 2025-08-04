@@ -106,6 +106,16 @@ async function addHistoryEntry(action, description) {
     console.error('Erro ao adicionar histórico:', error);
   }
 }
+    function normalizarSku(sku) {
+  if (!sku) return '';
+  return sku
+    .replace(/\s+/g, '')       // Remove espaços
+    .toUpperCase()             // Deixa maiúsculo
+    .split('+')                // Separa componentes
+    .sort()                    // Ordena
+    .join('+');                // Junta de volta
+}
+
 async function carregarProdutosSistema() {
   const user = firebase.auth().currentUser;
   if (!user) return;
