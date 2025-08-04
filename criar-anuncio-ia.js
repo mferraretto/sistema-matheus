@@ -74,12 +74,12 @@ Características: ${caracteristicas}`;
 window.buscarPalavrasChave = async function() {
   const termo = document.getElementById('buscaKeyword').value;
 
-  const prompt = `Retorne um array JSON com 10 objetos no formato:
+ const prompt = `Apenas responda com um array JSON puro, com exatamente 10 objetos neste formato:
 [
-  { "palavra": "...", "volume": "...", "concorrencia": "...", "uso": "..." },
+  { "palavra": "exemplo", "volume": "alto", "concorrencia": "média", "uso": "descrição da aplicação" },
   ...
 ]
-Para o produto: "${termo}"`;
+Não inclua texto antes ou depois do JSON. Produto: "${termo}"`;
 
   try {
     const texto = await chamarIA(prompt, { json: true });
