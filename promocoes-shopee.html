@@ -291,49 +291,43 @@ await checkProducts();
   }
 }
 
-     function importShopeePromoFile() {
-      const fileInput = document.getElementById('promoFileInput');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        showToast('Selecione um arquivo primeiro!', 'warning');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-        if (jsonData.length < 2) {
-          showToast('Planilha vazia ou formato inválido!', 'warning');
-          return;
-        }
-
-        const headers = jsonData[0];
-        const products = [];
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (row.length === 0) continue;
-          const prod = {};
-          for (let j = 0; j < headers.length; j++) {
-            prod[headers[j]] = row[j];
-          }
-          products.push(prod);
-        }
-
-        sistema.promoShopeeData = products;
-                sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
-        displayPromoProducts(products);
-        document.getElementById('promoImportedProducts').style.display = 'block';
-                document.getElementById('acaoPromocoes').style.display = 'flex';
-        showToast(`${products.length} produtos importados!`, 'success');
-      };
-
-      reader.readAsArrayBuffer(file);
+    function importShopeePromoFile() {
+  const fileInput = document.getElementById('promoFileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    showToast('Selecione um arquivo primeiro!', 'warning');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    if (rows.length < 2) {
+      showToast('Planilha vazia ou formato inválido!', 'warning');
+      return;
     }
+
+    const [headers, ...body] = rows;
+    const products = body
+      .filter(r => r.length)
+      .map(r => Object.fromEntries(headers.map((h,i) => [h, r[i]])));
+
+    sistema.promoShopeeData = products;
+    sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
+    displayPromoProducts(products);
+
+    // compara SKUs
+    await checkProducts(true);
+
+    document.getElementById('promoImportedProducts').style.display = 'block';
+    document.getElementById('acaoPromocoes').style.display = 'flex';
+    showToast(`${products.length} produtos importados!`, 'success');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
     function displayPromoProducts(products) {
       const body = document.getElementById('promoProductsTableBody');
       body.innerHTML = '';
