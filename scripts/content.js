@@ -1,6 +1,7 @@
 (async () => {
   const pedidos = [];
-
+ // Removido fetch de geolocalização via ipapi.co para evitar erros de
+  // rede desnecessários durante a execução da extensão.
   document.querySelectorAll(".order-card").forEach(card => {
     const idEl = card.querySelector(".order-sn");
     const valorEl = card.querySelector(".total-price");
