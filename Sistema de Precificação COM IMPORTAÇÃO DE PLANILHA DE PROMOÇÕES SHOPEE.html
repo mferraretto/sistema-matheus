@@ -261,19 +261,16 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
         console.error("Erro ao carregar histórico:", error);
       }
       
-      // Carrega produtos
+      // Carrega produtos sempre do caminho uid/<uid>/produtos
       try {
-   let productsQuery;
-        if (isAdmin) {
-          productsQuery = db.collectionGroup('produtos').orderBy('createdAt', 'desc');
-        } else {
-          productsQuery = db
-            .collection('uid')
-            .doc(user.uid)
-            .collection('produtos')
-            .orderBy('createdAt', 'desc');
-        }
-        const productsSnapshot = await productsQuery.get();
+  const productsSnapshot = await db
+          .collection('uid')
+          .doc(user.uid)
+          .collection('produtos')
+          .orderBy('createdAt', 'desc')
+          .get();
+
+
         sistema.produtos = [];
         productsSnapshot.forEach(doc => {
           sistema.produtos.push({ id: doc.id, ...doc.data() });
