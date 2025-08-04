@@ -163,9 +163,9 @@ async function carregarProdutosSistema() {
       sistema.produtos.push(data);
     }
   }
+    console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku));
 
   console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
-    console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku));
 
 }
 
