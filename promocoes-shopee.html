@@ -144,6 +144,7 @@ async function addHistoryEntry(action, description) {
     console.error('Erro ao adicionar histórico:', error);
   }
 }
+
 async function carregarProdutosSistema() {
   const user = firebase.auth().currentUser;
   if (!user) return;
@@ -165,7 +166,6 @@ async function carregarProdutosSistema() {
 
   console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
 }
-
 
 
 
@@ -386,7 +386,7 @@ function applyPromoPriceUpdate(type) {
     const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ?
                       String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
 
-    const searchSku = sku || parentSku;
+const searchSku = (sku || parentSku || '').toUpperCase();
 
     if (!searchSku) {
       productsWithNoSku++;
