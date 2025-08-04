@@ -398,7 +398,7 @@ function applyPromoPriceUpdate(type) {
       ? String(p.parentSku).trim().toUpperCase()
       : '';
     if (sku) systemMap.set(sku, p);
-    if (parentSku && !systemMap.has(parentSku)) systemMap.set(parentSku, p);
+if (parentSku) systemMap.set(parentSku, p);
   });
 
   let productsWithNoSku = 0;
@@ -407,10 +407,11 @@ function applyPromoPriceUpdate(type) {
   const skusNaoEncontrados = [];
 
   sistema.promoShopeeData.forEach((importedProduct) => {
-    const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ?
-                String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
-    const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ?
-                      String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
+const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ? 
+            String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim().toUpperCase() : null;
+const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ? 
+                  String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim().toUpperCase() : null;
+
 
 const searchSku = (sku || parentSku || '').toUpperCase();
 
