@@ -169,52 +169,66 @@ async function carregarProdutosSistema() {
 
 
 
+// 1) Importação e preenchimento do sistema
 function importShopeeFile() {
-  const input = document.getElementById('shopeeFileInput');
-  const file = input.files[0];
-  if (!file) {
-    alert('Selecione um arquivo primeiro');
-    return;
-  }
-
+  const file = document.getElementById('shopeeFileInput').files[0];
+  if (!file) return alert('Selecione um arquivo primeiro');
   const reader = new FileReader();
-  reader.onload = async function(e) {
-    const data    = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
-    const sheet    = workbook.Sheets[workbook.SheetNames[0]];
-    const rows     = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-    if (rows.length < 2) {
-      alert('Planilha vazia ou formato inválido');
-      return;
-    }
-
-    // Cabeçalho + corpo
-    const [headers, ...body] = rows;
-    // Converte cada linha em objeto { header: valor, … }
-    const importedProducts = body
+  reader.onload = async e => {
+    const data = new Uint8Array(e.target.result);
+    const wb   = XLSX.read(data, { type:'array' });
+    const [headers, ...body] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1 });
+    sistema.importedShopeeData = body
       .filter(r => r.length)
-      .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
+      .map(r => Object.fromEntries(headers.map((h,i) => [h, r[i]])));
 
-    // Armazena no sistema
-    sistema.importedShopeeData = importedProducts;
-    sistema.originalShopeeData = importedProducts.map(p => ({ ...p }));
-
-    // Exibe tabela
-    displayImportedProducts(importedProducts);
+    displayImportedProducts(sistema.importedShopeeData);
     document.getElementById('importedShopeeProducts').style.display = 'block';
+    document.getElementById('acaoPromocoes').style.display          = 'flex';
 
-    // Destrava os botões de ação
-    document.getElementById('acaoPromocoes').style.display = 'flex';
-
-    // Feedback
-    showToast(`${importedProducts.length} produtos importados!`, 'success');
-
-    // Comparação de SKUs
-    await checkProducts();
+    const total = await checkProducts(false);
+    document.getElementById('modifiedCount').textContent =
+      `🔍 Verificação finalizada: ${total} SKUs verificados.`;
   };
-
   reader.readAsArrayBuffer(file);
+}
+
+// 2) Função unificada de verificação
+async function checkProducts(isPromo = false) {
+  const user = firebase.auth().currentUser; if (!user) return 0;
+
+  // pega todos os SKUs do Firestore
+  const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
+  const systemSkus = new Set(snap.docs.map(d => String(d.data().sku||'').trim()));
+
+  // escolhe o array correto
+  const lista = isPromo
+    ? sistema.promoShopeeData
+    : sistema.importedShopeeData;
+
+  // percorre e marca
+  let count = 0;
+  lista.forEach((prod, idx) => {
+    const sku = (
+      prod['Nº de Ref. SKU. (Opcional)'] ||
+      prod['Nº de Ref. Parent SKU. (Opcional)'] ||
+      ''
+    ).toString().trim();
+    const found = sku && systemSkus.has(sku);
+    if (found) count++;
+    prod.encontrado = found;
+    prod.status     = found ? 'Encontrado' : 'Não encontrado';
+
+    // atualiza a célula de status
+    const tbodyId = isPromo ? 'promoProductsTableBody' : 'importedProductsTableBody';
+    const row     = document.querySelectorAll(`#${tbodyId} tr`)[idx];
+    const td      = row.querySelector('.status-cell');
+    td.textContent = prod.status;
+    row.classList.toggle('bg-green-100', found);
+    row.classList.toggle('bg-red-100',  !found);
+  });
+
+  return count;
 }
 
     function displayImportedProducts(products) {
@@ -258,65 +272,7 @@ function importShopeeFile() {
       });
     }
 
-  async function checkProducts(isPromo = false) {
-  const user = firebase.auth().currentUser;
-  if (!user) return;
-
-  // 1) Buscando SKUs do sistema
-  const snap = await db
-    .collection('uid')
-    .doc(user.uid)
-    .collection('produtos')
-    .get();
-
-  const systemSkus = new Set(
-    snap.docs
-      .map(d => d.data()?.sku)
-      .filter(Boolean)
-      .map(s => String(s).trim())
-  );
-
-  // 2) Definindo fonte de dados e seletores conforme o tipo
-  const lista   = isPromo
-    ? sistema.promoShopeeData
-    : sistema.importedShopeeData;
-
-  const tableBodyId = isPromo
-    ? 'promoProductsTableBody'
-    : 'importedProductsTableBody';
-
-  const rows = document
-    .querySelectorAll(`#${tableBodyId} tr`);
-
-  // 3) Itera e marca cada linha
-  let verifiedCount = 0;
-  lista.forEach((prod, idx) => {
-    const sku = (
-      prod['Nº de Ref. SKU. (Opcional)'] ||
-      prod['Nº de Ref. Parent SKU. (Opcional)'] ||
-      ''
-    ).toString().trim();
-
-    const found = sku && systemSkus.has(sku);
-    if (found) verifiedCount++;
-
-    // Atualiza o objeto e a célula
-    prod.encontrado = found;
-    prod.status    = found ? 'Encontrado' : 'Não encontrado';
-
-    const row      = rows[idx];
-    const statusTd = row?.querySelector('.status-cell');
-    if (statusTd) statusTd.textContent = prod.status;
-
-    // Ajusta o background conforme o resultado
-    row?.classList.toggle('bg-green-100', found);
-    row?.classList.toggle('bg-red-100',  !found);
-  });
-
-  console.log(`🔍 Verificação finalizada: ${verifiedCount} SKUs verificados.`);
-  return verifiedCount;
-}
-
+ 
   function importShopeePromoFile() {
   const fileInput = document.getElementById('promoFileInput');
   const file = fileInput.files[0];
