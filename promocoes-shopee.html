@@ -121,22 +121,55 @@
   originalShopeeData: [],
   originalPromoShopeeData: []
 };
-
+async function addHistoryEntry(action, description) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  const entry = {
+    action,
+    description,
+    user: user.email,
+    userId: user.uid,
+    timestamp: new Date().toISOString()
+  };
+  try {
+    await db.collection('history').add(entry);
+  } catch (error) {
+    console.error('Erro ao adicionar histórico:', error);
+  }
+}
 async function carregarProdutosSistema() {
   const user = firebase.auth().currentUser;
   if (!user) return;
- const pass = getPassphrase() || `chave-${user.uid}`;
+
+  const pass = getPassphrase() || `chave-${user.uid}`;
   const { decryptString } = await import('./crypto.js');
-  const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
+
+  const snap = await db
+    .collection('uid')
+    .doc(user.uid)
+    .collection('produtos')
+    .get();
+
+  sistema.produtos = []; // limpar lista antes de carregar
+
   for (const doc of snap.docs) {
     const enc = doc.data().encrypted;
+
     if (!enc) continue;
-    const data = JSON.parse(await decryptString(enc, pass));
-    if (data?.sku) {
-      sistema.produtos.push(data);
+
+    try {
+      const data = JSON.parse(await decryptString(enc, pass));
+      if (data?.sku) {
+        sistema.produtos.push(data);
+      }
+    } catch (e) {
+      console.error('Erro ao descriptografar produto:', doc.id, e);
     }
   }
+
+  console.log(`✅ ${sistema.produtos.length} produtos carregados para o sistema.`);
 }
+
 
 
  function importShopeeFile() {
