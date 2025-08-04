@@ -1,17 +1,17 @@
-const functions = require("firebase-functions");
-const axios = require("axios");
-const cors = require("cors")({ origin: true });
+import { onRequest } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
+import cors from "cors";
+import axios from "axios";
 
-const DEEPSEEK_API_KEY = functions.config().deepseek.key;
+// Carrega variáveis .env se desejar localmente (dev)
+import "dotenv/config";
 
-exports.proxyDeepSeek = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
+const corsHandler = cors({ origin: true });
+
+export const proxyDeepSeek = onRequest((req, res) => {
+  corsHandler(req, res, async () => {
     try {
       const { model, messages, response_format, temperature } = req.body;
-
-      if (!messages || !Array.isArray(messages)) {
-        return res.status(400).json({ error: "mensagens inválidas" });
-      }
 
       const resposta = await axios.post(
         "https://api.deepseek.com/v1/chat/completions",
@@ -24,18 +24,17 @@ exports.proxyDeepSeek = functions.https.onRequest((req, res) => {
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
-          },
+            "Authorization": `Bearer ${process.env.DEEPSEEK_KEY}`
+          }
         }
       );
 
       res.status(200).json(resposta.data);
     } catch (error) {
-      const erroResposta = error.response?.data || {};
-      console.error("Erro ao consultar DeepSeek:", erroResposta, error.message);
+      logger.error("Erro ao consultar DeepSeek", error);
       res.status(500).json({
         erro: "Erro ao consultar DeepSeek",
-        detalhes: erroResposta || error.message,
+        detalhes: error.response?.data || error.message
       });
     }
   });
