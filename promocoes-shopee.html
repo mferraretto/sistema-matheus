@@ -121,6 +121,489 @@
   originalShopeeData: [],
   originalPromoShopeeData: []
 };
+async function addHistoryEntry(action, description) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  const entry = {
+    action,
+    description,
+    user: user.email,
+    userId: user.uid,
+    timestamp: new Date().toISOString()
+  };
+  try {
+    await db.collection('history').add(entry);
+  } catch (error) {
+    console.error('Erro ao adicionar histórico:', error);
+  }
+}
+async function carregarProdutosSistema() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const snap = await db
+    .collection('uid')
+    .doc(user.uid)
+    .collection('produtos')
+    .get();
+
+  sistema.produtos = [];
+
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (data?.sku) {
+      sistema.produtos.push(data);
+    }
+  }
+
+  console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
+}
+
+
+
+
+ function importShopeeFile() {
+      const input = document.getElementById('shopeeFileInput');
+      const file = input.files[0];
+      if (!file) {
+        alert('Selecione um arquivo primeiro');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (jsonData.length < 2) {
+          alert('Planilha vazia ou formato inválido');
+          return;
+        }
+        const headers = jsonData[0];
+        importedProducts = [];
+sistema.importedShopeeData = []; // ✅ adiciona aqui também
+sistema.originalShopeeData = []; // para exportar depois
+
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row.length === 0) continue;
+          const prod = {};
+          for (let j = 0; j < headers.length; j++) {
+            prod[headers[j]] = row[j];
+          }
+          importedProducts.push(prod);
+          sistema.importedShopeeData.push(prod);
+sistema.originalShopeeData.push({ ...prod }); // salva a versão original
+
+        }
+        displayImportedProducts(importedProducts);
+       document.getElementById('importedShopeeProducts').style.display = 'block';
+await checkProducts();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    function displayImportedProducts(products) {
+      const body = document.getElementById('importedProductsTableBody');
+      body.innerHTML = '';
+ let modified = 0;
+      products.forEach((prod, idx) => {
+        const tr = document.createElement('tr');
+        if (prod.modificado === true) {
+          tr.classList.add('bg-green-100');
+        } else if (prod.modificado === false) {
+          tr.classList.add('bg-red-100');
+        } else if (typeof prod.encontrado !== 'undefined') {
+          tr.classList.add(prod.encontrado ? 'bg-green-100' : 'bg-red-100');
+        }
+
+        const statusText = prod.status || '';
+        tr.innerHTML = `
+          <td>${prod['ID do produto'] || ''}</td>
+          <td>${prod['Nº de Ref. Parent SKU. (Opcional)'] || ''}</td>
+          <td>${prod['Nº de Ref. SKU. (Opcional)'] || ''}</td>
+          <td>${prod['Preço original (opcional)'] || ''}</td>
+          <td>${prod['Preço de desconto'] || ''}</td>
+          <td class="status">${statusText}</td>
+        `;
+        body.appendChild(tr);
+      });
+      const countEl = document.getElementById('modifiedCount');
+      if (countEl) countEl.textContent = `${modified} SKUs modificados`;
+      return modified;
+    }
+ function highlightPriceChanges(changedIdx) {
+      const rows = document.querySelectorAll('#importedProductsTableBody tr');
+      rows.forEach((row, idx) => {
+        row.classList.remove('bg-red-100', 'bg-green-100');
+        if (changedIdx.includes(idx)) {
+          row.classList.add('bg-green-100');
+        } else {
+          row.classList.add('bg-red-100');
+        }
+      });
+    }
+
+  async function checkProducts() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  try {
+    const snap = await db
+      .collection('uid')
+      .doc(user.uid)
+      .collection('produtos')
+      .get();
+
+    const systemSkus = new Set();
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      const sku = data.sku;
+      if (sku) {
+        systemSkus.add(String(sku).trim());
+      }
+    }
+
+    const rows = document.querySelectorAll('#importedProductsTableBody tr');
+
+    importedProducts.forEach((prod, idx) => {
+      const sku = (prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '') ||
+                  (prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '');
+      
+      const row = rows[idx];
+      const found = sku && systemSkus.has(sku);
+
+      prod.encontrado = found;
+      prod.status = found ? 'Encontrado' : 'Não encontrado';
+
+      if (found) {
+        row.classList.add('bg-green-100');
+        row.querySelector('.status').textContent = 'Encontrado';
+      } else {
+        row.classList.add('bg-red-100');
+        row.querySelector('.status').textContent = 'Não encontrado';
+      }
+    });
+
+    console.log(`🔍 Verificação finalizada: ${importedProducts.length} SKUs verificados.`);
+  } catch (error) {
+    console.error('Erro ao verificar produtos:', error);
+    showToast('Erro ao verificar produtos importados', 'error');
+  }
+}
+
+     function importShopeePromoFile() {
+      const fileInput = document.getElementById('promoFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        showToast('Selecione um arquivo primeiro!', 'warning');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        if (jsonData.length < 2) {
+          showToast('Planilha vazia ou formato inválido!', 'warning');
+          return;
+        }
+
+        const headers = jsonData[0];
+        const products = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row.length === 0) continue;
+          const prod = {};
+          for (let j = 0; j < headers.length; j++) {
+            prod[headers[j]] = row[j];
+          }
+          products.push(prod);
+        }
+
+        sistema.promoShopeeData = products;
+                sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
+        displayPromoProducts(products);
+        document.getElementById('promoImportedProducts').style.display = 'block';
+                document.getElementById('acaoPromocoes').style.display = 'flex';
+        showToast(`${products.length} produtos importados!`, 'success');
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+    function displayPromoProducts(products) {
+      const body = document.getElementById('promoProductsTableBody');
+      body.innerHTML = '';
+      const systemProducts = sistema.produtos || [];
+            let modified = 0;
+
+      products.forEach((prod, idx) => {
+        const sku = prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '';
+        const parentSku = prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '';
+        const searchSku = sku || parentSku;
+        const found = systemProducts.some(p => {
+          const systemSku = p.sku ? String(p.sku).trim() : '';
+          return systemSku === searchSku;
+        });
+
+        const row = document.createElement('tr');
+        const original = sistema.originalPromoShopeeData[idx] || {};
+        const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
+        if (isModified) {
+          row.classList.add('bg-green-100');
+          modified++;
+        } else {
+          row.classList.add('bg-red-100');
+        }
+        if (!found) row.classList.add('bg-red-50');
+        row.innerHTML = `
+          <td>${prod['ID do produto'] || ''}</td>
+          <td>${parentSku}</td>
+          <td>${sku}</td>
+          <td>${prod['Preço original (opcional)'] || ''}</td>
+          <td class="font-bold">${prod['Preço de desconto'] || ''}</td>
+          <td>${found ? 'Encontrado' : 'Não encontrado'}</td>
+        `;
+        body.appendChild(row);
+      });
+         const countEl = document.getElementById('promoChangesCount');
+      if (countEl) countEl.textContent = `${modified} SKUs modificados`;
+    }
+function applyPromoPriceUpdate(type) {
+  if (!sistema.promoShopeeData) {
+    showToast('Importe a planilha de promoções primeiro!', 'warning');
+    return;
+  }
+
+  const systemProducts = sistema.produtos;
+  let productsWithNoSku = 0;
+  let productsNotFound = 0;
+  let productsUpdated = 0;
+  const skusNaoEncontrados = [];
+
+  sistema.promoShopeeData.forEach((importedProduct) => {
+    const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ?
+                String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
+    const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ?
+                      String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
+
+    const searchSku = sku || parentSku;
+
+    if (!searchSku) {
+      productsWithNoSku++;
+      importedProduct.modificado = false;
+      importedProduct.status = 'Sem SKU';
+      return;
+    }
+
+    const systemProduct = systemProducts.find(p => {
+      const systemSku = p.sku ? String(p.sku).trim() : '';
+      return systemSku === searchSku;
+    });
+
+    if (!systemProduct) {
+      productsNotFound++;
+      importedProduct.modificado = false;
+      skusNaoEncontrados.push(searchSku);
+      importedProduct.status = 'Não encontrado';
+      return;
+    }
+
+    let priceToApply = 0;
+    switch(type) {
+      case 'promo':
+        priceToApply = parseFloat(systemProduct.precoMinimo).toFixed(2);
+        break;
+      case 'medium':
+        priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
+        break;
+      case 'ideal':
+        priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
+        break;
+    }
+    
+    const oldPrice = importedProduct['Preço de desconto'];
+    if (parseFloat(oldPrice) !== parseFloat(priceToApply)) {
+ importedProduct.modificado = true;
+      importedProduct.status = 'Atualizado';
+      productsUpdated++;
+    } else {
+      importedProduct.modificado = false;
+    }
+    importedProduct['Preço de desconto'] = priceToApply;
+   
+  });
+
+  displayPromoProducts(sistema.promoShopeeData);
+
+   showToast(`✅ Atualizados ${productsUpdated} SKUs! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
+
+
+  if (skusNaoEncontrados.length > 0) {
+    const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
+    document.getElementById('toastContainer').innerHTML += `
+      <div class="toast toast-warning">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+          <strong>${skusNaoEncontrados.length} SKUs não encontrados:</strong>
+          <ul class="text-sm mt-1 list-disc pl-4 max-h-40 overflow-y-auto">${lista}</ul>
+        </div>
+      </div>
+    `;
+  }
+
+  addHistoryEntry('price_update', `${productsUpdated} preços atualizados com ${type}`);
+}
+ function exportPromoFile() {
+      if (!sistema.promoShopeeData || !sistema.originalPromoShopeeData.length) {
+        showToast('Nenhum dado para exportar!', 'warning');
+        return;
+      }
+      
+       const headers = Object.keys(sistema.originalPromoShopeeData[0]);
+
+      const dataToExport = [headers];
+      
+
+      sistema.originalPromoShopeeData.forEach((origProd, idx) => {
+        const updated = sistema.promoShopeeData[idx] || {};
+        const exportProd = { ...origProd };
+        if (updated['Preço de desconto'] !== undefined) {
+          exportProd['Preço de desconto'] = updated['Preço de desconto'];
+        }
+        const row = headers.map(header => exportProd[header]);
+        dataToExport.push(row);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Promoções");
+      
+      XLSX.writeFile(wb, `promocoes_shopee_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      
+ addHistoryEntry('export', 'Planilha de promoções exportada');
+      showToast('Planilha de promoções exportada com sucesso!', 'success');
+    }
+
+  </script>
+  <!-- Toast container -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+<script>
+  function showToast(mensagem, tipo = 'success') {
+    const container = document.getElementById('toastContainer');
+
+    const cor = tipo === 'success' ? 'bg-green-500' :
+                tipo === 'warning' ? 'bg-yellow-500' :
+                tipo === 'error'   ? 'bg-red-500' : 'bg-blue-500';
+
+    const toast = document.createElement('div');
+    toast.className = `${cor} text-white px-4 py-3 rounded shadow-lg flex items-center justify-between min-w-[250px] animate-fadeIn`;
+    toast.innerHTML = `
+      <span class="mr-4">${mensagem}</span>
+      <button onclick="this.parentElement.remove()" class="text-white font-bold">×</button>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remover após 4s
+    setTimeout(() => toast.remove(), 4000);
+  }
+</script>
+
+  <script src="shared.js"></script>
+</body>
+</html>
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-2">Importar Planilha de Promoções:</label>
+            <input type="file" id="promoFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
+          </div>
+          <button onclick="importShopeePromoFile()" class="btn-primary">
+            <i class="fas fa-upload mr-2"></i> Importar Promoções
+          </button>
+        </div>
+      </div>
+      <div id="importedShopeeProducts" style="display:none;" class="mt-6">
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID Produto</th>
+                <th>Parent SKU</th>
+                <th>SKU</th>
+                <th>Preço Original</th>
+                <th>Preço Desconto</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="importedProductsTableBody"></tbody>
+          </table>
+        </div>
+        <p id="modifiedCount" class="mt-2 font-bold"></p>
+      </div>
+
+      <div id="promoImportedProducts" style="display:none;" class="mt-6">
+        <div class="overflow-x-auto">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID Produto</th>
+                <th>Parent SKU</th>
+                <th>SKU</th>
+                <th>Preço Original</th>
+                <th>Preço Desconto</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="promoProductsTableBody"></tbody>
+          </table>
+        </div>
+        <p id="promoChangesCount" class="mt-2 font-bold"></p>
+      </div>
+      <!-- Botões de ação -->
+<div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
+  <button onclick="applyPromoPriceUpdate('promo')" class="btn-danger">
+    <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
+  </button>
+  <button onclick="applyPromoPriceUpdate('medium')" class="btn-secondary">
+    <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
+  </button>
+  <button onclick="applyPromoPriceUpdate('ideal')" class="btn-success">
+    <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
+  </button>
+
+  <button onclick="exportPromoFile()" class="btn btn-success">
+    <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+  </button>
+  <button onclick="window.print()" class="btn btn-danger">
+    <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
+  </button>
+</div>
+    </div>
+  </div>
+  <script>
+ let db;
+    document.addEventListener('DOMContentLoaded', () => {
+      firebase.initializeApp(window.firebaseConfig);
+      db = firebase.firestore();
+      firebase.auth().onAuthStateChanged(user => {
+        if (!user) {
+          window.location.href = 'index.html?login=1';
+        }
+      });
+      carregarProdutosSistema();
+    });
+    var importedProducts = [];
+    const sistema = {
+  produtos: [],
+  importedShopeeData: [],
+  promoShopeeData: [],
+  originalShopeeData: [],
+  originalPromoShopeeData: []
+};
 
 async function carregarProdutosSistema() {
   const user = firebase.auth().currentUser;
