@@ -93,3 +93,35 @@
             </button>
           </div>
         </div>
+
+        <div class="card" id="controleLogistico">
+          <div class="card-header">
+            <i class="fas fa-truck"></i>
+            <h3>Controle Logístico</h3>
+            <span id="alertasLogistica" class="ml-4 text-red-600 font-semibold"></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <select id="filtroStatusLogistica" class="form-control" onchange="aplicarFiltroLogistica()">
+                <option value="">Todos os Status</option>
+                <option value="pendente">Pendente</option>
+                <option value="prazo">Prazo Próximo</option>
+                <option value="postado">Postado</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="tabelaLogistica">
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Status</th>
+                  <th>Código de Rastreio</th>
+                  <th>Checklist</th>
+                  <th>Postado no Prazo</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
