@@ -222,13 +222,35 @@ async function carregarProdutosSistema() {
          const countEl = document.getElementById('promoChangesCount');
       if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
-function applyPromoPriceUpdate(type) {
+async function applyPromoPriceUpdate(type) {
   if (!sistema.promoShopeeData) {
     showToast('Importe a planilha de promoções primeiro!', 'warning');
     return;
   }
 
-  const systemProducts = sistema.produtos;
+const user = firebase.auth().currentUser;
+  if (!user) {
+    showToast('Usuário não autenticado!', 'error');
+    return;
+  }
+
+  let systemProducts = [];
+  try {
+    const snap = await db
+      .collection('uid')
+      .doc(user.uid)
+      .collection('produtos')
+      .get();
+
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data?.sku) systemProducts.push(data);
+    });
+  } catch (error) {
+    console.error('Erro ao carregar produtos do sistema:', error);
+    showToast('Erro ao carregar produtos do sistema', 'error');
+    return;
+  }
   let productsWithNoSku = 0;
   let productsNotFound = 0;
   let productsUpdated = 0;
