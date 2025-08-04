@@ -12,28 +12,54 @@ async function chamarIA(prompt, { json = false } = {}) {
     model: 'deepseek-chat',
     messages: [{ role: 'user', content: prompt }]
   };
-  if (json) body.response_format = { type: 'json_object' };  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
+  if (json) body.response_format = { type: 'json_object' };
+
+  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify(body)
+    body: JSON.stringify(body)
   });
+
   if (!resp.ok) {
     const text = await resp.text();
     throw new Error(`IA request failed: ${resp.status} ${text}`);
   }
+
   const data = await resp.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
+  const texto = data.choices?.[0]?.message?.content?.trim() || '';
+  console.log("🧠 Resposta da IA (bruta):", texto);
+  return texto;
 }
 
 window.gerarAnuncioIA = async function() {
   const nome = document.getElementById('nomeProduto').value;
   const preco = document.getElementById('precoBase').value;
   const caracteristicas = document.getElementById('caracteristicas').value;
-  const prompt = `Você é um assistente de marketing da Shopee. Gere um anúncio em formato JSON com as chaves titulo, descricao, categoria e palavras_chave (lista).\nProduto: ${nome}\nPreço: ${preco}\nCaracterísticas: ${caracteristicas}`;
+
+  const prompt = `Responda com um JSON no formato:
+{
+  "titulo": "...",
+  "descricao": "...",
+  "categoria": "...",
+  "palavras_chave": ["...", "..."]
+}
+Produto: ${nome}
+Preço: ${preco}
+Características: ${caracteristicas}`;
+
   try {
-const texto = await chamarIA(prompt, { json: true });
-    console.log("Resposta da IA:", texto);
-    const dados = JSON.parse(texto);
+    const texto = await chamarIA(prompt, { json: true });
+
+    let dados;
+    try {
+      dados = typeof texto === 'string' ? JSON.parse(texto) : texto;
+    } catch {
+      const match = texto.match(/\{[\s\S]+\}/);
+      dados = match ? JSON.parse(match[0]) : {};
+    }
+
+    console.log("🎯 Dados processados:", dados);
+
     document.getElementById('sugestoes').classList.remove('hidden');
     document.getElementById('tituloIA').value = dados.titulo || '';
     document.getElementById('descricaoIA').value = dados.descricao || '';
@@ -42,25 +68,42 @@ const texto = await chamarIA(prompt, { json: true });
   } catch (e) {
     alert('Erro ao gerar anúncio: ' + e.message);
   }
-}
+};
+
 
 window.buscarPalavrasChave = async function() {
   const termo = document.getElementById('buscaKeyword').value;
-  const prompt = `Retorne um array JSON com 10 objetos contendo as chaves palavra, volume, concorrencia e uso para o produto "${termo}".`;
+
+  const prompt = `Retorne um array JSON com 10 objetos no formato:
+[
+  { "palavra": "...", "volume": "...", "concorrencia": "...", "uso": "..." },
+  ...
+]
+Para o produto: "${termo}"`;
+
   try {
- const texto = await chamarIA(prompt, { json: true });
-    console.log("Texto recebido:", texto);
-    const lista = JSON.parse(texto);
+    const texto = await chamarIA(prompt, { json: true });
+
+    let lista;
+    try {
+      lista = typeof texto === 'string' ? JSON.parse(texto) : texto;
+    } catch {
+      const match = texto.match(/\[.*\]/s);
+      lista = match ? JSON.parse(match[0]) : [];
+    }
+
+    console.log("🔑 Palavras-chave:", lista);
+
     const tabela = document.getElementById('resultadoKeywords');
     let html = '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';
-  for (const item of lista) {
+    for (const item of lista) {
       html += `<tr><td class="p-2">${item.palavra}</td><td class="p-2">${item.volume}</td><td class="p-2">${item.concorrencia}</td><td class="p-2">${item.uso}</td></tr>`;
     }
     tabela.innerHTML = html;
   } catch (e) {
     alert('Erro ao buscar palavras-chave: ' + e.message);
   }
-}
+};
 
 window.salvarRascunho = async function() {
   const user = auth.currentUser;
