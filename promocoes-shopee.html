@@ -198,6 +198,8 @@ sistema.originalShopeeData.push({ ...prod }); // salva a versão original
         }
         displayImportedProducts(importedProducts);
        document.getElementById('importedShopeeProducts').style.display = 'block';
+    document.getElementById('acaoPromocoes').style.display = 'flex';
+    showToast(`${products.length} produtos importados!`, 'success');
 await checkProducts();
       };
       reader.readAsArrayBuffer(file);
