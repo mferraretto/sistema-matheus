@@ -364,7 +364,14 @@ function applyPromoPriceUpdate(type) {
     return;
   }
 
-  const systemProducts = sistema.produtos;
+  const systemProducts = sistema.produtos || [];
+  const systemMap = new Map();
+  systemProducts.forEach(p => {
+    if (p.sku) {
+      systemMap.set(String(p.sku).trim(), p);
+    }
+  });
+
   let productsWithNoSku = 0;
   let productsNotFound = 0;
   let productsUpdated = 0;
@@ -385,10 +392,7 @@ function applyPromoPriceUpdate(type) {
       return;
     }
 
-    const systemProduct = systemProducts.find(p => {
-      const systemSku = p.sku ? String(p.sku).trim() : '';
-      return systemSku === searchSku;
-    });
+    const systemProduct = systemMap.get(searchSku); // ✅ Aqui você busca corretamente
 
     if (!systemProduct) {
       productsNotFound++;
@@ -410,23 +414,23 @@ function applyPromoPriceUpdate(type) {
         priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
         break;
     }
-    
+
     const oldPrice = importedProduct['Preço de desconto'];
     if (parseFloat(oldPrice) !== parseFloat(priceToApply)) {
- importedProduct.modificado = true;
+      importedProduct.modificado = true;
       importedProduct.status = 'Atualizado';
       productsUpdated++;
     } else {
       importedProduct.modificado = false;
+      importedProduct.status = 'Sem alteração';
     }
+
     importedProduct['Preço de desconto'] = priceToApply;
-   
   });
 
   displayPromoProducts(sistema.promoShopeeData);
 
-   showToast(`✅ Atualizados ${productsUpdated} SKUs! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
-
+  showToast(`✅ Atualizados ${productsUpdated} SKUs! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
 
   if (skusNaoEncontrados.length > 0) {
     const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
@@ -443,6 +447,7 @@ function applyPromoPriceUpdate(type) {
 
   addHistoryEntry('price_update', `${productsUpdated} preços atualizados com ${type}`);
 }
+
  function exportPromoFile() {
       if (!sistema.promoShopeeData || !sistema.originalPromoShopeeData.length) {
         showToast('Nenhum dado para exportar!', 'warning');
