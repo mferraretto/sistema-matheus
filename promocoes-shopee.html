@@ -145,32 +145,38 @@ async function addHistoryEntry(action, description) {
   }
 }
 
-async function carregarProdutosSistema() {
-  const user = firebase.auth().currentUser;
-  if (!user) return;
+function carregarProdutosSistema() {
+  return new Promise(async (resolve, reject) => {
+    const user = firebase.auth().currentUser;
+    if (!user) return reject("Usuário não autenticado");
 
-  const snap = await db
-    .collection('uid')
-    .doc(user.uid)
-    .collection('produtos')
-    .get();
+    try {
+      const snap = await db
+        .collection('uid')
+        .doc(user.uid)
+        .collection('produtos')
+        .get();
 
-  sistema.produtos = [];
+      sistema.produtos = [];
 
-  for (const doc of snap.docs) {
-    const data = doc.data();
- const sku = data?.sku ? String(data.sku).trim().toUpperCase() : '';
-    const parentSku = data?.parentSku ? String(data.parentSku).trim().toUpperCase() : '';
-    if (sku || parentSku) {
-      data.sku = sku;
-      data.parentSku = parentSku;
-      sistema.produtos.push(data);
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        const sku = data?.sku ? String(data.sku).trim().toUpperCase() : '';
+        const parentSku = data?.parentSku ? String(data.parentSku).trim().toUpperCase() : '';
+        if (sku || parentSku) {
+          data.sku = sku;
+          data.parentSku = parentSku;
+          sistema.produtos.push(data);
+        }
+      }
+
+      console.log("✅ Produtos carregados:", sistema.produtos.map(p => p.sku || p.parentSku));
+      resolve(); // Finaliza a Promise com sucesso
+    } catch (erro) {
+      console.error("Erro ao carregar produtos:", erro);
+      reject(erro); // Finaliza a Promise com erro
     }
-  }
-  console.log("SKUs carregados do sistema:", sistema.produtos.map(p => p.sku || p.parentSku));
-
-  console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
-
+  });
 }
 
 
@@ -386,7 +392,8 @@ async function checkProducts(isPromo = false) {
          const countEl = document.getElementById('promoChangesCount');
       if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
-function applyPromoPriceUpdate(type) {
+async function applyPromoPriceUpdate(type) {
+  await carregarProdutosSistema();
   if (!sistema.promoShopeeData) {
     showToast('Importe a planilha de promoções primeiro!', 'warning');
     return;
