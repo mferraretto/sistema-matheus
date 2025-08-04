@@ -2,30 +2,29 @@ const functions = require("firebase-functions");
 const axios = require("axios");
 const cors = require("cors")({ origin: true });
 
+const DEEPSEEK_API_KEY = functions.config().deepseek.key;
+
 exports.proxyDeepSeek = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     try {
-      const pergunta = req.body.pergunta || "Me diga um insight";
+      const { model, messages, response_format, temperature } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: "mensagens inválidas" });
+      }
 
       const resposta = await axios.post(
-        "https://api.deepseek.com/chat/completions", // ✅ endpoint correto
+        "https://api.deepseek.com/v1/chat/completions",
         {
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: "Você é um especialista em performance de vendas para Shopee.",
-            },
-            {
-              role: "user",
-              content: pergunta,
-            },
-          ],
+          model: model || "deepseek-chat",
+          messages,
+          response_format,
+          temperature: temperature || 0.8
         },
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer sk-2ada97f70b3b4ef89efc228801335b93", // ✅ prefixo "Bearer"
+            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
           },
         }
       );
@@ -41,4 +40,3 @@ exports.proxyDeepSeek = functions.https.onRequest((req, res) => {
     }
   });
 });
-
