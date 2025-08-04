@@ -25,9 +25,13 @@ async function carregarProdutos() {
     for (const doc of snap.docs) {
       const owner = doc.ref.parent.parent.id;
       const pass = getPassphrase() || `chave-${owner}`;
-      const enc = doc.data().encrypted;
-      if (!enc) continue;
-      const data = JSON.parse(await decryptString(enc, pass));
+       const docData = doc.data();
+      let data;
+      if (docData.encrypted) {
+        data = JSON.parse(await decryptString(docData.encrypted, pass));
+      } else {
+        data = docData;
+      }
       produtos.push({ id: doc.id, uid: owner, ...data });
     }
   } else if (uid) {
@@ -39,9 +43,13 @@ async function carregarProdutos() {
       .orderBy('createdAt', 'desc')
       .get();
     for (const doc of snap.docs) {
-      const enc = doc.data().encrypted;
-      if (!enc) continue;
-      const data = JSON.parse(await decryptString(enc, pass));
+    const docData = doc.data();
+      let data;
+      if (docData.encrypted) {
+        data = JSON.parse(await decryptString(docData.encrypted, pass));
+      } else {
+        data = docData;
+      }
       produtos.push({ id: doc.id, uid, ...data });
     }
   }
@@ -246,7 +254,7 @@ const user = firebase.auth().currentUser;
 async function excluirTodos() {
   if (!produtos.length) return;
   if (!confirm('Excluir todos os produtos?')) return;
- await Promise.all(
+await Promise.all(
     produtos.map(p =>
       dbListaPrecos
         .collection('uid')
@@ -255,7 +263,8 @@ async function excluirTodos() {
         .doc(p.id)
         .delete()
     )
-  );  selecionados.clear();
+  );
+  selecionados.clear();
   carregarProdutos();
 }
 function fecharModal() {
@@ -331,7 +340,7 @@ function importarExcelLista() {
       if (idxMedio !== -1 && row[idxMedio] !== undefined) updateData.precoMedio = parseFloat(row[idxMedio]) || 0;
       if (idxPromo !== -1 && row[idxPromo] !== undefined) updateData.precoPromo = parseFloat(row[idxPromo]) || 0;
       if (Object.keys(updateData).length) {
-   await dbListaPrecos
+    await dbListaPrecos
           .collection('uid')
           .doc(prod.uid)
           .collection('produtos')
