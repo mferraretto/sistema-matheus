@@ -1,7 +1,9 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const functions = require("firebase-functions");
 const cors = require("cors")({ origin: true });
 const fetch = require("node-fetch");
 
+// 🔍 Busca Shopee
 exports.proxyShopeeSearch = onRequest(
   {
     region: 'us-central1',
@@ -53,8 +55,7 @@ exports.proxyShopeeSearch = onRequest(
   }
 );
 
-
-// 🤖 Função para encaminhar mensagens à IA DeepSeek
+// 🤖 IA DeepSeek
 exports.proxyDeepSeek = onRequest(
   {
     region: 'us-central1',
@@ -76,17 +77,21 @@ exports.proxyDeepSeek = onRequest(
       return;
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    const body = req.body;
+    const apiKey = functions.config().deepseek?.key;
+
+    if (!apiKey) {
+      console.error('❌ API Key da DeepSeek está ausente!');
+      return res.status(500).json({ error: 'API Key não configurada. Use firebase functions:config:set deepseek.key="SUA_CHAVE"' });
+    }
 
     try {
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(req.body),
       });
       const data = await response.json();
       res.json(data);
@@ -96,3 +101,4 @@ exports.proxyDeepSeek = onRequest(
     }
   }
 );
+
