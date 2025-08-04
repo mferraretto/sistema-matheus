@@ -357,10 +357,12 @@ async function checkProducts(isPromo = false) {
           ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim().toUpperCase()
           : '';
         const searchSku = sku || parentSku;
-        const found = systemProducts.some(p => {
-          const systemSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
-          const systemParentSku = p.parentSku ? String(p.parentSku).trim().toUpperCase() : '';
-          return systemSku === searchSku || systemParentSku === searchSku;
+       const found = systemProducts.some(p => {
+  const systemSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
+  const systemParentSku = p.parentSku ? String(p.parentSku).trim().toUpperCase() : '';
+  return systemSku === searchSku || systemParentSku === searchSku;
+});
+
         const row = document.createElement('tr');
         const original = sistema.originalPromoShopeeData[idx] || {};
         const isModified = String(prod['Preço de desconto']) !== String(original['Preço de desconto']);
@@ -402,6 +404,7 @@ function applyPromoPriceUpdate(type) {
     if (sku) systemMap.set(sku, p);
 if (parentSku) systemMap.set(parentSku, p);
   });
+console.log("Mapeamento de SKUs do sistema:", Array.from(systemMap.keys()));
 
   let productsWithNoSku = 0;
   let productsNotFound = 0;
