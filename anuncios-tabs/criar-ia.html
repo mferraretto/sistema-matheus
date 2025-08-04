@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mentoria Ferraretto - Criar Anúncio com IA</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="../css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content">
+    <div class="card">
+      <div class="card-header">
+        <div class="flex items-center">
+          <i class="fas fa-magic text-2xl text-indigo-600 mr-3"></i>
+          <h2 class="text-2xl font-bold">Criar Anúncio com IA</h2>
+        </div>
+      </div>
+      <div class="card-body space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-medium">Nome do produto</label>
+            <input id="nomeProduto" type="text" class="input"/>
+          </div>
+          <div>
+            <label class="block font-medium">Preço base</label>
+            <input id="precoBase" type="number" class="input"/>
+          </div>
+          <div>
+            <label class="block font-medium">Estoque disponível</label>
+            <input id="estoque" type="number" class="input"/>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-medium">Características ou palavras-chave</label>
+            <textarea id="caracteristicas" class="textarea"></textarea>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block font-medium">Imagem (opcional)</label>
+            <input id="imagem" type="file" accept="image/*"/>
+          </div>
+        </div>
+        <button class="btn btn-primary flex items-center" onclick="gerarAnuncioIA()">
+          <i class="fas fa-robot mr-2"></i>Gerar Anúncio com IA
+        </button>
+        <div id="sugestoes" class="space-y-4 hidden">
+          <div>
+            <label class="block font-medium">Título sugerido</label>
+            <input id="tituloIA" type="text" class="input"/>
+          </div>
+          <div>
+            <label class="block font-medium">Descrição sugerida</label>
+            <textarea id="descricaoIA" class="textarea" rows="4"></textarea>
+          </div>
+          <div>
+            <label class="block font-medium">Categoria recomendada</label>
+            <input id="categoriaIA" type="text" class="input"/>
+          </div>
+          <div>
+            <label class="block font-medium">Palavras-chave estratégicas</label>
+            <input id="palavrasChaveIA" type="text" class="input"/>
+          </div>
+        </div>
+        <div class="border-t pt-4">
+          <h3 class="text-xl font-semibold mb-4">Buscador de Palavras-chave</h3>
+          <div class="flex items-center space-x-2 mb-4">
+            <input id="buscaKeyword" type="text" placeholder="Digite o nome ou tipo do produto" class="input flex-1"/>
+            <button class="btn btn-secondary" onclick="buscarPalavrasChave()"><i class="fas fa-search mr-1"></i>Buscar Palavras-Chave</button>
+          </div>
+          <table id="resultadoKeywords" class="min-w-full text-sm"></table>
+        </div>
+        <div class="flex space-x-4 pt-4">
+          <button class="btn btn-secondary" onclick="salvarRascunho()"><i class="fas fa-save mr-2"></i>Salvar como rascunho</button>
+          <button class="btn btn-primary" onclick="exportarCSV()"><i class="fas fa-file-export mr-2"></i>Exportar Anúncio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="../firebase-config.js"></script>
+  <script type="module" src="../criar-anuncio-ia.js"></script>
+  <script src="../shared.js"></script>
+</body>
+</html>
