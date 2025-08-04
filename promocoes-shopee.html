@@ -38,7 +38,7 @@
             <label class="block text-sm font-medium mb-2">Importar Planilha de Promoções:</label>
             <input type="file" id="promoFileInput" accept=".xlsx,.xls" class="border p-2 rounded-lg w-full">
           </div>
-          <button onclick="importShopeePromoFile()" class="btn-primary">
+          <button onclick="()" class="btn-primary">
             <i class="fas fa-upload mr-2"></i> Importar Promoções
           </button>
         </div>
@@ -299,40 +299,50 @@ function importShopeeFile() {
   }
 }
 
-    function importShopeePromoFile() {
+  function importShopeePromoFile() {
   const fileInput = document.getElementById('promoFileInput');
   const file = fileInput.files[0];
   if (!file) {
     showToast('Selecione um arquivo primeiro!', 'warning');
     return;
   }
+
   const reader = new FileReader();
   reader.onload = async function(e) {
-    const data = new Uint8Array(e.target.result);
+    // 1) Parse da planilha
+    const data     = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const sheet    = workbook.Sheets[workbook.SheetNames[0]];
+    const rows     = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // 2) Validação de conteúdo
     if (rows.length < 2) {
       showToast('Planilha vazia ou formato inválido!', 'warning');
       return;
     }
 
+    // 3) Constrói o array de objetos
     const [headers, ...body] = rows;
     const products = body
       .filter(r => r.length)
-      .map(r => Object.fromEntries(headers.map((h,i) => [h, r[i]])));
+      .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i]])));
 
-    sistema.promoShopeeData = products;
+    // 4) Salva no sistema e exibe tabela
+    sistema.promoShopeeData         = products;
     sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
     displayPromoProducts(products);
+    document.getElementById('promoImportedProducts').style.display = 'block';
 
-    // compara SKUs
+    // 5) Destrava os botões de ação
+    document.getElementById('acaoPromocoes').style.display = 'flex';
+
+    // 6) Compara SKUs (passando `true` para modo “promo”)
     await checkProducts(true);
 
-    document.getElementById('promoImportedProducts').style.display = 'block';
-    document.getElementById('acaoPromocoes').style.display = 'flex';
+    // 7) Feedback final
     showToast(`${products.length} produtos importados!`, 'success');
   };
+
   reader.readAsArrayBuffer(file);
 }
 
