@@ -200,8 +200,23 @@ async function checkProducts(isPromo = false) {
   const user = firebase.auth().currentUser; if (!user) return 0;
 
   // pega todos os SKUs do Firestore
-  const snap = await db.collection('uid').doc(user.uid).collection('produtos').get();
-  const systemSkus = new Set(snap.docs.map(d => String(d.data().sku||'').trim()));
+ const snap = await db
+    .collection('uid')
+    .doc(user.uid)
+    .collection('produtos')
+    .get();
+  const systemSkus = new Set();
+  snap.docs.forEach(d => {
+    const data = d.data();
+    const sku = String(data.sku || '')
+      .trim()
+      .toUpperCase();
+    const parentSku = String(data.parentSku || '')
+      .trim()
+      .toUpperCase();
+    if (sku) systemSkus.add(sku);
+    if (parentSku) systemSkus.add(parentSku);
+  });
 
   // escolhe o array correto
   const lista = isPromo
@@ -215,7 +230,10 @@ async function checkProducts(isPromo = false) {
       prod['Nº de Ref. SKU. (Opcional)'] ||
       prod['Nº de Ref. Parent SKU. (Opcional)'] ||
       ''
-    ).toString().trim();
+)
+      .toString()
+      .trim()
+      .toUpperCase();
     const found = sku && systemSkus.has(sku);
     if (found) count++;
     prod.encontrado = found;
@@ -329,11 +347,15 @@ async function checkProducts(isPromo = false) {
             let modified = 0;
 
       products.forEach((prod, idx) => {
-        const sku = prod['Nº de Ref. SKU. (Opcional)'] ? String(prod['Nº de Ref. SKU. (Opcional)']).trim() : '';
-        const parentSku = prod['Nº de Ref. Parent SKU. (Opcional)'] ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim() : '';
+   const sku = prod['Nº de Ref. SKU. (Opcional)']
+          ? String(prod['Nº de Ref. SKU. (Opcional)']).trim().toUpperCase()
+          : '';
+        const parentSku = prod['Nº de Ref. Parent SKU. (Opcional)']
+          ? String(prod['Nº de Ref. Parent SKU. (Opcional)']).trim().toUpperCase()
+          : '';
         const searchSku = sku || parentSku;
         const found = systemProducts.some(p => {
-          const systemSku = p.sku ? String(p.sku).trim() : '';
+          const systemSku = p.sku ? String(p.sku).trim().toUpperCase() : '';
           return systemSku === searchSku;
         });
 
@@ -371,8 +393,10 @@ function applyPromoPriceUpdate(type) {
 
   // ✅ Adiciona tanto o sku quanto o parentSku ao mapa
   systemProducts.forEach(p => {
-    const sku = p.sku ? String(p.sku).trim() : '';
-    const parentSku = p.parentSku ? String(p.parentSku).trim() : '';
+   const sku = p.sku ? String(p.sku).trim().toUpperCase() : '';
+    const parentSku = p.parentSku
+      ? String(p.parentSku).trim().toUpperCase()
+      : '';
     if (sku) systemMap.set(sku, p);
     if (parentSku && !systemMap.has(parentSku)) systemMap.set(parentSku, p);
   });
