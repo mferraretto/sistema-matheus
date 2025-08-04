@@ -32,6 +32,7 @@ window.gerarAnuncioIA = async function() {
   const prompt = `Você é um assistente de marketing da Shopee. Gere um anúncio em formato JSON com as chaves titulo, descricao, categoria e palavras_chave (lista).\nProduto: ${nome}\nPreço: ${preco}\nCaracterísticas: ${caracteristicas}`;
   try {
 const texto = await chamarIA(prompt, { json: true });
+    console.log("Resposta da IA:", texto);
     const dados = JSON.parse(texto);
     document.getElementById('sugestoes').classList.remove('hidden');
     document.getElementById('tituloIA').value = dados.titulo || '';
@@ -48,6 +49,7 @@ window.buscarPalavrasChave = async function() {
   const prompt = `Retorne um array JSON com 10 objetos contendo as chaves palavra, volume, concorrencia e uso para o produto "${termo}".`;
   try {
  const texto = await chamarIA(prompt, { json: true });
+    console.log("Texto recebido:", texto);
     const lista = JSON.parse(texto);
     const tabela = document.getElementById('resultadoKeywords');
     let html = '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';
