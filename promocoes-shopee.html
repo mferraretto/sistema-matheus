@@ -82,17 +82,17 @@
       </div>
       <!-- Botões de ação -->
 <div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
-  <button onclick="applyPriceUpdate('promo')" class="btn-danger">
+  <button onclick="applyPromoPriceUpdate('promo')" class="btn-danger">
     <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
   </button>
-  <button onclick="applyPriceUpdate('medium')" class="btn-secondary">
+  <button onclick="applyPromoPriceUpdate('medium')" class="btn-secondary">
     <i class="fas fa-chart-line mr-2"></i> Aplicar Lucro 5%
   </button>
-  <button onclick="applyPriceUpdate('ideal')" class="btn-success">
+  <button onclick="applyPromoPriceUpdate('ideal')" class="btn-success">
     <i class="fas fa-star mr-2"></i> Aplicar Lucro 10%
   </button>
 
-  <button onclick="exportShopeeFile()" class="btn btn-success">
+  <button onclick="exportPromoFile()" class="btn btn-success">
     <i class="fas fa-file-excel mr-2"></i> Exportar Excel
   </button>
   <button onclick="window.print()" class="btn btn-danger">
@@ -175,7 +175,6 @@ sistema.originalShopeeData.push({ ...prod }); // salva a versão original
         }
         displayImportedProducts(importedProducts);
        document.getElementById('importedShopeeProducts').style.display = 'block';
-document.getElementById('acaoPromocoes').style.display = 'flex';
 await checkProducts();
       };
       reader.readAsArrayBuffer(file);
@@ -289,6 +288,7 @@ await checkProducts();
                 sistema.originalPromoShopeeData = products.map(p => ({ ...p }));
         displayPromoProducts(products);
         document.getElementById('promoImportedProducts').style.display = 'block';
+                document.getElementById('acaoPromocoes').style.display = 'flex';
         showToast(`${products.length} produtos importados!`, 'success');
       };
 
@@ -332,9 +332,9 @@ await checkProducts();
          const countEl = document.getElementById('promoChangesCount');
       if (countEl) countEl.textContent = `${modified} SKUs modificados`;
     }
-function applyPriceUpdate(type) {
-  if (!sistema.importedShopeeData) {
-    showToast('Importe os dados da Shopee primeiro!', 'warning');
+function applyPromoPriceUpdate(type) {
+  if (!sistema.promoShopeeData) {
+    showToast('Importe a planilha de promoções primeiro!', 'warning');
     return;
   }
 
@@ -342,20 +342,19 @@ function applyPriceUpdate(type) {
   let productsWithNoSku = 0;
   let productsNotFound = 0;
   let productsUpdated = 0;
-    const changedIdx = [];
   const skusNaoEncontrados = [];
 
-  sistema.importedShopeeData.forEach((importedProduct, idx) => {
+  sistema.promoShopeeData.forEach((importedProduct) => {
     const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ?
                 String(importedProduct['Nº de Ref. SKU. (Opcional)']).trim() : null;
-    const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ? 
+    const parentSku = importedProduct['Nº de Ref. Parent SKU. (Opcional)'] ?
                       String(importedProduct['Nº de Ref. Parent SKU. (Opcional)']).trim() : null;
 
     const searchSku = sku || parentSku;
 
     if (!searchSku) {
       productsWithNoSku++;
-       importedProduct.modificado = false;
+      importedProduct.modificado = false;
       importedProduct.status = 'Sem SKU';
       return;
     }
@@ -376,7 +375,7 @@ function applyPriceUpdate(type) {
     let priceToApply = 0;
     switch(type) {
       case 'promo':
-        priceToApply = parseFloat(systemProduct.precoMinimo).toFixed(2); // ✅ usa o preço mínimo
+        priceToApply = parseFloat(systemProduct.precoMinimo).toFixed(2);
         break;
       case 'medium':
         priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
@@ -385,21 +384,23 @@ function applyPriceUpdate(type) {
         priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
         break;
     }
- const oldPrice = importedProduct['Preço de desconto'];
+    
+    const oldPrice = importedProduct['Preço de desconto'];
     if (parseFloat(oldPrice) !== parseFloat(priceToApply)) {
-      changedIdx.push(idx);
+ importedProduct.modificado = true;
+      importedProduct.status = 'Atualizado';
+      productsUpdated++;
+    } else {
+      importedProduct.modificado = false;
     }
     importedProduct['Preço de desconto'] = priceToApply;
-     importedProduct.modificado = true;
-    importedProduct.status = 'Atualizado';
-    productsUpdated++;
+   
   });
 
+  displayPromoProducts(sistema.promoShopeeData);
 
-  const modifiedCount = displayImportedProducts(sistema.importedShopeeData);
-  highlightPriceChanges(changedIdx);
+   showToast(`✅ Atualizados ${productsUpdated} SKUs! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
 
-showToast(`✅ Atualizados ${changedIdx.length} SKUs! ❌ Não encontrados: ${productsNotFound}, ⚠️ Sem SKU: ${productsWithNoSku}`, 'success');
 
   if (skusNaoEncontrados.length > 0) {
     const lista = skusNaoEncontrados.map(sku => `<li>${sku}</li>`).join("");
@@ -416,20 +417,19 @@ showToast(`✅ Atualizados ${changedIdx.length} SKUs! ❌ Não encontrados: ${pr
 
   addHistoryEntry('price_update', `${productsUpdated} preços atualizados com ${type}`);
 }
-
-    function exportShopeeFile() {
-      if (!sistema.importedShopeeData || !sistema.originalShopeeData.length) {
+ function exportPromoFile() {
+      if (!sistema.promoShopeeData || !sistema.originalPromoShopeeData.length) {
         showToast('Nenhum dado para exportar!', 'warning');
         return;
       }
       
-      // Recriar estrutura original com cabeçalhos
-      const headers = Object.keys(sistema.originalShopeeData[0]);
+       const headers = Object.keys(sistema.originalPromoShopeeData[0]);
+
       const dataToExport = [headers];
       
-      // Usar os dados originais e aplicar apenas as alterações de preço
-      sistema.originalShopeeData.forEach((origProd, idx) => {
-        const updated = sistema.importedShopeeData[idx] || {};
+
+      sistema.originalPromoShopeeData.forEach((origProd, idx) => {
+        const updated = sistema.promoShopeeData[idx] || {};
         const exportProd = { ...origProd };
         if (updated['Preço de desconto'] !== undefined) {
           exportProd['Preço de desconto'] = updated['Preço de desconto'];
@@ -438,16 +438,14 @@ showToast(`✅ Atualizados ${changedIdx.length} SKUs! ❌ Não encontrados: ${pr
         dataToExport.push(row);
       });
       
-      // Criar planilha
       const ws = XLSX.utils.aoa_to_sheet(dataToExport);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Promoções");
       
-      // Exportar
       XLSX.writeFile(wb, `promocoes_shopee_${new Date().toISOString().slice(0, 10)}.xlsx`);
       
-      addHistoryEntry('export', 'Planilha Shopee exportada');
-      showToast('Planilha Shopee exportada com sucesso!', 'success');
+ addHistoryEntry('export', 'Planilha de promoções exportada');
+      showToast('Planilha de promoções exportada com sucesso!', 'success');
     }
 
   </script>
