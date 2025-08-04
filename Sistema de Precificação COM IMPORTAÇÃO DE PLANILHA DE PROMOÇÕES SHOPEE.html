@@ -1257,8 +1257,19 @@ await db
         </div>
       `;
       
-      document.getElementById("modalContent").innerHTML = html;
-      document.getElementById("detalhesModal").style.display = "block";
+ const modalBody = document.getElementById("modalBody");
+      if (modalBody) {
+        modalBody.innerHTML = html;
+      }
+      const modal = document.getElementById("detalhesModal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        if (typeof openModal === 'function') {
+          openModal("detalhesModal");
+        } else {
+          modal.style.display = "block";
+        }
+      }
     }
 
     function getPlatformClass(plataforma) {
@@ -1356,7 +1367,11 @@ const prod = sistema.produtos.find(p => p.id === id);
     }
 
     function fecharModal() {
-      document.getElementById("detalhesModal").style.display = "none";
+ const modal = document.getElementById("detalhesModal");
+      if (modal) {
+        modal.style.display = "none";
+        modal.classList.add("hidden");
+      }
     }
 function mostrarDuplicados() {
       const container = document.getElementById("listaDuplicados");
