@@ -141,34 +141,24 @@ async function carregarProdutosSistema() {
   const user = firebase.auth().currentUser;
   if (!user) return;
 
-  const pass = getPassphrase() || `chave-${user.uid}`;
-  const { decryptString } = await import('./crypto.js');
-
   const snap = await db
     .collection('uid')
     .doc(user.uid)
     .collection('produtos')
     .get();
 
-  sistema.produtos = []; // limpar lista antes de carregar
+  sistema.produtos = [];
 
   for (const doc of snap.docs) {
-    const enc = doc.data().encrypted;
-
-    if (!enc) continue;
-
-    try {
-      const data = JSON.parse(await decryptString(enc, pass));
-      if (data?.sku) {
-        sistema.produtos.push(data);
-      }
-    } catch (e) {
-      console.error('Erro ao descriptografar produto:', doc.id, e);
+    const data = doc.data();
+    if (data?.sku) {
+      sistema.produtos.push(data);
     }
   }
 
-  console.log(`✅ ${sistema.produtos.length} produtos carregados para o sistema.`);
+  console.log(`✅ ${sistema.produtos.length} produtos carregados.`);
 }
+
 
 
 
