@@ -408,9 +408,11 @@
     // =============================================
     async function carregarProdutos() {
       try {
-        let consulta = db.collection("products");
-        if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-          consulta = consulta.where('uid', '==', usuarioLogado.uid);
+let consulta;
+        if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+          consulta = db.collectionGroup('produtos');
+        } else {
+          consulta = db.collection('uid').doc(usuarioLogado.uid).collection('produtos');
         }
         const snapshot = await consulta.get();
         produtos = {};
@@ -441,9 +443,11 @@
         return await executarComRetry(async () => {
           metas = {};
           // Carrega SKUs e custo dos produtos cadastrados
-          let produtosSnapQuery = db.collection("products");
-          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
-            produtosSnapQuery = produtosSnapQuery.where('uid', '==', usuarioLogado.uid);
+  let produtosSnapQuery;
+          if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+            produtosSnapQuery = db.collectionGroup('produtos');
+          } else {
+            produtosSnapQuery = db.collection('uid').doc(usuarioLogado.uid).collection('produtos');
           }
           const produtosSnap = await produtosSnapQuery.get();
           produtosSnap.forEach((doc) => {
@@ -453,6 +457,7 @@
                 valor: parseFloat(data.custo),
                 atualizadoEm: new Date()
               };
+          produtos[data.sku] = data.custo;
             }
           });
 
@@ -1799,10 +1804,10 @@ let uids = [];
           if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
           agrupadoPorLoja[loja].push({ sku, total });
 
-        // 🔍 Buscar CUSTO do SKU na coleção "products"
+        // 🔍 Buscar CUSTO do SKU na subcoleção "produtos" do usuário
           try {
-            const produtosRef = db.collection("products");
-            const querySnap = await produtosRef.where("sku", "==", sku).limit(1).get();
+            const produtosRef = db.collection('uid').doc(uid).collection('produtos');
+            const querySnap = await produtosRef.where('sku', '==', sku).limit(1).get();
             if (!querySnap.empty) {
               const dados = querySnap.docs[0].data();
               const custo = Number(dados.custo || 0);
