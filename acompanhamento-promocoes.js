@@ -202,3 +202,41 @@ function calcularStatus(inicio, fim) {
   if (inicio > hoje) return "Agendada";
   return "Ativa";
 }
+window.editarPromocao = function(id) {
+  const promo = promocoes.find(p => p.id === id);
+  if (!promo) return alert("Promoção não encontrada.");
+
+  document.getElementById('editId').value = promo.id;
+  document.getElementById('editNome').value = promo.nome;
+  document.getElementById('editProduto').value = promo.produto;
+  document.getElementById('editVendas').value = promo.vendas;
+  document.getElementById('editCliques').value = promo.cliques;
+
+  document.getElementById('modalEdicao').classList.remove('hidden');
+}
+window.salvarEdicao = function() {
+  const id = document.getElementById('editId').value;
+  const promo = promocoes.find(p => p.id === id);
+  if (!promo) return alert("Promoção não encontrada.");
+
+  promo.nome = document.getElementById('editNome').value;
+  promo.produto = document.getElementById('editProduto').value;
+  promo.vendas = parseInt(document.getElementById('editVendas').value);
+  promo.cliques = parseInt(document.getElementById('editCliques').value);
+
+  fecharModal();
+  renderTabela();
+  alert("Promoção atualizada!");
+}
+window.excluirPromocao = function(id) {
+  const index = promocoes.findIndex(p => p.id === id);
+  if (index === -1) return alert("Promoção não encontrada.");
+
+  if (confirm("Deseja realmente excluir esta promoção?")) {
+    promocoes.splice(index, 1);
+    renderTabela();
+  }
+}
+window.fecharModal = function() {
+  document.getElementById('modalEdicao').classList.add('hidden');
+}
