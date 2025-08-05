@@ -106,5 +106,33 @@
   <script type="module" src="firebase-config.js"></script>
   <script src="shared.js"></script>
   <script src="acompanhamento-promocoes.js"></script>
+  <!-- Modal de Edição -->
+<div id="modalEdicao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-lg p-6 w-full max-w-md space-y-4">
+    <h2 class="text-xl font-bold mb-2">Editar Promoção</h2>
+    <input type="hidden" id="editId">
+    <div>
+      <label class="block text-sm font-medium mb-1">Nome</label>
+      <input type="text" id="editNome" class="form-control">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Produto</label>
+      <input type="text" id="editProduto" class="form-control">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Vendas</label>
+      <input type="number" id="editVendas" class="form-control">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">Cliques</label>
+      <input type="number" id="editCliques" class="form-control">
+    </div>
+    <div class="flex justify-end gap-2 pt-4">
+      <button onclick="fecharModal()" class="btn btn-secondary">Cancelar</button>
+      <button onclick="salvarEdicao()" class="btn btn-primary">Salvar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
