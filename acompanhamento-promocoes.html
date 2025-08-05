@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ 
 </head>
 <body class="bg-gray-100">
   <div class="app-container">
@@ -58,7 +60,13 @@
           </div>
         </div>
       </div>
-
+<!-- Botão de Importação -->
+<div class="flex justify-end">
+  <label class="btn btn-primary cursor-pointer">
+    📂 Importar Planilha de Promoções
+    <input type="file" accept=".xlsx" hidden onchange="importarPlanilhaPromocoes(event)">
+  </label>
+</div>
       <!-- Tabela de Promoções -->
       <div class="card">
         <div class="overflow-x-auto">
