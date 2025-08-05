@@ -37,8 +37,12 @@ window.gerarAnuncioIA = async function() {
   const nome = document.getElementById('nomeProduto').value;
   const preco = document.getElementById('precoBase').value;
   const caracteristicas = document.getElementById('caracteristicas').value;
+  const material = document.getElementById('materialProduto').value;
+  const medidas = document.getElementById('medidasProduto').value;
+  const cor = document.getElementById('corProduto').value;
+  const uso = document.getElementById('usoProduto').value;
 
-const prompt = `
+  const prompt = `
 Você é um especialista em anúncios da Shopee. Crie um anúncio com base nas informações abaixo e responda com um JSON válido no seguinte formato:
 
 {
@@ -52,8 +56,11 @@ Informações do produto:
 - Nome: ${nome}
 - Preço: R$ ${preco}
 - Características: ${caracteristicas}
+- Material: ${material}
+- Medidas: ${medidas}
+- Cor: ${cor}
+- Indicação de uso: ${uso}
 `;
-
 
   try {
     const texto = await chamarIA(prompt, { json: true });
