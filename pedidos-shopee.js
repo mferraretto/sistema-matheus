@@ -21,8 +21,8 @@ export async function carregarPedidosShopee() {
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
     const uid = auth.currentUser.uid;
-    const pass = getPassphrase() || `chave-${uid}`;
-const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
+const pass = (await getPassphrase()) || `chave-${uid}`;
+    const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     const pedidos = [];
     for (const d of snap.docs) {
       const pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
@@ -50,7 +50,16 @@ const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
   }
 }
-
+async function getPassphrase() {
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise(resolve => {
+      chrome.storage.local.get(['user'], res => {
+        resolve(res?.user?.passphrase || null);
+      });
+    });
+  }
+  return null;
+}
 function mostrarDetalhesPedido(pedido) {
   const modal = document.getElementById('modalPedido');
   const detalhes = document.getElementById('detalhesPedido');
