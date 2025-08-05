@@ -22,10 +22,10 @@ export async function carregarPedidosShopee() {
   try {
     const uid = auth.currentUser.uid;
 const pass = (await getPassphrase()) || `chave-${uid}`;
-    const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
+    const snap = await getDocs(collection(db, `uid/${uid}/pedidosShopee`));
     const pedidos = [];
     for (const d of snap.docs) {
-      const pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
+      const pedido = await loadUserDoc(db, uid, 'pedidosShopee', d.id, pass);
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
     tbody.innerHTML = '';
