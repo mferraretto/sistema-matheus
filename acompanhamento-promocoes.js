@@ -134,3 +134,67 @@ function gerarLabels(inicio, fim) {
   }
   return labels;
 }
+window.importarPlanilhaPromocoes = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return alert("Nenhum arquivo selecionado.");
+
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = XLSX.utils.sheet_to_json(sheet);
+
+  const novoTipo = detectarTipoDePromocao(file.name, data);
+  console.log("Tipo detectado:", novoTipo);
+
+  data.forEach((linha, i) => {
+    const sku = linha["SKU"] || linha["Product SKU"] || linha["Product Id"];
+    const produto = linha["Product Name"] || linha["Nome do Produto"] || "";
+    const vendas = parseInt(linha["Order Count"] || linha["Sales"] || linha["Usage Count"] || 0);
+    const cliques = parseInt(linha["Click Count"] || 0);
+    const inicio = (linha["Start Time"] || linha["Date"] || "").split(" ")[0];
+    const fim = (linha["End Time"] || linha["Date"] || "").split(" ")[0];
+    const nome = linha["Voucher Code"] || linha["Campaign Name"] || `Promoção ${sku || i}`;
+    
+    if (!sku) return;
+
+    promocoes.push({
+      id: `${novoTipo}-${nome}-${sku}`.replace(/\s+/g, "-").toLowerCase(),
+      nome,
+      tipo: novoTipo,
+      sku: sku.trim(),
+      produto: produto.trim(),
+      inicio: formatarData(inicio),
+      fim: formatarData(fim),
+      vendas,
+      cliques,
+      status: calcularStatus(formatarData(inicio), formatarData(fim)),
+      fonte: file.name
+    });
+  });
+
+  renderTabela();
+  alert("Promoções importadas com sucesso!");
+}
+function detectarTipoDePromocao(nomeArquivo, dados) {
+  const nome = nomeArquivo.toLowerCase();
+  const colunas = Object.keys(dados[0] || {}).map(c => c.toLowerCase());
+
+  if (nome.includes("voucher") || colunas.includes("voucher code")) return "Cupom de Vendedor";
+  if (nome.includes("flash") || colunas.includes("campaign name")) return "Oferta Relâmpago";
+  if (nome.includes("discount") || colunas.includes("discounted price")) return "Desconto";
+  if (nome.includes("prize") || colunas.includes("reward")) return "Afiliação";
+  return "Outro";
+}
+function formatarData(data) {
+  if (!data) return "";
+  const d = new Date(data);
+  if (isNaN(d)) return "";
+  return d.toISOString().split("T")[0]; // yyyy-mm-dd
+}
+function calcularStatus(inicio, fim) {
+  const hoje = new Date().toISOString().split("T")[0];
+  if (fim < hoje) return "Expirada";
+  if (inicio > hoje) return "Agendada";
+  return "Ativa";
+}
