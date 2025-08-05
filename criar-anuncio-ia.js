@@ -193,3 +193,14 @@ window.exportarCSV = function() {
   a.click();
   URL.revokeObjectURL(url);
 }
+window.copiarAnuncio = function () {
+  const titulo = document.getElementById('tituloIA').value;
+  const descricao = document.getElementById('descricaoIA').value;
+  const palavras = document.getElementById('palavrasChaveIA').value;
+
+  const texto = `📌 TÍTULO:\n${titulo}\n\n📝 DESCRIÇÃO:\n${descricao}\n\n🔑 PALAVRAS-CHAVE:\n${palavras}`;
+
+  navigator.clipboard.writeText(texto)
+    .then(() => alert("✅ Anúncio copiado com sucesso!"))
+    .catch(() => alert("❌ Falha ao copiar. Tente novamente."));
+};
