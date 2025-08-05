@@ -25,8 +25,15 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
     const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     const pedidos = [];
     for (const d of snap.docs) {
-      const pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
-        console.log('Pedido carregado:', d.id, pedido); // 👈 Adicione esta linha
+ let pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
+      if (!pedido) {
+        const raw = d.data();
+        if (raw && !raw.encrypted) {
+          // Documento sem criptografia, usa dados brutos
+          pedido = raw;
+        }
+      }
+      console.log('Pedido carregado:', d.id, pedido);
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
  tbody.innerHTML = '';
