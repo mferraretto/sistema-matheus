@@ -19,16 +19,24 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   const ref = buildRef(db, collectionName, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  const { encrypted, uid } = snap.data();
-  if (!encrypted) return null;
-  const plaintext = await decryptString(encrypted, passphrase);
-const data = JSON.parse(plaintext);
 
-  // Merge UID stored outside the encrypted payload (for backward compatibility)
-  if (uid && !data.uid) data.uid = uid;
+  const { encrypted, encryptedData, uid } = snap.data();
+  const payload = encrypted || encryptedData;
 
-  return data;
+  if (!payload) return null;
+
+  try {
+    const plaintext = await decryptString(payload, passphrase);
+    const data = JSON.parse(plaintext);
+
+    if (uid && !data.uid) data.uid = uid; // compatibilidade
+    return data;
+  } catch (err) {
+    console.warn("🔐 Erro ao descriptografar documento:", id, err.message);
+    return null;
+  }
 }
+
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
 export async function saveUserDoc(db, uid, collection, id, data, passphrase) {
