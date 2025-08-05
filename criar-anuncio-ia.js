@@ -38,16 +38,21 @@ window.gerarAnuncioIA = async function() {
   const preco = document.getElementById('precoBase').value;
   const caracteristicas = document.getElementById('caracteristicas').value;
 
-  const prompt = `Responda com um JSON no formato:
-{
-  "titulo": "...",
-  "descricao": "...",
-  "categoria": "...",
-  "palavras_chave": ["...", "..."]
-}
-Produto: ${nome}
-Preço: ${preco}
-Características: ${caracteristicas}`;
+const prompt = `
+Você é um gerador de palavras-chave para Shopee.
+
+IMPORTANTE:
+Responda apenas com um array JSON válido.
+Não adicione nenhuma explicação, comentário ou formatação Markdown.
+
+Exemplo:
+[
+  { "palavra": "sapato confortável", "volume": "alto", "concorrencia": "baixa", "uso": "título" },
+  ...
+]
+
+Produto: "cilindros"
+`;
 
   try {
     const texto = await chamarIA(prompt, { json: true });
@@ -75,9 +80,14 @@ Características: ${caracteristicas}`;
 
 window.buscarPalavrasChave = async function () {
   const termo = document.getElementById('buscaKeyword').value;
+const prompt = `
+Você é um gerador de palavras-chave para Shopee.
 
-  const prompt = `Responda apenas com um array JSON. NÃO escreva nada fora disso.
-Formato:
+IMPORTANTE:
+Responda apenas com um array JSON válido.
+Não adicione nenhuma explicação, comentário ou formatação Markdown.
+
+Exemplo:
 [
   { "palavra": "sapato confortável", "volume": "alto", "concorrencia": "baixa", "uso": "título" },
   ...
