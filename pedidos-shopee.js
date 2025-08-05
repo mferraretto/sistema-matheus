@@ -29,20 +29,21 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
         console.log('Pedido carregado:', d.id, pedido); // 👈 Adicione esta linha
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
-    tbody.innerHTML = '';
-    pedidos.forEach(p => {
-      const tr = document.createElement('tr');
-      const data = p.data || p.date || p.dataPedido || '';
-      const total = p.total || p.valor || p.valorTotal || '';
-      tr.innerHTML = `
-        <td>${p.id || ''}</td>
-        <td>${data}</td>
-        <td>${total}</td>
-        <td><button class="btn btn-secondary text-sm">Ver Detalhes</button></td>
-      `;
-      tr.querySelector('button').addEventListener('click', () => mostrarDetalhesPedido(p));
-      tbody.appendChild(tr);
-    });
+ tbody.innerHTML = '';
+pedidos.forEach(p => {
+  const tr = document.createElement('tr');
+  const data = p.data || p.status || '–'; // usa status se não houver data
+  const total = p.preco || p.total || '–'; // usa preço se não houver total
+  tr.innerHTML = `
+    <td>${p.id || ''}</td>
+    <td>${data}</td>
+    <td>${total}</td>
+    <td><button class="btn btn-secondary text-sm">Ver Detalhes</button></td>
+  `;
+  tr.querySelector('button').addEventListener('click', () => mostrarDetalhesPedido(p));
+  tbody.appendChild(tr);
+});
+
     if (!tbody.children.length) {
       tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
     }
