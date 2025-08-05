@@ -12,20 +12,20 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  await carregarPedidosShopee();
+  await carregarpedidosshopee();
 });
 
-export async function carregarPedidosShopee() {
-  const tbody = document.querySelector('#tabelaPedidosShopee tbody');
+export async function carregarpedidosshopee() {
+  const tbody = document.querySelector('#tabelapedidosshopee tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
     const uid = auth.currentUser.uid;
 const pass = (await getPassphrase()) || `chave-${uid}`;
-    const snap = await getDocs(collection(db, `uid/${uid}/pedidosShopee`));
+    const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     const pedidos = [];
     for (const d of snap.docs) {
-      const pedido = await loadUserDoc(db, uid, 'pedidosShopee', d.id, pass);
+      const pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
     tbody.innerHTML = '';
@@ -93,5 +93,5 @@ if (modal) {
 }
 
 if (typeof window !== 'undefined') {
-  window.carregarPedidosShopee = carregarPedidosShopee;
+  window.carregarpedidosshopee = carregarpedidosshopee;
 }
