@@ -14,7 +14,12 @@ export const proxyDeepSeek = onRequest(
   (req, res) => {
     cors(req, res, async () => {
       try {
-        const { model, messages, pergunta } = req.body;
+const { model, messages, pergunta } = req.body;
+
+console.log("📥 Requisição recebida:");
+console.log("🔹 model:", model);
+console.log("🔹 pergunta (separada):", pergunta);
+console.log("🔹 messages:", JSON.stringify(messages, null, 2));
 
         const promptMessages = messages || [
           {
@@ -26,6 +31,12 @@ export const proxyDeepSeek = onRequest(
             content: pergunta || "Me diga um insight",
           },
         ];
+const bodyParaDeepSeek = {
+  model: model || "deepseek-chat",
+  messages: promptMessages,
+};
+
+console.log("📤 Corpo enviado para DeepSeek:", JSON.stringify(bodyParaDeepSeek, null, 2));
 
         const resposta = await axios.post(
           "https://api.deepseek.com/chat/completions",
@@ -42,6 +53,8 @@ export const proxyDeepSeek = onRequest(
         );
 
         res.status(200).json(resposta.data);
+        console.log("📬 Resposta recebida da DeepSeek:", JSON.stringify(resposta.data, null, 2));
+
       } catch (error) {
         const erroResposta = error.response?.data || {};
         console.error("Erro ao consultar DeepSeek:", erroResposta, error.message);
