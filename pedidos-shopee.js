@@ -93,5 +93,5 @@ if (modal) {
 }
 
 if (typeof window !== 'undefined') {
-  window.carregarpedidosshopee = carregarpedidosshopee;
+window.carregarPedidosShopee = carregarPedidosShopee;
 }
