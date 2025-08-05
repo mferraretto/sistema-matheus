@@ -26,6 +26,7 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
     const pedidos = [];
     for (const d of snap.docs) {
       const pedido = await loadUserDoc(db, uid, 'pedidosshopee', d.id, pass);
+        console.log('Pedido carregado:', d.id, pedido); // 👈 Adicione esta linha
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
     tbody.innerHTML = '';
