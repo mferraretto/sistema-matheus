@@ -204,3 +204,31 @@ window.copiarAnuncio = function () {
     .then(() => alert("✅ Anúncio copiado com sucesso!"))
     .catch(() => alert("❌ Falha ao copiar. Tente novamente."));
 };
+window.sugerirCategoriaComIA = async function () {
+  const nome = document.getElementById('nomeProduto').value;
+  const caracteristicas = document.getElementById('caracteristicas').value;
+  const material = document.getElementById('materialProduto').value;
+  const uso = document.getElementById('usoProduto').value;
+
+  const prompt = `
+Você é um especialista em Shopee e deve sugerir a categoria mais apropriada com base nas informações do produto.
+
+Responda APENAS com o nome da categoria mais adequada, sem explicações adicionais.
+
+Informações do produto:
+- Nome: ${nome}
+- Características: ${caracteristicas}
+- Material: ${material}
+- Indicação de uso: ${uso}
+`;
+
+  try {
+    const resposta = await chamarIA(prompt, { json: false });
+
+    const categoriaLimpa = resposta.trim().replace(/^["']|["']$/g, ''); // Remove aspas se vier com
+    document.getElementById('categoriaIA').value = categoriaLimpa;
+    alert("✅ Categoria sugerida preenchida com sucesso!");
+  } catch (e) {
+    alert("❌ Erro ao sugerir categoria: " + e.message);
+  }
+};
