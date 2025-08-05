@@ -14,22 +14,24 @@ export const proxyDeepSeek = onRequest(
   (req, res) => {
     cors(req, res, async () => {
       try {
-        const pergunta = req.body.pergunta || "Me diga um insight";
+        const { model, messages, pergunta } = req.body;
+
+        const promptMessages = messages || [
+          {
+            role: "system",
+            content: "Você é um especialista em performance de vendas para Shopee.",
+          },
+          {
+            role: "user",
+            content: pergunta || "Me diga um insight",
+          },
+        ];
 
         const resposta = await axios.post(
           "https://api.deepseek.com/chat/completions",
           {
-            model: "deepseek-chat",
-            messages: [
-              {
-                role: "system",
-                content: "Você é um especialista em performance de vendas para Shopee.",
-              },
-              {
-                role: "user",
-                content: pergunta,
-              },
-            ],
+            model: model || "deepseek-chat",
+            messages: promptMessages,
           },
           {
             headers: {
@@ -51,3 +53,4 @@ export const proxyDeepSeek = onRequest(
     });
   }
 );
+
