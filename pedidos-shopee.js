@@ -12,11 +12,11 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  await carregarpedidosshopee();
+await carregarPedidosShopee();
 });
 
-export async function carregarpedidosshopee() {
-  const tbody = document.querySelector('#tabelapedidosshopee tbody');
+export async function carregarPedidosShopee() {
+const tbody = document.querySelector('#tabelapedidosshopee tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
