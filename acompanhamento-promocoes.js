@@ -86,7 +86,11 @@ function renderTabela() {
       <td>${p.vendas}</td>
       <td>${p.cliques}</td>
       <td>${taxa}</td>
-      <td><button class="btn btn-secondary" onclick="verDetalhes(${p.id})">Ver Detalhes</button></td>
+<td class="flex gap-2">
+  <button class="btn btn-secondary btn-sm" onclick="verDetalhes('${p.id}')">📊</button>
+  <button class="btn btn-info btn-sm" onclick="editarPromocao('${p.id}')">🖉</button>
+  <button class="btn btn-danger btn-sm" onclick="excluirPromocao('${p.id}')">🗑️</button>
+</td>
     `;
     tbody.appendChild(tr);
   });
