@@ -51,15 +51,20 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
   }
 }
 async function getPassphrase() {
+  // 1. Tenta recuperar da extensão
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     return new Promise(resolve => {
       chrome.storage.local.get(['user'], res => {
-        resolve(res?.user?.passphrase || null);
+        if (res?.user?.passphrase) resolve(res.user.passphrase);
+        else resolve(localStorage.getItem('sistemaPassphrase') || prompt("Digite sua senha de visualização:"));
       });
     });
   }
-  return null;
+
+  // 2. Se não estiver na extensão, tenta localStorage ou prompt
+  return localStorage.getItem('sistemaPassphrase') || prompt("Digite sua senha de visualização:");
 }
+
 function mostrarDetalhesPedido(pedido) {
   const modal = document.getElementById('modalPedido');
   const detalhes = document.getElementById('detalhesPedido');
