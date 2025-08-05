@@ -1,13 +1,9 @@
-// index.js
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
 import corsModule from "cors";
 
-// Define o segredo (isso automaticamente conecta ao Secret Manager do Firebase)
 const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
-
-// Função CORS
 const cors = corsModule({ origin: true });
 
 export const proxyDeepSeek = onRequest(
@@ -38,7 +34,7 @@ export const proxyDeepSeek = onRequest(
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${DEEPSEEK_API_KEY.value()}`,
+              Authorization: `Bearer ${await DEEPSEEK_API_KEY.value()}`,
             },
           }
         );
