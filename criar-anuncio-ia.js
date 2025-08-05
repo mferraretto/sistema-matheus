@@ -8,6 +8,8 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function chamarIA(prompt, { json = false } = {}) {
+    console.log("📤 Pergunta enviada para a IA:", prompt); // 👈 ADICIONE ESTA LINHA
+
   const body = {
     model: 'deepseek-chat',
     messages: [{ role: 'user', content: prompt }]
