@@ -39,20 +39,21 @@ window.gerarAnuncioIA = async function() {
   const caracteristicas = document.getElementById('caracteristicas').value;
 
 const prompt = `
-Você é um gerador de palavras-chave para Shopee.
+Você é um especialista em anúncios da Shopee. Crie um anúncio com base nas informações abaixo e responda com um JSON válido no seguinte formato:
 
-IMPORTANTE:
-Responda apenas com um array JSON válido.
-Não adicione nenhuma explicação, comentário ou formatação Markdown.
+{
+  "titulo": "...",
+  "descricao": "...",
+  "categoria": "...",
+  "palavras_chave": ["...", "..."]
+}
 
-Exemplo:
-[
-  { "palavra": "sapato confortável", "volume": "alto", "concorrencia": "baixa", "uso": "título" },
-  ...
-]
-
-Produto: "cilindros"
+Informações do produto:
+- Nome: ${nome}
+- Preço: R$ ${preco}
+- Características: ${caracteristicas}
 `;
+
 
   try {
     const texto = await chamarIA(prompt, { json: true });
