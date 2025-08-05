@@ -42,8 +42,10 @@ window.gerarAnuncioIA = async function() {
   const cor = document.getElementById('corProduto').value;
   const uso = document.getElementById('usoProduto').value;
 
-  const prompt = `
-Você é um especialista em anúncios da Shopee. Crie um anúncio com base nas informações abaixo e responda com um JSON válido no seguinte formato:
+const prompt = `
+Você é um especialista em criação de anúncios para a Shopee.
+
+Crie um anúncio profissional com base nas informações abaixo e responda com um JSON válido no seguinte formato:
 
 {
   "titulo": "...",
@@ -52,15 +54,24 @@ Você é um especialista em anúncios da Shopee. Crie um anúncio com base nas i
   "palavras_chave": ["...", "..."]
 }
 
-Informações do produto:
+🧠 INSTRUÇÕES IMPORTANTES:
+- NÃO mencione o preço na descrição.
+- A descrição deve ser completa, informativa e atrativa.
+- Destaque o uso prático, os diferenciais e o material.
+- NÃO use frases como "Aproveite", "Compre já" ou "Preço especial".
+- NÃO use emojis ou markdown.
+- As palavras-chave devem ser específicas e relevantes para busca na Shopee.
+
+📦 Informações do produto:
 - Nome: ${nome}
-- Preço: R$ ${preco}
+- Preço: R$ ${preco} (⚠️ não incluir na descrição)
 - Características: ${caracteristicas}
 - Material: ${material}
 - Medidas: ${medidas}
 - Cor: ${cor}
 - Indicação de uso: ${uso}
 `;
+
 
   try {
     const texto = await chamarIA(prompt, { json: true });
