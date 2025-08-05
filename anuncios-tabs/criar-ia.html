@@ -21,28 +21,48 @@
         </div>
       </div>
       <div class="card-body space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block font-medium">Nome do produto</label>
-            <input id="nomeProduto" type="text" class="input"/>
-          </div>
-          <div>
-            <label class="block font-medium">Preço base</label>
-            <input id="precoBase" type="number" class="input"/>
-          </div>
-          <div>
-            <label class="block font-medium">Estoque disponível</label>
-            <input id="estoque" type="number" class="input"/>
-          </div>
-          <div class="md:col-span-2">
-            <label class="block font-medium">Características ou palavras-chave</label>
-            <textarea id="caracteristicas" class="textarea"></textarea>
-          </div>
-          <div class="md:col-span-2">
-            <label class="block font-medium">Imagem (opcional)</label>
-            <input id="imagem" type="file" accept="image/*"/>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <label class="block font-medium">Nome do produto</label>
+    <input id="nomeProduto" type="text" class="input"/>
+  </div>
+  <div>
+    <label class="block font-medium">Preço base</label>
+    <input id="precoBase" type="number" class="input"/>
+  </div>
+  <div>
+    <label class="block font-medium">Estoque disponível</label>
+    <input id="estoque" type="number" class="input"/>
+  </div>
+  <div class="md:col-span-2">
+    <label class="block font-medium">Características gerais ou palavras-chave</label>
+    <textarea id="caracteristicas" class="textarea"></textarea>
+  </div>
+
+  <!-- NOVOS CAMPOS -->
+  <div>
+    <label class="block font-medium">Material</label>
+    <input id="materialProduto" type="text" class="input" placeholder="Ex: MDF, Plástico, Aço...">
+  </div>
+  <div>
+    <label class="block font-medium">Medidas (cm)</label>
+    <input id="medidasProduto" type="text" class="input" placeholder="Ex: 30x40x50 cm">
+  </div>
+  <div>
+    <label class="block font-medium">Cores disponíveis</label>
+    <input id="corProduto" type="text" class="input" placeholder="Ex: Branco, Rosé, Dourado">
+  </div>
+  <div>
+    <label class="block font-medium">Indicação de uso</label>
+    <input id="usoProduto" type="text" class="input" placeholder="Ex: Festas, Decoração, Eventos">
+  </div>
+  <!-- FIM DOS NOVOS CAMPOS -->
+
+  <div class="md:col-span-2">
+    <label class="block font-medium">Imagem (opcional)</label>
+    <input id="imagem" type="file" accept="image/*"/>
+  </div>
+</div>
         <button class="btn btn-primary flex items-center" onclick="gerarAnuncioIA()">
           <i class="fas fa-robot mr-2"></i>Gerar Anúncio com IA
         </button>
