@@ -16,7 +16,7 @@ await carregarPedidosShopee();
 });
 
 export async function carregarPedidosShopee() {
-const tbody = document.querySelector('#tabelapedidosshopee tbody');
+const tbody = document.querySelector('#tabelaPedidosShopee tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
