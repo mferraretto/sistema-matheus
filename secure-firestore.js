@@ -20,22 +20,26 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
 
-  const { encrypted, encryptedData, uid } = snap.data();
+  const { encrypted, encryptedData, uid, ...rest } = snap.data();
   const payload = encrypted || encryptedData;
 
-  if (!payload) return null;
-
+// Se não houver dados criptografados, retorna os campos restantes
+  if (!payload) {
+    return Object.keys(rest).length ? { ...rest, ...(uid && { uid }) } : null;
+  }
   try {
-    // Verifica se payload é uma string JSON
-    const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
-
-    const plaintext = await decryptString(JSON.stringify(parsedPayload), passphrase);
+    const jsonStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
 
     if (uid && !data.uid) data.uid = uid; // compatibilidade
     return data;
   } catch (err) {
-    console.warn("🔐 Erro ao descriptografar documento:", id, err.message);
+ console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
+    // Caso a descriptografia falhe, tenta retornar dados não criptografados
+    if (Object.keys(rest).length) {
+      return { ...rest, ...(uid && { uid }) };
+    }
     return null;
   }
 }
