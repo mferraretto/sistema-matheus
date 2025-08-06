@@ -28,7 +28,7 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
     return Object.keys(rest).length ? { ...rest, ...(uid && { uid }) } : null;
   }
   try {
-    const jsonStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+const jsonStr = typeof payload === 'string' ? payload.trim() : JSON.stringify(payload);
     const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
 
