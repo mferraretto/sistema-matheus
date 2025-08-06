@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getPassphrase, setPassphrase, loadUserDoc } from './secure-firestore.js';
+import { loadUserDoc } from './secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -12,8 +12,6 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  const pass = localStorage.getItem("sistemaPassphrase");
-  if (pass) setPassphrase(pass);
 await carregarPedidosShopee();
 });
 
@@ -23,6 +21,7 @@ const tbody = document.querySelector('#tabelaPedidosShopee tbody');
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
     const uid = auth.currentUser.uid;
+    const pass = (await getPassphrase()) || `chave-${uid}`;
     const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     const pedidos = [];
     for (const d of snap.docs) {
