@@ -77,11 +77,8 @@ async function carregarMapaAnuncios(uid, pass) {
       const nomeAnuncio = anuncio.nome || anuncioDoc.id;
       const variantesSnap = await getDocs(collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`));
       for (const varDoc of variantesSnap.docs) {
- let variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
-        if (!variante) {
-          const raw = varDoc.data();
-          if (raw && !raw.encrypted) variante = raw;
-        }
+         const variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
+
         if (!variante) continue;
         const chave = `${nomeAnuncio}|${variante.nomeVariante}`;
         if (variante.skuVariante) {
