@@ -30,6 +30,7 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   try {
  const cleaned = typeof payload === 'string' ? payload.trim() : JSON.stringify(payload);
 const jsonStr = cleaned.startsWith('{') ? cleaned : cleaned.replace(/^"|"$/g, '');
+console.log('📄 Documento:', id, 'Payload bruto:', payload);
 
 console.log('Tentando descriptografar:', jsonStr);
     const plaintext = await decryptString(jsonStr, passphrase);
