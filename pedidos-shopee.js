@@ -21,7 +21,7 @@ const tbody = document.querySelector('#tabelaPedidosShopee tbody');
   tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando...</td></tr>';
   try {
     const uid = auth.currentUser.uid;
-    const pass = (await getPassphrase()) || `chave-${uid}`;
+const pass = (await getPassphrase()) || `chave-${uid}`;
     const snap = await getDocs(collection(db, `uid/${uid}/pedidosshopee`));
     const pedidos = [];
     for (const d of snap.docs) {
