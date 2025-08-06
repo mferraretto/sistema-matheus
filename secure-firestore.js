@@ -26,7 +26,10 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   if (!payload) return null;
 
   try {
-    const plaintext = await decryptString(payload, passphrase);
+    // Verifica se payload é uma string JSON
+    const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+
+    const plaintext = await decryptString(JSON.stringify(parsedPayload), passphrase);
     const data = JSON.parse(plaintext);
 
     if (uid && !data.uid) data.uid = uid; // compatibilidade
@@ -36,6 +39,7 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
     return null;
   }
 }
+
 
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
