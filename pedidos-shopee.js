@@ -45,7 +45,10 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
           pedido = raw;
         }
       }
-      if (pedido) pedidos.push({ id: d.id, ...pedido });
+if (pedido) {
+  console.log('📦 Pedido carregado:', d.id, pedido); // 🔍 mostra no console
+  pedidos.push({ id: d.id, ...pedido });
+}
     }
 correlacionarPedidosComAnuncios(pedidos, mapaAnuncios);
 
@@ -107,6 +110,8 @@ function correlacionarPedidosComAnuncios(pedidos, mapa) {
     pedido.itens = itens.map(item => {
 const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
       const sku = mapa[chave] || null;
+            console.log(`🔍 Tentando correlacionar: "${chave}" → SKU:`, sku); // <--- log importante!
+
       return { ...item, sku };
     });
   }
