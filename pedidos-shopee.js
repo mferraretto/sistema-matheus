@@ -14,6 +14,14 @@ onAuthStateChanged(auth, async user => {
   }
 await carregarPedidosShopee();
 });
+function normalizarTexto(texto) {
+  return (texto || '')
+    .toLowerCase()
+    .normalize("NFD") // remove acentos
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos restantes
+    .replace(/[^a-z0-9]+/g, ' ') // remove símbolos especiais
+    .trim();
+}
 
 export async function carregarPedidosShopee() {
   const tbody = document.querySelector('#tabelaPedidosShopee tbody');
@@ -81,7 +89,7 @@ async function carregarMapaAnuncios(uid, pass) {
          const variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
 
         if (!variante) continue;
-        const chave = `${nomeAnuncio}|${variante.nomeVariante}`;
+const chave = `${normalizarTexto(nomeAnuncio)}|${normalizarTexto(variante.nomeVariante)}`;
         if (variante.skuVariante) {
           mapa[chave] = variante.skuVariante;
         }
@@ -97,7 +105,7 @@ function correlacionarPedidosComAnuncios(pedidos, mapa) {
   for (const pedido of pedidos) {
     const itens = pedido.itens || pedido.items || [];
     pedido.itens = itens.map(item => {
-      const chave = `${item.produto}|${item.variacao}`;
+const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
       const sku = mapa[chave] || null;
       return { ...item, sku };
     });
