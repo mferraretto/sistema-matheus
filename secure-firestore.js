@@ -28,13 +28,21 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 
   try {
-    // Normaliza o conteúdo do campo antes de descriptografar
-    const jsonStr = typeof payload === 'string'
-      ? payload.trim().replace(/^"|"$/g, '').replace(/\\n/g, '').replace(/\\"/g, '"')
-      : JSON.stringify(payload);
+    let jsonStr;
+
+    if (typeof payload === 'string') {
+      // Remove aspas extras e desserializa corretamente
+      jsonStr = payload.trim();
+
+      // 🔧 Corrige casos onde o JSON foi salvo como string com escapes
+      if (jsonStr.startsWith('"') && jsonStr.endsWith('"')) {
+        jsonStr = JSON.parse(jsonStr); // Remove aspas + parses internos
+      }
+    } else {
+      jsonStr = JSON.stringify(payload); // Já é objeto válido
+    }
 
     console.log('📄 Documento:', id);
-    console.log('📦 Payload bruto:', payload);
     console.log('🧪 JSON para descriptografar:', jsonStr);
 
     const plaintext = await decryptString(jsonStr, passphrase);
@@ -42,7 +50,6 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
 
     if (uid && !data.uid) data.uid = uid;
     return data;
-
   } catch (err) {
     console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
     if (Object.keys(rest).length) {
@@ -52,22 +59,6 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 }
 
-console.log('📄 Documento:', id, 'Payload bruto:', payload);
-
-console.log('Tentando descriptografar:', jsonStr);
-    const plaintext = await decryptString(jsonStr, passphrase);
-    const data = JSON.parse(plaintext);
-
-    if (uid && !data.uid) data.uid = uid;
-    return data;
-  } catch (err) {
-    console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
-    if (Object.keys(rest).length) {
-      return { ...rest, ...(uid && { uid }) };
-    }
-    return null;
-  }
-}
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
 export async function saveUserDoc(db, uid, collection, id, data, passphrase) {
