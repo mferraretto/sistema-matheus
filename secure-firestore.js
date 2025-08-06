@@ -16,6 +16,10 @@ export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
 }
 
 export async function loadSecureDoc(db, collectionName, id, passphrase) {
+ if (!id) {
+    console.warn('⚠️ ID do documento não foi fornecido para a coleção:', collectionName);
+    return null;
+  }
   const ref = buildRef(db, collectionName, id);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
