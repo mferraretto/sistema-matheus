@@ -36,6 +36,19 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
     return data;
   } catch (err) {
  console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
+
+    // ⚠️ Fallback: alguns documentos antigos podem estar salvos em texto puro
+    // dentro do campo `encrypted`. Tentamos interpretar o payload como JSON
+    // diretamente antes de desistir da leitura.
+    try {
+      const data = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      if (data && typeof data === 'object') {
+        if (uid && !data.uid) data.uid = uid;
+        return data;
+      }
+    } catch (_) {
+      // ignore se não for JSON válido
+    }
     // Caso a descriptografia falhe, tenta retornar dados não criptografados
     if (Object.keys(rest).length) {
       return { ...rest, ...(uid && { uid }) };
