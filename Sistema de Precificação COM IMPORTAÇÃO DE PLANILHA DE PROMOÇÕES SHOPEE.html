@@ -1976,7 +1976,7 @@ function applyPriceUpdate(type) {
       });
       
       // Filtros
-      document.getElementById('filterHistoryType').addEventListener('change', loadHistory);
+document.getElementById('filterHistoryType')?.addEventListener('change', loadHistory);
       document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
       document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
       document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
