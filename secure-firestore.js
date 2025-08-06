@@ -23,29 +23,36 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   const { encrypted, encryptedData, uid, ...rest } = snap.data();
   const payload = encrypted || encryptedData;
 
-// Se não houver dados criptografados, retorna os campos restantes
   if (!payload) {
     return Object.keys(rest).length ? { ...rest, ...(uid && { uid }) } : null;
   }
+
   try {
-const jsonStr = typeof payload === 'string' ? payload.trim() : JSON.stringify(payload);
+    let jsonStr = '';
+    if (typeof payload === 'string') {
+      try {
+        JSON.parse(payload);
+        jsonStr = payload.trim();
+      } catch {
+        jsonStr = JSON.stringify(payload);
+      }
+    } else {
+      jsonStr = JSON.stringify(payload);
+    }
+
     const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
 
-    if (uid && !data.uid) data.uid = uid; // compatibilidade
+    if (uid && !data.uid) data.uid = uid;
     return data;
   } catch (err) {
- console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
-
-    // Caso a descriptografia falhe, tenta retornar dados não criptografados
+    console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
     if (Object.keys(rest).length) {
       return { ...rest, ...(uid && { uid }) };
     }
     return null;
   }
 }
-
-
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
 export async function saveUserDoc(db, uid, collection, id, data, passphrase) {
