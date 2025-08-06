@@ -28,9 +28,9 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 
   try {
-  const jsonStr = typeof payload === 'string'
-  ? payload.trim().replace(/^"|"$/g, '') // remove aspas extras
-  : JSON.stringify(payload);
+ const cleaned = typeof payload === 'string' ? payload.trim() : JSON.stringify(payload);
+const jsonStr = cleaned.startsWith('{') ? cleaned : cleaned.replace(/^"|"$/g, '');
+
 
     const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
