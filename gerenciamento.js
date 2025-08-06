@@ -373,8 +373,9 @@ window.carregarAnuncios = async function () {
 
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
-      const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, getPassphrase()) || {};
-       if (!isAdmin && data.uid && data.uid !== user.uid) {
+const pass = await getPassphrase();
+      const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, pass) || {};
+      if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
 
@@ -384,7 +385,7 @@ window.carregarAnuncios = async function () {
 let variantes = [];
 
       if (!snap.empty) {
-        const pass = getPassphrase();
+const pass = await getPassphrase();
         const docs = await Promise.all(
           snap.docs.map(v => loadSecureDoc(db, `uid/${user.uid}/anuncios/${id}/variantes`, v.id, pass))
         );
