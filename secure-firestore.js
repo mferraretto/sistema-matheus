@@ -28,8 +28,33 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 
   try {
- const cleaned = typeof payload === 'string' ? payload.trim() : JSON.stringify(payload);
-const jsonStr = cleaned.startsWith('{') ? cleaned : cleaned.replace(/^"|"$/g, '');
+ let jsonStr;
+
+try {
+  if (typeof payload === 'string') {
+    // Remove quebras de linha, aspas extras e espaços
+    jsonStr = payload.trim().replace(/^"|"$/g, '').replace(/\\n/g, '').replace(/\\"/g, '"');
+  } else {
+    jsonStr = JSON.stringify(payload);
+  }
+
+  console.log('📄 Documento:', id);
+  console.log('📦 Payload bruto:', payload);
+  console.log('🧪 JSON para descriptografar:', jsonStr);
+
+  const plaintext = await decryptString(jsonStr, passphrase);
+  const data = JSON.parse(plaintext);
+
+  if (uid && !data.uid) data.uid = uid;
+  return data;
+} catch (err) {
+  console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
+  if (Object.keys(rest).length) {
+    return { ...rest, ...(uid && { uid }) };
+  }
+  return null;
+}
+
 console.log('📄 Documento:', id, 'Payload bruto:', payload);
 
 console.log('Tentando descriptografar:', jsonStr);
