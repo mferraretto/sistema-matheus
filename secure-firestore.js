@@ -28,31 +28,28 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 
   try {
- let jsonStr;
+    // Normaliza o conteúdo do campo antes de descriptografar
+    const jsonStr = typeof payload === 'string'
+      ? payload.trim().replace(/^"|"$/g, '').replace(/\\n/g, '').replace(/\\"/g, '"')
+      : JSON.stringify(payload);
 
-try {
-  if (typeof payload === 'string') {
-    // Remove quebras de linha, aspas extras e espaços
-    jsonStr = payload.trim().replace(/^"|"$/g, '').replace(/\\n/g, '').replace(/\\"/g, '"');
-  } else {
-    jsonStr = JSON.stringify(payload);
+    console.log('📄 Documento:', id);
+    console.log('📦 Payload bruto:', payload);
+    console.log('🧪 JSON para descriptografar:', jsonStr);
+
+    const plaintext = await decryptString(jsonStr, passphrase);
+    const data = JSON.parse(plaintext);
+
+    if (uid && !data.uid) data.uid = uid;
+    return data;
+
+  } catch (err) {
+    console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
+    if (Object.keys(rest).length) {
+      return { ...rest, ...(uid && { uid }) };
+    }
+    return null;
   }
-
-  console.log('📄 Documento:', id);
-  console.log('📦 Payload bruto:', payload);
-  console.log('🧪 JSON para descriptografar:', jsonStr);
-
-  const plaintext = await decryptString(jsonStr, passphrase);
-  const data = JSON.parse(plaintext);
-
-  if (uid && !data.uid) data.uid = uid;
-  return data;
-} catch (err) {
-  console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
-  if (Object.keys(rest).length) {
-    return { ...rest, ...(uid && { uid }) };
-  }
-  return null;
 }
 
 console.log('📄 Documento:', id, 'Payload bruto:', payload);
