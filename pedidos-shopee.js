@@ -87,20 +87,22 @@ async function carregarMapaAnuncios(uid, pass) {
 
       if (!anuncio) continue;
       const nomeAnuncio = anuncio.nome || anuncioDoc.id;
-      const variantesSnap = await getDocs(collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`));
+     const variantesSnap = await getDocs(collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`));
       for (const varDoc of variantesSnap.docs) {
-         const variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
-
+        const variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
         if (!variante) continue;
-const chave = `${normalizarTexto(nomeAnuncio)}|${normalizarTexto(variante.nomeVariante)}`;
+        const chave = `${normalizarTexto(nomeAnuncio)}|${normalizarTexto(variante.nomeVariante)}`;
         if (variante.skuVariante) {
-          mapa[chave] = variante.skuVariante;
+ mapa[chave] = variante.skuVariante;
+          console.log(`🔑 Chave gerada no anúncio: "${chave}" → SKU: ${variante.skuVariante}`);
         }
       }
     }
   } catch (err) {
     console.error('Erro ao carregar anúncios para correlação', err);
   }
+    console.log("📦 Mapa de Anúncios completo:");
+  console.log(mapa);
   return mapa;
 }
 
@@ -110,7 +112,11 @@ function correlacionarPedidosComAnuncios(pedidos, mapa) {
     pedido.itens = itens.map(item => {
 const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
       const sku = mapa[chave] || null;
-            console.log(`🔍 Tentando correlacionar: "${chave}" → SKU:`, sku); // <--- log importante!
+if (sku) {
+  console.log(`✅ Correlacionado: "${chave}" → SKU: ${sku}`);
+} else {
+  console.warn(`❌ SKU não encontrado para chave: "${chave}"`);
+}
 
       return { ...item, sku };
     });
