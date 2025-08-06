@@ -69,16 +69,22 @@ correlacionarPedidosComAnuncios(pedidos, mapaAnuncios);
 
 async function carregarMapaAnuncios(uid, pass) {
   const mapa = {};
+    const fallbackPass = `chave-${uid}`;
   try {
     const anunciosSnap = await getDocs(collection(db, `uid/${uid}/anuncios`));
     for (const anuncioDoc of anunciosSnap.docs) {
-      const anuncio = await loadUserDoc(db, uid, 'anuncios', anuncioDoc.id, pass);
+ let anuncio = await loadUserDoc(db, uid, 'anuncios', anuncioDoc.id, pass);
+      if (!anuncio && pass !== fallbackPass) {
+        anuncio = await loadUserDoc(db, uid, 'anuncios', anuncioDoc.id, fallbackPass);
+      }
       if (!anuncio) continue;
       const nomeAnuncio = anuncio.nome || anuncioDoc.id;
       const variantesSnap = await getDocs(collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`));
       for (const varDoc of variantesSnap.docs) {
-         const variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
-
+  let variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
+        if (!variante && pass !== fallbackPass) {
+          variante = await loadSecureDoc(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`, varDoc.id, fallbackPass);
+        }
         if (!variante) continue;
         const chave = `${nomeAnuncio}|${variante.nomeVariante}`;
         if (variante.skuVariante) {
