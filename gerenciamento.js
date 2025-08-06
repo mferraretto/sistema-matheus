@@ -45,7 +45,7 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-    // Global products object
+    // Global produtos object
     window.produtos = {};
 // Lista global de SKUs não cadastrados
     window.skusNaoCadastrados = [];
@@ -350,7 +350,7 @@ await saveSecureDoc(
       });
     });
 
-// Load products
+// Load produtos
 window.carregarAnuncios = async function () {
   const tbody = document.querySelector("#tabelaAnuncios tbody");
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
@@ -399,7 +399,7 @@ for (const v of variantes) {
   if (!sku) continue;
 
   try {
-    const refProd = collection(db, `uid/${user.uid}/products`);
+    const refProd = collection(db, `uid/${user.uid}/produtos`);
     const qProd = query(refProd, where("sku", "==", sku));
     const snapshotProd = await getDocs(qProd);
 
@@ -421,7 +421,7 @@ for (const v of variantes) {
         }
       }
   } catch (e) {
-    console.warn(`Erro ao buscar SKU ${sku} em products:`, e);
+    console.warn(`Erro ao buscar SKU ${sku} em produtos:`, e);
     v.skuNaoEncontrado = true; // fallback de segurança
     const skuLower = String(sku);
     if (!window.skusNaoCadastrados.includes(skuLower)) {
