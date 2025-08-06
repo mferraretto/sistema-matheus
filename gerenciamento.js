@@ -381,8 +381,17 @@ window.carregarAnuncios = async function () {
       // 🔄 Buscar subcoleção de variantes
       const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
       const snap = await getDocs(variantesRef);
-      const variantes = snap.empty ? [{}] : snap.docs.map(v => v.data());
+let variantes = [];
 
+      if (!snap.empty) {
+        const pass = getPassphrase();
+        const docs = await Promise.all(
+          snap.docs.map(v => loadSecureDoc(db, `uid/${user.uid}/anuncios/${id}/variantes`, v.id, pass))
+        );
+        variantes = docs.filter(Boolean);
+      }
+
+      if (variantes.length === 0) variantes = [{}];
        
 // 🔍 Verificar se alguma variação está abaixo do preço mínimo ou tem SKU não cadastrado
 for (const v of variantes) {
@@ -538,15 +547,13 @@ tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
 
 window.verDetalhesAnuncio = async function (id) {
   try {
-    const docRef = doc(db, "uid", auth.currentUser.uid, "anuncios", id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
+const user = auth.currentUser;
+    const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, getPassphrase());
+    if (!data) {
       showNotification("❌ Anúncio não encontrado", "error");
       return;
     }
 
-    const data = docSnap.data();
-    const user = auth.currentUser;
     if (!isAdmin && data.uid && data.uid !== user.uid) {
       showNotification("❌ Acesso negado", "error");
       return;
@@ -555,8 +562,14 @@ window.verDetalhesAnuncio = async function (id) {
     // 🔍 Buscar variantes
     const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
     const variantesSnap = await getDocs(variantesRef);
-    const variantes = variantesSnap.docs.map(doc => doc.data());
-
+let variantes = [];
+    if (!variantesSnap.empty) {
+      const pass = getPassphrase();
+      const docs = await Promise.all(
+        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${user.uid}/anuncios/${id}/variantes`, v.id, pass))
+      );
+      variantes = docs.filter(Boolean);
+    }
     // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
 const desempenhoRef = collection(db, `uid/${user.uid}/anuncios/${id}/desempenho`);
 const desempenhoSnap = await getDocs(desempenhoRef);
@@ -663,7 +676,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
         
         <div class="md:col-span-2">
           <h4 class="text-lg font-bold">${data.nome || "Sem nome"}</h4>
-          <div class="text-gray-600 mb-2">ID: ${data.id}</div>
+          <div class="text-gray-600 mb-2">ID: ${data.id || id}</div>
           
           <div class="grid grid-cols-2 gap-4 mb-4">
             <div class="bg-gray-50 p-3 rounded">
