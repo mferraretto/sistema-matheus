@@ -25,7 +25,13 @@
   <div class="status" id="status"></div>
   <canvas id="pdfCanvas"></canvas>
  </div>
-  
+  <div id="progressBar" style="display:none; margin-top: 10px;">
+  <div style="height: 20px; background: #eee; border-radius: 10px;">
+    <div id="progressFill" style="height: 100%; width: 0%; background: #4CAF50; border-radius: 10px;"></div>
+  </div>
+  <div id="progressText" style="margin-top: 5px; font-size: 14px;">Iniciando...</div>
+</div>
+
     <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
 
