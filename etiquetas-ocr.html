@@ -94,8 +94,8 @@ const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
 let linhaProduto = "Produto não identificado";
 for (let i = 0; i < linhas.length; i++) {
   if (/^1\s+/.test(linhas[i])) {
-    // Pega a linha inteira a partir do caractere 24 (índice 20)
-    linhaProduto = linhas[i].substring(20).trim();
+    // Pega a linha inteira a partir do caractere 1 (índice 1)
+    linhaProduto = linhas[i].substring(1).trim();
     break;
   }
 }
@@ -113,36 +113,45 @@ if (possiveisSkus.length > 0) {
   sku = `${possiveisSkus[0]} ${ultimaQtd}`.trim();
 }
 // Rodapé final simplificado
+// Define o conteúdo do rodapé
 const rodape = `Pedido: ${pedido}\n${linhaProduto}\nSKU: ${sku}`;
-          // Inserção no novo PDF
-          const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-          const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-          const larguraPagina = 283.46;
-          const alturaPagina = 425.2;
-          const larguraEtiqueta = 255;
-          const alturaEtiqueta = 359;
-          const margemX = (larguraPagina - larguraEtiqueta) / 2;
-          const margemY = alturaPagina - alturaEtiqueta - 15;
+// Define tamanho base da fonte e ajusta se necessário
+let fontSize = 12;
+const textoLimpo = rodape.replace(/\n/g, " "); // conta sem as quebras
+if (textoLimpo.length > 60) fontSize = 10;
+if (textoLimpo.length > 90) fontSize = 8;
 
-          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-          pag.drawImage(imgEmbed, {
-            x: margemX,
-            y: margemY,
-            width: larguraEtiqueta,
-            height: alturaEtiqueta,
-          });
+// Desenha a imagem da etiqueta
+const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-          pag.drawText(rodape, {
+const larguraPagina = 283.46;
+const alturaPagina = 425.2;
+const larguraEtiqueta = 255;
+const alturaEtiqueta = 359;
+const margemX = (larguraPagina - larguraEtiqueta) / 2;
+const margemY = alturaPagina - alturaEtiqueta - 15;
+
+const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+pag.drawImage(imgEmbed, {
+  x: margemX,
+  y: margemY,
+  width: larguraEtiqueta,
+  height: alturaEtiqueta,
+});
+
+// Desenha o rodapé com tamanho ajustado
+pag.drawText(rodape, {
   x: 30,
   y: 35,
-  size: 12,
-  lineHeight: 14,
+  size: fontSize,
+  lineHeight: fontSize + 2,
   color: PDFLib.rgb(0, 0, 0),
 });
-          console.log("✅ Rodapé inserido:", rodape);
-        }
-      }
+
+console.log("✅ Rodapé inserido:", rodape);
+
 
       const pdfFinal = await novoPdf.save();
       const blob = new Blob([pdfFinal], { type: "application/pdf" });
