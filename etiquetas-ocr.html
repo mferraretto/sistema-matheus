@@ -88,17 +88,17 @@ let pedido = null;
           const matchPedido = text.match(/([0-9A-Z]{12,})/);
           if (matchPedido) pedido = matchPedido[1].trim();
 
-// Pega a primeira linha que começa com 1 (ex: "1 Nome do Produto Qtd")
 const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
 
 let linhaProduto = "Produto não identificado";
 for (let i = 0; i < linhas.length; i++) {
   if (/^1\s+/.test(linhas[i])) {
-    // Pega a linha inteira a partir do caractere 1 (índice 1)
-    linhaProduto = linhas[i].substring(1).trim();
+    // Corta a linha a partir do caractere 24
+    linhaProduto = linhas[i].substring(20).trim();
     break;
   }
 }
+
 // Identificação do SKU com base em padrões
 let sku = "SKU não identificado";
 const palavras = linhaProduto.split(/\s+/);
@@ -106,51 +106,46 @@ const possiveisSkus = palavras.filter(p =>
   /^[A-Z]{1,}[0-9]{0,2}$/.test(p) ||    // T6, B6, A12
   /^[A-Z]{4,}$/.test(p)                // BOLEIRAS, SUPORTE
 );
+
+// Opcional: pega a última palavra se for número
 let ultimaQtd = palavras[palavras.length - 1];
-if (!/^\d+$/.test(ultimaQtd)) ultimaQtd = ""; // Se não for número, ignora
+if (!/^\d+$/.test(ultimaQtd)) ultimaQtd = "";
 
 if (possiveisSkus.length > 0) {
   sku = `${possiveisSkus[0]} ${ultimaQtd}`.trim();
 }
 // Rodapé final simplificado
 // Define o conteúdo do rodapé
-const rodape = `Pedido: ${pedido}\n${linhaProduto}\nSKU: ${sku}`;
+const rodape = Pedido: ${pedido}\n${linhaProduto}\nSKU: ${sku};
+          // Inserção no novo PDF
+          const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+          const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-// Define tamanho base da fonte e ajusta se necessário
-let fontSize = 12;
-const textoLimpo = rodape.replace(/\n/g, " "); // conta sem as quebras
-if (textoLimpo.length > 60) fontSize = 10;
-if (textoLimpo.length > 90) fontSize = 8;
+          const larguraPagina = 283.46;
+          const alturaPagina = 425.2;
+          const larguraEtiqueta = 255;
+          const alturaEtiqueta = 359;
+          const margemX = (larguraPagina - larguraEtiqueta) / 2;
+          const margemY = alturaPagina - alturaEtiqueta - 15;
 
-// Desenha a imagem da etiqueta
-const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-const imgEmbed = await novoPdf.embedPng(imgBytes);
+          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+          pag.drawImage(imgEmbed, {
+            x: margemX,
+            y: margemY,
+            width: larguraEtiqueta,
+            height: alturaEtiqueta,
+          });
 
-const larguraPagina = 283.46;
-const alturaPagina = 425.2;
-const larguraEtiqueta = 255;
-const alturaEtiqueta = 359;
-const margemX = (larguraPagina - larguraEtiqueta) / 2;
-const margemY = alturaPagina - alturaEtiqueta - 15;
-
-const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-pag.drawImage(imgEmbed, {
-  x: margemX,
-  y: margemY,
-  width: larguraEtiqueta,
-  height: alturaEtiqueta,
-});
-
-// Desenha o rodapé com tamanho ajustado
-pag.drawText(rodape, {
+          pag.drawText(rodape, {
   x: 30,
   y: 35,
-  size: fontSize,
-  lineHeight: fontSize + 2,
+  size: 12,
+  lineHeight: 14,
   color: PDFLib.rgb(0, 0, 0),
 });
-
-console.log("✅ Rodapé inserido:", rodape);
+          console.log("✅ Rodapé inserido:", rodape);
+        }
+      }
 
 
       const pdfFinal = await novoPdf.save();
@@ -162,8 +157,8 @@ console.log("✅ Rodapé inserido:", rodape);
       a.click();
       status.textContent = "✅ PDF gerado com sucesso!";
     }
-  
-
+  </script>
+<script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 </script>
 
