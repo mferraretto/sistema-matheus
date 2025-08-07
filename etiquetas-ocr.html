@@ -19,221 +19,142 @@
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <div class="main-content p-4 space-y-4">
-    <h2 class="text-2xl font-bold mb-4"><i class="fas fa-barcode mr-2"></i>Gerador de Etiquetas com SKU</h2>
-    <div class="card p-4 space-y-4">
-      <input type="file" id="pdfInput" accept="application/pdf" class="border p-2 rounded bg-white" />
-      <input type="file" id="excelInput" accept=".xlsx,.xls" class="border p-2 rounded bg-white" />
-      <button onclick="processar()" class="btn-primary"><i class="fas fa-cog mr-1"></i>Gerar PDF com Rodapé</button>
-      <p id="status" class="text-sm"></p>
-    </div>
-    <canvas id="pdfCanvas" style="display:none;"></canvas>
-  </div>
-  <script>
-function distanciaLevenshtein(a, b) {
-    const matriz = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-
-    for (let i = 0; i <= a.length; i++) matriz[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matriz[0][j] = j;
-
-    for (let i = 1; i <= a.length; i++) {
-      for (let j = 1; j <= b.length; j++) {
-        const custo = a[i - 1] === b[j - 1] ? 0 : 1;
-        matriz[i][j] = Math.min(
-          matriz[i - 1][j] + 1,
-          matriz[i][j - 1] + 1,
-          matriz[i - 1][j - 1] + custo
-        );
-      }
-    }
-
-    return matriz[a.length][b.length];
-  }
-
-  function encontrarPedidoAproximado(pedidoOCR, pedidosMap) {
-    const pedidos = Object.keys(pedidosMap);
-    let melhorMatch = null;
-    let menorDistancia = Infinity;
-
-    for (const pedido of pedidos) {
-      const dist = distanciaLevenshtein(pedidoOCR, pedido);
-      if (dist < menorDistancia && dist <= 2) {
-        menorDistancia = dist;
-        melhorMatch = pedido;
-      }
-    }
-
-    return melhorMatch;
-  }
-    let pedidosMap = {};
+   <h2>📦 Editor Visual de Etiquetas Shopee</h2>
+  <input type="file" id="pdfInput" accept="application/pdf" />
+  <button onclick="processar()">📥 Processar e Gerar PDF</button>
+  <div class="status" id="status"></div>
+  <canvas id="pdfCanvas"></canvas>
+ </div>
+  
+   <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
 
     async function processar() {
       const status = document.getElementById("status");
-      const excelFile = document.getElementById("excelInput").files[0];
       const pdfFile = document.getElementById("pdfInput").files[0];
-      if (!excelFile || !pdfFile) return alert("Envie o PDF e a planilha.");
-
-      status.textContent = "⏳ Lendo planilha...";
-      const data = await excelFile.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet);
-    json.forEach(linha => {
-  const pedido = String(linha.order_sn).trim().toUpperCase();
-  let sku = "Indefinido";
-  let quantidade = "Indefinida";
-
-  if (linha.product_info) {
-    const texto = linha.product_info.toString();
-
-    // Extrai o SKU após "SKU Reference No.:"
-const matchSku = texto.match(/SKU Reference No\.?:\s*([^;]+)/i);
-    if (matchSku) sku = matchSku[1].trim();
-
-    // Extrai a quantidade após "Quantity:"
-    const matchQtd = texto.match(/Quantity:\s*(\d+)/i);
-    if (matchQtd) quantidade = matchQtd[1].trim();
-  }
-
-  pedidosMap[pedido] = { sku, quantidade };
-});
-
+      if (!pdfFile) return alert("Envie o arquivo PDF.");
 
       status.textContent = "📸 Lendo PDF...";
       const arrayBuffer = await pdfFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const novoPdf = await PDFLib.PDFDocument.create();
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
 
       for (let i = 0; i < pdf.numPages; i++) {
         const page = await pdf.getPage(i + 1);
-const scale = 3; // aumenta a qualidade (2 já é bom, 3 é melhor)
-const viewport = page.getViewport({ scale });
-        const canvas = document.getElementById("pdfCanvas");
+        const scale = 3;
+        const viewport = page.getViewport({ scale });
+
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        const ctx = canvas.getContext("2d");
 
         await page.render({ canvasContext: ctx, viewport }).promise;
 
-        const etiquetas = [
-          { x: 0, y: 0 },
-          { x: canvas.width / 2, y: 0 },
-          { x: 0, y: canvas.height / 2 },
-          { x: canvas.width / 2, y: canvas.height / 2 },
+        const largura = canvas.width;
+        const altura = canvas.height;
+
+        const colWidth = largura / 2;
+        const rowHeight = altura / 2;
+
+        const pares = [
+          { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight / 1 } }, // coluna esquerda
+          { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight / 1 } }  // coluna direita
         ];
 
-        for (let et of etiquetas) {
-          const etCanvas = document.createElement("canvas");
-          etCanvas.width = canvas.width / 2;
-          etCanvas.height = canvas.height / 2;
-          const etCtx = etCanvas.getContext("2d");
-          etCtx.drawImage(canvas, et.x, et.y, etCanvas.width, etCanvas.height, 0, 0, etCanvas.width, etCanvas.height);
+        for (const par of pares) {
+          // CORTA ETIQUETA (linha de cima)
+const etCanvas = document.createElement("canvas");
+etCanvas.width = colWidth;
+etCanvas.height = rowHeight; // ✅ agora pega metade da página (altura da linha de etiqueta)
+const etCtx = etCanvas.getContext("2d");
+etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y, colWidth, rowHeight, 0, 0, colWidth, rowHeight);
 
-console.log("📦 Mapeamento carregado da planilha:");
-console.log(pedidosMap);
 
-// OCR da imagem da etiqueta
-const { data: { text } } = await Tesseract.recognize(etCanvas, "eng");
-console.log("🧾 OCR Extraído:", text);
+          // CORTA CHECKLIST (linha de baixo)
+          const chkCanvas = document.createElement("canvas");
+          chkCanvas.width = colWidth;
+          chkCanvas.height = rowHeight / 2;
+          const chkCtx = chkCanvas.getContext("2d");
+          chkCtx.drawImage(canvas, par.checklist.x, par.checklist.y, colWidth, rowHeight / 2, 0, 0, colWidth, rowHeight / 2);
 
-// Regex para capturar o número do pedido
-const pedidoMatch = text.match(/Pedido[:\s]*([A-Z0-9]+)/i);
-let pedidoExtraido = pedidoMatch ? pedidoMatch[1].replace(/\s+/g, "").trim().toUpperCase() : null;
+          // OCR do checklist (linha inferior)
+          const { data: { text } } = await Tesseract.recognize(chkCanvas, "eng");
+console.log("📄 Texto OCR completo do checklist:\n", text);
 
-console.log("🔍 Pedido extraído do OCR:", pedidoExtraido);
-if (!pedidosMap[pedidoExtraido] && pedidoExtraido) {
-  const tentativa = encontrarPedidoAproximado(pedidoExtraido, pedidosMap);
-  if (tentativa) {
-    console.warn(`⚠️ Corrigido automaticamente: ${pedidoExtraido} ➡️ ${tentativa}`);
-    pedidoExtraido = tentativa;
+          // Extração de dados
+let pedido = null;
+
+          const matchPedido = text.match(/([0-9A-Z]{12,})/);
+          if (matchPedido) pedido = matchPedido[1].trim();
+
+// Pega a primeira linha que começa com 1 (ex: "1 Nome do Produto Qtd")
+const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+let linhaProduto = "Produto não identificado";
+for (let i = 0; i < linhas.length; i++) {
+  if (/^1\s+/.test(linhas[i])) {
+    // Pega a linha inteira a partir do caractere 24 (índice 20)
+    linhaProduto = linhas[i].substring(20).trim();
+    break;
   }
 }
+// Identificação do SKU com base em padrões
+let sku = "SKU não identificado";
+const palavras = linhaProduto.split(/\s+/);
+const possiveisSkus = palavras.filter(p =>
+  /^[A-Z]{1,}[0-9]{0,2}$/.test(p) ||    // T6, B6, A12
+  /^[A-Z]{4,}$/.test(p)                // BOLEIRAS, SUPORTE
+);
+let ultimaQtd = palavras[palavras.length - 1];
+if (!/^\d+$/.test(ultimaQtd)) ultimaQtd = ""; // Se não for número, ignora
 
-// Verificar se existe na planilha
-if (pedidoExtraido) {
-  if (pedidosMap[pedidoExtraido]) {
-    console.log("✅ Pedido encontrado na planilha:", pedidosMap[pedidoExtraido]);
-  } else {
-    console.warn("⚠️ Pedido NÃO encontrado na planilha:", pedidoExtraido);
-  }
-} else {
-  console.error("❌ Nenhum pedido foi identificado no OCR.");
+if (possiveisSkus.length > 0) {
+  sku = `${possiveisSkus[0]} ${ultimaQtd}`.trim();
 }
+// Rodapé final simplificado
+const rodape = `Pedido: ${pedido}\n${linhaProduto}\nSKU: ${sku}`;
+          // Inserção no novo PDF
+          const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+          const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-// Buscar os dados na planilha
+          const larguraPagina = 283.46;
+          const alturaPagina = 425.2;
+          const larguraEtiqueta = 255;
+          const alturaEtiqueta = 359;
+          const margemX = (larguraPagina - larguraEtiqueta) / 2;
+          const margemY = alturaPagina - alturaEtiqueta - 15;
 
-if (!pedidosMap[pedidoExtraido] && pedidoExtraido) {
-  const tentativa = encontrarPedidoAproximado(pedidoExtraido, pedidosMap);
-  if (tentativa) {
-    console.warn(`⚠️ Corrigido automaticamente: ${pedidoExtraido} ➡️ ${tentativa}`);
-    pedidoExtraido = tentativa;
-  }
-}
+          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+          pag.drawImage(imgEmbed, {
+            x: margemX,
+            y: margemY,
+            width: larguraEtiqueta,
+            height: alturaEtiqueta,
+          });
 
-if (pedidoExtraido) {
-  if (pedidosMap[pedidoExtraido]) {
-    console.log("✅ Pedido encontrado na planilha:", pedidosMap[pedidoExtraido]);
-  } else {
-    console.warn("⚠️ Pedido NÃO encontrado na planilha:", pedidoExtraido);
-  }
-} else {
-  console.error("❌ Nenhum pedido foi identificado no OCR.");
-}
-
-const dados = pedidoExtraido && pedidosMap[pedidoExtraido] ? pedidosMap[pedidoExtraido] : null;
-const sku = dados?.sku || "undefined";
-const quantidade = dados?.quantidade || "undefined";
-
-console.log(`🖨️ Inserindo rodapé: SKU: ${sku} | Qtd: ${quantidade}`);
-
-const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-const imgEmbed = await novoPdf.embedPng(imgBytes);
-
-// 📐 Define dimensões da página: 10 cm x 15 cm
-const larguraPagina = 283.46;
-const alturaPagina = 425.2;
-
-// 📌 Define área da etiqueta: 9 cm x 12.3 cm
-const larguraEtiqueta = 255;
-const alturaEtiqueta = 359;
-
-// 🎯 Centraliza a etiqueta na página
-const margemX = (larguraPagina - larguraEtiqueta) / 2;
-const margemY = alturaPagina - alturaEtiqueta - 40; // espaço inferior para rodapé
-
-// 📝 Cria nova página com tamanho exato
-const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-
-// 🖼️ Desenha a imagem da etiqueta centralizada
-pag.drawImage(imgEmbed, {
-  x: margemX,
-  y: margemY,
-  width: larguraEtiqueta,
-  height: alturaEtiqueta,
-});
-
-// 🖨️ Rodapé em destaque abaixo da etiqueta
-const rodape = dados ? `SKU: ${dados.sku} | Qtd: ${dados.quantidade}` : "Pedido não encontrado";
-pag.drawText(rodape, {
+          pag.drawText(rodape, {
   x: 30,
-  y: 15,
-  size: 14, // aumenta a fonte
+  y: 35,
+  size: 12,
+  lineHeight: 14,
   color: PDFLib.rgb(0, 0, 0),
 });
+          console.log("✅ Rodapé inserido:", rodape);
+        }
+      }
 
-
- } // fim do for de páginas
-  }
       const pdfFinal = await novoPdf.save();
       const blob = new Blob([pdfFinal], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "etiquetas_final.pdf";
+      a.download = "etiquetas_editadas.pdf";
       a.click();
       status.textContent = "✅ PDF gerado com sucesso!";
     }
   </script>
-<script>
+  <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 </script>
   <script src="shared.js"></script>
