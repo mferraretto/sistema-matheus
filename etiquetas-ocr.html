@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Etiquetas Shopee com OCR</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,33 +13,125 @@
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Barra de progresso customizada */
+    .progress-bar-bg {
+      background: linear-gradient(90deg, #cfd9df 0%, #e2ebf0 100%);
+      border-radius: 9999px;
+      height: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+      height: 100%;
+      border-radius: 9999px 0 0 9999px;
+      transition: width 0.3s cubic-bezier(.4,0,.2,1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    /* Card Glassmorphism */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 32px rgba(72, 187, 255, 0.07);
+      border-radius: 1rem;
+      padding: 2.5rem 2rem 2rem 2rem;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(200, 230, 255, 0.18);
+      max-width: 520px;
+      margin: 1.5rem auto;
+    }
+    .main-content {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .btn-main {
+      background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+      color: #fff;
+      font-weight: 500;
+      border-radius: 0.75rem;
+      padding: 0.75rem 2.5rem;
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
+      border: none;
+      outline: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn-main:hover {
+      background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+      transform: translateY(-2px) scale(1.03);
+    }
+    #status {
+      min-height: 2rem;
+    }
+    @media (max-width: 600px) {
+      .glass-card {
+        padding: 1.5rem 0.6rem 1.5rem 0.6rem;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gradient-to-tr from-cyan-100 via-blue-50 to-cyan-200 text-gray-800 min-h-screen">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <div class="main-content p-4 space-y-4">
-   <h2>📦 Editor Visual de Etiquetas Shopee</h2>
-  <input type="file" id="pdfInput" accept="application/pdf" />
-  <button onclick="processar()">📥 Processar e Gerar PDF</button>
-  <div class="status" id="status"></div>
-  <canvas id="pdfCanvas"></canvas>
- </div>
-  <div id="progressBar" style="display:none; margin-top: 10px;">
-  <div style="height: 20px; background: #eee; border-radius: 10px;">
-    <div id="progressFill" style="height: 100%; width: 0%; background: #4CAF50; border-radius: 10px;"></div>
+  <div class="main-content p-4 w-full">
+    <div class="glass-card shadow-xl">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-3xl"><i class="fa-solid fa-barcode"></i></span>
+        <h2 class="text-2xl font-bold text-blue-700 tracking-tight">Editor Visual de Etiquetas Shopee</h2>
+      </div>
+      <div class="mb-4">
+        <label for="pdfInput" class="block text-lg font-medium mb-2 text-gray-700">
+          <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
+        </label>
+        <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
+      </div>
+      <button class="btn-main w-full" onclick="processar()">
+        <i class="fa-solid fa-magic-wand-sparkles mr-2"></i>
+        Processar e Gerar PDF
+      </button>
+      <div class="mt-6">
+        <div class="progress-bar-bg" id="progressBar" style="display:none;">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%;">
+            <span id="progressText" class="w-full text-center"></span>
+          </div>
+        </div>
+      </div>
+      <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
+      <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
+      <div class="flex justify-center mt-8">
+        <span class="text-xs text-gray-500">Desenvolvido por Matheus Ferraretto &nbsp;·&nbsp; <i class="fa-solid fa-robot"></i></span>
+      </div>
+    </div>
   </div>
-  <div id="progressText" style="margin-top: 5px; font-size: 14px;">Iniciando...</div>
-</div>
-
-    <script>
+  <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
 
     async function processar() {
-document.getElementById("progressBar").style.display = "block";
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      progressBar.style.display = "block";
+      progressFill.style.width = "0%";
+      progressText.textContent = "";
 
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
-      if (!pdfFile) return alert("Envie o arquivo PDF.");
+      if (!pdfFile) {
+        progressBar.style.display = "none";
+        return alert("Envie o arquivo PDF.");
+      }
 
       status.textContent = "📸 Lendo PDF...";
       const arrayBuffer = await pdfFile.arrayBuffer();
@@ -48,14 +139,14 @@ document.getElementById("progressBar").style.display = "block";
       const novoPdf = await PDFLib.PDFDocument.create();
       const canvas = document.getElementById("pdfCanvas");
       const ctx = canvas.getContext("2d");
-document.getElementById("progressBar").style.display = "block";
+      canvas.style.display = "block";
 
       for (let i = 0; i < pdf.numPages; i++) {
- const progress = Math.round((i / pdf.numPages) * 100);
-  document.getElementById("progressFill").style.width = progress + "%";
-  document.getElementById("progressText").textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-      
-  const page = await pdf.getPage(i + 1);
+        const progress = Math.round((i / pdf.numPages) * 100);
+        progressFill.style.width = progress + "%";
+        progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+
+        const page = await pdf.getPage(i + 1);
         const scale = 3;
         const viewport = page.getViewport({ scale });
 
@@ -77,12 +168,11 @@ document.getElementById("progressBar").style.display = "block";
 
         for (const par of pares) {
           // CORTA ETIQUETA (linha de cima)
-const etCanvas = document.createElement("canvas");
-etCanvas.width = colWidth;
-etCanvas.height = rowHeight; // ✅ agora pega metade da página (altura da linha de etiqueta)
-const etCtx = etCanvas.getContext("2d");
-etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y, colWidth, rowHeight, 0, 0, colWidth, rowHeight);
-
+          const etCanvas = document.createElement("canvas");
+          etCanvas.width = colWidth;
+          etCanvas.height = rowHeight;
+          const etCtx = etCanvas.getContext("2d");
+          etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y, colWidth, rowHeight, 0, 0, colWidth, rowHeight);
 
           // CORTA CHECKLIST (linha de baixo)
           const chkCanvas = document.createElement("canvas");
@@ -92,62 +182,61 @@ etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y, colWidth, rowHeight, 0, 
           chkCtx.drawImage(canvas, par.checklist.x, par.checklist.y, colWidth, rowHeight / 2, 0, 0, colWidth, rowHeight / 2);
 
           // OCR do checklist (linha inferior)
-const { data: { text } } = await Tesseract.recognize(chkCanvas, "eng");
-console.log("📄 Texto OCR completo do checklist:\n", text);
+          const { data: { text } } = await Tesseract.recognize(chkCanvas, "eng");
 
-// Extração do ID do pedido
-let pedido = null;
-const matchPedido = text.match(/([0-9A-Z]{12,})/);
-if (matchPedido) pedido = matchPedido[1].trim();
+          // Extração do ID do pedido
+          let pedido = null;
+          const matchPedido = text.match(/([0-9A-Z]{12,})/);
+          if (matchPedido) pedido = matchPedido[1].trim();
 
-// Extração dos dados estruturados do checklist
-function extrairDadosChecklist(textoOCR) {
-   const linhas = textoOCR.split('\n').map(l => l.trim()).filter(Boolean);
-  let cabecalhoEncontrado = false;
-  let dadosLinha = null;
-  let descricaoExtra = [];
+          // Extração dos dados estruturados do checklist
+          function extrairDadosChecklist(textoOCR) {
+            const linhas = textoOCR.split('\n').map(l => l.trim()).filter(Boolean);
+            let cabecalhoEncontrado = false;
+            let dadosLinha = null;
+            let descricaoExtra = [];
 
-  for (let i = 0; i < linhas.length; i++) {
-    const linha = linhas[i];
+            for (let i = 0; i < linhas.length; i++) {
+              const linha = linhas[i];
 
-    if (linha.startsWith("# Produto SKU")) {
-      cabecalhoEncontrado = true;
-      continue;
-    }
+              if (linha.startsWith("# Produto SKU")) {
+                cabecalhoEncontrado = true;
+                continue;
+              }
 
-    if (!cabecalhoEncontrado) continue;
+              if (!cabecalhoEncontrado) continue;
 
-    if (!dadosLinha && /^\d+ /.test(linha)) {
-      const partes = linha.split(/\s+/);
-      const numero = partes[0];
-      const quantidade = partes[partes.length - 1];
+              if (!dadosLinha && /^\d+ /.test(linha)) {
+                const partes = linha.split(/\s+/);
+                const numero = partes[0];
+                const quantidade = partes[partes.length - 1];
 
-      // Detecta o índice do SKU (ex: T6, B6, A12, BOLEIRAS etc.)
-      const indexSKU = partes.findIndex(p =>
-        /^[A-Z]{1,3}[0-9]{0,2}$/.test(p) || /^[A-Z]{4,}$/.test(p)
-      );
+                // Detecta o índice do SKU (ex: T6, B6, A12, BOLEIRAS etc.)
+                const indexSKU = partes.findIndex(p =>
+                  /^[A-Z]{1,3}[0-9]{0,2}$/.test(p) || /^[A-Z]{4,}$/.test(p)
+                );
 
-      let produto = partes.slice(1, indexSKU).join(' ');
-      const sku = partes[indexSKU];
-      const variacao = partes.slice(indexSKU + 1, partes.length - 1).join(' ');
+                let produto = partes.slice(1, indexSKU).join(' ');
+                const sku = partes[indexSKU];
+                const variacao = partes.slice(indexSKU + 1, partes.length - 1).join(' ');
 
-      dadosLinha = { numero, produto, sku, variacao, quantidade };
-    } else if (dadosLinha) {
-      descricaoExtra.push(linha);
-    }
-  }
+                dadosLinha = { numero, produto, sku, variacao, quantidade };
+              } else if (dadosLinha) {
+                descricaoExtra.push(linha);
+              }
+            }
 
-  if (dadosLinha && descricaoExtra.length > 0) {
-    dadosLinha.produto += ' ' + descricaoExtra.join(' ');
-  }
+            if (dadosLinha && descricaoExtra.length > 0) {
+              dadosLinha.produto += ' ' + descricaoExtra.join(' ');
+            }
 
-  return dadosLinha;
-}
+            return dadosLinha;
+          }
 
-const dados = extrairDadosChecklist(text);
+          const dados = extrairDadosChecklist(text);
 
-// Rodapé final com todos os dados
-const rodape = `SKU: ${dados?.sku || 'SKU não identificado'}
+          // Rodapé final com todos os dados
+          const rodape = `SKU: ${dados?.sku || 'SKU não identificado'}
 Variação: ${dados?.variacao || 'N/A'}
 Qtd: ${dados?.quantidade || 'N/A'}`;
 
@@ -171,15 +260,20 @@ Qtd: ${dados?.quantidade || 'N/A'}`;
           });
 
           pag.drawText(rodape, {
-  x: 15,
-  y: 45,
-  size: 12,
-  lineHeight: 11,
-  color: PDFLib.rgb(0, 0, 0),
-});
-          console.log("✅ Rodapé inserido:", rodape);
+            x: 15,
+            y: 45,
+            size: 12,
+            lineHeight: 11,
+            color: PDFLib.rgb(0, 0, 0),
+          });
         }
       }
+
+      progressFill.style.width = "100%";
+      progressText.textContent = "✅ Concluído!";
+      setTimeout(() => {
+        progressBar.style.display = "none";
+      }, 2000);
 
       const pdfFinal = await novoPdf.save();
       const blob = new Blob([pdfFinal], { type: "application/pdf" });
@@ -188,19 +282,13 @@ Qtd: ${dados?.quantidade || 'N/A'}`;
       a.href = url;
       a.download = "etiquetas_editadas.pdf";
       a.click();
-document.getElementById("progressFill").style.width = "100%";
-document.getElementById("progressText").textContent = "✅ Concluído!";
-setTimeout(() => {
-  document.getElementById("progressBar").style.display = "none";
-}, 2000);
 
       status.textContent = "✅ PDF gerado com sucesso!";
     }
   </script>
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-</script>
-
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  </script>
   <script src="shared.js"></script>
 </body>
 </html>
