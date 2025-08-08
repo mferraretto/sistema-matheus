@@ -2016,8 +2016,10 @@ let uids = [];
       resumoEl.innerHTML = '';
  const metaBrutoDiario = parseFloat(localStorage.getItem('metaBrutoDiario')) || 0;
       const metaLiquidoDiario = parseFloat(localStorage.getItem('metaLiquidoDiario')) || 0;
-      document.getElementById('metaBrutoDiario')?.value = metaBrutoDiario || '';
-      document.getElementById('metaLiquidoDiario')?.value = metaLiquidoDiario || '';
+     const metaBrutoInput = document.getElementById('metaBrutoDiario');
+      if (metaBrutoInput) metaBrutoInput.value = metaBrutoDiario || '';
+      const metaLiquidoInput = document.getElementById('metaLiquidoDiario');
+      if (metaLiquidoInput) metaLiquidoInput.value = metaLiquidoDiario || '';
       
     let ref;
       if (usuarioLogado.perfil.toLowerCase() === 'adm') {
