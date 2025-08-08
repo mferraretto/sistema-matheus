@@ -1,51 +1,51 @@
-<div class="card">
-  <div class="card-header">
-    <i class="fas fa-chart-line"></i>
-    <h3>Acompanhamento Mensal</h3>
+<div class="card shadow-xl rounded-2xl border border-gray-200 bg-white max-w-4xl mx-auto mt-8">
+  <div class="card-header flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-t-2xl">
+    <i class="fas fa-chart-line text-indigo-500 text-2xl"></i>
+    <h3 class="text-2xl font-bold text-gray-800 tracking-tight">Acompanhamento Mensal</h3>
   </div>
   
-  <div class="flex flex-col md:flex-row items-center gap-2 mb-4 px-4">
-    <label for="filtroMesAcompanhamento" class="font-medium">Filtrar por mês:</label>
-    <input type="month" id="filtroMesAcompanhamento" class="border border-gray-300 rounded px-2 py-2" onchange="carregarAcompanhamento()" />
+  <div class="flex flex-col md:flex-row items-center gap-4 mb-6 px-6 pt-6">
+    <label for="filtroMesAcompanhamento" class="font-semibold text-gray-700">Filtrar por mês:</label>
+    <input type="month" id="filtroMesAcompanhamento" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150" onchange="carregarAcompanhamento()" />
   </div>
   
-  <div class="flex flex-col md:flex-row items-center gap-2 mb-4 px-4">
-    <label for="metaBrutoDiario" class="font-medium">Meta diária Bruto:</label>
-    <input type="number" id="metaBrutoDiario" class="border border-gray-300 rounded px-2 py-2" />
-    <label for="metaLiquidoDiario" class="font-medium">Meta diária Líquido:</label>
-    <input type="number" id="metaLiquidoDiario" class="border border-gray-300 rounded px-2 py-2" />
-    <button onclick="salvarMetasAcompanhamento()" class="btn-primary">Salvar Metas</button>
+  <div class="flex flex-col md:flex-row items-center gap-4 mb-6 px-6">
+    <label for="metaBrutoDiario" class="font-semibold text-gray-700">Meta diária Bruto:</label>
+    <input type="number" id="metaBrutoDiario" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150 w-32" />
+    <label for="metaLiquidoDiario" class="font-semibold text-gray-700">Meta diária Líquido:</label>
+    <input type="number" id="metaLiquidoDiario" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150 w-32" />
+    <button onclick="salvarMetasAcompanhamento()" class="ml-0 md:ml-4 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition duration-150">Salvar Metas</button>
   </div>
   
-  <div class="flex flex-wrap gap-3 mb-4 px-4">
-    <button onclick="exportarAcompanhamentoExcel()" class="btn-success">
-      <i class="fas fa-file-excel mr-2"></i> Exportar Excel
+  <div class="flex flex-wrap gap-4 mb-6 px-6">
+    <button onclick="exportarAcompanhamentoExcel()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition duration-150">
+      <i class="fas fa-file-excel"></i> Exportar Excel
     </button>
-    <button onclick="exportarAcompanhamentoPDF()" class="btn-danger">
-      <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
+    <button onclick="exportarAcompanhamentoPDF()" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition duration-150">
+      <i class="fas fa-file-pdf"></i> Exportar PDF
     </button>
-    <button onclick="printAcompanhamento()" class="btn-secondary">
-      <i class="fas fa-print mr-2"></i> Imprimir
+    <button onclick="printAcompanhamento()" class="flex items-center gap-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg shadow transition duration-150">
+      <i class="fas fa-print"></i> Imprimir
     </button>
   </div>
 
   <!-- INÍCIO DA ÁREA DE IMPRESSÃO -->
-  <div id="areaImpressao">
-    <div class="table-container">
-      <table id="tabelaAcompanhamento" class="data-table">
+  <div id="areaImpressao" class="px-6 pb-8">
+    <div class="table-container overflow-x-auto rounded-lg shadow">
+      <table id="tabelaAcompanhamento" class="data-table min-w-full text-sm text-left border border-gray-200 rounded-lg shadow">
         <thead>
-          <tr>
-            <th>Data</th>
-            <th>Bruto</th>
-            <th>Líquido</th>
-            <th>Vendas</th>
+          <tr class="bg-indigo-50 text-indigo-700">
+            <th class="py-3 px-4 font-bold">Data</th>
+            <th class="py-3 px-4 font-bold">Bruto</th>
+            <th class="py-3 px-4 font-bold">Líquido</th>
+            <th class="py-3 px-4 font-bold">Vendas</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody class="bg-white divide-y divide-gray-100"></tbody>
       </table>
     </div>
     
-    <div id="resumoAcompanhamento" class="resumo-grid p-4 text-sm"></div>
+    <div id="resumoAcompanhamento" class="resumo-grid mt-6 p-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg text-sm text-gray-700 shadow"></div>
   </div> <!-- ✅ AGORA FECHOU CORRETAMENTE o #areaImpressao -->
 
 </div> <!-- fecha .card -->
