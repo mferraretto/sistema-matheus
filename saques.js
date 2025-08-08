@@ -143,7 +143,10 @@ export async function carregarSaques() {
   if (!container.children.length) {
     container.innerHTML = '<p class="text-gray-500">Nenhum saque encontrado</p>';
   }
-  const resumoBtn = document.createElement('button');
+ const oldBtn = document.getElementById('resumoBtn');
+if (oldBtn) oldBtn.remove();
+const resumoBtn = document.createElement('button');
+resumoBtn.id = 'resumoBtn';
 resumoBtn.textContent = 'Ver Resumo Selecionados';
 resumoBtn.className = 'btn btn-primary mt-4';
 resumoBtn.onclick = mostrarResumoSelecionados;
@@ -179,7 +182,32 @@ html += `<div class="mt-1 text-sm text-gray-800 border-t pt-1">
   }
   detalhesEl.innerHTML = html || '<p class="text-gray-500">Sem detalhes</p>';
 }
+async function mostrarResumoSelecionados() {
+  const checks = document.querySelectorAll('.selecionar-saque:checked');
+  const uids = Array.from(checks).map(c => c.dataset.saquedata);
+  if (!uids.length) return alert('Selecione ao menos um saque');
 
+  const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
+  let total = 0;
+  let totalComissao = 0;
+  for (const dataRef of uids) {
+    const snap = await getDocs(collection(db, `uid/${uid}/saques/${dataRef}/lojas`));
+    for (const docSnap of snap.docs) {
+      const enc = docSnap.data().encrypted;
+      if (!enc) continue;
+      const txt = await decryptString(enc, pass);
+      const d = JSON.parse(txt);
+      total += d.valor || 0;
+      if (d.comissao) totalComissao += (d.valor * d.comissao / 100);
+    }
+  }
+  alert(`Total Selecionado: R$ ${total.toLocaleString('pt-BR')}\nComissão Total: R$ ${totalComissao.toLocaleString('pt-BR')}`);
+}
+if (typeof window !== 'undefined') {
+  // ... seus outros exports
+  window.mostrarResumoSelecionados = mostrarResumoSelecionados;
+}
 export async function alternarPago(dataRef) {
   const uid = auth.currentUser.uid;
   const pass = getPassphrase() || `chave-${uid}`;
