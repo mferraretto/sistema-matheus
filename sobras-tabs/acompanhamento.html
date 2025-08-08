@@ -9,14 +9,35 @@
     <input type="month" id="filtroMesAcompanhamento" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150" onchange="carregarAcompanhamento()" />
   </div>
   
-  <div class="flex flex-col md:flex-row items-center gap-4 mb-6 px-6">
-    <label for="metaBrutoDiario" class="font-semibold text-gray-700">Meta diária Bruto:</label>
-    <input type="number" id="metaBrutoDiario" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150 w-32" />
-    <label for="metaLiquidoDiario" class="font-semibold text-gray-700">Meta diária Líquido:</label>
-    <input type="number" id="metaLiquidoDiario" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-300 outline-none transition duration-150 w-32" />
-    <button onclick="salvarMetasAcompanhamento()" class="ml-0 md:ml-4 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow transition duration-150">Salvar Metas</button>
+ <div class="flex flex-col md:flex-row items-end gap-4 mb-6 px-6 py-4 bg-white rounded-xl shadow-md">
+  <div class="flex flex-col">
+    <label for="metaBrutoDiario" class="text-xs font-medium text-gray-600 mb-1">Meta diária Bruto</label>
+    <input 
+      type="number" 
+      id="metaBrutoDiario" 
+      placeholder="Bruto"
+      class="border border-gray-200 rounded-md px-2 py-1.5 w-24 shadow-sm focus:ring-2 focus:ring-indigo-300 transition"
+    />
   </div>
-  
+  <div class="flex flex-col">
+    <label for="metaLiquidoDiario" class="text-xs font-medium text-gray-600 mb-1">Meta diária Líquido</label>
+    <input 
+      type="number" 
+      id="metaLiquidoDiario" 
+      placeholder="Líquido"
+      class="border border-gray-200 rounded-md px-2 py-1.5 w-24 shadow-sm focus:ring-2 focus:ring-indigo-300 transition"
+    />
+  </div>
+  <button 
+    onclick="salvarMetasAcompanhamento()" 
+    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg transition duration-150 text-sm"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    Salvar
+  </button>
+</div>
   <div class="flex flex-wrap gap-4 mb-6 px-6">
     <button onclick="exportarAcompanhamentoExcel()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition duration-150">
       <i class="fas fa-file-excel"></i> Exportar Excel
