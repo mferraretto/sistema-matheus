@@ -142,7 +142,7 @@
       canvas.style.display = "block";
 
       for (let i = 0; i < pdf.numPages; i++) {
-        const progress = Math.round((i / pdf.numPages) * 100);
+        const progress = Math.round(((i + 1) / pdf.numPages) * 100);
         progressFill.style.width = progress + "%";
         progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
 
@@ -267,6 +267,9 @@ Qtd: ${dados?.quantidade || 'N/A'}`;
             color: PDFLib.rgb(0, 0, 0),
           });
         }
+                // Libera memória e mantém a UI responsiva em arquivos longos
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
 
       progressFill.style.width = "100%";
