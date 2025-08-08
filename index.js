@@ -61,17 +61,26 @@ let totalLiquido = 0;
     for (const s of subSnap.docs) {
       let d = s.data();
       if (d.encrypted) {
+        const passFn =
+          typeof window !== 'undefined' ? window.getPassphrase : null;
+        const pass = passFn ? await passFn() : null;
+        let txt;
         try {
- const passFn =
-            typeof window !== 'undefined' ? window.getPassphrase : null;
-          const pass = passFn ? await passFn() : null;
-          const txt = await decryptString(d.encrypted, pass || ownerUid);
-          d = JSON.parse(txt);
+ txt = await decryptString(d.encrypted, pass || ownerUid);
         } catch (e) {
-          console.error('Erro ao descriptografar faturamento', e);
+          if (pass) {
+            try {
+              txt = await decryptString(d.encrypted, ownerUid);
+            } catch (err) {
+              console.error('Erro ao descriptografar faturamento', err);
+            }
+          } else {
+            console.error('Erro ao descriptografar faturamento', e);
+          }
         }
+                if (txt) d = JSON.parse(txt);
       }
- totalLiquido += d.valorLiquido || 0;
+      totalLiquido += d.valorLiquido || 0;
       totalBruto += d.valorBruto || 0;
       pedidos += d.qtdVendas || 0;
     }
