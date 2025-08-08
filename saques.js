@@ -20,6 +20,7 @@ export async function registrarSaque() {
   const data = document.getElementById('dataSaque').value;
   const loja = document.getElementById('lojaSaque').value.trim();
   const valor = parseFloat(document.getElementById('valorSaque').value);
+  const comissao = parseFloat(document.getElementById('comissaoSaque').value) || 0;
 
   if (!data || !loja || isNaN(valor) || valor <= 0) {
     alert('Preencha data, loja e valor corretamente.');
@@ -30,7 +31,13 @@ export async function registrarSaque() {
   const pass = getPassphrase() || `chave-${uid}`;
   const lojaId = loja.replace(/[.#$/\[\]]/g, '_');
 
-  await saveSecureDoc(db, `uid/${uid}/saques/${data}/lojas`, lojaId, { loja, valor, uid }, pass);
+  await saveSecureDoc(
+    db,
+    `uid/${uid}/saques/${data}/lojas`,
+    lojaId,
+    { loja, valor, comissao, uid },
+    pass
+  );
 
   const snap = await getDocs(collection(db, `uid/${uid}/saques/${data}/lojas`));
   let total = 0;
@@ -45,10 +52,17 @@ export async function registrarSaque() {
   const existente = await loadSecureDoc(db, `uid/${uid}/saques`, data, pass);
   const pago = existente?.pago || false;
 
-  await saveSecureDoc(db, `uid/${uid}/saques`, data, { data, valorTotal: total, pago, uid }, pass);
+  await saveSecureDoc(
+    db,
+    `uid/${uid}/saques`,
+    data,
+    { data, valorTotal: total, pago, uid },
+    pass
+  );
 
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
+  document.getElementById('comissaoSaque').value = '';
   await carregarSaques();
 }
 
@@ -101,31 +115,39 @@ export async function carregarSaques() {
         </div>
         <div id="detalhes-${docSnap.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
       `;
-    } else {
-      elem = document.createElement('div');
-      elem.className = 'bg-white rounded-lg p-3 border';
-      elem.innerHTML = `
-        <div class="flex justify-between items-center">
-          <div class="text-sm text-gray-500 flex items-center gap-2 font-semibold">
-            <i class="fas fa-calendar-alt text-blue-600"></i>${docSnap.id}
-          </div>
-          <label class="inline-flex items-center text-sm">
-            <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
-            <span class="ml-1">Pago</span>
-          </label>
+   } else {
+  elem = document.createElement('div');
+  elem.className = 'bg-white rounded-lg p-3 border';
+  elem.innerHTML = `
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <input type="checkbox" class="selecionar-saque" data-saquedata="${docSnap.id}">
+        <div class="text-sm text-gray-500 flex items-center gap-2 font-semibold">
+          <i class="fas fa-calendar-alt text-blue-600"></i>${docSnap.id}
         </div>
-        <div class="flex justify-between items-center mt-1">
-          <div class="text-lg font-bold text-green-600">R$ ${total.toLocaleString('pt-BR')}</div>
-          <button onclick="mostrarDetalhesSaque('${docSnap.id}')" class="btn btn-outline text-sm"><i class="fas fa-eye"></i></button>
-        </div>
-        <div id="detalhes-${docSnap.id}" class="mt-2 text-sm text-gray-700" style="display:none;"></div>
-      `;
-    }
+      </div>
+      <label class="inline-flex items-center text-sm">
+        <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
+        <span class="ml-1">Pago</span>
+      </label>
+    </div>
+    <div class="flex justify-between items-center mt-1">
+      <div class="text-lg font-bold text-green-600">R$ ${total.toLocaleString('pt-BR')}</div>
+      <button onclick="mostrarDetalhesSaque('${docSnap.id}')" class="btn btn-outline text-sm"><i class="fas fa-eye"></i></button>
+    </div>
+    <div id="detalhes-${docSnap.id}" class="mt-2 text-sm text-gray-700" style="display:none;"></div>
+  `;
+}
     container.appendChild(elem);
   }
   if (!container.children.length) {
     container.innerHTML = '<p class="text-gray-500">Nenhum saque encontrado</p>';
   }
+  const resumoBtn = document.createElement('button');
+resumoBtn.textContent = 'Ver Resumo Selecionados';
+resumoBtn.className = 'btn btn-primary mt-4';
+resumoBtn.onclick = mostrarResumoSelecionados;
+container.parentElement.appendChild(resumoBtn);
 }
 
 export async function mostrarDetalhesSaque(dataRef) {
@@ -148,7 +170,12 @@ export async function mostrarDetalhesSaque(dataRef) {
     const d = JSON.parse(txt);
     const loja = d.loja || 'Loja';
     const valor = d.valor || 0;
-    html += `<div class="mt-1 text-sm text-gray-800 border-t pt-1"><strong>${loja}</strong>: R$ ${valor.toLocaleString('pt-BR')}</div>`;
+const comissao = d.comissao || 0;
+const valorComissao = comissao ? ((valor * comissao) / 100) : 0;
+html += `<div class="mt-1 text-sm text-gray-800 border-t pt-1">
+  <strong>${loja}</strong>: R$ ${valor.toLocaleString('pt-BR')}
+  ${comissao ? `<span class="ml-2 text-blue-700">(Comissão: ${comissao}% → R$ ${valorComissao.toLocaleString('pt-BR')})</span>` : ''}
+</div>`;
   }
   detalhesEl.innerHTML = html || '<p class="text-gray-500">Sem detalhes</p>';
 }
