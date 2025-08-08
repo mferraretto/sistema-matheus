@@ -115,176 +115,169 @@
       </div>
     </div>
   </div>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+    <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    async function processar() {
-      const progressBar = document.getElementById("progressBar");
-      const progressFill = document.getElementById("progressFill");
-      const progressText = document.getElementById("progressText");
-      progressBar.style.display = "block";
-      progressFill.style.width = "0%";
-      progressText.textContent = "";
+function showMessage(text) {
+  const messageBox = document.getElementById("messageBox");
+  const messageText = document.getElementById("messageText");
+  messageText.textContent = text;
+  messageBox.style.display = "block";
+}
 
-      const status = document.getElementById("status");
-      const pdfFile = document.getElementById("pdfInput").files[0];
-      if (!pdfFile) {
-        progressBar.style.display = "none";
-        return alert("Envie o arquivo PDF.");
-      }
+async function processar() {
+  const progressBar = document.getElementById("progressBar");
+  const progressFill = document.getElementById("progressFill");
+  const progressText = document.getElementById("progressText");
+  progressBar.style.display = "block";
+  progressFill.style.width = "0%";
+  progressText.textContent = "";
 
-      status.textContent = "📸 Lendo PDF...";
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const novoPdf = await PDFLib.PDFDocument.create();
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.style.display = "block";
+  const status = document.getElementById("status");
+  const pdfFile = document.getElementById("pdfInput").files[0];
+  if (!pdfFile) {
+    progressBar.style.display = "none";
+    return showMessage("Envie o arquivo PDF.");
+  }
 
-      for (let i = 0; i < pdf.numPages; i++) {
-        const progress = Math.round((i / pdf.numPages) * 100);
-        progressFill.style.width = progress + "%";
-        progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+  status.textContent = "📸 Lendo PDF...";
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const novoPdf = await PDFLib.PDFDocument.create();
+  const canvas = document.getElementById("pdfCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.style.display = "block";
 
-        const page = await pdf.getPage(i + 1);
-        const scale = 3;
-        const viewport = page.getViewport({ scale });
+  for (let i = 0; i < pdf.numPages; i++) {
+    const progress = Math.round((i / pdf.numPages) * 100);
+    progressFill.style.width = progress + "%";
+    progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+    const page = await pdf.getPage(i + 1);
+    const scale = 2;
+    const viewport = page.getViewport({ scale });
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
 
-        const largura = canvas.width;
-        const altura = canvas.height;
+    await page.render({ canvasContext: ctx, viewport }).promise;
 
-        const colWidth = largura / 2;
-        const rowHeight = altura / 2;
+    const largura = canvas.width;
+    const altura = canvas.height;
 
-        const pares = [
-          { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight / 1 } }, // coluna esquerda
-          { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight / 1 } }  // coluna direita
-        ];
+    const colWidth = largura / 2;
+    const rowHeight = altura / 1.75;
 
-        for (const par of pares) {
-          // CORTA ETIQUETA (linha de cima)
-          const etCanvas = document.createElement("canvas");
-          etCanvas.width = colWidth;
-          etCanvas.height = rowHeight;
-          const etCtx = etCanvas.getContext("2d");
-          etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y, colWidth, rowHeight, 0, 0, colWidth, rowHeight);
+    const pares = [
+      { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
+      { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
+    ];
 
-          // CORTA CHECKLIST (linha de baixo)
-          const chkCanvas = document.createElement("canvas");
-          chkCanvas.width = colWidth;
-          chkCanvas.height = rowHeight / 2;
-          const chkCtx = chkCanvas.getContext("2d");
-          chkCtx.drawImage(canvas, par.checklist.x, par.checklist.y, colWidth, rowHeight / 2, 0, 0, colWidth, rowHeight / 2);
+    for (const par of pares) {
+      // Ajuste das proporções para garantir que a parte do checklist seja totalmente capturada.
+      // Desta vez, vamos dar mais espaço para o checklist para garantir que nada seja cortado.
+      const proporcaoEtiqueta = 0.88; 
+      const proporcaoChecklist = 0.12; 
 
-          // OCR do checklist (linha inferior)
-          const { data: { text } } = await Tesseract.recognize(chkCanvas, "eng");
+      const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
+      const alturaChecklist = rowHeight * proporcaoChecklist;
+      
+      const deslocamentoEtiquetaY = 0;
+      
+      // CORTA A ETIQUETA PRINCIPAL
+      const etCanvas = document.createElement("canvas");
+      etCanvas.width = colWidth;
+      etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
+      const etCtx = etCanvas.getContext("2d");
+      etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y + deslocamentoEtiquetaY, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY, 0, 0, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY);
+      
+      // CORTA A PARTE DO CHECKLIST
+      const chkCanvas = document.createElement("canvas");
+      
+      // Definimos um deslocamento mínimo para evitar a linha de separação, mas não cortar o texto.
+      const deslocamentoY = 6; 
+      const novaAlturaChecklist = alturaChecklist - deslocamentoY;
+      
+      chkCanvas.width = colWidth;
+      chkCanvas.height = novaAlturaChecklist;
+      const chkCtx = chkCanvas.getContext("2d");
+      
+      // Captura o checklist a partir do ponto inicial da seção.
+      chkCtx.drawImage(canvas, par.checklist.x, par.checklist.y + deslocamentoY, colWidth, novaAlturaChecklist, 0, 0, colWidth, novaAlturaChecklist);
+      
+      // COMBINA AS DUAS PARTES EM UM ÚNICO CANVAS
+      const etiquetaCompletaCanvas = document.createElement("canvas");
+      etiquetaCompletaCanvas.width = colWidth;
+      
+      const ajusteVerticalChecklist = 4; 
+      etiquetaCompletaCanvas.height = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + novaAlturaChecklist + ajusteVerticalChecklist;
+      
+      const completoCtx = etiquetaCompletaCanvas.getContext("2d");
+      completoCtx.drawImage(etCanvas, 0, 0);
+const escalaChecklist = 2; // 🔍 ZOOM 1.9x
 
-          // Extração do ID do pedido
-          let pedido = null;
-          const matchPedido = text.match(/([0-9A-Z]{12,})/);
-          if (matchPedido) pedido = matchPedido[1].trim();
+const larguraZoom = colWidth * escalaChecklist;
+const alturaZoom = novaAlturaChecklist * escalaChecklist;
 
-          // Extração dos dados estruturados do checklist
-          function extrairDadosChecklist(textoOCR) {
-            const linhas = textoOCR.split('\n').map(l => l.trim()).filter(Boolean);
-            let cabecalhoEncontrado = false;
-            let dadosLinha = null;
-            let descricaoExtra = [];
+// Ajustar a posição X para centralizar após o zoom (caso queira)
+const offsetX = (colWidth - larguraZoom) / 1.3;
+const offsetY = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + ajusteVerticalChecklist;
 
-            for (let i = 0; i < linhas.length; i++) {
-              const linha = linhas[i];
+// Aplica o zoom
+completoCtx.drawImage(
+  chkCanvas,
+  0, 0, colWidth, novaAlturaChecklist, // Fonte (tamanho original)
+  offsetX, offsetY, larguraZoom, alturaZoom // Destino (com zoom)
+);
 
-              if (linha.startsWith("# Produto SKU")) {
-                cabecalhoEncontrado = true;
-                continue;
-              }
+      // Inserção no novo PDF
+      const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+      const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-              if (!cabecalhoEncontrado) continue;
+      // Usando dimensões de página padrão para uma etiqueta
+      const larguraPagina = 283.46;
+      const alturaPagina = 455.2;
+      
+      // Adicionamos um fator de escala para diminuir a etiqueta de forma proporcional.
+      const scaleFactor = 0.90;
+      const larguraEtiquetaFinal = 277 * scaleFactor; 
+      const alturaEtiquetaFinal = 449 * scaleFactor;
+      
+      const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
+      const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
 
-              if (!dadosLinha && /^\d+ /.test(linha)) {
-                const partes = linha.split(/\s+/);
-                const numero = partes[0];
-                const quantidade = partes[partes.length - 1];
+      // Ajustado a posição vertical para subir a etiqueta e dar espaço para o checklist.
+      const ajusteVertical = 10; 
+      const yPos = margemY + ajusteVertical;
 
-                // Detecta o índice do SKU (ex: T6, B6, A12, BOLEIRAS etc.)
-                const indexSKU = partes.findIndex(p =>
-        /^[A-Za-z0-9.+\-]{2,}$/.test(p) && /[+\-\.]/.test(p)
-                );
+      // Adiciona uma página para cada etiqueta
+      const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
 
-                let produto = partes.slice(1, indexSKU).join(' ');
-                const sku = partes[indexSKU];
-                const variacao = partes.slice(indexSKU + 1, partes.length - 1).join(' ');
-
-                dadosLinha = { numero, produto, sku, variacao, quantidade };
-              } else if (dadosLinha) {
-                descricaoExtra.push(linha);
-              }
-            }
-
-            if (dadosLinha && descricaoExtra.length > 0) {
-              dadosLinha.produto += ' ' + descricaoExtra.join(' ');
-            }
-
-            return dadosLinha;
-          }
-
-          const dados = extrairDadosChecklist(text);
-
-          // Rodapé final com todos os dados
-          const rodape = `SKU: ${dados?.sku || 'SKU não identificado'}
-Variação: ${dados?.variacao || 'N/A'}
-Qtd: ${dados?.quantidade || 'N/A'}`;
-
-          // Inserção no novo PDF
-          const imgBytes = await fetch(etCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-          const imgEmbed = await novoPdf.embedPng(imgBytes);
-
-          const larguraPagina = 283.46;
-          const alturaPagina = 425.2;
-          const larguraEtiqueta = 255;
-          const alturaEtiqueta = 359;
-          const margemX = (larguraPagina - larguraEtiqueta) / 2;
-          const margemY = alturaPagina - alturaEtiqueta - 15;
-
-          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-          pag.drawImage(imgEmbed, {
-            x: margemX,
-            y: margemY,
-            width: larguraEtiqueta,
-            height: alturaEtiqueta,
-          });
-
-          pag.drawText(rodape, {
-            x: 15,
-            y: 45,
-            size: 12,
-            lineHeight: 11,
-            color: PDFLib.rgb(0, 0, 0),
-          });
-        }
-      }
-
-      progressFill.style.width = "100%";
-      progressText.textContent = "✅ Concluído!";
-      setTimeout(() => {
-        progressBar.style.display = "none";
-      }, 2000);
-
-      const pdfFinal = await novoPdf.save();
-      const blob = new Blob([pdfFinal], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "etiquetas_editadas.pdf";
-      a.click();
-
-      status.textContent = "✅ PDF gerado com sucesso!";
+      pag.drawImage(imgEmbed, {
+        x: margemX,
+        y: yPos,
+        width: larguraEtiquetaFinal,
+        height: alturaEtiquetaFinal,
+      });
     }
+  }
+
+  progressFill.style.width = "100%";
+  progressText.textContent = "✅ Concluído!";
+  setTimeout(() => {
+    progressBar.style.display = "none";
+  }, 2000);
+
+  const pdfFinal = await novoPdf.save();
+  const blob = new Blob([pdfFinal], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "etiquetas_editadas.pdf";
+  a.click();
+
+  status.textContent = "✅ PDF gerado com sucesso!";
+}
   </script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
