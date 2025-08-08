@@ -213,7 +213,7 @@
 
                 // Detecta o índice do SKU (ex: T6, B6, A12, BOLEIRAS etc.)
                 const indexSKU = partes.findIndex(p =>
-/^[A-Z0-9+\.\-]{2,}$/.test(p)
+        /^[A-Za-z0-9.+\-]{2,}$/.test(p) && /[+\-\.]/.test(p)
                 );
 
                 let produto = partes.slice(1, indexSKU).join(' ');
