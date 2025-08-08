@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { decryptString } from './crypto.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
@@ -143,14 +143,34 @@ export async function carregarSaques() {
   if (!container.children.length) {
     container.innerHTML = '<p class="text-gray-500">Nenhum saque encontrado</p>';
   }
- const oldBtn = document.getElementById('resumoBtn');
-if (oldBtn) oldBtn.remove();
-const resumoBtn = document.createElement('button');
-resumoBtn.id = 'resumoBtn';
-resumoBtn.textContent = 'Ver Resumo Selecionados';
-resumoBtn.className = 'btn btn-primary mt-4';
-resumoBtn.onclick = mostrarResumoSelecionados;
-container.parentElement.appendChild(resumoBtn);
+const oldControls = document.getElementById('acoesSelecionados');
+ if (oldControls) oldControls.remove();
+ const controls = document.createElement('div');
+ controls.id = 'acoesSelecionados';
+ controls.className = 'flex flex-wrap gap-2 mt-4';
+
+ const resumoBtn = document.createElement('button');
+ resumoBtn.textContent = 'Ver Resumo Selecionados';
+ resumoBtn.className = 'btn btn-primary';
+ resumoBtn.onclick = mostrarResumoSelecionados;
+
+ const excluirBtn = document.createElement('button');
+ excluirBtn.textContent = 'Excluir Selecionados';
+ excluirBtn.className = 'btn btn-danger';
+ excluirBtn.onclick = excluirSaquesSelecionados;
+
+ const excelBtn = document.createElement('button');
+ excelBtn.textContent = 'Exportar Excel';
+ excelBtn.className = 'btn btn-outline';
+ excelBtn.onclick = () => exportarSelecionados('excel');
+
+ const pdfBtn = document.createElement('button');
+ pdfBtn.textContent = 'Exportar PDF';
+ pdfBtn.className = 'btn btn-outline';
+ pdfBtn.onclick = () => exportarSelecionados('pdf');
+
+ controls.append(resumoBtn, excluirBtn, excelBtn, pdfBtn);
+ container.parentElement.appendChild(controls);
 }
 
 export async function mostrarDetalhesSaque(dataRef) {
@@ -204,9 +224,83 @@ async function mostrarResumoSelecionados() {
   }
   alert(`Total Selecionado: R$ ${total.toLocaleString('pt-BR')}\nComissão Total: R$ ${totalComissao.toLocaleString('pt-BR')}`);
 }
-if (typeof window !== 'undefined') {
-  // ... seus outros exports
-  window.mostrarResumoSelecionados = mostrarResumoSelecionados;
+
+async function exportarSelecionados(formato) {
+  const checks = document.querySelectorAll('.selecionar-saque:checked');
+  const datas = Array.from(checks).map(c => c.dataset.saquedata);
+  if (!datas.length) return alert('Selecione ao menos um saque');
+
+  const uid = auth.currentUser.uid;
+  const pass = getPassphrase() || `chave-${uid}`;
+  const rows = [];
+  let total = 0;
+  let totalComissao = 0;
+
+  for (const dataRef of datas) {
+    const snap = await getDocs(collection(db, `uid/${uid}/saques/${dataRef}/lojas`));
+    for (const docSnap of snap.docs) {
+      const enc = docSnap.data().encrypted;
+      if (!enc) continue;
+      const txt = await decryptString(enc, pass);
+      const d = JSON.parse(txt);
+      const valorComissao = d.comissao ? (d.valor * d.comissao / 100) : 0;
+      rows.push({
+        Data: dataRef,
+        Loja: d.loja || '',
+        Valor: d.valor || 0,
+        Comissao: d.comissao || 0,
+        ValorComissao: valorComissao
+      });
+      total += d.valor || 0;
+      totalComissao += valorComissao;
+    }
+  }
+
+  if (formato === 'excel') {
+    const wb = XLSX.utils.book_new();
+    const sheetData = [
+      ['Data', 'Loja', 'Valor', 'Comissão (%)', 'Valor Comissão'],
+      ...rows.map(r => [r.Data, r.Loja, r.Valor, r.Comissao, r.ValorComissao]),
+      ['Total', '', total, '', totalComissao]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Saques');
+    XLSX.writeFile(wb, 'saques_selecionados.xlsx');
+  } else if (formato === 'pdf') {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const tableBody = rows.map(r => [
+      r.Data,
+      r.Loja,
+      r.Valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      r.Comissao,
+      r.ValorComissao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    ]);
+    doc.autoTable({
+      head: [['Data', 'Loja', 'Valor', 'Comissão (%)', 'Valor Comissão']],
+      body: tableBody
+    });
+    const y = doc.lastAutoTable.finalY + 10;
+    doc.text(`Total: R$ ${total.toLocaleString('pt-BR')}`, 14, y);
+    doc.text(`Comissão Total: R$ ${totalComissao.toLocaleString('pt-BR')}`, 14, y + 8);
+    doc.save('saques_selecionados.pdf');
+  }
+}
+async function excluirSaquesSelecionados() {
+  const checks = document.querySelectorAll('.selecionar-saque:checked');
+  const datas = Array.from(checks).map(c => c.dataset.saquedata);
+  if (!datas.length) return alert('Selecione ao menos um saque');
+  if (!confirm('Excluir saques selecionados?')) return;
+
+  const uid = auth.currentUser.uid;
+  for (const dataRef of datas) {
+    const snap = await getDocs(collection(db, `uid/${uid}/saques/${dataRef}/lojas`));
+    for (const docSnap of snap.docs) {
+      await deleteDoc(doc(db, `uid/${uid}/saques/${dataRef}/lojas`, docSnap.id));
+    }
+    await deleteDoc(doc(db, `uid/${uid}/saques`, dataRef));
+  }
+  await carregarSaques();
 }
 export async function alternarPago(dataRef) {
   const uid = auth.currentUser.uid;
@@ -223,4 +317,7 @@ if (typeof window !== 'undefined') {
   window.carregarSaques = carregarSaques;
   window.mostrarDetalhesSaque = mostrarDetalhesSaque;
   window.alternarPago = alternarPago;
+   window.mostrarResumoSelecionados = mostrarResumoSelecionados;
+  window.exportarSelecionados = exportarSelecionados;
+  window.excluirSaquesSelecionados = excluirSaquesSelecionados;
 }
