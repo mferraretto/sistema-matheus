@@ -2123,6 +2123,9 @@ input:checked + .toggle-slider:before {
   #tabelaAcompanhamento th {
     background: #f0f0f0;
   }
+#tabelaAcompanhamento tr.abaixo-meta {
+    background-color: #ffe5e5;
+  }
 
   #resumoAcompanhamento {
     margin-top: 20px;
