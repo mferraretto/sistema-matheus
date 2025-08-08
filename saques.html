@@ -19,18 +19,22 @@
       </div>
       <div class="card-body space-y-4">
         <div class="form-row">
-          <div class="form-group">
-            <input type="date" id="dataSaque" class="form-control">
-          </div>
-          <div class="form-group">
-            <input type="text" id="lojaSaque" placeholder="Loja" class="form-control">
-          </div>
-          <div class="form-group">
-            <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control">
-          </div>
-          <button onclick="registrarSaque()" class="btn btn-primary">
-            <i class="fas fa-plus mr-1"></i> Registrar
-          </button>
+         <div class="form-group">
+  <input type="date" id="dataSaque" class="form-control">
+</div>
+<div class="form-group">
+  <input type="text" id="lojaSaque" placeholder="Loja" class="form-control">
+</div>
+<div class="form-group">
+  <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control">
+</div>
+<div class="form-group">
+  <label for="comissaoSaque">Comissão do Vendedor (%)</label>
+  <input type="number" id="comissaoSaque" min="0" max="100" step="0.01" placeholder="Ex: 10" class="form-control">
+</div>
+<button onclick="registrarSaque()" class="btn btn-primary">
+  <i class="fas fa-plus mr-1"></i> Registrar
+</button>
         </div>
       </div>
     </div>
@@ -44,6 +48,7 @@
           <label for="filtroMesSaques" class="font-medium">Filtrar por mês:</label>
           <input type="month" id="filtroMesSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
         </div>
+        
         <div class="flex items-center gap-2">
           <label for="modoVisualizacaoSaques" class="font-medium">Visualizar:</label>
           <select id="modoVisualizacaoSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
