@@ -137,6 +137,66 @@ const snap = isAdmin
   }).join('');
   el.innerHTML = `<table class="data-table"><thead><tr><th>SKU</th><th>Qtd.</th><th>Loja</th></tr></thead><tbody>${linhas}</tbody></table>`;
 }
+async function carregarChecklist(uid, isAdmin) {
+  const el = document.getElementById('dailyChecklist');
+  if (!el) return;
+  el.innerHTML = '<li class="text-gray-500">Carregando...</li>';
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const mapa = {};
+  const snap = isAdmin
+    ? await getDocs(collectionGroup(db, 'skusVendidos'))
+    : await getDocs(collection(db, `uid/${uid}/skusVendidos`));
+  for (const docSnap of snap.docs) {
+    if (docSnap.id !== hoje) continue;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const listaRef = collection(db, `uid/${ownerUid}/skusVendidos/${docSnap.id}/lista`);
+    const listaSnap = await getDocs(listaRef);
+    listaSnap.forEach(s => {
+      const d = s.data();
+      mapa[d.sku] = (mapa[d.sku] || 0) + (d.total || 0);
+    });
+  }
+  const ordenado = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+  const tarefas = [];
+  if (ordenado.length > 0) {
+    const top1 = ordenado[0][0];
+    tarefas.push(`Criar 5 anúncios novos do SKU ${top1}`);
+    if (ordenado.length > 1) {
+      const top2 = ordenado[1][0];
+      tarefas.push(`Criar 3 kits do SKU ${top1}`);
+      tarefas.push(`Criar 3 kits do SKU ${top2}`);
+    }
+  }
+
+  const quinzeDiasAtras = new Date(Date.now() - 15*24*60*60*1000).toISOString().slice(0,10);
+  const anunciosSnap = isAdmin
+    ? await getDocs(collectionGroup(db, 'anuncios'))
+    : await getDocs(collection(db, `uid/${uid}/anuncios`));
+  for (const docSnap of anunciosSnap.docs) {
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const desempenhoRef = doc(db, `uid/${ownerUid}/anuncios/${docSnap.id}/desempenho`, quinzeDiasAtras);
+    const desempenhoSnap = await getDoc(desempenhoRef);
+    if (!desempenhoSnap.exists()) continue;
+    const dados = desempenhoSnap.data();
+    const views = Number(dados.visualizacoes || 0);
+    const vendas = Number(dados.unidadesPago || dados.vendasPago || 0);
+    const nome = docSnap.data().nome || docSnap.id;
+    if (vendas === 0 && views < 100) {
+      tarefas.push(`Excluir anúncio ${nome}`);
+    } else if (vendas === 0 && views > 200) {
+      tarefas.push(`Modificar anúncio ${nome}`);
+    }
+  }
+
+  if (tarefas.length === 0) {
+    el.innerHTML = '<li class="text-gray-500">Nenhuma tarefa para hoje.</li>';
+  } else {
+    el.innerHTML = tarefas
+      .map(t => `<li><label class="flex items-center"><input type="checkbox" class="mr-2">${t}</label></li>`)
+      .join('');
+  }
+}
 
 async function iniciarPainel(user) {
   const uid = user?.uid;
@@ -149,7 +209,8 @@ async function iniciarPainel(user) {
   }
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
-    carregarTopSkus(uid, isAdmin)
+ carregarTopSkus(uid, isAdmin),
+    carregarChecklist(uid, isAdmin)
   ]);
   applyBlurStates();
 }
