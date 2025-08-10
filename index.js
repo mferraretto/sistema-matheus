@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, collectionGroup } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, collectionGroup, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { decryptString } from './crypto.js';
+import { loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -137,66 +138,90 @@ const snap = isAdmin
   }).join('');
   el.innerHTML = `<table class="data-table"><thead><tr><th>SKU</th><th>Qtd.</th><th>Loja</th></tr></thead><tbody>${linhas}</tbody></table>`;
 }
-async function carregarChecklist(uid, isAdmin) {
-  const el = document.getElementById('dailyChecklist');
-  if (!el) return;
-  el.innerHTML = '<li class="text-gray-500">Carregando...</li>';
+async function carregarTarefas(uid, isAdmin) {
+  const lista = document.getElementById('listaTarefas');
+  if (!lista) return;
+  lista.innerHTML = '<li class="text-gray-500">Carregando...</li>';
 
-  const hoje = new Date().toISOString().slice(0,10);
+  const tarefas = [];
+  const hoje = new Date();
+  const seteDiasAtras = new Date();
+  seteDiasAtras.setDate(hoje.getDate() - 7);
+
+  // Top SKUs
   const mapa = {};
-  const snap = isAdmin
+  const snapSkus = isAdmin
     ? await getDocs(collectionGroup(db, 'skusVendidos'))
     : await getDocs(collection(db, `uid/${uid}/skusVendidos`));
-  for (const docSnap of snap.docs) {
-    if (docSnap.id !== hoje) continue;
+  for (const docSnap of snapSkus.docs) {
+    const dataDoc = new Date(docSnap.id);
+    if (isNaN(dataDoc) || dataDoc < seteDiasAtras || dataDoc > hoje) continue;
     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
     const listaRef = collection(db, `uid/${ownerUid}/skusVendidos/${docSnap.id}/lista`);
     const listaSnap = await getDocs(listaRef);
     listaSnap.forEach(s => {
       const d = s.data();
-      mapa[d.sku] = (mapa[d.sku] || 0) + (d.total || 0);
+      const chave = `${d.sku}||${d.loja || ''}`;
+      mapa[chave] = (mapa[chave] || 0) + (d.total || 0);
     });
   }
-  const ordenado = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
-  const tarefas = [];
-  if (ordenado.length > 0) {
-    const top1 = ordenado[0][0];
-    tarefas.push(`Criar 5 anúncios novos do SKU ${top1}`);
-    if (ordenado.length > 1) {
-      const top2 = ordenado[1][0];
-      tarefas.push(`Criar 3 kits do SKU ${top1}`);
-      tarefas.push(`Criar 3 kits do SKU ${top2}`);
-    }
+  const ordenado = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+  if (ordenado[0]) {
+    const sku1 = ordenado[0][0].split('||')[0];
+    tarefas.push(`Criar 5 anúncios novos do SKU ${sku1}`);
+  }
+  if (ordenado[1]) {
+    const sku1 = ordenado[0][0].split('||')[0];
+    const sku2 = ordenado[1][0].split('||')[0];
+    tarefas.push(`Criar 3 kits com os SKUs ${sku1} e ${sku2}`);
   }
 
-  const quinzeDiasAtras = new Date(Date.now() - 15*24*60*60*1000).toISOString().slice(0,10);
-  const anunciosSnap = isAdmin
+  // Anúncios para excluir ou modificar
+  const snapAnuncios = isAdmin
     ? await getDocs(collectionGroup(db, 'anuncios'))
     : await getDocs(collection(db, `uid/${uid}/anuncios`));
-  for (const docSnap of anunciosSnap.docs) {
+  const pass = typeof getPassphrase === 'function' ? getPassphrase() : null;
+  for (const docSnap of snapAnuncios.docs) {
     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
-    const desempenhoRef = doc(db, `uid/${ownerUid}/anuncios/${docSnap.id}/desempenho`, quinzeDiasAtras);
-    const desempenhoSnap = await getDoc(desempenhoRef);
-    if (!desempenhoSnap.exists()) continue;
-    const dados = desempenhoSnap.data();
-    const views = Number(dados.visualizacoes || 0);
-    const vendas = Number(dados.unidadesPago || dados.vendasPago || 0);
-    const nome = docSnap.data().nome || docSnap.id;
-    if (vendas === 0 && views < 100) {
-      tarefas.push(`Excluir anúncio ${nome}`);
-    } else if (vendas === 0 && views > 200) {
-      tarefas.push(`Modificar anúncio ${nome}`);
+    const dados = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, docSnap.id, pass);
+    if (!dados || !dados.dataCriacao) continue;
+    const dataCriacao = new Date(dados.dataCriacao);
+    const diasAtivo = (hoje - dataCriacao) / (1000 * 60 * 60 * 24);
+    if (diasAtivo <= 15) continue;
+
+    const desempenhoRef = collection(db, `uid/${ownerUid}/anuncios/${docSnap.id}/desempenho`);
+    const desempenhoQuery = query(desempenhoRef, orderBy('__name__', 'desc'), limit(30));
+    const desempenhoSnap = await getDocs(desempenhoQuery);
+    let visualizacoes = 0;
+    let vendas = 0;
+    desempenhoSnap.forEach(d => {
+      const dataDoc = new Date(d.id);
+      const diffDias = (hoje - dataDoc) / (1000 * 60 * 60 * 24);
+      if (diffDias <= 15) {
+        const v = d.data();
+        visualizacoes += Number(v.visualizacoes || 0);
+        vendas += Number(v.unidadesPago || v.vendasPago || 0);
+      }
+    });
+    if (vendas === 0) {
+      const nome = dados.nome || docSnap.id;
+      if (visualizacoes < 100) {
+        tarefas.push(`Excluir anúncio ${nome} (sem vendas e poucas visualizações)`);
+      } else if (visualizacoes > 200) {
+        tarefas.push(`Modificar anúncio ${nome} (muitas visualizações sem vendas)`);
+      }
     }
   }
 
   if (tarefas.length === 0) {
-    el.innerHTML = '<li class="text-gray-500">Nenhuma tarefa para hoje.</li>';
+    lista.innerHTML = '<li class="text-gray-500">Sem tarefas pendentes</li>';
   } else {
-    el.innerHTML = tarefas
+    lista.innerHTML = tarefas
       .map(t => `<li><label class="flex items-center"><input type="checkbox" class="mr-2">${t}</label></li>`)
       .join('');
   }
 }
+
 
 async function iniciarPainel(user) {
   const uid = user?.uid;
@@ -209,8 +234,8 @@ async function iniciarPainel(user) {
   }
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
- carregarTopSkus(uid, isAdmin),
-    carregarChecklist(uid, isAdmin)
+  carregarTopSkus(uid, isAdmin),
+    carregarTarefas(uid, isAdmin)
   ]);
   applyBlurStates();
 }
