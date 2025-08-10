@@ -140,8 +140,10 @@ const snap = isAdmin
 }
 async function carregarTarefas(uid, isAdmin) {
   const lista = document.getElementById('listaTarefas');
-  if (!lista) return;
-  lista.innerHTML = '<li class="text-gray-500">Carregando...</li>';
+  const listaFeitas = document.getElementById('listaTarefasFeitas');
+  if (!lista || !listaFeitas) return;
+  lista.innerHTML = '<li class="placeholder text-gray-500">Carregando...</li>';
+  listaFeitas.innerHTML = '';
 
   const tarefas = [];
   const hoje = new Date();
@@ -213,15 +215,69 @@ async function carregarTarefas(uid, isAdmin) {
     }
   }
 
-  if (tarefas.length === 0) {
-    lista.innerHTML = '<li class="text-gray-500">Sem tarefas pendentes</li>';
-  } else {
-    lista.innerHTML = tarefas
-      .map(t => `<li><label class="flex items-center"><input type="checkbox" class="mr-2">${t}</label></li>`)
-      .join('');
-  }
-}
+  const storageKey = `tarefasFeitas_${hoje.toISOString().slice(0,10)}`;
+  const concluidas = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  const pendentes = tarefas.filter(t => !concluidas.includes(t));
+  const feitas = tarefas.filter(t => concluidas.includes(t));
 
+  const render = (t, done = false) => {
+    const bg = done ? 'bg-green-50' : 'bg-white';
+    const text = done ? 'line-through text-gray-500' : '';
+    const checked = done ? 'checked' : '';
+    return `<li class="flex items-center p-2 border rounded shadow-sm ${bg}"><input type="checkbox" class="mr-2" data-tarefa="${t}" ${checked}><span class="${text}">${t}</span></li>`;
+  };
+
+  lista.innerHTML = pendentes.length
+    ? pendentes.map(t => render(t)).join('')
+    : '<li class="placeholder text-gray-500">Sem tarefas pendentes</li>';
+  listaFeitas.innerHTML = feitas.length
+    ? feitas.map(t => render(t, true)).join('')
+    : '<li class="placeholder text-gray-500">Nenhuma tarefa concluída</li>';
+
+  function updateStorage(desc, done) {
+    const arr = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const idx = arr.indexOf(desc);
+    if (done && idx === -1) arr.push(desc);
+    if (!done && idx !== -1) arr.splice(idx, 1);
+    localStorage.setItem(storageKey, JSON.stringify(arr));
+  }
+
+  function updatePlaceholders() {
+    if (!lista.children.length) {
+      lista.innerHTML = '<li class="placeholder text-gray-500">Sem tarefas pendentes</li>';
+    }
+    if (!listaFeitas.children.length) {
+      listaFeitas.innerHTML = '<li class="placeholder text-gray-500">Nenhuma tarefa concluída</li>';
+    }
+  }
+
+  function moverTarefa(chk) {
+    const li = chk.closest('li');
+    const desc = chk.getAttribute('data-tarefa');
+    if (chk.checked) {
+      const ph = listaFeitas.querySelector('.placeholder');
+      if (ph) ph.remove();
+      li.classList.remove('bg-white');
+      li.classList.add('bg-green-50');
+      li.querySelector('span').classList.add('line-through', 'text-gray-500');
+      listaFeitas.appendChild(li);
+      updateStorage(desc, true);
+    } else {
+      const ph = lista.querySelector('.placeholder');
+      if (ph) ph.remove();
+      li.classList.remove('bg-green-50');
+      li.classList.add('bg-white');
+      li.querySelector('span').classList.remove('line-through', 'text-gray-500');
+      lista.appendChild(li);
+      updateStorage(desc, false);
+    }
+    updatePlaceholders();
+  }
+
+  document.querySelectorAll('#listaTarefas input[type="checkbox"], #listaTarefasFeitas input[type="checkbox"]').forEach(chk => {
+    chk.addEventListener('change', () => moverTarefa(chk));
+  });
+}
 
 async function iniciarPainel(user) {
   const uid = user?.uid;
