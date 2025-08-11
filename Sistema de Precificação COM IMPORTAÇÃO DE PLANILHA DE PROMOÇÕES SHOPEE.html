@@ -84,7 +84,9 @@
    
 let db, auth, storage;
     document.addEventListener('DOMContentLoaded', () => {
-      firebase.initializeApp(window.firebaseConfig);
+if (!firebase.apps.length) {
+        firebase.initializeApp(window.firebaseConfig);
+      }
       db = firebase.firestore();
       auth = firebase.auth();
       storage = firebase.storage();
