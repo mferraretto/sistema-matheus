@@ -1,4 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import {
   getFirestore,
   collection,
@@ -17,7 +17,7 @@ const firebaseConfig = {
 };
 
 // Inicializa Firebase
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // 🔁 Exporte tudo que o background precisa:
