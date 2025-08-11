@@ -99,7 +99,11 @@
       <tbody class="bg-white"></tbody>
     </table>
   </div>
-
+ <div class="flex justify-end items-center space-x-2 mt-4">
+    <button id="prevPage" onclick="carregarAnuncios('prev')" class="btn btn-secondary px-4 py-2" disabled>Página anterior</button>
+    <span id="pageInfo" class="text-sm text-gray-600"></span>
+    <button id="nextPage" onclick="carregarAnuncios('next')" class="btn btn-secondary px-4 py-2">Próxima página</button>
+  </div>
   <div class="mt-4 text-sm text-gray-500">
     <i class="fas fa-info-circle mr-2"></i>Clique em "Ver Detalhes" para mais informações do produto
   </div>
