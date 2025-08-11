@@ -1897,26 +1897,27 @@ let uids = [];
       const agrupadoPorLoja = {};
       let sobraEsperada = 0;
 
-    for (const uid of uids) {
+      for (const uid of uids) {
         const ref = db.collection(`uid/${uid}/skusVendidos/${dataDoc}/lista`);
         const snap = await ref.get();
         for (const doc of snap.docs) {
           const { sku, total, loja } = doc.data();
           if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
-          agrupadoPorLoja[loja].push({ sku, total });
 
-        // 🔍 Buscar CUSTO do SKU na subcoleção "produtos" do usuário
+          let custo = 0;
           try {
             const produtosRef = db.collection('uid').doc(uid).collection('produtos');
             const querySnap = await produtosRef.where('sku', '==', sku).limit(1).get();
             if (!querySnap.empty) {
               const dados = querySnap.docs[0].data();
-              const custo = Number(dados.custo || 0);
-              sobraEsperada += (total || 0) * custo;
+              custo = Number(dados.custo || 0);
+
             }
           } catch (e) {
             console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
           }
+             sobraEsperada += (total || 0) * custo;
+          agrupadoPorLoja[loja].push({ sku, total, custo });
         }
       }
 
@@ -1946,8 +1947,9 @@ let uids = [];
       let html = `<strong>📅 Detalhes de ${dataDoc}</strong><br><br>`;
       for (const loja in agrupadoPorLoja) {
         html += `<strong>🏪 Loja: ${loja}</strong><br>`;
-        agrupadoPorLoja[loja].forEach(({ sku, total }) => {
-          html += `• ${sku}: ${total} unid.<br>`;
+  agrupadoPorLoja[loja].forEach(({ sku, total, custo }) => {
+          const sobraItem = (total || 0) * (custo || 0);
+          html += `• R$ ${sobraItem.toFixed(2)} - ${sku}: ${total} unid.<br>`;
         });
         html += `<br>`;
       }
