@@ -533,29 +533,26 @@ for (const v of variantes) {
           <div class="text-gray-500 text-sm">${data.categoria || "Sem categoria"}</div>
           <ul class="mt-2">${variacoesHTML}</ul>
         </td>
-        <td class="px-4 py-2">
-          <div class="font-semibold">R$ ${precoMedio}</div>
-          <div class="text-gray-500 text-sm">Frete: R$ ${data.taxaFrete || "0.00"}</div>
-        </td>
-        <td class="px-4 py-2">
-          <span class="badge badge-${estoqueStatus}">${estoqueTotal} un</span>
-        </td>
-        <td class="px-4 py-2">
-          <span class="badge badge-${conversaoStatus}">${conversao}%</span>
-        </td>
+    <td class="px-4 py-2"><div class="font-semibold">R$ ${precoMedio}</div></td>
+        <td class="px-4 py-2">R$ ${data.taxaFrete || "0.00"}</td>
+        <td class="px-4 py-2"><span class="badge badge-${estoqueStatus}">${estoqueTotal} un</span></td>
+        <td class="px-4 py-2"><span class="badge badge-${conversaoStatus}">${conversao}%</span></td>
+        <td class="px-4 py-2">R$ ${mediaDesempenho.vendasPago || "0.00"}</td>
         <td class="px-4 py-2 whitespace-nowrap">
           <button onclick="verDetalhesAnuncio('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm">
             <i class="fas fa-eye mr-1"></i>Ver Detalhes
           </button>
         </td>
       `;
-tr.setAttribute("data-id", id);
-tr.setAttribute("data-nome", (data.nome || "").toLowerCase());
-tr.setAttribute("data-sku", (variantes.map(v => v.skuVariante).join(" ") || "").toLowerCase());
-tr.setAttribute("data-preco", precoMedio);
-tr.setAttribute("data-estoque", estoqueTotal);
-tr.setAttribute("data-conversao", conversao);
-tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
+ tr.setAttribute("data-id", id);
+      tr.setAttribute("data-nome", (data.nome || "").toLowerCase());
+      tr.setAttribute("data-sku", (variantes.map(v => v.skuVariante).join(" ") || "").toLowerCase());
+      tr.setAttribute("data-preco", precoMedio);
+      tr.setAttribute("data-frete", data.taxaFrete || 0);
+      tr.setAttribute("data-estoque", estoqueTotal);
+      tr.setAttribute("data-conversao", conversao);
+      tr.setAttribute("data-vendas", mediaDesempenho.vendasPago || 0);
+      tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
       tr.setAttribute("data-skuinvalido", variantes.some(v => v.skuNaoEncontrado) ? "1" : "0");
 
 
