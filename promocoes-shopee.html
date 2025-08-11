@@ -101,7 +101,9 @@
   <script>
 let db;
 document.addEventListener('DOMContentLoaded', () => {
-  firebase.initializeApp(window.firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(window.firebaseConfig);
+  }
   db = firebase.firestore();
 
   firebase.auth().onAuthStateChanged(user => {
