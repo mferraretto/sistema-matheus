@@ -26,6 +26,15 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db = getFirestore(app);
 const auth = getAuth(app);
 let isAdmin = false;
+// Resolve a senha efetiva: usa a passphrase do usuário; se não houver, cai no UID
+function getEffectivePass(fallbackUid) {
+  try {
+    const p = (typeof getPassphrase === 'function') ? getPassphrase() : '';
+    return (p && p.trim()) ? p : fallbackUid;
+  } catch {
+    return fallbackUid;
+  }
+}
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -33,10 +42,7 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-// ✅ Define a passphrase padrão se nenhuma estiver configurada
-  if (!getPassphrase()) {
-    setPassphrase(`chave-${user.uid}`);
-  }
+
 
   try {
     const snap = await getDoc(doc(db, 'uid', user.uid));
@@ -237,12 +243,14 @@ window.salvarNoFirebase = async () => {
   const loadingMsg = showNotification("⏳ Salvando dados no Firebase...", 'info', true);
 
   try {
-    const user = auth.currentUser;
-    const pass = await getPassphrase();
+   const user = auth.currentUser;
+const pass = getEffectivePass(user.uid);
+
 
     for (const [id, produto] of Object.entries(window.produtos)) {
  const docPath = `uid/${user.uid}/anuncios`;
       const dadosAntigos = await loadSecureDoc(db, docPath, id, pass);
+      const docExiste = rawSnap.exists();
       const docExiste = !!dadosAntigos;
 
       let dadosCompletos = { ...produto };
@@ -440,8 +448,8 @@ const nextBtn = document.getElementById('nextPage');
       const id = doc.id;
 const ownerUid = doc.data().uid || user.uid;
       const basePath = doc.ref.parent.path;
-      const pass = getPassphrase();
-      const data = await loadSecureDoc(db, basePath, id, pass) || {};
+     const pass = getEffectivePass(ownerUid);
+const data = await loadSecureDoc(db, basePath, id, pass) || {};
       if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
@@ -452,9 +460,9 @@ const ownerUid = doc.data().uid || user.uid;
       let variantes = [];
 
       if (!snap.empty) {
-        const docs = await Promise.all(
- snap.docs.map(v => loadSecureDoc(db, `${basePath}/${id}/variantes`, v.id, pass))
-        );
+    const docs = await Promise.all(
+  snap.docs.map(v => loadSecureDoc(db, `${basePath}/${id}/variantes`, v.id, pass))
+);
         variantes = docs.filter(Boolean);
       }
 
@@ -613,8 +621,9 @@ for (const v of variantes) {
 window.verDetalhesAnuncio = async function (id, ownerUid = auth.currentUser?.uid) {
   try {
 const user = auth.currentUser;
-    const pass = getPassphrase();
-    const data = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, id, pass);
+  const pass = getEffectivePass(ownerUid);
+const data = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, id, pass);
+
     if (!data) {
       showNotification("❌ Anúncio não encontrado", "error");
       return;
@@ -630,10 +639,10 @@ const user = auth.currentUser;
     const variantesSnap = await getDocs(variantesRef);
     let variantes = [];
     if (!variantesSnap.empty) {
-      const pass = getPassphrase();
-      const docs = await Promise.all(
-        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${ownerUid}/anuncios/${id}/variantes`, v.id, pass))
-      );
+    const passVar = getEffectivePass(ownerUid);
+const docs = await Promise.all(
+  variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${ownerUid}/anuncios/${id}/variantes`, v.id, passVar))
+);
       variantes = docs.filter(Boolean);
     }
     // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
@@ -913,9 +922,9 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
         
 
         for (const doc of querySnapshot.docs) {
-          const ownerUid = doc.data().uid || user.uid;
-          const pass = getPassphrase();
-          const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
+         const ownerUid = doc.data().uid || user.uid;
+const pass = getEffectivePass(ownerUid);
+const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
           const id = a.id || doc.id || "(sem ID)";
           const nome = a.nome || "(sem nome)";
           const conversao = parseFloat(a.conversaoPago || 0);
@@ -1061,19 +1070,20 @@ window.carregarEvolucao = async function () {
     const cards = [];
 
     for (const doc of anunciosSnap.docs) {
- const pass = getPassphrase();
-      const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
+ const ownerUid = doc.ref.parent.parent.id;
+const pass = getEffectivePass(ownerUid);
+const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
       const id = a.id || doc.id || "(sem ID)";
       const nome = a.nome || "(sem nome)";
       const visitas = a.visitas || a.visualizacoes || 0;
       const vendas = a.vendasPago || 0;
       const conversao = a.conversaoPago || 0;
-
-      const ownerUid = doc.ref.parent.parent.id;
       const variantesSnap = await getDocs(collection(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`));
  const variantes = (await Promise.all(
-        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`, v.id, pass))
-      )).filter(Boolean);
+  variantesSnap.docs.map(v =>
+    loadSecureDoc(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`, v.id, pass)
+  )
+)).filter(Boolean);
       const historico = (historicoPorId[id] || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
 
       let evolucaoHTML = "";
