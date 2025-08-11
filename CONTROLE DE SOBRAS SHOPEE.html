@@ -1434,6 +1434,7 @@ const dataInput = document.getElementById("dataFaturamento");
           }
 
           let bruto = 0, taxas = 0, qtdVendas = 0;
+          const skusVendidos = {};
 
           rows.forEach((row) => {
             const status = (row["Status do pedido"] || "").toLowerCase();
@@ -1445,9 +1446,20 @@ const dataInput = document.getElementById("dataFaturamento");
             const comissao = parseFloat(row["Taxa de comissão"]) || 0;
             const servico = parseFloat(row["Taxa de serviço"]) || 0;
 
+            const liquidoLinha = subtotal + reembolso - cupom - comissao - servico;
+
             bruto += subtotal + reembolso;
             taxas += cupom + comissao + servico;
             qtdVendas++;
+
+            const headers = Object.keys(row);
+            const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
+            const sku = headerSKU ? row[headerSKU] : null;
+            if (!sku) return;
+
+            if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
+            skusVendidos[sku].total++;
+            skusVendidos[sku].valorLiquido += liquidoLinha;
           });
 
           const liquido = bruto - taxas;
@@ -1459,22 +1471,6 @@ const dataInput = document.getElementById("dataFaturamento");
             qtdVendas += anterior.qtdVendas || 0;
           }
 
-          // ✅ Agrupar SKUs vendidos usando apenas a coluna exata
-          const skusVendidos = {};
-          rows.forEach((row) => {
-            const status = (row["Status do pedido"] || "").toLowerCase();
-            if (status.includes("cancelado") || status.includes("não pago")) return;
-
-            const headers = Object.keys(row);
-            const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
-
-            const sku = headerSKU ? row[headerSKU] : null;
-            if (!sku) return;
-
-            if (!skusVendidos[sku]) skusVendidos[sku] = 0;
-            skusVendidos[sku]++;
-          });
-
           // Salvar SKUs vendidos
  const refSku = db
             .collection('uid')
@@ -1483,8 +1479,8 @@ const dataInput = document.getElementById("dataFaturamento");
             .doc(dataReferencia);
           await refSku.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true }); // garante doc pai e marca usuário
 
-          for (const [sku, total] of Object.entries(skusVendidos)) {
-            const skuId = String(sku).replace(/[.#$/\[\]]/g, "_");
+          for (const [sku, dadosSku] of Object.entries(skusVendidos)) {
+            const skuId = String(sku).replace(/[.#$\/\[\]]/g, "_");
  const docRef = db
               .collection('uid')
               .doc(usuarioLogado.uid)
@@ -1494,15 +1490,18 @@ const dataInput = document.getElementById("dataFaturamento");
               .doc(skuId);
             const docSnap = await docRef.get();
 
-            let totalFinal = total;
+            let totalFinal = dadosSku.total;
+            let valorLiquidoFinal = dadosSku.valorLiquido;
             if (docSnap.exists) {
               const dadosAnteriores = docSnap.data();
               totalFinal += dadosAnteriores.total || 0;
+              valorLiquidoFinal += dadosAnteriores.valorLiquido || 0;
             }
 
             await docRef.set({
               sku: sku,
               total: totalFinal,
+              valorLiquido: valorLiquidoFinal,
               data: dataReferencia,
               loja: loja,
               uid: usuarioLogado.uid
@@ -1896,12 +1895,13 @@ let uids = [];
 
       const agrupadoPorLoja = {};
       let sobraEsperada = 0;
+      let valorLiquidoTotal = 0;
 
       for (const uid of uids) {
         const ref = db.collection(`uid/${uid}/skusVendidos/${dataDoc}/lista`);
         const snap = await ref.get();
         for (const doc of snap.docs) {
-          const { sku, total, loja } = doc.data();
+          const { sku, total, loja, valorLiquido: valorSku } = doc.data();
           if (!agrupadoPorLoja[loja]) agrupadoPorLoja[loja] = [];
 
           let custo = 0;
@@ -1916,46 +1916,40 @@ let uids = [];
           } catch (e) {
             console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
           }
-             sobraEsperada += (total || 0) * custo;
-          agrupadoPorLoja[loja].push({ sku, total, custo });
+          sobraEsperada += (total || 0) * custo;
+          valorLiquidoTotal += Number(valorSku || 0);
+          agrupadoPorLoja[loja].push({ sku, total, custo, valorLiquido: valorSku || 0 });
         }
-      }
-
-      // 🔍 Somar valor líquido de todas as lojas do dia
-      let valorLiquido = 0;
-      try {
-  const { decryptString } = await import('./crypto.js');
-        for (const uid of uids) {
-          const lojasRef = db.collection(`uid/${uid}/faturamento/${dataDoc}/lojas`);
-          const lojasSnap = await lojasRef.get();
-          for (const lojaDoc of lojasSnap.docs) {
-            let dados = lojaDoc.data();
-            if (dados.encrypted) {
-              try {
-                const txt = await decryptString(dados.encrypted, getPassphrase() || usuarioLogado.uid);
-                dados = JSON.parse(txt);
-              } catch (e) { console.error('Erro ao descriptografar faturamento', e); }
-            }
-            valorLiquido += Number(dados.valorLiquido || 0);
-          }
-          }
-      } catch (e) {
-        console.warn("Erro ao buscar valor líquido por loja:", e);
       }
 
       // 🧾 Montar HTML
       let html = `<strong>📅 Detalhes de ${dataDoc}</strong><br><br>`;
       for (const loja in agrupadoPorLoja) {
-        html += `<strong>🏪 Loja: ${loja}</strong><br>`;
-  agrupadoPorLoja[loja].forEach(({ sku, total, custo }) => {
+        html += `<strong>🏪 Loja: ${loja}</strong>`;
+        html += `<table style="width:100%; border-collapse: collapse; margin: 8px 0;">
+          <thead>
+            <tr style="background:#f0f0f0;">
+              <th style="border:1px solid #ddd; padding:4px;">SKU</th>
+              <th style="border:1px solid #ddd; padding:4px;">Unidades</th>
+              <th style="border:1px solid #ddd; padding:4px;">Sobra Esperada</th>
+              <th style="border:1px solid #ddd; padding:4px;">Valor Líquido</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        agrupadoPorLoja[loja].forEach(({ sku, total, custo, valorLiquido }) => {
           const sobraItem = (total || 0) * (custo || 0);
-          html += `• R$ ${sobraItem.toFixed(2)} - ${sku}: ${total} unid.<br>`;
+          html += `<tr>
+            <td style="border:1px solid #ddd; padding:4px;">${sku}</td>
+            <td style="border:1px solid #ddd; padding:4px;">${total}</td>
+            <td style="border:1px solid #ddd; padding:4px;">R$ ${sobraItem.toFixed(2)}</td>
+            <td style="border:1px solid #ddd; padding:4px;">R$ ${(valorLiquido || 0).toFixed(2)}</td>
+          </tr>`;
         });
-        html += `<br>`;
+        html += `</tbody></table>`;
       }
 
       html += `<hr><strong>📦 Sobra Esperada:</strong> R$ ${sobraEsperada.toFixed(2)}<br>`;
-      html += `<strong>💰 Valor Líquido Real:</strong> R$ ${valorLiquido.toFixed(2)}<br>`;
+      html += `<strong>💰 Valor Líquido Real:</strong> R$ ${valorLiquidoTotal.toFixed(2)}<br>`;
 
       Swal.fire({
         title: 'Detalhamento por Loja',
