@@ -2,7 +2,7 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getFirestore, doc, getDoc, collection, addDoc, getDocs,
-  query, where, orderBy, limit, collectionGroup
+  query, where, orderBy, limit, startAfter, collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 
@@ -366,33 +366,74 @@ window.salvarNoFirebase = async () => {
     document.querySelectorAll('.tab-button').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
-      });
-    });
+ document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
 
-// Load produtos
-window.carregarAnuncios = async function () {
+
+// Paginação de anúncios
+const PAGE_SIZE = 20;
+let currentPage = 0;
+let pageCursors = [null];
+
+// Load produtos com paginação
+window.carregarAnuncios = async function (direction) {
   const tbody = document.querySelector("#tabelaAnuncios tbody");
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
 
   try {
-    const user = auth.currentUser;
-  let querySnapshot;
-    if (!isAdmin) {
-      querySnapshot = await getDocs(collection(db, `uid/${user.uid}/anuncios`));
+    if (direction === 'next') {
+      currentPage++;
+    } else if (direction === 'prev') {
+      currentPage = Math.max(0, currentPage - 1);
     } else {
-      querySnapshot = await getDocs(collectionGroup(db, 'anuncios'));
+      currentPage = 0;
+      pageCursors = [null];
     }
-
+    const user = auth.currentUser;
+    let baseRef;
+    if (!isAdmin) {
+      baseRef = collection(db, `uid/${user.uid}/anuncios`);
+    } else {
+      baseRef = collectionGroup(db, 'anuncios');
+    }
+ const cursor = pageCursors[currentPage];
+    let q;
+    if (cursor) {
+      q = query(
+        baseRef,
+        orderBy('vendasPago', 'desc'),
+        orderBy('visualizacoes', 'desc'),
+        startAfter(cursor),
+        limit(PAGE_SIZE)
+      );
+    } else {
+      q = query(
+        baseRef,
+        orderBy('vendasPago', 'desc'),
+        orderBy('visualizacoes', 'desc'),
+        limit(PAGE_SIZE)
+      );
+    }
+    const querySnapshot = await getDocs(q);
     tbody.innerHTML = '';
-
+const nextBtn = document.getElementById('nextPage');
+    const prevBtn = document.getElementById('prevPage');
+    const info = document.getElementById('pageInfo');
     if (querySnapshot.empty) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Nenhum anúncio encontrado</td></tr>';
+      if (nextBtn) nextBtn.disabled = true;
+      if (prevBtn) prevBtn.disabled = currentPage === 0;
+      if (info) info.textContent = `Página ${currentPage + 1}`;
       return;
     }
-
+ pageCursors[currentPage + 1] = querySnapshot.docs[querySnapshot.docs.length - 1];
+    if (prevBtn) prevBtn.disabled = currentPage === 0;
+    if (nextBtn) nextBtn.disabled = querySnapshot.docs.length < PAGE_SIZE;
+    if (info) info.textContent = `Página ${currentPage + 1}`;
+    
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
 const ownerUid = doc.data().uid || user.uid;
