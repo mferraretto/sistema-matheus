@@ -29,7 +29,25 @@
       btn.textContent = 'Esconder Importar Produtos';
     }
   };
- // Load sidebar HTML into placeholder
+  // Load Intro.js library if not already loaded
+  function loadIntroJs() {
+    return new Promise(function(resolve, reject) {
+      if (typeof introJs !== 'undefined') {
+        resolve();
+        return;
+      }
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/intro.js/minified/introjs.min.css';
+      document.head.appendChild(link);
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/intro.js/minified/intro.min.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+// Load sidebar HTML into placeholder
   window.loadSidebar = function(containerId) {
     containerId = containerId || 'sidebar-container';
     return fetch(BASE_PATH + 'partials/sidebar.html')
@@ -38,6 +56,8 @@
         var container = document.getElementById(containerId);
         if (container) {
           container.innerHTML = html;
+          var event = new CustomEvent('sidebarLoaded', { detail: { containerId: containerId } });
+          document.dispatchEvent(event);
         }
       });
   };
@@ -108,6 +128,28 @@
     });
   };
 
+  window.startSidebarTour = function(force) {
+    if (typeof introJs === 'undefined') return;
+    if (!force && localStorage.getItem('sidebarTourSeen') === 'true') return;
+    var intro = introJs();
+    intro.setOptions({
+      steps: [
+        { element: '#menu-inicio', intro: 'Voltar para a página inicial.' },
+        { element: '#menu-vendas', intro: 'Área para acompanhar vendas e sobras.' },
+        { element: '#menu-precificacao', intro: 'Ferramentas para precificação de produtos.' },
+        { element: '#menu-anuncios', intro: 'Seção de anúncios e promoções.' },
+        { element: '#menu-configuracoes', intro: 'Configurações gerais do sistema.' },
+        { element: '#menu-manual', intro: 'Acesse o manual completo do sistema.' }
+      ],
+      nextLabel: 'Próximo',
+      prevLabel: 'Anterior',
+      skipLabel: 'Pular',
+      doneLabel: 'Finalizar'
+    }).oncomplete(function(){ localStorage.setItem('sidebarTourSeen','true'); })
+      .onexit(function(){ localStorage.setItem('sidebarTourSeen','true'); })
+      .start();
+  };
+
 document.addEventListener('DOMContentLoaded', function () {
   window.loadSidebar().then(function () {
     window.initDarkMode();
@@ -133,6 +175,16 @@ document.addEventListener('navbarLoaded', function () {
     if (sidebar) {
       sidebar.classList.toggle('active');
     }
+  });
+});
+
+document.addEventListener('sidebarLoaded', function () {
+  loadIntroJs().then(function () {
+    var btn = document.getElementById('startSidebarTourBtn');
+    if (btn) {
+      btn.addEventListener('click', function () { window.startSidebarTour(true); });
+    }
+    window.startSidebarTour(false);
   });
 });
 
