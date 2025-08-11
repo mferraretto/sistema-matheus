@@ -43,7 +43,9 @@
 
   <script>
 
-    firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     
     firebase.auth().onAuthStateChanged(async user => {
