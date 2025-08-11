@@ -165,8 +165,13 @@ const normalizeKey = (str) =>
             try {
               const qVar = query(
                 collectionGroup(db, 'variantes'),
-                where('__name__', '==', varianteId)
-              );
+ // Each variante document stores its ID in the `varianteId` field,
+                // so we can query by this field instead of documentId. Querying
+                // a collectionGroup using `documentId()` requires the full
+                // document path, which we don't have yet and caused errors when
+                // only the raw ID was provided. Using the field avoids the
+                // "Invalid query" Firestore error.
+                where('varianteId', '==', varianteId)              );
               const snapVar = await getDocs(qVar);
               for (const docVar of snapVar.docs) {
                 const path = docVar.ref.path; // uid/<uid>/anuncios/<id>/variantes/<varianteId>
