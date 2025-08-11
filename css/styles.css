@@ -158,6 +158,69 @@ input:checked + .dark-mode-slider:before {
 .skeleton {
   background-color: #e0e0e0
 }
+
+/* Estilos modernos para o card de tarefas */
+#tarefasCard .card-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  border-bottom: none;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+#tarefasCard .card-header-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+}
+
+#tarefasCard .card-body {
+  background-color: #f9fafb;
+}
+
+#tarefasCard .progress-wrapper {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  height: 0.5rem;
+}
+
+#tarefasCard .progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, var(--success), #86efac);
+  transition: width 0.3s ease;
+}
+
+#tarefasCard .task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: background-color .2s, box-shadow .2s, transform .2s;
+}
+
+#tarefasCard .task-item:hover {
+  background-color: #f3f4f6;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+#tarefasCard .task-item.completed {
+  background-color: #ecfdf5;
+}
+
+#tarefasCard .task-text.completed {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+#tarefasCard input[type="checkbox"] {
+  accent-color: var(--primary);
+}
 @keyframes skeleton-loading {
   0%,
   100% {
