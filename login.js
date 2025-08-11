@@ -7,6 +7,7 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let wasLoggedIn = false;
 let authListenerRegistered = false;
+let explicitLogout = false;
 
 
 function showToast(message, type = 'success') {
@@ -79,6 +80,7 @@ window.login = () => {
 };
 
 window.logout = () => {
+    explicitLogout = true;
   signOut(auth).catch(err => showToast('Erro ao sair: ' + err.message, 'error'));
 };
 
@@ -140,8 +142,10 @@ function checkLogin() {
       showUserArea(user);
       wasLoggedIn = true;
     } else {
-      if (wasLoggedIn) {
+      if (wasLoggedIn && explicitLogout) {
         clearPassphrase();
+                explicitLogout = false;
+
       }
       wasLoggedIn = false;
       hideUserArea();
