@@ -27,12 +27,13 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let isAdmin = false;
 // Resolve a senha efetiva: usa a passphrase do usuário; se não houver, cai no UID
-function getEffectivePass(fallbackUid) {
+function getEffectivePass(ownerUid) {
   try {
-    const p = (typeof getPassphrase === 'function') ? getPassphrase() : '';
-    return (p && p.trim()) ? p : fallbackUid;
+    const pass = (typeof getPassphrase === 'function') ? getPassphrase() : '';
+    const current = auth.currentUser?.uid;
+    return (current === ownerUid && pass && pass.trim()) ? pass : ownerUid;
   } catch {
-    return fallbackUid;
+    return ownerUid;
   }
 }
 
@@ -386,7 +387,7 @@ if (docExiste && !dadosAntigos) {
     document.querySelectorAll('.tab-button').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+ document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById(btn.dataset.tab).classList.add('active');
         if (btn.dataset.tab === 'anuncios') {
@@ -394,8 +395,6 @@ document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('activ
         }
       });
     });
-
-
 
 // Paginação de anúncios
 const PAGE_SIZE = 20;
@@ -428,16 +427,14 @@ window.carregarAnuncios = async function (direction) {
     if (cursor) {
       q = query(
         baseRef,
-        orderBy('vendasPago', 'desc'),
-        orderBy('visualizacoes', 'desc'),
+        orderBy('__name__'),
         startAfter(cursor),
         limit(PAGE_SIZE)
       );
     } else {
       q = query(
         baseRef,
-        orderBy('vendasPago', 'desc'),
-        orderBy('visualizacoes', 'desc'),
+        orderBy('__name__'),
         limit(PAGE_SIZE)
       );
     }
