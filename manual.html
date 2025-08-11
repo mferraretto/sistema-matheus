@@ -1,89 +1,286 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manual do Sistema Shopee</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/components.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Unificado do Sistema Shopee</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --brand:#f97316; }
+    html { scroll-behavior: smooth; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    /* Caixa de destaque */
+    .callout { @apply rounded-xl p-4 border; }
+    .callout-tip { background: #f0fdf4; border-color:#86efac; }
+    .callout-warn { background: #fffbeb; border-color:#facc15; }
+    .callout-info { background: #eff6ff; border-color:#93c5fd; }
+    /* Sumário fixo em telas largas */
+    @media (min-width:1024px){
+      .toc-sticky { position: sticky; top: 1.5rem; }
+    }
+    /* Estilo de impressão */
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      a[href]::after { content:""; }
+      .no-print { display:none !important; }
+      .page-break { page-break-before: always; }
+      .shadow, .shadow-md, .shadow-lg { box-shadow: none !important; }
+    }
+    /* Tabela responsiva simples */
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { border-bottom:1px solid #e5e7eb; text-align:left; padding:10px; font-size: 0.95rem; }
+    .kbd { background:#f3f4f6; border:1px solid #e5e7eb; border-bottom-width:2px; border-radius:6px; padding:2px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.8rem; }
+    .badge { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; border-radius:999px; padding:2px 10px; font-size: .75rem; font-weight:600; }
+    .section h2 { scroll-margin-top: 100px; }
+  </style>
 </head>
-<body class="bg-gray-50">
-  <!-- Sidebar e Navbar -->
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Cabeçalho / Capa -->
+  <header class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-orange-100 text-orange-600"><i class="fa-solid fa-store"></i></span>
+        <div>
+          <h1 class="text-2xl lg:text-3xl font-bold">Manual Unificado do Sistema Shopee</h1>
+          <p class="text-sm text-gray-500">Guia completo: instalação, segurança, módulos e fluxos de trabalho</p>
+        </div>
+      </div>
+      <a href="#fluxo-rapido" class="no-print hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white font-semibold shadow hover:bg-orange-600 transition">
+        <i class="fa-solid fa-bolt"></i> Fluxo Rápido
+      </a>
+    </div>
+  </header>
 
-  <main class="main-content p-6 space-y-8">
-    <section>
-      <h1 class="text-3xl font-bold mb-4">Manual de Uso do Sistema Shopee</h1>
-      <p class="text-gray-700">Bem-vindo ao guia rápido de utilização do sistema de gerenciamento Shopee. Aqui você encontra instruções para iniciar, importar planilhas e aproveitar os recursos disponíveis.</p>
-    </section>
+  <main class="max-w-6xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-8">
+    <!-- Sumário -->
+    <aside class="lg:col-span-4 xl:col-span-3 no-print">
+      <nav class="toc-sticky bg-white rounded-2xl border p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-list-check text-orange-500"></i> Sumário</h2>
+        <ol class="space-y-2 text-sm">
+          <li><a class="hover:text-orange-600" href="#intro">1. Introdução & Segurança</a></li>
+          <li><a class="hover:text-orange-600" href="#login-passphrase">2. Login & Passphrase</a></li>
+          <li><a class="hover:text-orange-600" href="#dashboard">3. Dashboard</a></li>
+          <li><a class="hover:text-orange-600" href="#precificacao">4. Precificação</a></li>
+          <li><a class="hover:text-orange-600" href="#produtos-lista">5. Produtos & Lista de Preços</a></li>
+          <li><a class="hover:text-orange-600" href="#historico">6. Histórico</a></li>
+          <li><a class="hover:text-orange-600" href="#custeio">7. Custeio de Produção</a></li>
+          <li><a class="hover:text-orange-600" href="#promocoes-shopee">8. Promoções Shopee</a></li>
+          <li><a class="hover:text-orange-600" href="#anuncios-ia">9. Criação de Anúncios com IA</a></li>
+          <li><a class="hover:text-orange-600" href="#import-export">10. Importação & Exportação</a></li>
+          <li><a class="hover:text-orange-600" href="#faturamento">11. Faturamento Diário</a></li>
+          <li><a class="hover:text-orange-600" href="#controle-sku">12. Controle de Vendas por SKU</a></li>
+          <li><a class="hover:text-orange-600" href="#evolucao-ads">13. Evolução & Ads</a></li>
+          <li><a class="hover:text-orange-600" href="#fluxo-rapido">14. Fluxo Rápido</a></li>
+          <li><a class="hover:text-orange-600" href="#faq">15. FAQ</a></li>
+          <li><a class="hover:text-orange-600" href="#glossario">16. Glossário</a></li>
+        </ol>
+      </nav>
+    </aside>
 
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Como Baixar Planilhas da Shopee</h2>
-      <ol class="list-decimal list-inside space-y-2 text-gray-700">
-        <li>Acesse o Seller Center e vá ao menu <strong>Pedidos</strong>.</li>
-        <li>Escolha o período desejado e clique em <strong>Exportar</strong>.</li>
-        <li>Salve o arquivo em seu computador.</li>
-      </ol>
-      <img src="imagens/placeholder1.jpg" alt="Baixar planilha" class="rounded-lg shadow-md mt-4">
-    </section>
+    <!-- Conteúdo principal -->
+    <section class="lg:col-span-8 xl:col-span-9 space-y-12">
+      <!-- 1. Introdução & Segurança -->
+      <section id="intro" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-orange-500"></i> Introdução & Segurança</h2>
+        <p class="mb-4">Este sistema utiliza <strong>criptografia local AES‑GCM</strong> para proteger seus dados. A <em>senha de visualização</em> (passphrase) <strong>nunca é enviada ao servidor</strong>: os dados são criptografados no navegador antes de serem salvos no Firebase. Sem a passphrase correta, <strong>não é possível recuperar</strong> os dados antigos.</p>
+        <div class="callout callout-warn mb-4">
+          <p class="font-semibold">Importante</p>
+          <ul class="list-disc ml-6 text-sm mt-1">
+            <li>Guarde sua passphrase com segurança. Ela é pessoal e intransferível.</li>
+            <li>Você pode acessar de qualquer dispositivo usando a mesma conta e a mesma passphrase.</li>
+          </ul>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4 text-sm">
+          <div class="p-4 rounded-xl bg-gray-50 border"><span class="badge">Segurança</span><p class="mt-2">Criptografia <strong>AES‑GCM</strong> com chave derivada por <strong>PBKDF2‑SHA256</strong> (100k iterações).</p></div>
+          <div class="p-4 rounded-xl bg-gray-50 border"><span class="badge">Privacidade</span><p class="mt-2">A passphrase <strong>não sai</strong> do seu navegador.</p></div>
+          <div class="p-4 rounded-xl bg-gray-50 border"><span class="badge">Compatível</span><p class="mt-2">Funciona em desktop moderno (Chrome/Edge/Firefox).</p></div>
+        </div>
+      </section>
 
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Como Importar Dados</h2>
-      <ol class="list-decimal list-inside space-y-2 text-gray-700">
-        <li>No sistema, clique em <strong>Importar Planilha</strong>.</li>
-        <li>Selecione o arquivo baixado e confirme.</li>
-        <li>Verifique a mensagem de sucesso no topo da página.</li>
-      </ol>
-      <img src="imagens/placeholder2.jpg" alt="Importar planilha" class="rounded-lg shadow-md mt-4">
-    </section>
+      <!-- 2. Login & Passphrase -->
+      <section id="login-passphrase" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-right-to-bracket text-orange-500"></i> Login & Senha de Visualização</h2>
+        <ol class="list-decimal ml-6 space-y-2">
+          <li>Acesse a página inicial e entre com <strong>e‑mail</strong> e <strong>senha</strong> da conta.</li>
+          <li>Defina a sua <strong>senha de visualização (passphrase)</strong> no primeiro acesso.</li>
+          <li>Guarde-a. Ela será usada para <strong>descriptografar</strong> os dados no navegador.</li>
+        </ol>
+        <div class="callout callout-info mt-4">
+          <p class="font-semibold">Dica</p>
+          <p class="text-sm">Use um gerenciador de senhas e, se possível, uma frase longa (ex.: três palavras + números).</p>
+        </div>
+      </section>
 
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Funcionalidades Principais</h2>
-      <ul class="list-disc list-inside space-y-2 text-gray-700">
-        <li><strong>Bulk Editor</strong> para alterar vários anúncios de uma só vez.</li>
-        <li><strong>Precificação automática</strong> baseada em regras personalizadas.</li>
-        <li><strong>Anúncios e Ads</strong> para analisar desempenho e otimizar campanhas.</li>
-        <li><strong>Controle de Estoque</strong> com alertas de baixo volume.</li>
-      </ul>
-      <img src="imagens/placeholder3.jpg" alt="Recursos principais" class="rounded-lg shadow-md mt-4">
-    </section>
+      <!-- 3. Dashboard -->
+      <section id="dashboard" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-line text-orange-500"></i> Dashboard</h2>
+        <p>Visão geral de produtos, sugestões e indicadores de precificação. Acompanhe alertas e atalhos para as rotinas mais usadas.</p>
+      </section>
 
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Dicas de Uso</h2>
-      <ul class="list-disc list-inside space-y-2 text-gray-700">
-        <li>Mantenha suas planilhas atualizadas para melhores resultados.</li>
-        <li>Revise preços regularmente utilizando o módulo de precificação.</li>
-        <li>Acompanhe métricas de anúncios para otimizar investimentos.</li>
-      </ul>
-    </section>
+      <!-- 4. Precificação -->
+      <section id="precificacao" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-tags text-orange-500"></i> Precificação</h2>
+        <p class="mb-4">Calcule automaticamente três preços estratégicos por produto:</p>
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+          <div class="p-4 rounded-xl border bg-gray-50"><h3 class="font-semibold">Preço Mínimo (com lucro)</h3><p class="text-sm mt-1">Custo + taxas + margem mínima.</p></div>
+          <div class="p-4 rounded-xl border bg-gray-50"><h3 class="font-semibold">Preço Médio</h3><p class="text-sm mt-1">Para giro acelerado mantendo a saúde da margem.</p></div>
+          <div class="p-4 rounded-xl border bg-gray-50"><h3 class="font-semibold">Preço Ideal</h3><p class="text-sm mt-1">Valor mais alto competitivo para ancorar promoções.</p></div>
+        </div>
+        <div class="callout callout-tip mb-4">
+          <p class="font-semibold">Regra de Ouro</p>
+          <p class="text-sm">Anuncie com o <strong>Preço Ideal</strong> como preço cheio. Use Cupons e Ofertas Relâmpago para mostrar desconto sem perder margem.</p>
+        </div>
+        <table class="table">
+          <thead><tr><th>Campo</th><th>Descrição</th><th>Exemplo</th></tr></thead>
+          <tbody>
+            <tr><td>Custo</td><td>Somatório de insumos, embalagem e operação.</td><td>R$ 30,00</td></tr>
+            <tr><td>Taxas</td><td>Comissão, serviços e frete da plataforma.</td><td>12% + R$ 1,00</td></tr>
+            <tr><td>Margem</td><td>Percentual mínimo desejado.</td><td>20%</td></tr>
+          </tbody>
+        </table>
+      </section>
 
-    <section>
-      <h2 class="text-2xl font-semibold mb-2">Fluxo Rápido</h2>
-      <ol class="list-decimal list-inside space-y-2 text-gray-700">
-        <li>Baixe planilhas do Seller Center.</li>
-        <li>Importe-as no sistema.</li>
-        <li>Edite produtos em massa.</li>
-        <li>Monitore resultados na área de anúncios.</li>
-      </ol>
+      <!-- 5. Produtos & Lista de Preços -->
+      <section id="produtos-lista" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-box-open text-orange-500"></i> Produtos & Lista de Preços</h2>
+        <ul class="list-disc ml-6 space-y-2">
+          <li>Produtos são carregados do Firestore e <strong>descriptografados</strong> conforme o perfil (usuário comum ou administrador).</li>
+          <li>A edição grava novamente os dados <strong>criptografados</strong> antes de salvar.</li>
+          <li>Exporte toda a lista para <strong>Excel ou PDF</strong> e importe planilhas para atualização em lote.</li>
+        </ul>
+      </section>
+
+      <!-- 6. Histórico -->
+      <section id="historico" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-orange-500"></i> Histórico</h2>
+        <p>Registro completo das alterações de precificação ao longo do tempo para auditoria e aprendizado.</p>
+      </section>
+
+      <!-- 7. Custeio de Produção -->
+      <section id="custeio" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-industry text-orange-500"></i> Custeio de Produção</h2>
+        <p>Calcule custos detalhados (ex.: MDF, mão de obra, embalagens e indiretos) e integre com a precificação.</p>
+      </section>
+
+      <!-- 8. Promoções Shopee -->
+      <section id="promocoes-shopee" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-bolt text-orange-500"></i> Promoções Shopee</h2>
+        <p>Automatize o cálculo de preços para campanhas. Ao importar a planilha da Shopee, o sistema sugere preços <strong>compatíveis com preço mínimo, médio e ideal</strong>.</p>
+        <ul class="list-disc ml-6 mt-2 text-sm">
+          <li>Suporte a <em>Ofertas Relâmpago</em>, <em>Cupons</em> e descontos temporários.</li>
+          <li>Compatível com SKUs com variação e identificadores.</li>
+        </ul>
+      </section>
+
+      <!-- 9. Criação de Anúncios com IA -->
+      <section id="anuncios-ia" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-orange-500"></i> Criação de Anúncios com IA</h2>
+        <p>Integração com função em nuvem <strong>proxyDeepSeek</strong> para gerar <em>título</em>, <em>descrição</em>, <em>categoria</em> e <em>palavras‑chave</em>. O anúncio completo pode ser gerado em <strong>JSON</strong>, salvo como rascunho <strong>(criptografado)</strong>, exportado para CSV ou copiado.</p>
+        <div class="callout callout-info mt-4">
+          <p class="font-semibold">Formato de Saída</p>
+          <p class="text-sm">Estrutura JSON com campos de produto, variantes e mídia. Útil para automações e importações em massa.</p>
+        </div>
+      </section>
+
+      <!-- 10. Importação & Exportação -->
+      <section id="import-export" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-file-import text-orange-500"></i> Importação & Exportação</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="p-4 rounded-xl border bg-gray-50">
+            <h3 class="font-semibold mb-2">Como baixar planilhas da Shopee</h3>
+            <ol class="list-decimal ml-6 space-y-1 text-sm">
+              <li>Abra o Seller Center e acesse <strong>Pedidos</strong>.</li>
+              <li>Escolha o período e clique em <strong>Exportar</strong>.</li>
+              <li>Salve o arquivo no computador.</li>
+            </ol>
+          </div>
+          <div class="p-4 rounded-xl border bg-gray-50">
+            <h3 class="font-semibold mb-2">Como importar no sistema</h3>
+            <ol class="list-decimal ml-6 space-y-1 text-sm">
+              <li>Clique em <strong>Importar Planilha</strong>.</li>
+              <li>Selecione o arquivo baixado e confirme.</li>
+              <li>Confira a mensagem de sucesso.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. Faturamento Diário -->
+      <section id="faturamento" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-orange-500"></i> Faturamento Diário</h2>
+        <p>Registre <strong>valor bruto</strong> (Subtotal + Reembolso), <strong>taxas</strong> (Cupom + Comissão + Serviço) e <strong>valor líquido</strong> por data, com filtros e exportação.</p>
+      </section>
+
+      <!-- 12. Controle de Vendas por SKU -->
+      <section id="controle-sku" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-barcode text-orange-500"></i> Controle de Vendas por SKU</h2>
+        <p>O sistema agrupa SKUs vendidos por data e loja, exibe totais e permite detalhamento por origem.</p>
+        <ul class="list-disc ml-6 mt-2 text-sm">
+          <li>Integração com o módulo de <em>Conferência de Sobras</em>.</li>
+          <li>Cards diários, filtro por mês e exportação.</li>
+        </ul>
+      </section>
+
+      <!-- 13. Evolução & Ads -->
+      <section id="evolucao-ads" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-bullhorn text-orange-500"></i> Evolução & Ads</h2>
+        <p>Visualize evolução diária de visitas, cliques e vendas por anúncio. No módulo de Ads, acompanhe CTR, CPC, CPA e ROAS, com sugestões automáticas por IA.</p>
+      </section>
+
+      <!-- 14. Fluxo Rápido -->
+      <section id="fluxo-rapido" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-person-running text-orange-500"></i> Fluxo Rápido</h2>
+        <ol class="list-decimal ml-6 space-y-2">
+          <li>Baixe as planilhas no Seller Center.</li>
+          <li>Importe no sistema e <strong>confirme</strong> os dados.</li>
+          <li>Defina <strong>Preço Ideal</strong> e configure promoções.</li>
+          <li>Gere anúncios com IA (opcional) e publique.</li>
+          <li>Acompanhe métricas na aba <em>Evolução</em> e ajuste Ads.</li>
+        </ol>
+      </section>
+
+      <!-- 15. FAQ -->
+      <section id="faq" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-circle-question text-orange-500"></i> FAQ</h2>
+        <details class="mb-2 p-4 rounded-xl bg-gray-50 border">
+          <summary class="font-semibold">Esqueci minha passphrase. E agora?</summary>
+          <p class="mt-2 text-sm">Por segurança, os dados antigos não podem ser recuperados. Você poderá criar uma nova passphrase, mas registros salvos com a anterior permanecem inacessíveis.</p>
+        </details>
+        <details class="mb-2 p-4 rounded-xl bg-gray-50 border">
+          <summary class="font-semibold">Posso usar em mais de um computador?</summary>
+          <p class="mt-2 text-sm">Sim. Faça login e informe a mesma passphrase para descriptografar seus dados.</p>
+        </details>
+        <details class="mb-2 p-4 rounded-xl bg-gray-50 border">
+          <summary class="font-semibold">Quais planilhas a importação aceita?</summary>
+          <p class="mt-2 text-sm">Planilhas oficiais da Shopee (Pedidos, Promoções, Vendas, Frete, Mídia, Desempenho). O sistema detecta cabeçalho deslocado e variações de colunas.</p>
+        </details>
+      </section>
+
+      <!-- 16. Glossário -->
+      <section id="glossario" class="section bg-white rounded-2xl border p-6 shadow-sm">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2"><i class="fa-solid fa-book text-orange-500"></i> Glossário</h2>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>CTR</strong>: Taxa de cliques dos anúncios.</div>
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>CPC</strong>: Custo por clique.</div>
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>CPA</strong>: Custo por aquisição.</div>
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>ROAS</strong>: Retorno sobre gasto com anúncios.</div>
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>PBKDF2</strong>: Derivação de chave para criptografia.</div>
+          <div class="p-4 rounded-xl border bg-gray-50"><strong>AES‑GCM</strong>: Algoritmo de criptografia autenticada.</div>
+        </div>
+      </section>
+
+      <!-- Rodapé -->
+      <footer class="text-sm text-gray-500 mt-10">
+        <p>© <span id="ano"></span> Sistema Shopee — Manual Unificado. Para exportar em PDF, use <span class="kbd">Ctrl</span>+<span class="kbd">P</span> e escolha "Salvar como PDF".</p>
+      </footer>
     </section>
   </main>
 
-  <!-- Script opcional para carregar o manual em abas -->
+  <!-- Script: ano / pequenos helpers -->
   <script>
-    function carregarManualEm(tabId) {
-      fetch('manual.html')
-        .then(r => r.text())
-        .then(html => {
-          const cont = document.getElementById(tabId);
-          if (cont) cont.innerHTML = html;
-        });
-    }
+    document.getElementById('ano').textContent = new Date().getFullYear();
   </script>
-
-  <script src="shared.js"></script>
 </body>
 </html>
