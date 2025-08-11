@@ -115,113 +115,137 @@ function limparUndefined(obj) {
         window.dataDesempenhoReferencia = dataReferencia;
       }
     }
-
+const normalizeKey = (str) =>
+      str.toString().toLowerCase().normalize('NFD').replace(/[^\w]/g, '');
     for (const linha of dados) {
-      const id = linha["ID do Produto"] || linha["ID do Item"] || linha["Id Produto"] || linha["Item ID"];
-      let varianteId = (
-        linha["Variante Identificador"] ||
-        linha["ID da Variação"] ||
-        linha["SKU"] ||
-        linha["SKU da Variação"]
+      const map = {};
+      for (const [k, v] of Object.entries(linha)) {
+        map[normalizeKey(k)] = v;
+      }
+      const get = (...keys) => {
+        for (const key of keys) {
+          const val = map[normalizeKey(key)];
+          if (val !== undefined && val !== '') return val;
+        }
+        return undefined;
+      };
+
+      const id = get(
+        'ID do Produto',
+        'ID do Item',
+        'Id Produto',
+        'Item ID',
+        'ID Produto',
+        'Produto ID'
+      );
+      let varianteId = get(
+        'Variante Identificador',
+        'ID da Variação',
+        'SKU',
+        'SKU da Variação',
+        'ID SKU',
+        'SKU ID'
       );
 
       if (!id) continue;
-      if (!varianteId) varianteId = "unico_" + id;
+      if (!varianteId) varianteId = 'unico_' + id;
       varianteId = String(varianteId).trim();
       
- const skuRef =
-        linha["SKU de referência"] ||
-        linha["SKU de Referência"] ||
-        linha["SKU de referencia"] ||
-        linha["SKU Principal"] ||
-        linha["SKU principal"] ||
-        linha["SKU Principle"];
+  const skuRef = get(
+        'SKU de referência',
+        'SKU de Referência',
+        'SKU de referencia',
+        'SKU Principal',
+        'SKU principal',
+        'SKU Principle'
+      );
 
       // Criar estrutura do produto pai
-      if (!window.produtos[id]) window.produtos[id] = {
-        id,
-        uid,
-        variantes: {}
-      };
+     if (!window.produtos[id])
+        window.produtos[id] = {
+          id,
+          uid,
+          variantes: {}
+        };
 
       const p = window.produtos[id];
-            if (skuRef) p.skuReferencia = skuRef;
+      if (skuRef) p.skuReferencia = skuRef;
       if (!p.variantes[varianteId]) p.variantes[varianteId] = { varianteId };
 
       const v = p.variantes[varianteId];
-  if (skuRef) v.skuReferencia = skuRef;
+      if (skuRef) v.skuReferencia = skuRef;
 
-      const nomeLinha = linha["Nome do Produto"] || linha["Produto"];
+      const nomeLinha = get('Nome do Produto', 'Produto');
       if (nomeLinha && !p.nome) p.nome = nomeLinha;
       // Separar por tipo de planilha
       switch (tipo) {
-        case "desempenho":
+        case 'desempenho':
           v.dataReferencia = window.dataDesempenhoReferencia;
-          v.statusAtual = linha["Status Atual do Item"];
-          v.skuVariante = linha["SKU da Variação"] || v.skuVariante;
+         v.statusAtual = get('Status Atual do Item');
+          v.skuVariante = get('SKU da Variação') || v.skuVariante;
           v.skuPrincipal =
-            linha["SKU Principle"] ||
-            linha["SKU Principal"] ||
+                       get('SKU Principle', 'SKU Principal') ||
             v.skuReferencia ||
             p.skuReferencia;
-          v.visitas = linha["Visitantes do Produto (Visita)"];
-          v.visualizacoes = linha["Visualizações da Página do Produto"];
-          v.cliquesBusca = linha["Cliques em buscas"];
-          v.curtidas = linha["Curtidas"];
-          v.saidas = linha["Visitantes que saíram da página"];
-          v.taxaRejeicao = linha["Taxa de Rejeição do Produto"];
-          v.visitantesCarrinho = linha["Visitantes do Produto (Adicionar ao Carrinho)"];
-          v.unidadesCarrinho = linha["Unidades (adicionar ao carrinho)"];
-          v.conversaoCarrinho = linha["Taxa de Conversão (adicionar ao carrinho)"];
-          v.compradoresPedido = linha["Compradores (Pedido realizado)"];
-          v.unidadesPedido = linha["Unidades (Pedido realizado)"];
-          v.vendasPedido = linha["Vendas (Pedido realizado) (BRL)"];
-          v.conversaoPedido = linha["Taxa de conversão (Pedido realizado)"];
-          v.compradoresPago = linha["Compradores (Pedidos pago)"];
-          v.unidadesPago = linha["Unidades (Pedido pago)"];
-          v.vendasPago = linha["Vendas (Pedido pago) (BRL)"];
-          v.conversaoPago = linha["Taxa de conversão (Pedido pago)"];
+          v.visitas = get('Visitantes do Produto (Visita)', 'Visitantes do produto (Visitas)');
+          v.visualizacoes = get('Visualizações da Página do Produto', 'Visualizacoes da Pagina do Produto');
+          v.cliquesBusca = get('Cliques em buscas', 'Cliques em busca');
+          v.curtidas = get('Curtidas');
+          v.saidas = get('Visitantes que saíram da página', 'Visitantes que sairam da pagina');
+          v.taxaRejeicao = get('Taxa de Rejeição do Produto', 'Taxa de rejeicao do produto');
+          v.visitantesCarrinho = get('Visitantes do Produto (Adicionar ao Carrinho)');
+          v.unidadesCarrinho = get('Unidades (adicionar ao carrinho)');
+          v.conversaoCarrinho = get('Taxa de Conversão (adicionar ao carrinho)');
+          v.compradoresPedido = get('Compradores (Pedido realizado)');
+          v.unidadesPedido = get('Unidades (Pedido realizado)');
+          v.vendasPedido = get('Vendas (Pedido realizado) (BRL)', 'Vendas (Pedido realizado) (R$)');
+          v.conversaoPedido = get('Taxa de conversão (Pedido realizado)');
+          v.compradoresPago = get('Compradores (Pedidos pago)', 'Compradores (Pedido pago)');
+          v.unidadesPago = get('Unidades (Pedido pago)');
+          v.vendasPago = get('Vendas (Pedido pago) (BRL)', 'Vendas (Pedido pago) (R$)');
+          v.conversaoPago = get('Taxa de conversão (Pedido pago)');
           break;
 
-        case "vendas":
-          p.nome = linha["Nome do Produto"] || p.nome;
+      case 'vendas':
+          p.nome = get('Nome do Produto') || p.nome;
           p.skuReferencia = p.skuReferencia || skuRef;
-          v.preco = parseFloat(linha["Preço"] || linha["preco"] || linha["Valor"] || linha["Valor da Variação"] || 0);
-          v.estoque = parseInt(linha["Estoque do vendedor"] || linha["Estoque"] || 0);
-          v.gtin = linha["GTIN (EAN)"] || linha["gtin"] || linha["Código EAN"];
-          v.skuVariante = linha["SKU"] || linha["sku"] || linha["Código da Variação"];
-          v.nomeVariante = linha["Nome"] || linha["Nome da Variação"] || linha["Variação"] || linha["Modelo"] || "";
+           v.preco = parseFloat(
+            get('Preço', 'preco', 'Valor', 'Valor da Variação') || 0
+          );
+          v.estoque = parseInt(get('Estoque do vendedor', 'Estoque') || 0);
+          v.gtin = get('GTIN (EAN)', 'gtin', 'Código EAN');
+          v.skuVariante = get('SKU', 'sku', 'Código da Variação');
+          v.nomeVariante =
+            get('Nome', 'Nome da Variação', 'Variação', 'Modelo') || '';
           break;
 
-        case "basica":
-          p.nome = linha["Nome do Produto"] || p.nome;
-          p.descricao = linha["Descrição do Produto"];
-                    p.skuReferencia = p.skuReferencia || skuRef;
+        case 'basica':
+          p.nome = get('Nome do Produto') || p.nome;
+          p.descricao = get('Descrição do Produto');
+          p.skuReferencia = p.skuReferencia || skuRef;
           break;
 
-        case "frete":
-        p.skuReferencia = p.skuReferencia || skuRef;
-          p.peso = linha["Peso (kg)"] || linha["Peso do Produto/kg"];
-          p.comprimento = linha["Comprimento (cm)"] || linha["Comprimento"];
-          p.largura = linha["Largura (cm)"] || linha["Largura"];
-          p.altura = linha["Altura (cm)"] || linha["Altura"];
+         case 'frete':
+          p.skuReferencia = p.skuReferencia || skuRef;
+          p.peso = get('Peso (kg)', 'Peso do Produto/kg');
+          p.comprimento = get('Comprimento (cm)', 'Comprimento');
+          p.largura = get('Largura (cm)', 'Largura');
+          p.altura = get('Altura (cm)', 'Altura');
           p.taxaFrete = parseFloat(
-            linha["Taxa de frete (R$)"] ||
-            linha["Taxa de frete"] ||
-            0
+         get('Taxa de frete (R$)', 'Taxa de frete') || 0
           );
           break;
 
 
-        case "midia":
-                    p.skuReferencia = p.skuReferencia || skuRef;
-          p.categoria = linha["Categoria"];
-          p.imagemCapa = linha["Imagem de capa"];
-          p.tabelaMedidas = linha["Template da Tabela de Medidas"];
-          p.nomeVariacao = linha["Nome da Variação 1"];
+         case 'midia':
+          p.skuReferencia = p.skuReferencia || skuRef;
+          p.categoria = get('Categoria');
+          p.imagemCapa = get('Imagem de capa');
+          p.tabelaMedidas = get('Template da Tabela de Medidas');
+          p.nomeVariacao = get('Nome da Variação 1');
           p.opcoesVariacao = Object.keys(linha)
-            .filter(k => k.startsWith("Opção"))
-            .map(k => linha[k])
+           .filter((k) => k.startsWith('Opção'))
+            .map((k) => linha[k])
             .filter(Boolean);
           break;
       }
