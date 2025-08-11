@@ -88,7 +88,7 @@ function limparUndefined(obj) {
 
   const uid = user.uid;
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const workbook = XLSX.read(e.target.result, { type: "binary" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const dados = XLSX.utils.sheet_to_json(sheet, { defval: "" });
@@ -130,26 +130,86 @@ const normalizeKey = (str) =>
         return undefined;
       };
 
-      const id = get(
-        'ID do Produto',
-        'ID do Item',
-        'Id Produto',
-        'Item ID',
-        'ID Produto',
-        'Produto ID'
-      );
-      let varianteId = get(
-        'Variante Identificador',
-        'ID da Variação',
-        'SKU',
-        'SKU da Variação',
-        'ID SKU',
-        'SKU ID'
-      );
+ let id, varianteId;
+      if (tipo === 'desempenho') {
+        varianteId = get(
+          'ID do Item',
+          'Item ID',
+          'Variante Identificador',
+          'ID da Variação',
+          'SKU',
+          'SKU da Variação',
+          'ID SKU',
+          'SKU ID'
+        );
+        id = get(
+          'ID do Produto',
+          'Id Produto',
+          'ID Produto',
+          'Produto ID'
+        );
 
-      if (!id) continue;
-      if (!varianteId) varianteId = 'unico_' + id;
-      varianteId = String(varianteId).trim();
+        if (!varianteId) continue;
+        varianteId = String(varianteId).trim();
+
+        if (!id) {
+          // 🔍 Buscar no cache local de produtos
+          for (const [pid, prod] of Object.entries(window.produtos)) {
+            if (prod.variantes && prod.variantes[varianteId]) {
+              id = pid;
+              break;
+            }
+          }
+          // 🔍 Buscar no Firestore caso não encontrado
+          if (!id) {
+            try {
+              const qVar = query(
+                collectionGroup(db, 'variantes'),
+                where('__name__', '==', varianteId)
+              );
+              const snapVar = await getDocs(qVar);
+              for (const docVar of snapVar.docs) {
+                const path = docVar.ref.path; // uid/<uid>/anuncios/<id>/variantes/<varianteId>
+                if (path.startsWith(`uid/${uid}/`)) {
+                  const parts = path.split('/');
+                  const idx = parts.indexOf('anuncios');
+                  if (idx !== -1 && parts[idx + 1]) {
+                    id = parts[idx + 1];
+                    break;
+                  }
+                }
+              }
+            } catch (err) {
+              console.error('Erro ao localizar variante no Firestore:', err);
+            }
+          }
+        }
+
+        if (!id) {
+          console.warn(`❌ Variante ${varianteId} sem anúncio correspondente.`);
+          continue;
+        }
+      } else {
+        id = get(
+          'ID do Produto',
+          'ID do Item',
+          'Id Produto',
+          'Item ID',
+          'ID Produto',
+          'Produto ID'
+        );
+        varianteId = get(
+          'Variante Identificador',
+          'ID da Variação',
+          'SKU',
+          'SKU da Variação',
+          'ID SKU',
+          'SKU ID'
+        );
+        if (!id) continue;
+        if (!varianteId) varianteId = 'unico_' + id;
+        varianteId = String(varianteId).trim();
+      }
       
   const skuRef = get(
         'SKU de referência',
