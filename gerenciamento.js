@@ -132,68 +132,32 @@ const normalizeKey = (str) =>
 
  let id, varianteId;
       if (tipo === 'desempenho') {
-        varianteId = get(
+        id = get(
           'ID do Item',
           'Item ID',
-          'Variante Identificador',
+            'ID do Produto',
+          'Id Produto',
+          'Produto ID'
+        );
+        varianteId = get(
           'ID da Variação',
+           'Variante Identificador',
           'SKU',
           'SKU da Variação',
           'ID SKU',
           'SKU ID'
         );
-        id = get(
-          'ID do Produto',
-          'Id Produto',
-          'ID Produto',
-          'Produto ID'
-        );
+       
 
-        if (!varianteId) continue;
-        varianteId = String(varianteId).trim();
-
-        if (!id) {
-          // 🔍 Buscar no cache local de produtos
-          for (const [pid, prod] of Object.entries(window.produtos)) {
-            if (prod.variantes && prod.variantes[varianteId]) {
-              id = pid;
-              break;
-            }
-          }
-          // 🔍 Buscar no Firestore caso não encontrado
-          if (!id) {
-            try {
-              const qVar = query(
-                collectionGroup(db, 'variantes'),
- // Each variante document stores its ID in the `varianteId` field,
-                // so we can query by this field instead of documentId. Querying
-                // a collectionGroup using `documentId()` requires the full
-                // document path, which we don't have yet and caused errors when
-                // only the raw ID was provided. Using the field avoids the
-                // "Invalid query" Firestore error.
-                where('varianteId', '==', varianteId)              );
-              const snapVar = await getDocs(qVar);
-              for (const docVar of snapVar.docs) {
-                const path = docVar.ref.path; // uid/<uid>/anuncios/<id>/variantes/<varianteId>
-                if (path.startsWith(`uid/${uid}/`)) {
-                  const parts = path.split('/');
-                  const idx = parts.indexOf('anuncios');
-                  if (idx !== -1 && parts[idx + 1]) {
-                    id = parts[idx + 1];
-                    break;
-                  }
-                }
-              }
-            } catch (err) {
-              console.error('Erro ao localizar variante no Firestore:', err);
-            }
-          }
-        }
-
-        if (!id) {
-          console.warn(`❌ Variante ${varianteId} sem anúncio correspondente.`);
+        if (!id) continue;
+        id = String(id).trim();
+        
+        if (!varianteId) {
+          console.warn(`❌ Linha de desempenho sem ID da Variação para item ${id}.`);
           continue;
         }
+                varianteId = String(varianteId).trim();
+
       } else {
         id = get(
           'ID do Produto',
@@ -493,6 +457,10 @@ let pageCursors = [null];
 // Load produtos com paginação
 window.carregarAnuncios = async function (direction) {
   const tbody = document.querySelector("#tabelaAnuncios tbody");
+  if (!tbody) {
+    console.warn("Elemento #tabelaAnuncios tbody não encontrado.");
+    return;
+  }
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
 
   try {
