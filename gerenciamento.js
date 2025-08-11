@@ -33,8 +33,10 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  // ✅ DEFINIR A PASSPHRASE
-   setPassphrase(`chave-${user.uid}`);
+// ✅ Define a passphrase padrão se nenhuma estiver configurada
+  if (!getPassphrase()) {
+    setPassphrase(`chave-${user.uid}`);
+  }
 
   try {
     const snap = await getDoc(doc(db, 'uid', user.uid));
