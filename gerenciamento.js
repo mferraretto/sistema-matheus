@@ -249,9 +249,18 @@ const pass = getEffectivePass(user.uid);
 
     for (const [id, produto] of Object.entries(window.produtos)) {
  const docPath = `uid/${user.uid}/anuncios`;
-      const dadosAntigos = await loadSecureDoc(db, docPath, id, pass);
-      const docExiste = rawSnap.exists();
-      const docExiste = !!dadosAntigos;
+   const docRef = doc(db, docPath, id);              // <-- cria a ref crua
+const rawSnap = await getDoc(docRef);             // <-- lê o doc sem criptografia
+const dadosAntigos = await loadSecureDoc(db, docPath, id, pass); // <-- tenta descriptografar
+const docExiste = rawSnap.exists();               // <-- existência real do doc
+
+// Se o doc existe mas a descriptografia falhou, a senha está errada.
+// Evita sobrescrever com outra chave.
+if (docExiste && !dadosAntigos) {
+  showNotification("🔒 Senha incorreta para este anúncio. Atualização ignorada.", "error");
+  continue;
+}
+
 
       let dadosCompletos = { ...produto };
       let salvarPai = true;
