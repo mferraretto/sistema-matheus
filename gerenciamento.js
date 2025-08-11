@@ -51,6 +51,7 @@ onAuthStateChanged(auth, async user => {
     console.error('Erro ao verificar perfil do usuário:', err);
     isAdmin = false;
   }
+    carregarAnuncios();
 });
 
     // Global produtos object
