@@ -154,7 +154,7 @@ async function processar() {
     progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
 
     const page = await pdf.getPage(i + 1);
-    const scale = 2;
+    const scale = 8;
     const viewport = page.getViewport({ scale });
 
     canvas.width = viewport.width;
@@ -182,7 +182,7 @@ async function processar() {
       const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
       const alturaChecklist = rowHeight * proporcaoChecklist;
       
-      const deslocamentoEtiquetaY = 0;
+      const deslocamentoEtiquetaY = 6;
       
       // CORTA A ETIQUETA PRINCIPAL
       const etCanvas = document.createElement("canvas");
@@ -195,48 +195,70 @@ async function processar() {
       const chkCanvas = document.createElement("canvas");
       
       // Definimos um deslocamento mínimo para evitar a linha de separação, mas não cortar o texto.
-      const deslocamentoY = 6; 
-      const novaAlturaChecklist = alturaChecklist - deslocamentoY;
+      const deslocamentoY = 60; 
+const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
       
-      chkCanvas.width = colWidth;
-      chkCanvas.height = novaAlturaChecklist;
-      const chkCtx = chkCanvas.getContext("2d");
-      
-      // Captura o checklist a partir do ponto inicial da seção.
-      chkCtx.drawImage(canvas, par.checklist.x, par.checklist.y + deslocamentoY, colWidth, novaAlturaChecklist, 0, 0, colWidth, novaAlturaChecklist);
-      
-      // COMBINA AS DUAS PARTES EM UM ÚNICO CANVAS
-      const etiquetaCompletaCanvas = document.createElement("canvas");
-      etiquetaCompletaCanvas.width = colWidth;
-      
-      const ajusteVerticalChecklist = 4; 
-      etiquetaCompletaCanvas.height = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + novaAlturaChecklist + ajusteVerticalChecklist;
-      
-      const completoCtx = etiquetaCompletaCanvas.getContext("2d");
-      completoCtx.drawImage(etCanvas, 0, 0);
-const escalaChecklist = 2; // 🔍 ZOOM 1.9x
+     const scaleChecklist = 8; // resolução extra
+chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
+chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
+const chkCtx = chkCanvas.getContext("2d");
+chkCtx.imageSmoothingEnabled = true;
+chkCtx.imageSmoothingQuality = 'high';
 
-const larguraZoom = colWidth * escalaChecklist;
-const alturaZoom = novaAlturaChecklist * escalaChecklist;
+// captura em alta resolução
+chkCtx.drawImage(
+  canvas,
+  par.checklist.x, par.checklist.y + deslocamentoY,     // origem (na página)
+  colWidth, novaAlturaChecklist,                        // tamanho a capturar
+  0, 0,                                                 // destino no chkCanvas
+  chkCanvas.width, chkCanvas.height                     // destino (maior)
+);
 
-// Ajustar a posição X para centralizar após o zoom (caso queira)
-const offsetX = (colWidth - larguraZoom) / 1.3;
-const offsetY = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + ajusteVerticalChecklist;
 
-// Aplica o zoom
+      
+            
+     // COMBINA AS DUAS PARTES EM UM ÚNICO CANVAS
+const etiquetaCompletaCanvas = document.createElement("canvas");
+const paddingX = 0; // margem lateral extra (se quiser)
+etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
+
+const ajusteVerticalChecklist = 12;
+etiquetaCompletaCanvas.height =
+  (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
+  novaAlturaChecklist +
+  ajusteVerticalChecklist;
+
+const completoCtx = etiquetaCompletaCanvas.getContext("2d");
+completoCtx.imageSmoothingEnabled = true;
+completoCtx.imageSmoothingQuality = 'high';
+
+// Desenha a etiqueta principal
+completoCtx.drawImage(etCanvas, paddingX, 0);
+
+// 👉 POSICIONAMENTO QUE VOCÊ VAI AJUSTAR
+// Horizontal: posX (esquerda/direita)
+// Vertical:   posY (cima/baixo)
+const posX = paddingX -2100; // +valor = direita, -valor = esquerda
+const posY = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + ajusteVerticalChecklist - 0; // +valor = desce, -valor = sobe
+
+const zoomChecklist = 2.2; // 2.0 = tamanho atual, 1.5 = 50% maior, 2.0 = 100% maior
+
 completoCtx.drawImage(
   chkCanvas,
-  0, 0, colWidth, novaAlturaChecklist, // Fonte (tamanho original)
-  offsetX, offsetY, larguraZoom, alturaZoom // Destino (com zoom)
+  0, 0, chkCanvas.width, chkCanvas.height, // origem: imagem inteira
+  posX, posY,                               // posição final
+  colWidth * zoomChecklist,                 // largura com zoom
+  novaAlturaChecklist * zoomChecklist       // altura com zoom
 );
+
 
       // Inserção no novo PDF
       const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
       const imgEmbed = await novoPdf.embedPng(imgBytes);
 
       // Usando dimensões de página padrão para uma etiqueta
-      const larguraPagina = 283.46;
-      const alturaPagina = 455.2;
+      const larguraPagina = 293.46;
+      const alturaPagina = 475.2;
       
       // Adicionamos um fator de escala para diminuir a etiqueta de forma proporcional.
       const scaleFactor = 0.90;
@@ -247,7 +269,7 @@ completoCtx.drawImage(
       const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
 
       // Ajustado a posição vertical para subir a etiqueta e dar espaço para o checklist.
-      const ajusteVertical = 10; 
+      const ajusteVertical = 20; 
       const yPos = margemY + ajusteVertical;
 
       // Adiciona uma página para cada etiqueta
@@ -282,6 +304,7 @@ completoCtx.drawImage(
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
   </script>
+
   <script src="shared.js"></script>
 </body>
 </html>
