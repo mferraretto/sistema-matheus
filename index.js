@@ -40,6 +40,39 @@ function applyBlurStates() {
 // apply saved blur settings for static cards immediately
 applyBlurStates();
 
+function startTour(force = false) {
+  if (typeof introJs === 'undefined') return;
+  if (!force && localStorage.getItem('tourSeen') === 'true') return;
+  const intro = introJs();
+  intro.setOptions({
+    steps: [
+      { intro: 'Bem-vindo ao VendedorPro! Este tour apresenta os principais recursos da tela.' },
+      { element: '#resumoFaturamentoCard', intro: 'Resumo do faturamento do mês.' },
+      { element: '#topSkusCard', intro: 'Top 5 SKUs do mês.' },
+      { element: '#tarefasCard', intro: 'Aqui ficam suas tarefas do dia.' },
+      { element: '#atualizacoesCard', intro: 'Novidades e atualizações da Shopee.' }
+    ],
+    nextLabel: 'Próximo',
+    prevLabel: 'Anterior',
+    skipLabel: 'Pular',
+    doneLabel: 'Finalizar'
+  }).oncomplete(() => localStorage.setItem('tourSeen', 'true'))
+    .onexit(() => localStorage.setItem('tourSeen', 'true'))
+    .start();
+}
+
+document.addEventListener('navbarLoaded', () => {
+  const btn = document.getElementById('startTourBtn');
+  if (btn) {
+    btn.classList.remove('hidden');
+    btn.addEventListener('click', () => startTour(true));
+  }
+});
+
+function maybeStartTour() {
+  startTour(false);
+}
+
 
 async function carregarResumoFaturamento(uid, isAdmin) {
   const el = document.getElementById('resumoFaturamento');
@@ -301,6 +334,7 @@ async function iniciarPainel(user) {
     carregarTarefas(uid, isAdmin)
   ]);
   applyBlurStates();
+  maybeStartTour();
 }
 
 onAuthStateChanged(auth, user => {
