@@ -124,4 +124,16 @@ document.addEventListener('DOMContentLoaded', function () {
   window.checkColorContrast();
 });
 
+// Handle mobile sidebar toggle after navbar loads
+document.addEventListener('navbarLoaded', function () {
+  var btn = document.querySelector('.mobile-menu-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('active');
+    }
+  });
+});
+
 })();
