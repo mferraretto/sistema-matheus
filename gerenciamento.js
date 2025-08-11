@@ -395,21 +395,22 @@ window.carregarAnuncios = async function () {
 
     for (const doc of querySnapshot.docs) {
       const id = doc.id;
-const pass = await getPassphrase();
-      const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, pass) || {};
+const ownerUid = doc.data().uid || user.uid;
+      const basePath = doc.ref.parent.path;
+      const pass = getPassphrase();
+      const data = await loadSecureDoc(db, basePath, id, pass) || {};
       if (!isAdmin && data.uid && data.uid !== user.uid) {
         continue;
       }
 
       // 🔄 Buscar subcoleção de variantes
-      const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
+      const variantesRef = collection(db, `${basePath}/${id}/variantes`);
       const snap = await getDocs(variantesRef);
-let variantes = [];
+      let variantes = [];
 
       if (!snap.empty) {
-const pass = await getPassphrase();
         const docs = await Promise.all(
-          snap.docs.map(v => loadSecureDoc(db, `uid/${user.uid}/anuncios/${id}/variantes`, v.id, pass))
+ snap.docs.map(v => loadSecureDoc(db, `${basePath}/${id}/variantes`, v.id, pass))
         );
         variantes = docs.filter(Boolean);
       }
@@ -422,7 +423,7 @@ for (const v of variantes) {
   if (!sku) continue;
 
   try {
-    const refProd = collection(db, `uid/${user.uid}/produtos`);
+    const refProd = collection(db, `uid/${ownerUid}/produtos`);
     const qProd = query(refProd, where("sku", "==", sku));
     const snapshotProd = await getDocs(qProd);
 
@@ -456,7 +457,7 @@ for (const v of variantes) {
 
 
       // 🔄 Buscar últimos 7 dias da subcoleção desempenho
-      const desempenhoRef = collection(db, `uid/${user.uid}/anuncios/${id}/desempenho`);
+      const desempenhoRef = collection(db, `${basePath}/${id}/desempenho`);
       const desempenhoQuery = query(desempenhoRef, orderBy("__name__", "desc"), limit(7));
       const desempenhoSnap = await getDocs(desempenhoQuery);
 
@@ -539,7 +540,7 @@ for (const v of variantes) {
         <td class="px-4 py-2"><span class="badge badge-${conversaoStatus}">${conversao}%</span></td>
         <td class="px-4 py-2">R$ ${mediaDesempenho.vendasPago || "0.00"}</td>
         <td class="px-4 py-2 whitespace-nowrap">
-          <button onclick="verDetalhesAnuncio('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm">
+          <button onclick="verDetalhesAnuncio('${id}','${ownerUid}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm">
             <i class="fas fa-eye mr-1"></i>Ver Detalhes
           </button>
         </td>
@@ -554,6 +555,7 @@ for (const v of variantes) {
       tr.setAttribute("data-vendas", mediaDesempenho.vendasPago || 0);
       tr.setAttribute("data-alerta", variantes.some(v => v.alertaPreco) ? "1" : "0");
       tr.setAttribute("data-skuinvalido", variantes.some(v => v.skuNaoEncontrado) ? "1" : "0");
+      tr.setAttribute("data-owner", ownerUid);
 
 
       tbody.appendChild(tr);
@@ -565,10 +567,11 @@ for (const v of variantes) {
 };
 
 
-window.verDetalhesAnuncio = async function (id) {
+window.verDetalhesAnuncio = async function (id, ownerUid = auth.currentUser?.uid) {
   try {
 const user = auth.currentUser;
-    const data = await loadSecureDoc(db, `uid/${user.uid}/anuncios`, id, getPassphrase());
+    const pass = getPassphrase();
+    const data = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, id, pass);
     if (!data) {
       showNotification("❌ Anúncio não encontrado", "error");
       return;
@@ -580,19 +583,19 @@ const user = auth.currentUser;
     }
 
     // 🔍 Buscar variantes
-    const variantesRef = collection(db, `uid/${user.uid}/anuncios/${id}/variantes`);
+    const variantesRef = collection(db, `uid/${ownerUid}/anuncios/${id}/variantes`);
     const variantesSnap = await getDocs(variantesRef);
-let variantes = [];
+    let variantes = [];
     if (!variantesSnap.empty) {
       const pass = getPassphrase();
       const docs = await Promise.all(
-        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${user.uid}/anuncios/${id}/variantes`, v.id, pass))
+        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${ownerUid}/anuncios/${id}/variantes`, v.id, pass))
       );
       variantes = docs.filter(Boolean);
     }
     // 🔍 Buscar média dos últimos 7 dias da subcoleção de desempenho
-const desempenhoRef = collection(db, `uid/${user.uid}/anuncios/${id}/desempenho`);
-const desempenhoSnap = await getDocs(desempenhoRef);
+    const desempenhoRef = collection(db, `uid/${ownerUid}/anuncios/${id}/desempenho`);
+    const desempenhoSnap = await getDocs(desempenhoRef);
 let desempenho = {};
 
 if (!desempenhoSnap.empty) {
@@ -753,7 +756,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
       ${variantesHtml}
 
       <div class="flex justify-end space-x-2 mt-4">
-        <button onclick="verHistorico('${id}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+        <button onclick="verHistorico('${id}','${data.uid || ownerUid}')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
           <i class="fas fa-history mr-2"></i>Ver Histórico
         </button>
         <button onclick="fecharModal('modalDetalhes')" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
@@ -798,19 +801,14 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
 
 
     // View history
-    window.verHistorico = async function (id) {
+    window.verHistorico = async function (id, ownerUid = auth.currentUser?.uid) {
       const container = document.getElementById("conteudoHistorico");
       container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Carregando histórico...</div>';
       document.getElementById("modalHistorico").style.display = "flex";
 
       try {
-  const user = auth.currentUser;
-        let qRef;
-        if (!isAdmin) {
-          qRef = collection(db, `uid/${user.uid}/atualizacoes`);
-        } else {
-          qRef = collectionGroup(db, 'atualizacoes');
-        }
+        const qRef = collection(db, `uid/${ownerUid}/atualizacoes`);
+
         const q = await getDocs(qRef);
         const historico = [];
         q.forEach(doc => {
@@ -860,8 +858,8 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
       container.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Analisando anúncios...</div>';
       
       try {
- const user = auth.currentUser;
-       let q;
+        const user = auth.currentUser;
+        let q;
         if (!isAdmin) {
           q = collection(db, `uid/${user.uid}/anuncios`);
         } else {
@@ -870,9 +868,12 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
         const querySnapshot = await getDocs(q);
         const sugestoes = [];
         
-        querySnapshot.forEach(doc => {
-          const a = doc.data();
-          const id = a.id || "(sem ID)";
+
+        for (const doc of querySnapshot.docs) {
+          const ownerUid = doc.data().uid || user.uid;
+          const pass = getPassphrase();
+          const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
+          const id = a.id || doc.id || "(sem ID)";
           const nome = a.nome || "(sem nome)";
           const conversao = parseFloat(a.conversaoPago || 0);
           const visualizacoes = parseInt(a.visualizacoes || 0);
@@ -922,7 +923,7 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
             const iconNivel = nivel === "alto" ? "fa-exclamation-triangle text-red-500" : 
                              nivel === "médio" ? "fa-exclamation-circle text-yellow-500" : "fa-info-circle text-blue-500";
             
-            sugestoes.push(`
+        sugestoes.push(`
               <div class="sugestao-item border rounded-lg p-4 ${corNivel}">
                 <div class="flex justify-between items-start mb-2">
                   <div>
@@ -959,17 +960,17 @@ acumulado.taxaRejeicao += parseFloat(taxaStr) || 0;
                  <button onclick="copiarTitulo('${nome.replace(/'/g, "\\'")}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-2 rounded text-sm mr-2">
                     <i class="far fa-copy mr-1"></i>Copiar Título
                   </button>
-                  <button onclick="verDetalhesAnuncio('${doc.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-sm">
+                  <button onclick="verDetalhesAnuncio('${doc.id}','${ownerUid}')" class="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded text-sm">
                     <i class="fas fa-eye mr-1"></i>Ver Detalhes
                   </button>
                 </div>
               </div>
             `);
           }
-        });
+       }
 
-        container.innerHTML = sugestoes.length ? 
-          sugestoes.join('') : 
+          container.innerHTML = sugestoes.length ?
+          sugestoes.join('') :
           '<div class="text-center py-8 text-green-600"><i class="fas fa-check-circle mr-2"></i>Nenhuma sugestão no momento. Seus anúncios estão bem otimizados!</div>';
       } catch (error) {
         console.error("Erro ao gerar sugestões:", error);
@@ -1017,17 +1018,19 @@ window.carregarEvolucao = async function () {
     const cards = [];
 
     for (const doc of anunciosSnap.docs) {
-      const a = doc.data();
-      const id = a.id || "(sem ID)";
+ const pass = getPassphrase();
+      const a = await loadSecureDoc(db, doc.ref.parent.path, doc.id, pass) || {};
+      const id = a.id || doc.id || "(sem ID)";
       const nome = a.nome || "(sem nome)";
       const visitas = a.visitas || a.visualizacoes || 0;
       const vendas = a.vendasPago || 0;
       const conversao = a.conversaoPago || 0;
 
-const ownerUid = doc.ref.parent.parent.id;
+      const ownerUid = doc.ref.parent.parent.id;
       const variantesSnap = await getDocs(collection(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`));
-      const variantes = variantesSnap.docs.map(v => v.data());
-
+ const variantes = (await Promise.all(
+        variantesSnap.docs.map(v => loadSecureDoc(db, `uid/${ownerUid}/anuncios/${doc.id}/variantes`, v.id, pass))
+      )).filter(Boolean);
       const historico = (historicoPorId[id] || []).sort((a, b) => new Date(a.dataHora) - new Date(b.dataHora));
 
       let evolucaoHTML = "";
