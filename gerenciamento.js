@@ -239,10 +239,10 @@ window.salvarNoFirebase = async () => {
     const pass = await getPassphrase();
 
     for (const [id, produto] of Object.entries(window.produtos)) {
-      const ref = doc(db, "uid", user.uid, "anuncios", id);
-      const snapshot = await getDoc(ref);
+ const docPath = `uid/${user.uid}/anuncios`;
+      const dadosAntigos = await loadSecureDoc(db, docPath, id, pass);
+      const docExiste = !!dadosAntigos;
 
-      let dadosAntigos = {};
       let dadosCompletos = { ...produto };
       let salvarPai = true;
       let registrarHistorico = false;
@@ -251,8 +251,8 @@ window.salvarNoFirebase = async () => {
       const variantes = dadosCompletos.variantes || {};
       delete dadosCompletos.variantes;
 
-      if (snapshot.exists()) {
-        dadosAntigos = snapshot.data();
+      if (docExiste) {
+
         if (dadosAntigos.uid && dadosAntigos.uid !== user.uid && !isAdmin) {
           continue;
         }
@@ -289,7 +289,7 @@ window.salvarNoFirebase = async () => {
       for (const [varianteId, variante] of Object.entries(variantes)) {
         if (variante.dataReferencia) {
           // Só salva desempenho se o anúncio já existir
-          if (snapshot.exists()) {
+          if (docExiste) {
             const { dataReferencia, ...metricas } = variante;
             const desempenhoPath = `uid/${user.uid}/anuncios/${id}/desempenho`;
             const antigo = (await loadSecureDoc(db, desempenhoPath, dataReferencia, pass)) || {};
