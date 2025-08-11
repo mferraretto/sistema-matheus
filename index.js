@@ -220,11 +220,10 @@ async function carregarTarefas(uid, isAdmin) {
   const pendentes = tarefas.filter(t => !concluidas.includes(t));
   const feitas = tarefas.filter(t => concluidas.includes(t));
 
-  const render = (t, done = false) => {
-    const bg = done ? 'bg-green-50' : 'bg-white';
-    const text = done ? 'line-through text-gray-500' : '';
+const render = (t, done = false) => {
     const checked = done ? 'checked' : '';
-    return `<li class="flex items-center p-2 border rounded shadow-sm ${bg}"><input type="checkbox" class="mr-2" data-tarefa="${t}" ${checked}><span class="${text}">${t}</span></li>`;
+    const completedClass = done ? ' completed' : '';
+    return `<li class="task-item${completedClass}"><input type="checkbox" class="task-checkbox" data-tarefa="${t}" ${checked}><span class="task-text${completedClass}">${t}</span></li>`;
   };
 
   lista.innerHTML = pendentes.length
@@ -233,6 +232,14 @@ async function carregarTarefas(uid, isAdmin) {
   listaFeitas.innerHTML = feitas.length
     ? feitas.map(t => render(t, true)).join('')
     : '<li class="placeholder text-gray-500">Nenhuma tarefa concluída</li>';
+function atualizarProgresso() {
+    const total = lista.querySelectorAll('li:not(.placeholder)').length +
+                  listaFeitas.querySelectorAll('li:not(.placeholder)').length;
+    const concluidasQtd = listaFeitas.querySelectorAll('li:not(.placeholder)').length;
+    const percent = total ? (concluidasQtd / total) * 100 : 0;
+    const bar = document.getElementById('tarefasProgressBar');
+    if (bar) bar.style.width = `${percent}%`;
+  }
 
   function updateStorage(desc, done) {
     const arr = JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -257,26 +264,26 @@ async function carregarTarefas(uid, isAdmin) {
     if (chk.checked) {
       const ph = listaFeitas.querySelector('.placeholder');
       if (ph) ph.remove();
-      li.classList.remove('bg-white');
-      li.classList.add('bg-green-50');
-      li.querySelector('span').classList.add('line-through', 'text-gray-500');
+li.classList.add('completed');
+      li.querySelector('.task-text').classList.add('completed');
       listaFeitas.appendChild(li);
       updateStorage(desc, true);
     } else {
       const ph = lista.querySelector('.placeholder');
       if (ph) ph.remove();
-      li.classList.remove('bg-green-50');
-      li.classList.add('bg-white');
-      li.querySelector('span').classList.remove('line-through', 'text-gray-500');
+        li.classList.remove('completed');
+      li.querySelector('.task-text').classList.remove('completed');
       lista.appendChild(li);
       updateStorage(desc, false);
     }
     updatePlaceholders();
+        atualizarProgresso();
   }
 
   document.querySelectorAll('#listaTarefas input[type="checkbox"], #listaTarefasFeitas input[type="checkbox"]').forEach(chk => {
     chk.addEventListener('change', () => moverTarefa(chk));
   });
+    atualizarProgresso();
 }
 
 async function iniciarPainel(user) {
