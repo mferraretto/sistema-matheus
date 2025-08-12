@@ -308,16 +308,28 @@ const normalizeKey = (str) =>
           break;
 
       case 'vendas':
+          // ID do Produto já foi usado como chave (variável `id`)
+          // e `varianteId` identifica cada variação.
           p.nome = get('Nome do Produto') || p.nome;
           p.skuReferencia = p.skuReferencia || skuRef;
-           v.preco = parseFloat(
+
+          // Registrar campos principais da variação
+          v.varianteId = varianteId;
+          v.varianteIdentificador = varianteId;
+          v.skuReferencia = p.skuReferencia;
+          v.sku = get('SKU', 'sku', 'Código da Variação');
+          v.skuVariante = v.sku; // compatibilidade
+          v.nome = get('Nome', 'Nome da Variação', 'Variação', 'Modelo') || '';
+          v.nomeVariante = v.nome; // compatibilidade
+          v.preco = parseFloat(
             get('Preço', 'preco', 'Valor', 'Valor da Variação') || 0
           );
-          v.estoque = parseInt(get('Estoque do vendedor', 'Estoque') || 0);
+          v.estoqueVendedor = parseInt(
+            get('Estoque do vendedor', 'Estoque') || 0
+          );
+          v.estoque = v.estoqueVendedor; // compatibilidade
+          v.idProduto = id;
           v.gtin = get('GTIN (EAN)', 'gtin', 'Código EAN');
-          v.skuVariante = get('SKU', 'sku', 'Código da Variação');
-          v.nomeVariante =
-            get('Nome', 'Nome da Variação', 'Variação', 'Modelo') || '';
           break;
 
         case 'basica':
