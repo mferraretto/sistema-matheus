@@ -177,11 +177,13 @@ const normalizeKey = (str) =>
       };
       const getAlias = (campo) => get(...(COL_ALIASES[campo] || []));
 
-      let id = getAlias('idProduto') || ultimoId;
+      let id = getAlias('idProduto');
+      if (tipo !== 'frete' && !id) id = ultimoId;
       const skuRef = getAlias('skuReferencia');
-      let varianteId = getAlias('idVariacao') || getAlias('skuVariacao') || ultimaVariacao;
+      let varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
+      if (tipo !== 'frete' && !varianteId) varianteId = ultimaVariacao;
 
-      if (!id && skuRef) {
+      if (!id && skuRef && tipo !== 'frete') {
         const skuNorm = String(skuRef).trim();
         id = Object.keys(window.produtos).find((pid) => {
           const prod = window.produtos[pid];
@@ -206,9 +208,12 @@ const normalizeKey = (str) =>
           }
         }
       }
-      if (!id) continue;
+      if (!id) {
+        console.warn(`❌ Linha de ${tipo} sem ID do Produto.`, linha);
+        continue;
+      }
       id = String(id).trim();
-      if (id !== ultimoId) {
+      if (tipo !== 'frete' && id !== ultimoId) {
         ultimoId = id;
         ultimaVariacao = null;
       }
@@ -221,7 +226,7 @@ const normalizeKey = (str) =>
         varianteId = 'unico_' + id;
       }
       varianteId = String(varianteId).trim();
-      ultimaVariacao = varianteId;
+      if (tipo !== 'frete') ultimaVariacao = varianteId;
 
       // Criar estrutura do produto pai
       if (!window.produtos[id]) {
@@ -338,15 +343,13 @@ const normalizeKey = (str) =>
           p.skuReferencia = p.skuReferencia || skuRef;
           break;
 
-         case 'frete':
+        case 'frete':
           p.skuReferencia = p.skuReferencia || skuRef;
-          p.peso = get('Peso (kg)', 'Peso do Produto/kg');
-          p.comprimento = get('Comprimento (cm)', 'Comprimento');
-          p.largura = get('Largura (cm)', 'Largura');
-          p.altura = get('Altura (cm)', 'Altura');
-          p.taxaFrete = parseFloat(
-         get('Taxa de frete (R$)', 'Taxa de frete') || 0
-          );
+          p.peso = parseNumeroBr(get('Peso (kg)', 'Peso do Produto/kg'));
+          p.comprimento = parseNumeroBr(get('Comprimento (cm)', 'Comprimento'));
+          p.largura = parseNumeroBr(get('Largura (cm)', 'Largura'));
+          p.altura = parseNumeroBr(get('Altura (cm)', 'Altura'));
+          p.taxaFrete = parseNumeroBr(get('Taxa de frete (R$)', 'Taxa de frete'));
           break;
 
 
