@@ -175,26 +175,47 @@ const normalizeKey = (str) =>
       };
       const getAlias = (campo) => get(...(COL_ALIASES[campo] || []));
 
-      let id, varianteId;
-      if (tipo === 'desempenho') {
-        id = getAlias('idProduto');
-        varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
-        if (!id) continue;
-        id = String(id).trim();
-        if (!varianteId) {
+      let id = getAlias('idProduto');
+      const skuRef = getAlias('skuReferencia');
+      let varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
+
+      if (!id && skuRef) {
+        const skuNorm = String(skuRef).trim();
+        id = Object.keys(window.produtos).find((pid) => {
+          const prod = window.produtos[pid];
+          return (
+            prod.skuReferencia &&
+            String(prod.skuReferencia).trim() === skuNorm
+          );
+        });
+        if (!id) {
+          try {
+            const q = query(
+              collection(db, `uid/${uid}/anuncios`),
+              where('skuReferencia', '==', skuNorm),
+              limit(1)
+            );
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              id = snap.docs[0].id;
+            }
+          } catch (err) {
+            console.error(`Erro ao buscar SKU ${skuNorm}:`, err);
+          }
+        }
+      }
+
+      if (!id) continue;
+      id = String(id).trim();
+
+      if (!varianteId) {
+        if (tipo === 'desempenho') {
           console.warn(`❌ Linha de desempenho sem ID da Variação para item ${id}.`);
           continue;
         }
-        varianteId = String(varianteId).trim();
-      } else {
-        id = getAlias('idProduto');
-        varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
-        if (!id) continue;
-        if (!varianteId) varianteId = 'unico_' + id;
-        varianteId = String(varianteId).trim();
+        varianteId = 'unico_' + id;
       }
-
-      const skuRef = getAlias('skuReferencia');
+      varianteId = String(varianteId).trim();
 
       // Criar estrutura do produto pai
       if (!window.produtos[id]) {
@@ -305,17 +326,43 @@ const normalizeKey = (str) =>
           break;
 
 
-         case 'midia':
+        case 'midia': {
           p.skuReferencia = p.skuReferencia || skuRef;
           p.categoria = get('Categoria');
-          p.imagemCapa = get('Imagem de capa');
           p.tabelaMedidas = get('Template da Tabela de Medidas');
           p.nomeVariacao = get('Nome da Variação 1');
           p.opcoesVariacao = Object.keys(linha)
-           .filter((k) => k.startsWith('Opção'))
+            .filter((k) => k.startsWith('Opção'))
             .map((k) => linha[k])
             .filter(Boolean);
+
+          const urls = [];
+          const pushUrls = (val) => {
+            if (val === undefined || val === null) return;
+            const tokens = String(val)
+              .split(/[\s,;]+/)
+              .map((s) => s.trim())
+              .filter((s) => s && !/^(-|n\/?a)$/i.test(s));
+            urls.push(...tokens);
+          };
+
+          pushUrls(get('Imagem de capa', 'Cover Image'));
+          for (const [col, val] of Object.entries(linha)) {
+            if (/imagem/i.test(col) && !/capa/i.test(col)) {
+              pushUrls(val);
+            }
+          }
+
+          if (urls.length) {
+            if (varianteId.startsWith('unico_')) {
+              if (!p.imagemCapa) p.imagemCapa = urls[0];
+              p.galeria = urls;
+            } else {
+              v.imagemUrl = urls[0];
+            }
+          }
           break;
+        }
       }
     }
 
