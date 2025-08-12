@@ -158,7 +158,65 @@ input:checked + .dark-mode-slider:before {
 .skeleton {
   background-color: #e0e0e0
 }
+/* Caixa principal */
+.introjs-tooltip {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  max-width: 320px;
+}
 
+/* Título */
+.introjs-tooltip-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ff6600;
+  border-bottom: 2px solid #ff6600;
+  padding-bottom: .5rem;
+  margin-bottom: 1rem;
+}
+
+/* Texto */
+.introjs-tooltiptext {
+  font-size: .95rem;
+  line-height: 1.4rem;
+}
+
+/* Botões */
+.introjs-button {
+  border-radius: .5rem;
+  padding: .4rem 1rem;
+  font-weight: 500;
+  border: none;
+}
+
+.introjs-nextbutton {
+  background-color: #ff6600;
+  color: white;
+}
+
+.introjs-prevbutton {
+  background-color: #e5e7eb;
+  color: #333;
+}
+
+.introjs-skipbutton {
+  color: #999;
+  background: none;
+}
+
+/* Pontinhos de progresso */
+.introjs-bullets li a {
+  background-color: #ddd;
+  border-radius: 50%;
+}
+
+.introjs-bullets li a.active {
+  background-color: #ff6600;
+}
 /* Estilos modernos para o card de tarefas */
 #tarefasCard .card-header {
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
