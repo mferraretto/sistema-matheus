@@ -354,6 +354,10 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
   const filtro = document.getElementById('filtroMesFaturamento');
   const mesFiltro = filtro?.value || new Date().toISOString().slice(0,7);
 
+  const hoje = new Date();
+  const mesAtual = hoje.toISOString().slice(0,7);
+  let totalLiquido = 0;
+
   const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'faturamento'))
     : await getDocs(collection(db, `uid/${uid}/faturamento`));
@@ -366,6 +370,11 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
     const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
     let liquido = 0;
+  for (const docSnap of snap.docs) {
+    if (docSnap.id !== mesAtual) continue;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
+    const subSnap = await getDocs(subRef);
     for (const s of subSnap.docs) {
       let d = s.data();
       if (d.encrypted) {
@@ -405,6 +414,28 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
         backgroundColor: 'rgba(52,211,153,0.2)',
         tension: 0.1,
         fill: true
+      totalLiquido += d.valorLiquido || 0;
+    }
+  }
+
+  let meta = 0;
+  if (isAdmin) {
+    const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
+    metasSnap.forEach(m => {
+      if (m.id === mesAtual) meta += Number(m.data().valor || 0);
+    });
+  } else if (uid) {
+    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
+    if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+  }
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Faturado', 'Meta'],
+      datasets: [{
+        data: [totalLiquido, meta],
+        backgroundColor: ['#34D399', '#F87171']
       }]
     },
     options: {
