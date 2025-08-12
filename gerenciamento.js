@@ -84,8 +84,26 @@ function limparUndefined(obj) {
 function parseNumeroBr(valor) {
   if (valor === undefined || valor === null || valor === '') return undefined;
   if (typeof valor === 'number') return valor;
-  const limpo = valor.toString().replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
-  const num = parseFloat(limpo);
+
+  let str = valor.toString().trim();
+  if (!str) return undefined;
+
+  // Detect the last separator to determine decimal symbol
+  const lastComma = str.lastIndexOf(',');
+  const lastDot = str.lastIndexOf('.');
+  let decimalSeparator = '';
+  if (lastComma > lastDot) decimalSeparator = ',';
+  else if (lastDot > lastComma) decimalSeparator = '.';
+
+  // Remove thousands separators and normalize decimal separator to '.'
+  if (decimalSeparator === ',') {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (decimalSeparator === '.') {
+    str = str.replace(/,/g, '');
+  }
+
+  str = str.replace(/[^\d.-]/g, '');
+  const num = parseFloat(str);
   return isNaN(num) ? undefined : num;
 }
 
