@@ -81,6 +81,50 @@ function limparUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
 }
 
+function parseNumeroBr(valor) {
+  if (valor === undefined || valor === null || valor === '') return undefined;
+  if (typeof valor === 'number') return valor;
+  const limpo = valor.toString().replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+  const num = parseFloat(limpo);
+  return isNaN(num) ? undefined : num;
+}
+
+function formatarData(valor) {
+  if (!valor) return undefined;
+  const d = new Date(valor);
+  return isNaN(d) ? undefined : d.toISOString().slice(0, 10);
+}
+
+const COL_ALIASES = {
+  idProduto: ['ID do Item', 'Item ID', 'ID do Produto', 'Produto ID', 'idproduto'],
+  skuReferencia: ['SKU de referência', 'SKU de Referência', 'SKU de referencia', 'SKU Principal', 'Parent SKU'],
+  idVariacao: ['ID da Variação', 'Variante Identificador', 'ID SKU', 'SKU ID', 'Variation ID'],
+  skuVariacao: ['SKU da Variação', 'SKU', 'SKU da Variacao', 'Variation SKU'],
+  nomeProduto: ['Nome do Produto', 'Produto', 'Product name'],
+  variacao: ['Variação', 'Atributos', 'Variation'],
+  categoria: ['Categoria', 'Category'],
+  dataInicio: ['Período Início', 'Data Início', 'Start Date', 'Periodo Inicio'],
+  dataFim: ['Período Fim', 'Data Fim', 'End Date', 'Periodo Fim'],
+  visitantes: ['Visitantes do produto', 'Visitantes', 'Unique visitors', 'Visitantes únicos'],
+  visualizacoes: ['Visualizações', 'Views', 'Page Views', 'Visualizações da Página do Produto'],
+  impressoes: ['Impressões', 'Impressions'],
+  cliques: ['Cliques', 'Clicks'],
+  ctr: ['CTR', 'Taxa de cliques'],
+  vendas: ['Vendas', 'Itens vendidos', 'Unidades vendidas'],
+  pedidos: ['Pedidos', 'Orders'],
+  taxaConversao: ['Taxa de conversão', 'Conversion rate'],
+  receitaBruta: ['Receita Bruta', 'Receita', 'Gross Sales'],
+  descontos: ['Descontos', 'Cupons', 'Coupons'],
+  receitaLiquida: ['Receita Líquida', 'Net Sales'],
+  estoqueVendedor: ['Estoque do vendedor', 'Estoque', 'Seller stock'],
+  precoAtual: ['Preço', 'Preço atual', 'Price'],
+  gastosAds: ['Gasto em anúncios', 'Ads cost', 'Cost'],
+  roas: ['ROAS'],
+  cpc: ['CPC'],
+  cpa: ['CPA'],
+  statusItem: ['Status Atual do Item', 'Status do Item', 'Status'],
+};
+
     // Process spreadsheets
  window.processarPlanilha = function(file, tipo) {
   const user = auth.currentUser;
@@ -129,65 +173,28 @@ const normalizeKey = (str) =>
         }
         return undefined;
       };
+      const getAlias = (campo) => get(...(COL_ALIASES[campo] || []));
 
- let id, varianteId;
+      let id, varianteId;
       if (tipo === 'desempenho') {
-        id = get(
-          'ID do Item',
-          'Item ID',
-            'ID do Produto',
-          'Id Produto',
-          'Produto ID'
-        );
-        varianteId = get(
-          'ID da Variação',
-           'Variante Identificador',
-          'SKU',
-          'SKU da Variação',
-          'ID SKU',
-          'SKU ID'
-        );
-       
-
+        id = getAlias('idProduto');
+        varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
         if (!id) continue;
         id = String(id).trim();
-        
         if (!varianteId) {
           console.warn(`❌ Linha de desempenho sem ID da Variação para item ${id}.`);
           continue;
         }
-                varianteId = String(varianteId).trim();
-
+        varianteId = String(varianteId).trim();
       } else {
-        id = get(
-          'ID do Produto',
-          'ID do Item',
-          'Id Produto',
-          'Item ID',
-          'ID Produto',
-          'Produto ID'
-        );
-        varianteId = get(
-          'Variante Identificador',
-          'ID da Variação',
-          'SKU',
-          'SKU da Variação',
-          'ID SKU',
-          'SKU ID'
-        );
+        id = getAlias('idProduto');
+        varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
         if (!id) continue;
         if (!varianteId) varianteId = 'unico_' + id;
         varianteId = String(varianteId).trim();
       }
-      
-  const skuRef = get(
-        'SKU de referência',
-        'SKU de Referência',
-        'SKU de referencia',
-        'SKU Principal',
-        'SKU principal',
-        'SKU Principle'
-      );
+
+      const skuRef = getAlias('skuReferencia');
 
       // Criar estrutura do produto pai
       if (!window.produtos[id]) {
@@ -220,35 +227,51 @@ const normalizeKey = (str) =>
       const v = p.variantes[varianteId];
       if (skuRef) v.skuReferencia = skuRef;
 
-      const nomeLinha = get('Nome do Produto', 'Produto');
+      const nomeLinha = getAlias('nomeProduto');
       if (nomeLinha && !p.nome) p.nome = nomeLinha;
       // Separar por tipo de planilha
       switch (tipo) {
         case 'desempenho':
           v.dataReferencia = window.dataDesempenhoReferencia;
-         v.statusAtual = get('Status Atual do Item');
-          v.skuVariante = get('SKU da Variação') || v.skuVariante;
-          v.skuPrincipal =
-                       get('SKU Principle', 'SKU Principal') ||
-            v.skuReferencia ||
-            p.skuReferencia;
-          v.visitas = get('Visitantes do Produto (Visita)', 'Visitantes do produto (Visitas)');
-          v.visualizacoes = get('Visualizações da Página do Produto', 'Visualizacoes da Pagina do Produto');
-          v.cliquesBusca = get('Cliques em buscas', 'Cliques em busca');
-          v.curtidas = get('Curtidas');
-          v.saidas = get('Visitantes que saíram da página', 'Visitantes que sairam da pagina');
-          v.taxaRejeicao = get('Taxa de Rejeição do Produto', 'Taxa de rejeicao do produto');
-          v.visitantesCarrinho = get('Visitantes do Produto (Adicionar ao Carrinho)');
-          v.unidadesCarrinho = get('Unidades (adicionar ao carrinho)');
-          v.conversaoCarrinho = get('Taxa de Conversão (adicionar ao carrinho)');
-          v.compradoresPedido = get('Compradores (Pedido realizado)');
-          v.unidadesPedido = get('Unidades (Pedido realizado)');
-          v.vendasPedido = get('Vendas (Pedido realizado) (BRL)', 'Vendas (Pedido realizado) (R$)');
-          v.conversaoPedido = get('Taxa de conversão (Pedido realizado)');
-          v.compradoresPago = get('Compradores (Pedidos pago)', 'Compradores (Pedido pago)');
-          v.unidadesPago = get('Unidades (Pedido pago)');
-          v.vendasPago = get('Vendas (Pedido pago) (BRL)', 'Vendas (Pedido pago) (R$)');
-          v.conversaoPago = get('Taxa de conversão (Pedido pago)');
+          v.idProduto = id;
+          v.skuReferencia = (skuRef || v.skuReferencia || p.skuReferencia || '').toString().trim();
+          v.skuVariacao = (getAlias('skuVariacao') || v.skuVariacao || '').toString().trim();
+          v.nomeProduto = p.nome ? p.nome.toString().trim() : undefined;
+          const variacaoNome = getAlias('variacao');
+          if (variacaoNome) v.variacao = variacaoNome.toString().trim();
+          const categoria = getAlias('categoria');
+          if (categoria) p.categoria = categoria.toString().trim();
+          v.categoria = p.categoria;
+          v.dataInicio = formatarData(getAlias('dataInicio'));
+          v.dataFim = formatarData(getAlias('dataFim'));
+          v.visitantes = parseNumeroBr(getAlias('visitantes'));
+          v.visualizacoes = parseNumeroBr(getAlias('visualizacoes'));
+          v.impressoes = parseNumeroBr(getAlias('impressoes'));
+          v.cliques = parseNumeroBr(getAlias('cliques'));
+          v.ctr = parseNumeroBr(getAlias('ctr'));
+          v.pedidos = parseNumeroBr(getAlias('pedidos'));
+          v.vendas = parseNumeroBr(getAlias('vendas'));
+          v.taxaConversao = parseNumeroBr(getAlias('taxaConversao'));
+          v.receitaBruta = parseNumeroBr(getAlias('receitaBruta'));
+          v.descontos = parseNumeroBr(getAlias('descontos'));
+          v.receitaLiquida = parseNumeroBr(getAlias('receitaLiquida'));
+          v.estoqueVendedor = parseNumeroBr(getAlias('estoqueVendedor'));
+          v.precoAtual = parseNumeroBr(getAlias('precoAtual'));
+          v.gastosAds = parseNumeroBr(getAlias('gastosAds'));
+          v.roas = parseNumeroBr(getAlias('roas'));
+          v.cpc = parseNumeroBr(getAlias('cpc'));
+          v.cpa = parseNumeroBr(getAlias('cpa'));
+          v.statusItem = getAlias('statusItem');
+          if (v.statusItem) v.statusItem = v.statusItem.toString().trim();
+          if (v.ctr === undefined && v.cliques !== undefined && v.impressoes) {
+            v.ctr = v.impressoes ? v.cliques / v.impressoes : undefined;
+          }
+          if (v.taxaConversao === undefined && v.vendas !== undefined && v.visitantes) {
+            v.taxaConversao = v.visitantes ? v.vendas / v.visitantes : undefined;
+          }
+          if (v.roas === undefined && v.receitaBruta !== undefined && v.gastosAds) {
+            v.roas = v.gastosAds ? v.receitaBruta / v.gastosAds : undefined;
+          }
           break;
 
       case 'vendas':
@@ -348,6 +371,11 @@ if (docExiste && !dadosAntigos) {
         }
 
         dadosCompletos = { ...dadosAntigos, ...dadosCompletos };
+        ['precoIdeal', 'precoMinimo', 'precoSemLucro'].forEach(campo => {
+          if (dadosAntigos && dadosAntigos[campo] !== undefined) {
+            dadosCompletos[campo] = dadosAntigos[campo];
+          }
+        });
 
         if (objetosIguais(dadosAntigos, dadosCompletos)) {
           salvarPai = false;
@@ -378,7 +406,6 @@ if (docExiste && !dadosAntigos) {
  // 🔸 Salvar variações
       for (const [varianteId, variante] of Object.entries(variantes)) {
         if (variante.dataReferencia) {
-          // Só salva desempenho se o anúncio já existir
           if (docExiste) {
             const { dataReferencia, ...metricas } = variante;
             const desempenhoPath = `uid/${user.uid}/anuncios/${id}/desempenho`;
@@ -386,6 +413,16 @@ if (docExiste && !dadosAntigos) {
             const novo = { ...antigo, ...metricas };
             if (!objetosIguais(antigo, novo)) {
               await saveSecureDoc(db, desempenhoPath, dataReferencia, limparUndefined(novo), pass);
+            }
+            if (metricas.precoAtual !== undefined || metricas.estoqueVendedor !== undefined) {
+              const variantesPath = `uid/${user.uid}/anuncios/${id}/variantes`;
+              const antigoVar = (await loadSecureDoc(db, variantesPath, varianteId, pass)) || {};
+              const novoVar = { ...antigoVar };
+              if (metricas.precoAtual !== undefined) novoVar.precoAtual = metricas.precoAtual;
+              if (metricas.estoqueVendedor !== undefined) novoVar.estoqueVendedor = metricas.estoqueVendedor;
+              if (!objetosIguais(antigoVar, novoVar)) {
+                await saveSecureDoc(db, variantesPath, varianteId, limparUndefined(novoVar), pass);
+              }
             }
           } else {
             console.warn(`❌ Desempenho ignorado - anúncio ${id} não existe no Firebase.`);
