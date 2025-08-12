@@ -330,7 +330,8 @@ async function iniciarPainel(user) {
   }
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
-  carregarTopSkus(uid, isAdmin),
+    carregarGraficoFaturamento(uid, isAdmin),
+    carregarTopSkus(uid, isAdmin),
     carregarTarefas(uid, isAdmin)
   ]);
   applyBlurStates();
@@ -340,3 +341,69 @@ async function iniciarPainel(user) {
 onAuthStateChanged(auth, user => {
   if (user) iniciarPainel(user);
 });
+
+async function carregarGraficoFaturamento(uid, isAdmin) {
+  const canvas = document.getElementById('chartFaturamentoMeta');
+  if (!canvas || typeof Chart === 'undefined') return;
+  const ctx = canvas.getContext('2d');
+
+  const hoje = new Date();
+  const mesAtual = hoje.toISOString().slice(0,7);
+  let totalLiquido = 0;
+
+  const snap = isAdmin
+    ? await getDocs(collectionGroup(db, 'faturamento'))
+    : await getDocs(collection(db, `uid/${uid}/faturamento`));
+
+  for (const docSnap of snap.docs) {
+    if (docSnap.id !== mesAtual) continue;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
+    const subSnap = await getDocs(subRef);
+    for (const s of subSnap.docs) {
+      let d = s.data();
+      if (d.encrypted) {
+        const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
+        const pass = passFn ? await passFn() : null;
+        let txt;
+        try {
+          txt = await decryptString(d.encrypted, pass || ownerUid);
+        } catch (e) {
+          if (pass) {
+            try {
+              txt = await decryptString(d.encrypted, ownerUid);
+            } catch (err) {}
+          }
+        }
+        if (txt) d = JSON.parse(txt);
+      }
+      totalLiquido += d.valorLiquido || 0;
+    }
+  }
+
+  let meta = 0;
+  if (isAdmin) {
+    const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
+    metasSnap.forEach(m => {
+      if (m.id === mesAtual) meta += Number(m.data().valor || 0);
+    });
+  } else if (uid) {
+    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
+    if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+  }
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Faturado', 'Meta'],
+      datasets: [{
+        data: [totalLiquido, meta],
+        backgroundColor: ['#34D399', '#F87171']
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
