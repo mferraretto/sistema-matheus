@@ -3,6 +3,7 @@ import { getFirestore, collection, getDocs, doc, getDoc, collectionGroup, query,
 import { decryptString } from './crypto.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -348,33 +349,29 @@ onAuthStateChanged(auth, user => {
 });
 
 async function carregarGraficoFaturamento(uid, isAdmin) {
-  const canvas = document.getElementById('chartFaturamentoMeta');
-  if (!canvas || typeof Chart === 'undefined') return;
-  const ctx = canvas.getContext('2d');
-  const filtro = document.getElementById('filtroMesFaturamento');
-  const mesFiltro = filtro?.value || new Date().toISOString().slice(0,7);
+  const canvasLinha = document.getElementById('chartFaturamentoMeta');
+  if (!canvasLinha || typeof Chart === 'undefined') return;
+  const ctxLinha = canvasLinha.getContext('2d');
 
-  const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7);
-  let totalLiquido = 0;
+  const filtro = document.getElementById('filtroMesFaturamento');
+  const mesFiltro = filtro?.value || new Date().toISOString().slice(0, 7);
 
   const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'faturamento'))
     : await getDocs(collection(db, `uid/${uid}/faturamento`));
 
   const dados = [];
+  let totalLiquido = 0;
+
   for (const docSnap of snap.docs) {
-    const [ano, mes, dia] = docSnap.id.split('-');
+    const [ano, mes, dia] = (docSnap.id || '').split('-');
     if (`${ano}-${mes}` !== mesFiltro) continue;
+
     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
     const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
+
     let liquido = 0;
-  for (const docSnap of snap.docs) {
-    if (docSnap.id !== mesAtual) continue;
-    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
-    const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
-    const subSnap = await getDocs(subRef);
     for (const s of subSnap.docs) {
       let d = s.data();
       if (d.encrypted) {
@@ -385,25 +382,24 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
           txt = await decryptString(d.encrypted, pass || ownerUid);
         } catch (e) {
           if (pass) {
-            try {
-              txt = await decryptString(d.encrypted, ownerUid);
-            } catch (err) {}
+            try { txt = await decryptString(d.encrypted, ownerUid); } catch (_) {}
           }
         }
         if (txt) d = JSON.parse(txt);
       }
-      liquido += d.valorLiquido || 0;
+      liquido += Number(d.valorLiquido) || 0;
     }
+
+    totalLiquido += liquido;
     dados.push({ dia, liquido });
   }
 
-  dados.sort((a,b) => a.dia.localeCompare(b.dia));
+  dados.sort((a, b) => a.dia.localeCompare(b.dia));
   const labels = dados.map(d => d.dia);
   const valores = dados.map(d => d.liquido);
 
   if (window.chartFaturamentoMeta) window.chartFaturamentoMeta.destroy();
-
-  window.chartFaturamentoMeta = new Chart(ctx, {
+  window.chartFaturamentoMeta = new Chart(ctxLinha, {
     type: 'line',
     data: {
       labels,
@@ -414,33 +410,41 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
         backgroundColor: 'rgba(52,211,153,0.2)',
         tension: 0.1,
         fill: true
-      totalLiquido += d.valorLiquido || 0;
-    }
-  }
-
-  let meta = 0;
-  if (isAdmin) {
-    const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
-    metasSnap.forEach(m => {
-      if (m.id === mesAtual) meta += Number(m.data().valor || 0);
-    });
-  } else if (uid) {
-    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
-    if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
-  }
-
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['Faturado', 'Meta'],
-      datasets: [{
-        data: [totalLiquido, meta],
-        backgroundColor: ['#34D399', '#F87171']
       }]
     },
-    options: {
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
+    options: { scales: { y: { beginAtZero: true } } }
   });
+
+  // --- Gráfico comparativo (opcional) ---
+  const canvasBar = document.getElementById('chartComparativoMeta');
+  if (canvasBar) {
+    const ctxBar = canvasBar.getContext('2d');
+
+    let meta = 0;
+    if (isAdmin) {
+      const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
+      metasSnap.forEach(m => {
+        if (m.id === mesFiltro) meta += Number(m.data().valor || 0);
+      });
+    } else if (uid) {
+      const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesFiltro));
+      if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+    }
+
+    if (window.chartComparativoMeta) window.chartComparativoMeta.destroy();
+    window.chartComparativoMeta = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: ['Faturado', 'Meta'],
+        datasets: [{
+          data: [totalLiquido, meta],
+          backgroundColor: ['#34D399', '#F87171']
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
 }
