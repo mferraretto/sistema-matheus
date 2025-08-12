@@ -249,7 +249,7 @@ const normalizeKey = (str) =>
       if (skuRef) v.skuReferencia = skuRef;
 
       const nomeLinha = getAlias('nomeProduto');
-      if (nomeLinha && !p.nome) p.nome = nomeLinha;
+      if (nomeLinha && !p.nome) p.nome = nomeLinha.toString().trim();
       // Separar por tipo de planilha
       switch (tipo) {
         case 'desempenho':
@@ -257,7 +257,13 @@ const normalizeKey = (str) =>
           v.idProduto = id;
           v.skuReferencia = (skuRef || v.skuReferencia || p.skuReferencia || '').toString().trim();
           v.skuVariacao = (getAlias('skuVariacao') || v.skuVariacao || '').toString().trim();
-          v.nomeProduto = p.nome ? p.nome.toString().trim() : undefined;
+          const nomePlanilha = nomeLinha ? nomeLinha.toString().trim() : undefined;
+          if (nomePlanilha) {
+            p.nome = p.nome || nomePlanilha;
+            v.nomeProduto = nomePlanilha;
+          } else {
+            v.nomeProduto = p.nome ? p.nome.toString().trim() : undefined;
+          }
           const variacaoNome = getAlias('variacao');
           if (variacaoNome) v.variacao = variacaoNome.toString().trim();
           const categoria = getAlias('categoria');
