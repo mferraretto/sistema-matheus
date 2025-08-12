@@ -84,8 +84,26 @@ function limparUndefined(obj) {
 function parseNumeroBr(valor) {
   if (valor === undefined || valor === null || valor === '') return undefined;
   if (typeof valor === 'number') return valor;
-  const limpo = valor.toString().replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
-  const num = parseFloat(limpo);
+
+  let str = valor.toString().trim();
+  if (!str) return undefined;
+
+  // Detect the last separator to determine decimal symbol
+  const lastComma = str.lastIndexOf(',');
+  const lastDot = str.lastIndexOf('.');
+  let decimalSeparator = '';
+  if (lastComma > lastDot) decimalSeparator = ',';
+  else if (lastDot > lastComma) decimalSeparator = '.';
+
+  // Remove thousands separators and normalize decimal separator to '.'
+  if (decimalSeparator === ',') {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (decimalSeparator === '.') {
+    str = str.replace(/,/g, '');
+  }
+
+  str = str.replace(/[^\d.-]/g, '');
+  const num = parseFloat(str);
   return isNaN(num) ? undefined : num;
 }
 
@@ -178,12 +196,12 @@ const normalizeKey = (str) =>
       const getAlias = (campo) => get(...(COL_ALIASES[campo] || []));
 
       let id = getAlias('idProduto');
-      if (tipo !== 'frete' && !id) id = ultimoId;
+      if (!id) id = ultimoId;
       const skuRef = getAlias('skuReferencia');
       let varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
-      if (tipo !== 'frete' && !varianteId) varianteId = ultimaVariacao;
+      if (!varianteId) varianteId = ultimaVariacao;
 
-      if (!id && skuRef && tipo !== 'frete') {
+      if (!id && skuRef) {
         const skuNorm = String(skuRef).trim();
         id = Object.keys(window.produtos).find((pid) => {
           const prod = window.produtos[pid];
@@ -213,7 +231,7 @@ const normalizeKey = (str) =>
         continue;
       }
       id = String(id).trim();
-      if (tipo !== 'frete' && id !== ultimoId) {
+      if (id !== ultimoId) {
         ultimoId = id;
         ultimaVariacao = null;
       }
@@ -226,7 +244,7 @@ const normalizeKey = (str) =>
         varianteId = 'unico_' + id;
       }
       varianteId = String(varianteId).trim();
-      if (tipo !== 'frete') ultimaVariacao = varianteId;
+      ultimaVariacao = varianteId;
 
       // Criar estrutura do produto pai
       if (!window.produtos[id]) {
@@ -354,11 +372,21 @@ const normalizeKey = (str) =>
 
         case 'frete':
           p.skuReferencia = p.skuReferencia || skuRef;
-          p.peso = parseNumeroBr(get('Peso (kg)', 'Peso do Produto/kg'));
-          p.comprimento = parseNumeroBr(get('Comprimento (cm)', 'Comprimento'));
-          p.largura = parseNumeroBr(get('Largura (cm)', 'Largura'));
-          p.altura = parseNumeroBr(get('Altura (cm)', 'Altura'));
-          p.taxaFrete = parseNumeroBr(get('Taxa de frete (R$)', 'Taxa de frete'));
+          p.peso = parseNumeroBr(
+            get('Peso (kg)', 'Peso do Produto/kg')
+          );
+          p.comprimento = parseNumeroBr(
+            get('Comprimento (cm)', 'Comprimento')
+          );
+          p.largura = parseNumeroBr(
+            get('Largura (cm)', 'Largura')
+          );
+          p.altura = parseNumeroBr(
+            get('Altura (cm)', 'Altura')
+          );
+          p.taxaFrete = parseNumeroBr(
+            get('Taxa de frete (R$)', 'Taxa de frete', 'taxaFrete (R$)', 'taxaFrete')
+          );
           break;
 
 
