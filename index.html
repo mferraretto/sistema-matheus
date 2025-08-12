@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 </head>
 <body>
@@ -63,7 +64,24 @@
           <div class="card-body" id="topSkus"></div>
         </div>
         
- </div>
+      </div>
+      <!-- Gráfico de Faturamento x Meta -->
+      <div class="card mb-6" id="faturamentoMetaCard">
+        <div class="card-header">
+          <div class="card-header-icon">
+            <i class="fas fa-chart-bar text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Faturamento x Meta</h2>
+          </div>
+          <div class="ml-auto">
+            <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
+          </div>
+        </div>
+        <div class="card-body">
+          <canvas id="chartFaturamentoMeta" height="200"></canvas>
+        </div>
+      </div>
 
         <div class="card mb-6" id="tarefasCard">
           <div class="card-header">
