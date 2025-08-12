@@ -335,6 +335,15 @@ const normalizeKey = (str) =>
           v.estoque = v.estoqueVendedor; // compatibilidade
           v.idProduto = id;
           v.gtin = get('GTIN (EAN)', 'gtin', 'Código EAN');
+
+          if (varianteId.startsWith('unico_')) {
+            p.sku = v.sku;
+            p.preco = v.preco;
+            p.estoqueVendedor = v.estoqueVendedor;
+            p.gtin = v.gtin;
+          } else {
+            delete p.variantes['unico_' + id];
+          }
           break;
 
         case 'basica':
