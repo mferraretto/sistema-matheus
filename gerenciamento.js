@@ -190,12 +190,28 @@ const normalizeKey = (str) =>
       );
 
       // Criar estrutura do produto pai
-     if (!window.produtos[id])
+      if (!window.produtos[id]) {
+        // Apenas a planilha de informações básicas pode cadastrar novos anúncios
+        if (tipo !== 'basica') {
+          try {
+            const docRef = doc(db, `uid/${uid}/anuncios`, id);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
+              showNotification(`Anúncio ${id} não cadastrado. Use a planilha de Informações Básicas para cadastrá-lo.`, 'warning');
+              continue;
+            }
+          } catch (err) {
+            console.error(`Erro ao verificar anúncio ${id}:`, err);
+            continue;
+          }
+        }
+
         window.produtos[id] = {
           id,
           uid,
           variantes: {}
         };
+      }
 
       const p = window.produtos[id];
       if (skuRef) p.skuReferencia = skuRef;
