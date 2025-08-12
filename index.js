@@ -330,9 +330,15 @@ async function iniciarPainel(user) {
   }
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
-  carregarTopSkus(uid, isAdmin),
+    carregarGraficoFaturamento(uid, isAdmin),
+    carregarTopSkus(uid, isAdmin),
     carregarTarefas(uid, isAdmin)
   ]);
+  const filtroMes = document.getElementById('filtroMesFaturamento');
+  if (filtroMes) {
+    filtroMes.value = new Date().toISOString().slice(0,7);
+    filtroMes.addEventListener('change', () => carregarGraficoFaturamento(uid, isAdmin));
+  }
   applyBlurStates();
   maybeStartTour();
 }
@@ -340,3 +346,70 @@ async function iniciarPainel(user) {
 onAuthStateChanged(auth, user => {
   if (user) iniciarPainel(user);
 });
+
+async function carregarGraficoFaturamento(uid, isAdmin) {
+  const canvas = document.getElementById('chartFaturamentoMeta');
+  if (!canvas || typeof Chart === 'undefined') return;
+  const ctx = canvas.getContext('2d');
+  const filtro = document.getElementById('filtroMesFaturamento');
+  const mesFiltro = filtro?.value || new Date().toISOString().slice(0,7);
+
+  const snap = isAdmin
+    ? await getDocs(collectionGroup(db, 'faturamento'))
+    : await getDocs(collection(db, `uid/${uid}/faturamento`));
+
+  const dados = [];
+  for (const docSnap of snap.docs) {
+    const [ano, mes, dia] = docSnap.id.split('-');
+    if (`${ano}-${mes}` !== mesFiltro) continue;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
+    const subSnap = await getDocs(subRef);
+    let liquido = 0;
+    for (const s of subSnap.docs) {
+      let d = s.data();
+      if (d.encrypted) {
+        const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
+        const pass = passFn ? await passFn() : null;
+        let txt;
+        try {
+          txt = await decryptString(d.encrypted, pass || ownerUid);
+        } catch (e) {
+          if (pass) {
+            try {
+              txt = await decryptString(d.encrypted, ownerUid);
+            } catch (err) {}
+          }
+        }
+        if (txt) d = JSON.parse(txt);
+      }
+      liquido += d.valorLiquido || 0;
+    }
+    dados.push({ dia, liquido });
+  }
+
+  dados.sort((a,b) => a.dia.localeCompare(b.dia));
+  const labels = dados.map(d => d.dia);
+  const valores = dados.map(d => d.liquido);
+
+  if (window.chartFaturamentoMeta) window.chartFaturamentoMeta.destroy();
+
+  window.chartFaturamentoMeta = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Líquido',
+        data: valores,
+        borderColor: '#34D399',
+        backgroundColor: 'rgba(52,211,153,0.2)',
+        tension: 0.1,
+        fill: true
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
