@@ -161,6 +161,8 @@ const COL_ALIASES = {
     }
 const normalizeKey = (str) =>
       str.toString().toLowerCase().normalize('NFD').replace(/[^\w]/g, '');
+    let ultimoId = null;
+    let ultimaVariacao = null;
     for (const linha of dados) {
       const map = {};
       for (const [k, v] of Object.entries(linha)) {
@@ -175,9 +177,9 @@ const normalizeKey = (str) =>
       };
       const getAlias = (campo) => get(...(COL_ALIASES[campo] || []));
 
-      let id = getAlias('idProduto');
+      let id = getAlias('idProduto') || ultimoId;
       const skuRef = getAlias('skuReferencia');
-      let varianteId = getAlias('idVariacao') || getAlias('skuVariacao');
+      let varianteId = getAlias('idVariacao') || getAlias('skuVariacao') || ultimaVariacao;
 
       if (!id && skuRef) {
         const skuNorm = String(skuRef).trim();
@@ -204,9 +206,12 @@ const normalizeKey = (str) =>
           }
         }
       }
-
       if (!id) continue;
       id = String(id).trim();
+      if (id !== ultimoId) {
+        ultimoId = id;
+        ultimaVariacao = null;
+      }
 
       if (!varianteId) {
         if (tipo === 'desempenho') {
@@ -216,6 +221,7 @@ const normalizeKey = (str) =>
         varianteId = 'unico_' + id;
       }
       varianteId = String(varianteId).trim();
+      ultimaVariacao = varianteId;
 
       // Criar estrutura do produto pai
       if (!window.produtos[id]) {
