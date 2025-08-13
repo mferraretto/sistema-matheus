@@ -67,8 +67,13 @@
         div.className = 'p-4 bg-white rounded shadow' + (attention ? ' border-2 border-red-500' : '');
         const name = data.name || 'PDF';
         const url = data.url;
+        const owner = data.ownerEmail || 'Desconhecido';
+        const createdAt = data.createdAt && data.createdAt.toDate
+          ? data.createdAt.toDate().toLocaleString('pt-BR')
+          : 'Data desconhecida';
         div.innerHTML = `
           <p class="font-semibold">${name}</p>
+          <p class="text-sm text-gray-600">Criado por: ${owner} em ${createdAt}</p>
           <div class="mt-2 space-x-2">
             <button class="btn btn-primary" onclick="visualizar('${url}')">Visualizar</button>
             <button class="btn btn-primary" onclick="imprimir('${url}')">Imprimir</button>
