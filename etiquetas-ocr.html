@@ -134,6 +134,7 @@
     let currentUser = null;
     firebase.auth().onAuthStateChanged(u => currentUser = u);
 
+    
     function showMessage(text) {
       const messageBox = document.getElementById("messageBox");
       const messageText = document.getElementById("messageText");
@@ -309,7 +310,7 @@ completoCtx.drawImage(
   const pdfFinal = await novoPdf.save();
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
   if (currentUser) {
-    const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+ const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
     const fileRef = storage
       .ref()
       .child(`etiquetas/${currentUser.uid}/${fileName}`);
