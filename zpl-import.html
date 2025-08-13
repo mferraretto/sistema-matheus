@@ -119,6 +119,24 @@
             await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
         }
 
+        async function savePrintedSkuQuantities(items) {
+            if (!currentUser || !items || items.length === 0) return;
+            const dateKey = new Date().toISOString().split('T')[0];
+            const collectionName = `etiquetasImpressas_${dateKey}`;
+            const batch = db.batch();
+            items.forEach(item => {
+                const docRef = db.collection(collectionName).doc();
+                batch.set(docRef, {
+                    sku: item.sku,
+                    quantidade: item.quantidade,
+                    userUid: currentUser.uid,
+                    userEmail: currentUser.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            await batch.commit();
+        }
+
         const fileInput = document.getElementById('zplFile');
         const converterButton = document.getElementById('converterButton');
         const progressContainer = document.getElementById('progress-container');
@@ -172,12 +190,13 @@
                 const dpmm = 8; 
                 const originalWidthIn = 4.0; 
                 const originalHeightIn = 5.2; 
-                const { PDFDocument } = PDFLib; 
-                const pdfDoc = await PDFDocument.create(); 
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.create();
                 const totalLabels = blocks.length / 2;
+                const allExtractedItems = [];
 
                 // Loop to process each pair of ZPL blocks
-                for (let i = 0; i < blocks.length; i += 2) { 
+                for (let i = 0; i < blocks.length; i += 2) {
                     const currentLabelIndex = (i / 2) + 1;
                     progressStatus.textContent = `A processar etiqueta ${currentLabelIndex} de ${totalLabels}...`;
                     progressBar.style.width = `${(currentLabelIndex / totalLabels) * 100}%`;
@@ -190,7 +209,8 @@
                     const checklistBase64 = await blobToBase64(checklistImageBlob); 
 
                     // 2. Use Gemini API to extract SKU and quantity
-                    const extractedData = await extractDataFromImage(checklistBase64); 
+                    const extractedData = await extractDataFromImage(checklistBase64);
+                    allExtractedItems.push(...extractedData);
 
                     if (!extractedData || extractedData.length === 0) { 
                         throw new Error(`Não foi possível extrair dados de SKU e quantidade da imagem do checklist da etiqueta ${currentLabelIndex}.`); 
@@ -229,6 +249,7 @@
                 pdfLinksDiv.appendChild(link);
 
                 await savePdf(pdfBlob, fileName);
+                await savePrintedSkuQuantities(allExtractedItems);
                 
                 // 8. Display the preview of the first label
                 const firstLabelImageBlob = await generateImageFromZpl(generateCombinedZPL(blocks[0], await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))), dpmm, originalWidthIn, calculateNewTotalHeight(originalHeightIn, (await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))).length, dpmm)); 
