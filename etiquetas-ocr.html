@@ -12,10 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script type="module">
-  import { firebaseConfig } from './firebase-config.js'; /* usa o ESM do seu arquivo */
-  window.firebaseConfig = firebaseConfig;                /* expõe para o script não-módulo abaixo */
-</script>  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -40,8 +37,6 @@
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-weight: 500;
-      font-size: 1rem;
     }
     /* Card Glassmorphism */
     .glass-card {
@@ -100,7 +95,7 @@
       <div class="mb-4">
         <label for="pdfInput" class="block text-lg font-medium mb-2 text-gray-700">
           <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
-        </label>
+             </label>
         <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
       </div>
       <button class="btn-main w-full" onclick="processar()">
@@ -125,31 +120,35 @@
       </div>
     </div>
   </div>
-    <script>
+    <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-if (!firebase.apps.length) { firebase.initializeApp(window.firebaseConfig); }
-const db = firebase.firestore();
-let currentUser = null;
-firebase.auth().onAuthStateChanged(u => currentUser = u);
+ if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    let currentUser = null;
+    firebase.auth().onAuthStateChanged(u => currentUser = u);
 
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
 
-function showMessage(text) {
-  const messageBox = document.getElementById("messageBox");
-  const messageText = document.getElementById("messageText");
-  messageText.textContent = text;
-  messageBox.style.display = "block";
-}
+    function showMessage(text) {
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("messageText");
+      messageText.textContent = text;
+      messageBox.style.display = "block";
+    }
 
-async function processar() {
+    async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
   const progressText = document.getElementById("progressText");
@@ -331,9 +330,10 @@ completoCtx.drawImage(
   a.click();
 
   status.textContent = "✅ PDF gerado com sucesso!";
-}
-  </script>
+    }
 
+    window.processar = processar;
+    </script>
 
   <script src="shared.js"></script>
 </body>
