@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
   <!-- Bibliotecas JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -21,6 +22,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
       <script type="module" src="firebase-config.js"></script>
 
 
@@ -233,7 +235,37 @@
           document.querySelector('.sidebar')?.classList.toggle('active');
         });
       }
+      const tourBtn = document.getElementById('startTourBtn');
+      if (tourBtn) {
+        tourBtn.classList.remove('hidden');
+        tourBtn.addEventListener('click', () => startSobrasTour(true));
+      }
     });
+
+    async function startSobrasTour(force = false) {
+      if (typeof introJs === 'undefined') return;
+      if (!force && localStorage.getItem('sobrasTourSeen') === 'true') return;
+      await tabsLoaded;
+      const intro = introJs();
+      intro.setOptions({
+        steps: [
+          { intro: 'Nesta aba você confere a sobra dos seus pedidos da Shopee. Primeiro, precifique seus produtos na aba de precificação com o mesmo SKU cadastrado na Shopee. Depois exporte a planilha de vendas da Shopee e importe aqui para conferir.' },
+          { element: '#inputExcel', intro: 'Selecione a planilha de vendas exportada da Shopee.' },
+          { element: '#btnProcessar', intro: 'Processa a planilha para calcular as sobras.' },
+          { element: '#filtroSKU', intro: 'Use os filtros para buscar SKUs e status específicos.' },
+          { element: '#resultado', intro: 'Veja aqui os resultados da conferência de sobras.' },
+          { element: '#controleLogistico', intro: 'Acompanhe o status logístico de cada pedido.' }
+        ],
+        nextLabel: 'Próximo',
+        prevLabel: 'Anterior',
+        skipLabel: 'Pular',
+        doneLabel: 'Finalizar'
+      }).oncomplete(() => localStorage.setItem('sobrasTourSeen', 'true'))
+        .onexit(() => localStorage.setItem('sobrasTourSeen', 'true'))
+        .start();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => startSobrasTour(false));
 
     // =============================================
     // FUNÇÕES DE GERENCIAMENTO DE CONEXÃO
