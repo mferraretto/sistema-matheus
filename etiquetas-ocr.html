@@ -133,8 +133,18 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
     let currentUser = null;
-    firebase.auth().onAuthStateChanged(u => currentUser = u);
-
+firebase.auth().onAuthStateChanged(async u => {
+      currentUser = u;
+      if (!u) return;
+      try {
+        const doc = await db.collection('uid').doc(u.uid).get();
+        const data = doc.data() || {};
+        const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
+        document.getElementById('gestoresEmails').value = Array.isArray(emails) ? emails.join(', ') : emails;
+      } catch (err) {
+        console.error('Erro ao carregar gestor de expedição:', err);
+      }
+    });
     
     function showMessage(text) {
       const messageBox = document.getElementById("messageBox");
