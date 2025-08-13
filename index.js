@@ -152,13 +152,21 @@ async function carregarTopSkus(uid, isAdmin) {
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7);
   const mapa = {};
-const snap = isAdmin
+  const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'skusVendidos'))
     : await getDocs(collection(db, `uid/${uid}/skusVendidos`));
   for (const docSnap of snap.docs) {
     const [ano, mes] = docSnap.id.split('-');
     if (`${ano}-${mes}` !== mesAtual) continue;
-     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    let ownerUid = uid;
+    if (isAdmin) {
+      const parentDoc = docSnap.ref.parent.parent;
+      if (!parentDoc) {
+        console.warn('Documento sem pai para skusVendidos:', docSnap.ref.path);
+        continue;
+      }
+      ownerUid = parentDoc.id;
+    }
     const listaRef = collection(db, `uid/${ownerUid}/skusVendidos/${docSnap.id}/lista`);
     const listaSnap = await getDocs(listaRef);
     listaSnap.forEach(s => {
