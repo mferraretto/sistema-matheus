@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script type="module" src="firebase-config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap'); 
@@ -75,6 +76,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
+        const storage = firebase.storage();
         let currentUser = null;
         firebase.auth().onAuthStateChanged(u => currentUser = u);
 
@@ -89,10 +91,13 @@
 
         async function savePdf(blob, name) {
             if (!currentUser) return;
-            const base64 = await blobToBase64(blob);
+            const fileRef = storage.ref().child(`etiquetas/${currentUser.uid}/${name}`);
+            await fileRef.put(blob);
+            const url = await fileRef.getDownloadURL();
             await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
                 name: name,
-                pdf: base64,
+                url: url,
+                path: fileRef.fullPath,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
