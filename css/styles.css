@@ -1,11 +1,12 @@
 
 :root {
-  --primary: #F45C00;
-  --primary-hover: #e05500;
-  --primary-dark: #c94e00;
-  --primary-light: #ff7e33;
-  --brand: #F45C00;
-  --hover: #f27422;
+  /* Adjusted primary palette for a softer orange tone */
+  --primary: #f97316;
+  --primary-hover: #fb923c;
+  --primary-dark: #c2410c;
+  --primary-light: #fde68a;
+  --brand: #f97316;
+  --hover: #fb923c;
   --dark: #1C2B36;
   --secondary: #273746;
   --success: #4CAF50;
@@ -75,8 +76,8 @@ transition: .3s;
   align-items: center;
  justify-content: center;
   margin-right: 15px;
-  background-color: rgba(244,92,0,.1);
-  color: var(--primary)
+  background-color: rgba(249,115,22,0.1); /* subtle highlight */
+  color: var(--primary);
 }
 
 .card-body {
