@@ -25,6 +25,8 @@
         <form id="userForm" class="space-y-4">
           <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
           <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
+          <input type="email" id="email" placeholder="E-mail do Usuário" class="w-full p-2 border rounded">
+          <input type="email" id="emailExpedicao" placeholder="E-mail Responsável Expedição" class="w-full p-2 border rounded">
       <select id="perfil" class="w-full p-2 border rounded">
         <option value="Cliente">Cliente</option>
         <option value="ADM">ADM</option>
@@ -77,13 +79,17 @@ if (!firebase.apps.length) {
       e.preventDefault();
       const uid = document.getElementById("uid").value.trim();
       const nome = document.getElementById("nome").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const emailExpedicao = document.getElementById("emailExpedicao").value.trim();
       const perfil = document.getElementById("perfil").value;
 
-      if (uid && nome) {
+      if (uid && nome && email) {
 const { encryptString } = await import('./crypto.js');
         const pass = getPassphrase() || `chave-${uid}`;
         await db.collection('uid').doc(uid).set({
           uid,
+          email,
+          responsavelExpedicaoEmail: emailExpedicao || null,
           encrypted: await encryptString(JSON.stringify({ nome, perfil }), pass)
         });
         alert("Usuário salvo com sucesso!");
@@ -100,9 +106,12 @@ const { encryptString } = await import('./crypto.js');
         if (!enc) continue;
         const pass = getPassphrase() || `chave-${doc.id}`;
         const data = JSON.parse(await decryptString(enc, pass));
+        const info = doc.data();
+        const resp = info.responsavelExpedicaoEmail || 'N/A';
+        const email = info.email || 'N/A';
         const item = document.createElement("li");
         item.className = "p-2 bg-gray-50 border rounded";
-        item.innerText = `UID: ${doc.id} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+        item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
         lista.appendChild(item);
     }
     }
