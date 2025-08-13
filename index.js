@@ -44,7 +44,7 @@ applyBlurStates();
 function startTour(force = false) {
   if (typeof introJs === 'undefined') return;
   if (!force && localStorage.getItem('tourSeen') === 'true') return;
-    const intro = introJs.tour();
+  const intro = introJs();
   intro.setOptions({
     steps: [
       { intro: 'Bem-vindo ao VendedorPro! Este tour apresenta os principais recursos da tela.' },
