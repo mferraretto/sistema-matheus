@@ -30,15 +30,18 @@ export async function exportarSkuImpressos() {
     where('createdAt', '<', Timestamp.fromDate(fim))
   );
   const snap = await getDocs(q);
-  const agregados = {};
+  const linhas = [];
   snap.forEach(doc => {
     const dados = doc.data();
     const sku = dados.sku || 'sem-sku';
-    const qtd = dados.quantidade || 0;
-    agregados[sku] = (agregados[sku] || 0) + qtd;
+      const quantidade = dados.quantidade || 0;
+    const loja = dados.loja || '';
+    const data = dados.createdAt && dados.createdAt.toDate
+      ? dados.createdAt.toDate().toLocaleDateString('pt-BR')
+      : '';
+    linhas.push({ SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
   });
 
-  const linhas = Object.entries(agregados).map(([sku, quantidade]) => ({ SKU: sku, Quantidade: quantidade }));
   if (!linhas.length) {
     alert('Nenhum dado encontrado para o mês selecionado.');
     return;
