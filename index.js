@@ -347,28 +347,39 @@ li.classList.add('completed');
 async function iniciarPainel(user) {
   const uid = user?.uid;
   let isAdmin = false;
+
   if (uid) {
     try {
-      const snap = await getDoc(doc(db, 'uid', uid));
-      const perfil = String(snap.data().perfil || '').toLowerCase();
-      isAdmin = snap.exists() && (perfil === 'adm' || perfil === 'admin');
-    } catch (e) { console.error(e); }
+      const snap = await getDoc(doc(db, 'usuarios', uid)); // <- aqui era 'uid'
+      if (snap.exists()) {
+        const perfil = String(snap.data().perfil || '').toLowerCase();
+        isAdmin = (perfil === 'adm' || perfil === 'admin');
+      } else {
+        console.warn(`Documento de usuário ${uid} não encontrado em 'usuarios'`);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar perfil do usuário:', e);
+    }
   }
+
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
     carregarGraficoFaturamento(uid, isAdmin),
     carregarTopSkus(uid, isAdmin),
     carregarTarefas(uid, isAdmin)
   ]);
+
   const filtroMes = document.getElementById('filtroMesFaturamento');
   if (filtroMes) {
     filtroMes.value = new Date().toISOString().slice(0,7);
-    filtroMes.addEventListener('change', () => carregarGraficoFaturamento(uid, isAdmin));
+    filtroMes.addEventListener('change', () =>
+      carregarGraficoFaturamento(uid, isAdmin)
+    );
   }
+
   applyBlurStates();
   maybeStartTour();
 }
-
 onAuthStateChanged(auth, user => {
   if (user) iniciarPainel(user);
 });
