@@ -17,7 +17,7 @@
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
-    <div class="mb-4">
+     <div class="mb-4">
       <label for="statusFilter" class="mr-2">Filtrar por situação:</label>
       <select id="statusFilter" class="border p-1">
         <option value="all">Todas</option>
@@ -78,15 +78,25 @@
             <button class="btn btn-primary" onclick="visualizar('${url}')">Visualizar</button>
             <button class="btn btn-primary" onclick="imprimir('${url}')">Imprimir</button>
             <a class="btn btn-primary" href="${url}" download="${name}">Baixar</a>
-          </div>
+         </div>
           <div class="mt-2 space-y-2">
-            <label class="flex items-center">
-              <input type="checkbox" class="mr-2" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
-              Impresso
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
+              <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-blue-500 peer-checked:border-blue-500">
+                <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+              <span>Impresso</span>
             </label>
-            <label class="flex items-center">
-              <input type="checkbox" class="mr-2" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked)">
-              Atenção problema
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked)">
+              <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-red-500 peer-checked:border-red-500">
+                <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+              <span>Atenção problema</span>
             </label>
             <textarea class="border p-1 w-full" placeholder="Observação" onblur="salvarObservacao('${doc.id}', this.value)">${observacao}</textarea>
             <button class="btn btn-secondary" onclick="marcarConcluido('${doc.id}')">Concluir</button>
@@ -112,8 +122,7 @@
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
     window.imprimir = imprimir;
-
-    async function toggleImpresso(id, checked) {
+async function toggleImpresso(id, checked) {
       await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
       carregarEtiquetas();
     }
