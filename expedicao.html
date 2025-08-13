@@ -135,6 +135,7 @@
         </div>`;
       return div;
     }
+    window.visualizar = visualizar;
 
     const pdfModal = document.getElementById('pdfModal');
     const pdfFrame = document.getElementById('pdfFrame');
@@ -223,6 +224,7 @@
       setTimeout(() => toast.classList.add('opacity-0'), 2000);
       setTimeout(() => toast.remove(), 2500);
     }
+    window.excluir = excluir;
 
     loadSidebar();
     loadNavbar();
