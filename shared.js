@@ -8,6 +8,18 @@
   if (currentScript && currentScript.src) {
     BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
   }
+
+  function loadTailwind() {
+    return new Promise(function(resolve, reject) {
+      if (document.querySelector('link[href*="tailwind"]')) { resolve(); return; }
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
+      link.onload = resolve;
+      link.onerror = reject;
+      document.head.appendChild(link);
+    });
+  }
   
   // Toggle submenu visibility with smooth slide animation
   window.toggleMenu = function(menuId) {
@@ -156,10 +168,12 @@
   };
 
 document.addEventListener('DOMContentLoaded', function () {
-  window.loadSidebar().then(function () {
-    window.initDarkMode();
+  loadTailwind().then(function () {
+    window.loadSidebar().then(function () {
+      window.initDarkMode();
+    });
+    window.loadNavbar();
   });
-  window.loadNavbar();
 
   // ✅ Só carrega os modais de login se estiver na index.html
   const pathname = window.location.pathname.toLowerCase();

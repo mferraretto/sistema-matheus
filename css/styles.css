@@ -25,7 +25,7 @@
   --text-light: #6B7280;
   --transition: all 0.3s ease;
   --navbar-height: 70px;
-  --sidebar-width: 250px
+  --sidebar-width: 16rem
 }
     
   
@@ -33,7 +33,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  left: 250px;
+  left: var(--sidebar-width);
   height: 70px;
   background-color: #1c2b36;
   box-shadow: 0 2px 10px rgba(0,0,0,.05);
@@ -49,7 +49,7 @@ transition: .3s;
 
 .content-wrapper {
   flex: 1;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width);
   margin-top: 70px;
   padding: 30px
 }
@@ -397,7 +397,7 @@ body.dark .sidebar-link:hover {
 }
 
 .navbar {
-  left: 250px;
+  left: var(--sidebar-width);
   display: flex;
   align-items: center;
   justify-content: flex-end
@@ -639,7 +639,7 @@ tr:hover {
     overflow-y: auto;
     overflow-x: hidden;
     background-color: #1c2b36;
-    width: 250px;
+    width: var(--sidebar-width);
     min-height: 100vh;
     color: #fff;
     position: fixed;
@@ -744,7 +744,7 @@ tr:hover {
   }
   .main-content {
     flex: 1;
-    margin-left: 250px;
+    margin-left: var(--sidebar-width);
     padding-top: 90px;
     padding-bottom: 40px
   }
