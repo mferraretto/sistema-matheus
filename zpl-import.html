@@ -131,18 +131,21 @@ firebase.auth().onAuthStateChanged(async u => {
 
         async function savePrintedSkuQuantities(items) {
             if (!currentUser || !items || items.length === 0) return;
-            const dateKey = new Date().toISOString().split('T')[0];
-            const collectionName = `etiquetasImpressas_${dateKey}`;
             const batch = db.batch();
+            const userDoc = db.collection('uid').doc(currentUser.uid);
+            const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
             items.forEach(item => {
-                const docRef = db.collection(collectionName).doc();
-                batch.set(docRef, {
+            const data = {
                     sku: item.sku,
                     quantidade: item.quantidade,
                     userUid: currentUser.uid,
                     userEmail: currentUser.email,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                batch.set(userDoc.collection('skuimpressos').doc(), data);
+                if (respDoc) {
+                    batch.set(respDoc.collection('skuimpressos').doc(), data);
+                }
             });
             await batch.commit();
         }
