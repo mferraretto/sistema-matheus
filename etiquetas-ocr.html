@@ -133,6 +133,7 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
     let currentUser = null;
+    let responsavelExpedicaoUid = null;
 firebase.auth().onAuthStateChanged(async u => {
       currentUser = u;
       if (!u) return;
@@ -141,6 +142,11 @@ firebase.auth().onAuthStateChanged(async u => {
         const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         document.getElementById('gestoresEmails').value = Array.isArray(emails) ? emails.join(', ') : emails;
+        const respEmail = Array.isArray(data.gestoresExpedicaoEmails) ? data.gestoresExpedicaoEmails[0] : data.responsavelExpedicaoEmail;
+        if (respEmail) {
+          const snap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
+          if (!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+        }
       } catch (err) {
         console.error('Erro ao carregar gestor de expedição:', err);
       }
@@ -153,6 +159,47 @@ firebase.auth().onAuthStateChanged(async u => {
       messageBox.style.display = "block";
     }
 
+    async function extractSkuQuantitiesFromCanvas(canvas) {
+      const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+      const items = [];
+      const regex = /SKU\s*[:\-]?\s*([\w\.\-\/]+).*?(?:QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/gis;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        items.push({ sku: match[1], quantidade: parseInt(match[2], 10) || 0 });
+      }
+      if (items.length === 0) {
+        const lines = text.split(/\n/).map(l => l.trim());
+        for (let i = 0; i < lines.length; i++) {
+          const skuMatch = lines[i].match(/SKU\s*[:\-]?\s*([\w\.\-\/]+)/i);
+          if (skuMatch) {
+            const next = lines[i + 1] || '';
+            const qtdMatch = next.match(/(QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/i);
+            items.push({ sku: skuMatch[1], quantidade: qtdMatch ? parseInt(qtdMatch[2], 10) || 0 : 0 });
+          }
+        }
+      }
+      return items;
+    }
+
+    async function savePrintedSkuQuantities(items) {
+      if (!currentUser || !items || items.length === 0) return;
+      const batch = db.batch();
+      const userDoc = db.collection('uid').doc(currentUser.uid);
+      const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
+      items.forEach(item => {
+        const data = {
+          sku: item.sku,
+          quantidade: item.quantidade,
+          userUid: currentUser.uid,
+          userEmail: currentUser.email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        batch.set(userDoc.collection('skuimpressos').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+      });
+      await batch.commit();
+    }
+
     async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
@@ -163,6 +210,7 @@ firebase.auth().onAuthStateChanged(async u => {
 
   const status = document.getElementById("status");
   const pdfFile = document.getElementById("pdfInput").files[0];
+  const allExtractedItems = [];
   if (!pdfFile) {
     progressBar.style.display = "none";
     return showMessage("Envie o arquivo PDF.");
@@ -241,6 +289,9 @@ chkCtx.drawImage(
   0, 0,                                                 // destino no chkCanvas
   chkCanvas.width, chkCanvas.height                     // destino (maior)
 );
+
+      const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas);
+      allExtractedItems.push(...extracted);
 
 
       
@@ -349,6 +400,7 @@ completoCtx.drawImage(
       .collection('etiquetaenvio')
       .add({ ...record });
   }
+  await savePrintedSkuQuantities(allExtractedItems);
   const localUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = localUrl;
