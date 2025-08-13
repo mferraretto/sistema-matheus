@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script type="module" src="firebase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -121,6 +125,20 @@
   </div>
     <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+const db = firebase.firestore();
+let currentUser = null;
+firebase.auth().onAuthStateChanged(u => currentUser = u);
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 function showMessage(text) {
   const messageBox = document.getElementById("messageBox");
@@ -296,6 +314,14 @@ completoCtx.drawImage(
 
   const pdfFinal = await novoPdf.save();
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
+  if (currentUser) {
+    const base64 = await blobToBase64(blob);
+    await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
+      name: `etiquetas_editadas_${Date.now()}.pdf`,
+      pdf: base64,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
