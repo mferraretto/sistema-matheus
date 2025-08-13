@@ -194,8 +194,10 @@ function applyPerfilRestrictions(perfil) {
 
 async function checkExpedicao(user) {
   try {
-    const q = query(collection(db, 'usuarios'), where('responsavelExpedicaoEmail', '==', user.email));
-    const snap = await getDocs(q);
+    let snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelExpedicaoEmail', '==', user.email)));
+    if (snap.empty) {
+      snap = await getDocs(query(collection(db, 'usuarios'), where('gestoresExpedicaoEmails', 'array-contains', user.email)));
+    }
     if (!snap.empty) {
       isExpedicao = true;
       applyExpedicaoSidebar();
