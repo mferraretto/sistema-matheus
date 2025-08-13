@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script type="module" src="firebase-config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap'); 
         body { 
@@ -72,40 +72,40 @@
 </div> 
 
 <script>
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.firestore();
-    let currentUser = null;
-    firebase.auth().onAuthStateChanged(u => currentUser = u);
-
-    function blobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    }
-
-    async function savePdf(blob, name) {
-        if (!currentUser) return;
-        const base64 = await blobToBase64(blob);
-        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
-            name: name,
-            pdf: base64,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        const fileInput = document.getElementById('zplFile'); 
-        const converterButton = document.getElementById('converterButton'); 
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.firestore();
+        let currentUser = null;
+        firebase.auth().onAuthStateChanged(u => currentUser = u);
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function savePdf(blob, name) {
+            if (!currentUser) return;
+            const base64 = await blobToBase64(blob);
+            await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
+                name: name,
+                pdf: base64,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        const fileInput = document.getElementById('zplFile');
+        const converterButton = document.getElementById('converterButton');
         const progressContainer = document.getElementById('progress-container');
         const progressBar = document.getElementById('progress-bar');
         const progressStatus = document.getElementById('progress-status');
-        const errorDiv = document.getElementById('error-message'); 
-        const resultsCard = document.getElementById('results-card'); 
-        const pdfLinksDiv = document.getElementById('pdf-links'); 
-        const previewImage = document.getElementById('preview-image'); 
+        const errorDiv = document.getElementById('error-message');
+        const resultsCard = document.getElementById('results-card');
+        const pdfLinksDiv = document.getElementById('pdf-links');
+        const previewImage = document.getElementById('preview-image');
 
         // Initial state of the user interface
         converterButton.disabled = true; 
@@ -367,27 +367,16 @@
             return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}^XZ`; 
         } 
 
-        function readFileAsync(file) { 
-            return new Promise((resolve, reject) => { 
-                const reader = new FileReader(); 
-                reader.onload = () => { 
-                    resolve(reader.result); 
-                }; 
-                reader.onerror = reject; 
-                reader.readAsText(file); 
-            }); 
-        } 
-        
-        function blobToBase64(blob) { 
-            return new Promise((resolve, reject) => { 
-                const reader = new FileReader(); 
-                reader.onloadend = () => { 
-                    resolve(reader.result.split(',')[1]); 
-                }; 
-                reader.onerror = reject; 
-                reader.readAsDataURL(blob); 
-            }); 
-        } 
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve(reader.result);
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
 
         async function applyBlackContrastFromBlob(imageBlob, { contrast = 40, gamma = 0.9, threshold = 200 } = {}) { 
             return new Promise((resolve, reject) => { 
