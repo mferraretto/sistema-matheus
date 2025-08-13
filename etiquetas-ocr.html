@@ -1,340 +1,352 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Etiquetas Shopee com OCR</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/components.css">
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    /* Barra de progresso customizada */
-    .progress-bar-bg {
-      background: linear-gradient(90deg, #cfd9df 0%, #e2ebf0 100%);
-      border-radius: 9999px;
-      height: 1.5rem;
-      overflow: hidden;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    }
-    .progress-bar-fill {
-      background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
-      height: 100%;
-      border-radius: 9999px 0 0 9999px;
-      transition: width 0.3s cubic-bezier(.4,0,.2,1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-    }
-    /* Card Glassmorphism */
-    .glass-card {
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 4px 32px rgba(72, 187, 255, 0.07);
-      border-radius: 1rem;
-      padding: 2.5rem 2rem 2rem 2rem;
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(200, 230, 255, 0.18);
-      max-width: 520px;
-      margin: 1.5rem auto;
-    }
-    .main-content {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .btn-main {
-      background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
-      color: #fff;
-      font-weight: 500;
-      border-radius: 0.75rem;
-      padding: 0.75rem 2.5rem;
-      margin-top: 1rem;
-      font-size: 1.1rem;
-      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
-      border: none;
-      outline: none;
-      transition: background 0.2s, transform 0.2s;
-    }
-    .btn-main:hover {
-      background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
-      transform: translateY(-2px) scale(1.03);
-    }
-    #status {
-      min-height: 2rem;
-    }
-    @media (max-width: 600px) {
-      .glass-card {
-        padding: 1.5rem 0.6rem 1.5rem 0.6rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiquetas Shopee com OCR</title>
+    <!-- Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Inter para tipografia -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos personalizados */
+        body { font-family: 'Inter', sans-serif; }
+        .main-content { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); box-shadow: 0 4px 32px rgba(72, 187, 255, 0.07); backdrop-filter: blur(8px); border: 1px solid rgba(200, 230, 255, 0.18); }
+        .progress-bar-bg { background: linear-gradient(90deg, #e2ebf0 0%, #cfd9df 100%); box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+        .progress-bar-fill { background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%); transition: width 0.3s cubic-bezier(.4,0,.2,1); }
+        .btn-main { background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%); transition: background 0.2s, transform 0.2s; box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08); }
+        .btn-main:hover { background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%); transform: translateY(-2px) scale(1.03); }
+        .modal { display: none; } /* Oculta a modal por padrão */
+    </style>
+    <!-- Bibliotecas essenciais -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        // Define as variáveis globais do Firebase
+        let db, auth, storage;
+        let userId = null;
+        let isAuthReady = false;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        /**
+         * Inicializa o Firebase e autentica o usuário.
+         */
+        async function initFirebaseAndAuth() {
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing. Data persistence will not be available.");
+                return;
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                storage = getStorage(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Usuário autenticado:", userId);
+                    } else {
+                        userId = null;
+                        console.log("Usuário não autenticado.");
+                    }
+                    isAuthReady = true;
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Erro ao inicializar o Firebase ou autenticar:", error);
+                showModal("Erro", "Não foi possível conectar ao banco de dados. O salvamento de arquivos está desativado.");
+            }
+        }
+        
+        // Exponha as funções globais necessárias
+        window.initFirebaseAndAuth = initFirebaseAndAuth;
+        window.getDb = () => db;
+        window.getAuth = () => auth;
+        window.getUserId = () => userId;
+        window.isAuthReady = () => isAuthReady;
+        window.serverTimestamp = serverTimestamp;
+        window.getAppId = () => appId;
+        window.getStorage = () => storage;
+    </script>
 </head>
 <body class="bg-gradient-to-tr from-cyan-100 via-blue-50 to-cyan-200 text-gray-800 min-h-screen">
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
-  <div class="main-content p-4 w-full">
-    <div class="glass-card shadow-xl">
-      <div class="flex items-center gap-3 mb-4">
-        <span class="text-3xl"><i class="fa-solid fa-barcode"></i></span>
-        <h2 class="text-2xl font-bold text-blue-700 tracking-tight">Editor Visual de Etiquetas Shopee</h2>
-      </div>
-      <div class="mb-4">
-        <label for="pdfInput" class="block text-lg font-medium mb-2 text-gray-700">
-          <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
-             </label>
-        <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
-      </div>
-      <button class="btn-main w-full" onclick="processar()">
-        <i class="fa-solid fa-magic-wand-sparkles mr-2"></i>
-        Processar e Gerar PDF
-      </button>
-      <a href="zpl-import.html" class="btn-main w-full text-center block mt-2">
-        <i class="fa-solid fa-file-code mr-2"></i>
-        Importar via ZPL
-      </a>
-      <div class="mt-6">
-        <div class="progress-bar-bg" id="progressBar" style="display:none;">
-          <div class="progress-bar-fill" id="progressFill" style="width:0%;">
-            <span id="progressText" class="w-full text-center"></span>
-          </div>
-        </div>
-      </div>
-      <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
-      <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
-      <div class="flex justify-center mt-8">
-        <span class="text-xs text-gray-500">Desenvolvido por Matheus Ferraretto &nbsp;·&nbsp; <i class="fa-solid fa-robot"></i></span>
-      </div>
-    </div>
-  </div>
-    <script type="module">
-    import { firebaseConfig } from './firebase-config.js';
-
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
- if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-    let currentUser = null;
-    firebase.auth().onAuthStateChanged(u => currentUser = u);
-
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    function showMessage(text) {
-      const messageBox = document.getElementById("messageBox");
-      const messageText = document.getElementById("messageText");
-      messageText.textContent = text;
-      messageBox.style.display = "block";
-    }
-
-    async function processar() {
-  const progressBar = document.getElementById("progressBar");
-  const progressFill = document.getElementById("progressFill");
-  const progressText = document.getElementById("progressText");
-  progressBar.style.display = "block";
-  progressFill.style.width = "0%";
-  progressText.textContent = "";
-
-  const status = document.getElementById("status");
-  const pdfFile = document.getElementById("pdfInput").files[0];
-  if (!pdfFile) {
-    progressBar.style.display = "none";
-    return showMessage("Envie o arquivo PDF.");
-  }
-
-  status.textContent = "📸 Lendo PDF...";
-  const arrayBuffer = await pdfFile.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const novoPdf = await PDFLib.PDFDocument.create();
-  const canvas = document.getElementById("pdfCanvas");
-  const ctx = canvas.getContext("2d");
-  canvas.style.display = "block";
-
-  for (let i = 0; i < pdf.numPages; i++) {
-    const progress = Math.round((i / pdf.numPages) * 100);
-    progressFill.style.width = progress + "%";
-    progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-
-    const page = await pdf.getPage(i + 1);
-    const scale = 8;
-    const viewport = page.getViewport({ scale });
-
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    const largura = canvas.width;
-    const altura = canvas.height;
-
-    const colWidth = largura / 2;
-    const rowHeight = altura / 1.75;
-
-    const pares = [
-      { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
-      { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
-    ];
-
-    for (const par of pares) {
-      // Ajuste das proporções para garantir que a parte do checklist seja totalmente capturada.
-      // Desta vez, vamos dar mais espaço para o checklist para garantir que nada seja cortado.
-      const proporcaoEtiqueta = 0.88; 
-      const proporcaoChecklist = 0.12; 
-
-      const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
-      const alturaChecklist = rowHeight * proporcaoChecklist;
-      
-      const deslocamentoEtiquetaY = 6;
-      
-      // CORTA A ETIQUETA PRINCIPAL
-      const etCanvas = document.createElement("canvas");
-      etCanvas.width = colWidth;
-      etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
-      const etCtx = etCanvas.getContext("2d");
-      etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y + deslocamentoEtiquetaY, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY, 0, 0, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY);
-      
-      // CORTA A PARTE DO CHECKLIST
-      const chkCanvas = document.createElement("canvas");
-      
-      // Definimos um deslocamento mínimo para evitar a linha de separação, mas não cortar o texto.
-      const deslocamentoY = 60; 
-const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
-      
-     const scaleChecklist = 8; // resolução extra
-chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
-chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
-const chkCtx = chkCanvas.getContext("2d");
-chkCtx.imageSmoothingEnabled = true;
-chkCtx.imageSmoothingQuality = 'high';
-
-// captura em alta resolução
-chkCtx.drawImage(
-  canvas,
-  par.checklist.x, par.checklist.y + deslocamentoY,     // origem (na página)
-  colWidth, novaAlturaChecklist,                        // tamanho a capturar
-  0, 0,                                                 // destino no chkCanvas
-  chkCanvas.width, chkCanvas.height                     // destino (maior)
-);
-
-
-      
+    <div class="main-content p-4 w-full">
+        <div class="glass-card w-full max-w-2xl mx-auto rounded-xl p-8 md:p-12 shadow-xl">
+            <!-- Cabeçalho -->
+            <div class="flex items-center gap-4 mb-6">
+                <span class="text-4xl text-blue-700"><i class="fa-solid fa-barcode"></i></span>
+                <h2 class="text-3xl font-bold text-blue-700 tracking-tight">Editor de Etiquetas Shopee</h2>
+            </div>
             
-     // COMBINA AS DUAS PARTES EM UM ÚNICO CANVAS
-const etiquetaCompletaCanvas = document.createElement("canvas");
-const paddingX = 0; // margem lateral extra (se quiser)
-etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
+            <!-- Campo de upload de PDF -->
+            <div class="mb-6">
+                <label for="pdfInput" class="block text-lg font-medium mb-2 text-gray-700">
+                    <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
+                </label>
+                <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-3" />
+            </div>
+            
+            <!-- Botões de ação -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button class="btn-main w-full" onclick="processar()">
+                    <i class="fa-solid fa-magic-wand-sparkles mr-2"></i> Processar e Gerar PDF
+                </button>
+                <button class="btn-main w-full bg-blue-500" onclick="doOcrOnCanvas()">
+                    <i class="fa-solid fa-spell-check mr-2"></i> Extrair Texto da Etiqueta
+                </button>
+            </div>
 
-const ajusteVerticalChecklist = 12;
-etiquetaCompletaCanvas.height =
-  (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
-  novaAlturaChecklist +
-  ajusteVerticalChecklist;
+            <!-- Barra de progresso -->
+            <div id="progressBar" class="mt-6 progress-bar-bg rounded-full h-4 relative overflow-hidden" style="display:none;">
+                <div id="progressFill" class="progress-bar-fill h-full text-white text-xs font-semibold flex items-center justify-center transition-all duration-300 ease-in-out" style="width:0%;">
+                    <span id="progressText"></span>
+                </div>
+            </div>
+            
+            <!-- Área de status e resultados -->
+            <div class="mt-6 flex flex-col gap-4">
+                <div class="text-blue-700 font-medium min-h-[24px]" id="status"></div>
+                <!-- Área para exibir o resultado do OCR -->
+                <div id="ocrResult" class="hidden bg-gray-100 p-4 rounded-lg shadow-inner">
+                    <h3 class="text-lg font-bold text-gray-700 mb-2">Texto Extraído (OCR)</h3>
+                    <pre class="whitespace-pre-wrap text-sm text-gray-600 font-mono"></pre>
+                </div>
+            </div>
 
-const completoCtx = etiquetaCompletaCanvas.getContext("2d");
-completoCtx.imageSmoothingEnabled = true;
-completoCtx.imageSmoothingQuality = 'high';
+            <!-- Canvas para visualização da etiqueta processada -->
+            <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow-lg" style="display:none; max-width:100%;"></canvas>
+            
+            <!-- Rodapé -->
+            <div class="flex justify-center mt-8">
+                <span class="text-xs text-gray-500">
+                    Desenvolvido com <i class="fa-solid fa-heart text-red-500"></i> &nbsp;·&nbsp;
+                    <a href="https://github.com/matheusferraretto" target="_blank" class="text-blue-500 hover:underline">Matheus Ferraretto</a> &nbsp;·&nbsp;
+                    <i class="fa-solid fa-robot"></i>
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Mensagens -->
+    <div id="messageModal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm transform transition-all duration-300 scale-95">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800"></h3>
+            <p id="modalMessage" class="text-gray-600"></p>
+            <div class="mt-6 flex justify-end">
+                <button onclick="hideModal()" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors">Fechar</button>
+            </div>
+        </div>
+    </div>
 
-// Desenha a etiqueta principal
-completoCtx.drawImage(etCanvas, paddingX, 0);
+    <!-- Script principal da aplicação -->
+    <script type="text/javascript">
+        // Variáveis globais para o estado da aplicação
+        let lastProcessedCanvas = null;
 
-// 👉 POSICIONAMENTO QUE VOCÊ VAI AJUSTAR
-// Horizontal: posX (esquerda/direita)
-// Vertical:   posY (cima/baixo)
-const posX = paddingX -2100; // +valor = direita, -valor = esquerda
-const posY = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + ajusteVerticalChecklist - 0; // +valor = desce, -valor = sobe
+        // Funções para a modal
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('messageModal').style.display = 'flex';
+        }
 
-const zoomChecklist = 2.2; // 2.0 = tamanho atual, 1.5 = 50% maior, 2.0 = 100% maior
+        function hideModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
 
-completoCtx.drawImage(
-  chkCanvas,
-  0, 0, chkCanvas.width, chkCanvas.height, // origem: imagem inteira
-  posX, posY,                               // posição final
-  colWidth * zoomChecklist,                 // largura com zoom
-  novaAlturaChecklist * zoomChecklist       // altura com zoom
-);
+        /**
+         * Função principal para processar o arquivo PDF.
+         * Renderiza cada página em um canvas, e depois gera um novo PDF.
+         */
+        async function processar() {
+            const progressBar = document.getElementById("progressBar");
+            const progressFill = document.getElementById("progressFill");
+            const progressText = document.getElementById("progressText");
+            const status = document.getElementById("status");
+            const pdfFile = document.getElementById("pdfInput").files[0];
 
+            if (!pdfFile) {
+                return showModal("Atenção", "Por favor, selecione um arquivo PDF primeiro.");
+            }
 
-      // Inserção no novo PDF
-      const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-      const imgEmbed = await novoPdf.embedPng(imgBytes);
+            progressBar.style.display = "block";
+            progressFill.style.width = "0%";
+            status.textContent = "Iniciando processamento do PDF...";
 
-      // Usando dimensões de página padrão para uma etiqueta
-      const larguraPagina = 293.46;
-      const alturaPagina = 475.2;
-      
-      // Adicionamos um fator de escala para diminuir a etiqueta de forma proporcional.
-      const scaleFactor = 0.90;
-      const larguraEtiquetaFinal = 277 * scaleFactor; 
-      const alturaEtiquetaFinal = 449 * scaleFactor;
-      
-      const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
-      const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
+            try {
+                // Carrega o PDF original
+                const arrayBuffer = await pdfFile.arrayBuffer();
+                const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const novoPdf = await PDFLib.PDFDocument.create();
+                const canvas = document.getElementById("pdfCanvas");
+                const ctx = canvas.getContext("2d");
 
-      // Ajustado a posição vertical para subir a etiqueta e dar espaço para o checklist.
-      const ajusteVertical = 20; 
-      const yPos = margemY + ajusteVertical;
+                canvas.style.display = "block";
+                status.textContent = "Processando páginas...";
 
-      // Adiciona uma página para cada etiqueta
-      const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+                for (let i = 0; i < pdfDoc.numPages; i++) {
+                    const pageNumber = i + 1;
+                    const progress = Math.round((pageNumber / pdfDoc.numPages) * 100);
+                    progressFill.style.width = progress + "%";
+                    progressText.textContent = `Página ${pageNumber} de ${pdfDoc.numPages}`;
 
-      pag.drawImage(imgEmbed, {
-        x: margemX,
-        y: yPos,
-        width: larguraEtiquetaFinal,
-        height: alturaEtiquetaFinal,
-      });
-    }
-  }
+                    const page = await pdfDoc.getPage(pageNumber);
+                    const scale = 4; // Escala reduzida para melhorar o desempenho
+                    const viewport = page.getViewport({ scale });
 
-  progressFill.style.width = "100%";
-  progressText.textContent = "✅ Concluído!";
-  setTimeout(() => {
-    progressBar.style.display = "none";
-  }, 2000);
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    await page.render({ canvasContext: ctx, viewport }).promise;
+                    
+                    // Converte a página renderizada para uma imagem e a insere no novo PDF
+                    const imgData = canvas.toDataURL("image/png");
+                    const imgBytes = await fetch(imgData).then(res => res.arrayBuffer());
+                    const imgEmbed = await novoPdf.embedPng(imgBytes);
 
-  const pdfFinal = await novoPdf.save();
-  const blob = new Blob([pdfFinal], { type: "application/pdf" });
-  if (currentUser) {
-    const base64 = await blobToBase64(blob);
-    await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
-      name: `etiquetas_editadas_${Date.now()}.pdf`,
-      pdf: base64,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "etiquetas_editadas.pdf";
-  a.click();
+                    const { width, height } = imgEmbed.scale(0.5);
+                    const newPage = novoPdf.addPage();
+                    newPage.drawImage(imgEmbed, { x: 50, y: 50, width, height });
+                }
 
-  status.textContent = "✅ PDF gerado com sucesso!";
-    }
+                progressFill.style.width = "100%";
+                progressText.textContent = "100% Concluído!";
+                status.textContent = "PDF gerado. Salvando e baixando...";
 
-    window.processar = processar;
+                const pdfFinal = await novoPdf.save();
+                const blob = new Blob([pdfFinal], { type: "application/pdf" });
+
+                // Salva no Cloud Storage se o usuário estiver autenticado e o Firebase estiver pronto
+                const userId = window.getUserId();
+                const appId = window.getAppId();
+                if (userId && window.isAuthReady() && window.getDb() && window.getStorage()) {
+                    try {
+                        const db = window.getDb();
+                        const storage = window.getStorage();
+                        const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+                        const storagePath = `artifacts/${appId}/users/${userId}/etiquetas_processadas/${fileName}`;
+                        const storageRef = ref(storage, storagePath);
+                        
+                        // Upload do arquivo para o Cloud Storage
+                        await uploadBytes(storageRef, blob);
+                        const downloadURL = await getDownloadURL(storageRef);
+
+                        // Salva os metadados no Firestore
+                        const docRef = await addDoc(collection(db, `artifacts/${appId}/users/${userId}/etiquetaenvio`), {
+                            name: fileName,
+                            url: downloadURL,
+                            createdAt: window.serverTimestamp()
+                        });
+                        console.log("Documento de metadados salvo com ID:", docRef.id);
+                        console.log("Arquivo de PDF salvo em:", downloadURL);
+
+                    } catch (e) {
+                        console.error("Erro ao salvar no Firebase Storage ou Firestore:", e);
+                        showModal("Erro", "O arquivo foi gerado, mas não pudemos salvá-lo no banco de dados. Tente fazer o download manualmente.");
+                    }
+                } else {
+                    console.warn("Usuário não autenticado ou Firebase não está pronto. O arquivo não será salvo no Cloud Storage ou Firestore.");
+                }
+
+                // Faz o download do arquivo
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "etiquetas_editadas.pdf";
+                a.click();
+                URL.revokeObjectURL(url);
+
+                status.textContent = "✅ PDF gerado e baixado com sucesso!";
+                
+                // Salva o último canvas processado para o OCR
+                lastProcessedCanvas = canvas;
+
+            } catch (error) {
+                console.error("Erro durante o processamento do PDF:", error);
+                status.textContent = "❌ Ocorreu um erro ao processar o PDF.";
+                showModal("Erro", `Não foi possível processar o PDF. Detalhes: ${error.message}`);
+            } finally {
+                setTimeout(() => {
+                    progressBar.style.display = "none";
+                }, 2000);
+            }
+        }
+
+        /**
+         * Realiza o Reconhecimento Óptico de Caracteres (OCR) no último canvas processado.
+         */
+        async function doOcrOnCanvas() {
+            if (!lastProcessedCanvas) {
+                return showModal("Atenção", "Por favor, processe um PDF primeiro para extrair o texto.");
+            }
+
+            const ocrResultDiv = document.getElementById('ocrResult');
+            const ocrResultPre = ocrResultDiv.querySelector('pre');
+            const status = document.getElementById("status");
+
+            ocrResultDiv.classList.add('hidden');
+            ocrResultPre.textContent = '';
+            status.textContent = "Iniciando reconhecimento de texto...";
+
+            try {
+                // Inicializa o Tesseract.js com uma barra de progresso
+                const worker = await Tesseract.createWorker({
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            status.textContent = `Reconhecendo texto... ${progress}%`;
+                        } else {
+                            status.textContent = `Status OCR: ${m.status}`;
+                        }
+                    }
+                });
+
+                // Carrega a língua portuguesa
+                await worker.loadLanguage('por');
+                await worker.initialize('por');
+                
+                // Executa o OCR no canvas
+                const { data: { text } } = await worker.recognize(lastProcessedCanvas);
+                
+                ocrResultDiv.classList.remove('hidden');
+                ocrResultPre.textContent = text;
+                status.textContent = "✅ Reconhecimento de texto concluído!";
+                await worker.terminate();
+
+            } catch (error) {
+                console.error("Erro no OCR:", error);
+                status.textContent = "❌ Ocorreu um erro ao extrair o texto.";
+                showModal("Erro no OCR", `Não foi possível extrair o texto da imagem. Detalhes: ${error.message}`);
+            }
+        }
+
+        // Inicializa o Firebase ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.initFirebaseAndAuth === 'function') {
+                window.initFirebaseAndAuth();
+            } else {
+                console.error("Firebase init function not available. Check script import.");
+            }
+        });
     </script>
-
-  <script src="shared.js"></script>
 </body>
 </html>
