@@ -143,9 +143,10 @@
             const userDoc = db.collection('uid').doc(currentUser.uid);
             const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
             items.forEach(item => {
-            const data = {
+                const data = {
                     sku: item.sku,
                     quantidade: item.quantidade,
+                    loja: item.loja || '',
                     userUid: currentUser.uid,
                     userEmail: currentUser.email,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -321,8 +322,8 @@
             return response.blob(); 
         } 
 
-        async function extractDataFromImage(base64Image) { 
-            const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU e a quantidade. Retorne os resultados num array de objetos JSON, com as chaves "sku" e "quantidade". Por favor, apenas retorne o JSON e nada mais.`; 
+        async function extractDataFromImage(base64Image) {
+            const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU, a quantidade e a loja. Retorne os resultados num array de objetos JSON, com as chaves "sku", "quantidade" e "loja". Por favor, apenas retorne o JSON e nada mais.`;
             const payload = { 
                 contents: [ 
                     { 
@@ -340,18 +341,19 @@
                 ], 
                 generationConfig: { 
                     responseMimeType: "application/json", 
-                    responseSchema: { 
-                        type: "ARRAY", 
-                        items: { 
-                            type: "OBJECT", 
-                            properties: { 
-                                "sku": { "type": "STRING" }, 
-                                "quantidade": { "type": "NUMBER" } 
-                            } 
-                        } 
-                    } 
-                } 
-            }; 
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "sku": { "type": "STRING" },
+                                "quantidade": { "type": "NUMBER" },
+                                "loja": { "type": "STRING" }
+                            }
+                        }
+                    }
+                }
+            };
             
             const apiKey = "AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk"; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; 
