@@ -156,7 +156,7 @@ function restoreSidebar() {
 
 async function checkExpedicao(user) {
   try {
-    const q = query(collection(db, 'uid'), where('responsavelExpedicaoEmail', '==', user.email));
+    const q = query(collection(db, 'usuarios'), where('responsavelExpedicaoEmail', '==', user.email));
     const snap = await getDocs(q);
     if (!snap.empty) {
       isExpedicao = true;
