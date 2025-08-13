@@ -96,8 +96,13 @@
       const createdAt = data.createdAt && data.createdAt.toDate
         ? data.createdAt.toDate().toLocaleString('pt-BR')
         : 'Data desconhecida';
+      const statusClass = status === 'impresso'
+        ? 'bg-green-100'
+        : status === 'nao_impresso'
+          ? 'bg-yellow-100'
+          : 'bg-white';
       const div = document.createElement('div');
-      div.className = 'pdf-card p-4 bg-white rounded-lg shadow transition-colors' + (attention ? ' border-2 border-red-500' : '');
+      div.className = `pdf-card p-4 rounded-lg shadow transition-colors ${statusClass}` + (attention ? ' border-2 border-red-500' : '');
       div.innerHTML = `
         <p class="font-semibold">${name}</p>
         <p class="text-sm text-gray-600">Criado por: ${owner} em ${createdAt}</p>
@@ -108,7 +113,7 @@
         </div>
         <div class="mt-2 space-y-2">
           <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
+            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked, this.closest('.pdf-card'))">
             <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-blue-500 peer-checked:border-blue-500">
               <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -162,8 +167,12 @@
     }
     window.imprimir = imprimir;
 
-    async function toggleImpresso(id, checked) {
+    async function toggleImpresso(id, checked, card) {
       await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
+      if (card) {
+        card.classList.remove('bg-yellow-100','bg-green-100','bg-white');
+        card.classList.add(checked ? 'bg-green-100' : 'bg-yellow-100');
+      }
       showToast('Status atualizado');
     }
     window.toggleImpresso = toggleImpresso;
