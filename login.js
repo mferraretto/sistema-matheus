@@ -1,13 +1,16 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
+let isExpedicao = false;
 
 
 function showToast(message, type = 'success') {
@@ -113,6 +116,7 @@ function showUserArea(user) {
       localStorage.setItem('passphraseModalShown', 'true');
     }
   }
+  checkExpedicao(user);
 }
 
 
@@ -123,6 +127,48 @@ function hideUserArea() {
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
   localStorage.removeItem('passphraseModalShown');
+  isExpedicao = false;
+  restoreSidebar();
+}
+
+function applyExpedicaoSidebar() {
+  const hideLinks = () => {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
+      const href = link.getAttribute('href') || '';
+      if (!href.includes('expedicao.html')) {
+        link.parentElement.classList.add('hidden');
+      }
+    });
+  };
+  hideLinks();
+  document.addEventListener('sidebarLoaded', hideLinks);
+}
+
+function restoreSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
+    link.parentElement.classList.remove('hidden');
+  });
+}
+
+async function checkExpedicao(user) {
+  try {
+    const q = query(collection(db, 'uid'), where('responsavelExpedicaoEmail', '==', user.email));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      isExpedicao = true;
+      applyExpedicaoSidebar();
+      const path = window.location.pathname.toLowerCase();
+      if (!path.endsWith('/expedicao.html')) {
+        window.location.href = 'expedicao.html';
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao verificar expedição:', e);
+  }
 }
 
 window.requireLogin = (event) => {
