@@ -17,6 +17,15 @@
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
+    <div class="mb-4">
+      <label for="statusFilter" class="mr-2">Filtrar por situação:</label>
+      <select id="statusFilter" class="border p-1">
+        <option value="all">Todas</option>
+        <option value="nao_impresso">Não impresso</option>
+        <option value="impresso">Impresso</option>
+        <option value="concluido">Concluído</option>
+      </select>
+    </div>
     <div id="labelsList" class="space-y-4"></div>
   </div>
  <script type="module">
@@ -28,6 +37,7 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
     let currentUser = null;
+    document.getElementById('statusFilter').addEventListener('change', carregarEtiquetas);
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
@@ -38,18 +48,23 @@
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
+      const filter = document.getElementById('statusFilter').value;
       const snap = await db
         .collection('pdfDocs')
         .orderBy('createdAt', 'desc')
         .get();
       snap.forEach(doc => {
         const data = doc.data();
-         const allowed =
+        const allowed =
           data.ownerEmail === currentUser.email ||
           (data.gestoresExpedicaoEmails || []).includes(currentUser.email);
         if (!allowed) return;
+        const status = data.status || 'nao_impresso';
+        if (filter !== 'all' && status !== filter) return;
+        const attention = data.attention || false;
+        const observacao = data.observacao || '';
         const div = document.createElement('div');
-        div.className = 'p-4 bg-white rounded shadow';
+        div.className = 'p-4 bg-white rounded shadow' + (attention ? ' border-2 border-red-500' : '');
         const name = data.name || 'PDF';
         const url = data.url;
         div.innerHTML = `
@@ -58,6 +73,18 @@
             <button class="btn btn-primary" onclick="visualizar('${url}')">Visualizar</button>
             <button class="btn btn-primary" onclick="imprimir('${url}')">Imprimir</button>
             <a class="btn btn-primary" href="${url}" download="${name}">Baixar</a>
+          </div>
+          <div class="mt-2 space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" class="mr-2" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
+              Impresso
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" class="mr-2" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked)">
+              Atenção problema
+            </label>
+            <textarea class="border p-1 w-full" placeholder="Observação" onblur="salvarObservacao('${doc.id}', this.value)">${observacao}</textarea>
+            <button class="btn btn-secondary" onclick="marcarConcluido('${doc.id}')">Concluir</button>
           </div>`;
         list.appendChild(div);
       });
@@ -80,6 +107,29 @@
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
     window.imprimir = imprimir;
+
+    async function toggleImpresso(id, checked) {
+      await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
+      carregarEtiquetas();
+    }
+    window.toggleImpresso = toggleImpresso;
+
+    async function marcarConcluido(id) {
+      await db.collection('pdfDocs').doc(id).update({ status: 'concluido' });
+      carregarEtiquetas();
+    }
+    window.marcarConcluido = marcarConcluido;
+
+    async function toggleAtencao(id, checked) {
+      await db.collection('pdfDocs').doc(id).update({ attention: checked });
+      carregarEtiquetas();
+    }
+    window.toggleAtencao = toggleAtencao;
+
+    async function salvarObservacao(id, texto) {
+      await db.collection('pdfDocs').doc(id).update({ observacao: texto });
+    }
+    window.salvarObservacao = salvarObservacao;
 
     loadSidebar();
     loadNavbar();
