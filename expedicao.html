@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expedição</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -17,17 +18,22 @@
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
-     <div class="mb-4">
-      <label for="statusFilter" class="mr-2">Filtrar por situação:</label>
-      <select id="statusFilter" class="border p-1">
-        <option value="all">Todas</option>
-        <option value="nao_impresso">Não impresso</option>
-        <option value="impresso">Impresso</option>
-        <option value="concluido">Concluído</option>
-      </select>
+    <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
+      <button class="filter-btn px-3 py-1 rounded-full bg-blue-500 text-white" data-status="all">Todas</button>
+      <button class="filter-btn px-3 py-1 rounded-full bg-gray-200" data-status="nao_impresso">Não impresso</button>
+      <button class="filter-btn px-3 py-1 rounded-full bg-gray-200" data-status="impresso">Impresso</button>
+      <button class="filter-btn px-3 py-1 rounded-full bg-gray-200" data-status="concluido">Concluído</button>
     </div>
-    <div id="labelsList" class="space-y-4"></div>
+    <div id="labelsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
+
+  <div id="pdfModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white w-11/12 md:w-3/4 h-5/6 rounded shadow-lg relative">
+      <button id="closeModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
+      <iframe id="pdfFrame" src="" class="w-full h-full rounded-b"></iframe>
+    </div>
+  </div>
+
  <script type="module">
     import { firebaseConfig } from './firebase-config.js';
 
@@ -37,7 +43,17 @@
     const db = firebase.firestore();
     const storage = firebase.storage();
     let currentUser = null;
-    document.getElementById('statusFilter').addEventListener('change', carregarEtiquetas);
+    let currentFilter = 'all';
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-blue-500','text-white'));
+        btn.classList.add('bg-blue-500','text-white');
+        currentFilter = btn.dataset.status;
+        carregarEtiquetas();
+      });
+    });
+
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
@@ -48,7 +64,7 @@
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
-      const filter = document.getElementById('statusFilter').value;
+      const filter = currentFilter;
       const snap = await db
         .collection('pdfDocs')
         .orderBy('createdAt', 'desc')
@@ -61,58 +77,81 @@
         if (!allowed) return;
         const status = data.status || 'nao_impresso';
         if (filter !== 'all' && status !== filter) return;
-        const attention = data.attention || false;
-        const observacao = data.observacao || '';
-        const div = document.createElement('div');
-        div.className = 'p-4 bg-white rounded shadow' + (attention ? ' border-2 border-red-500' : '');
-        const name = data.name || 'PDF';
-        const url = data.url;
-        const owner = data.ownerEmail || 'Desconhecido';
-        const createdAt = data.createdAt && data.createdAt.toDate
-          ? data.createdAt.toDate().toLocaleString('pt-BR')
-          : 'Data desconhecida';
-        div.innerHTML = `
-          <p class="font-semibold">${name}</p>
-                    <p class="text-sm text-gray-600">Criado por: ${owner} em ${createdAt}</p>
-          <div class="mt-2 space-x-2">
-            <button class="btn btn-primary" onclick="visualizar('${url}')">Visualizar</button>
-            <button class="btn btn-primary" onclick="imprimir('${url}')">Imprimir</button>
-            <a class="btn btn-primary" href="${url}" download="${name}">Baixar</a>
-         </div>
-          <div class="mt-2 space-y-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
-              <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-blue-500 peer-checked:border-blue-500">
-                <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-              <span>Impresso</span>
-            </label>
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked)">
-              <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-red-500 peer-checked:border-red-500">
-                <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-              <span>Atenção problema</span>
-            </label>
-            <textarea class="border p-1 w-full" placeholder="Observação" onblur="salvarObservacao('${doc.id}', this.value)">${observacao}</textarea>
-            <button class="btn btn-secondary" onclick="marcarConcluido('${doc.id}')">Concluir</button>
-          </div>`;
-        list.appendChild(div);
+        const card = createPdfCard(doc);
+        list.appendChild(card);
       });
       if (!list.hasChildNodes()) {
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
       }
     }
 
+    function createPdfCard(doc) {
+      const data = doc.data();
+      const status = data.status || 'nao_impresso';
+      const attention = data.attention || false;
+      const observacao = data.observacao || '';
+      const name = data.name || 'PDF';
+      const url = data.url;
+      const owner = data.ownerEmail || 'Desconhecido';
+      const createdAt = data.createdAt && data.createdAt.toDate
+        ? data.createdAt.toDate().toLocaleString('pt-BR')
+        : 'Data desconhecida';
+      const div = document.createElement('div');
+      div.className = 'pdf-card p-4 bg-white rounded-lg shadow transition-colors' + (attention ? ' border-2 border-red-500' : '');
+      div.innerHTML = `
+        <p class="font-semibold">${name}</p>
+        <p class="text-sm text-gray-600">Criado por: ${owner} em ${createdAt}</p>
+        <div class="mt-2 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+          <button class="btn btn-primary flex items-center justify-center" onclick="visualizar('${url}')"><i class="fas fa-eye mr-2"></i><span>Visualizar</span></button>
+          <button class="btn btn-primary flex items-center justify-center" onclick="imprimir('${url}')"><i class="fas fa-print mr-2"></i><span>Imprimir</span></button>
+          <a class="btn btn-primary flex items-center justify-center" href="${url}" download="${name}"><i class="fas fa-download mr-2"></i><span>Baixar</span></a>
+        </div>
+        <div class="mt-2 space-y-2">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked)">
+            <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-blue-500 peer-checked:border-blue-500">
+              <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <span>Impresso</span>
+          </label>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked, this.closest('.pdf-card'))">
+            <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-red-500 peer-checked:border-red-500">
+              <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <span>Atenção problema</span>
+          </label>
+          <textarea class="border p-1 w-full" placeholder="Observação" onblur="salvarObservacao('${doc.id}', this.value)">${observacao}</textarea>
+          <button class="btn btn-secondary" onclick="marcarConcluido('${doc.id}', this.closest('.pdf-card'))">Concluir</button>
+        </div>`;
+      return div;
+    }
+
+    const pdfModal = document.getElementById('pdfModal');
+    const pdfFrame = document.getElementById('pdfFrame');
+    const closeModal = document.getElementById('closeModal');
+
     function visualizar(url) {
-      const win = window.open('', '_blank');
-      win.document.write('<iframe width="100%" height="100%" src="' + url + '"></iframe>');
+      pdfFrame.src = url;
+      pdfModal.classList.remove('hidden');
     }
     window.visualizar = visualizar;
+
+    closeModal.addEventListener('click', () => {
+      pdfModal.classList.add('hidden');
+      pdfFrame.src = '';
+    });
+
+    pdfModal.addEventListener('click', e => {
+      if (e.target === pdfModal) {
+        pdfModal.classList.add('hidden');
+        pdfFrame.src = '';
+      }
+    });
 
     function imprimir(url) {
       const win = window.open('', '_blank');
@@ -122,28 +161,47 @@
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
     window.imprimir = imprimir;
-async function toggleImpresso(id, checked) {
+
+    async function toggleImpresso(id, checked) {
       await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
-      carregarEtiquetas();
+      showToast('Status atualizado');
     }
     window.toggleImpresso = toggleImpresso;
 
-    async function marcarConcluido(id) {
+    async function marcarConcluido(id, card) {
       await db.collection('pdfDocs').doc(id).update({ status: 'concluido' });
-      carregarEtiquetas();
+      if (card) card.remove();
+      showToast('Marcado como concluído');
     }
     window.marcarConcluido = marcarConcluido;
 
-    async function toggleAtencao(id, checked) {
+    async function toggleAtencao(id, checked, card) {
       await db.collection('pdfDocs').doc(id).update({ attention: checked });
-      carregarEtiquetas();
+      if (card) {
+        if (checked) {
+          card.classList.add('border-2','border-red-500');
+        } else {
+          card.classList.remove('border-2','border-red-500');
+        }
+      }
+      showToast('Atualizado');
     }
     window.toggleAtencao = toggleAtencao;
 
     async function salvarObservacao(id, texto) {
       await db.collection('pdfDocs').doc(id).update({ observacao: texto });
+      showToast('Observação salva');
     }
     window.salvarObservacao = salvarObservacao;
+
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow transition-opacity';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add('opacity-0'), 2000);
+      setTimeout(() => toast.remove(), 2500);
+    }
 
     loadSidebar();
     loadNavbar();
