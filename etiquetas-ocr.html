@@ -98,6 +98,7 @@
           <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
              </label>
         <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
+        <input type="text" id="gestoresEmails" placeholder="E-mails do gestor de expedição (separados por vírgula)" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg mt-2 p-2" />
       </div>
       <button class="btn-main w-full" onclick="processar()">
         <i class="fa-solid fa-magic-wand-sparkles mr-2"></i>
@@ -311,11 +312,21 @@ completoCtx.drawImage(
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
   if (currentUser) {
  const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+    const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+    const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+    const docRef = await db.collection('pdfDocs').add({
+      ownerUid: currentUser.uid,
+      ownerEmail: currentUser.email,
+      gestoresExpedicaoEmails: gestoresEmails,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      name: fileName
+    });
     const fileRef = storage
       .ref()
-      .child(`etiquetas/${currentUser.uid}/${fileName}`);
+      .child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
     await fileRef.put(blob);
     const url = await fileRef.getDownloadURL();
+    await docRef.update({ url: url, storagePath: fileRef.fullPath });
     const record = {
         name: fileName,
         url: url,
@@ -327,19 +338,6 @@ completoCtx.drawImage(
       .doc(currentUser.uid)
       .collection('etiquetaenvio')
       .add({ ...record });
-
-    try {
-        const userDoc = await db.collection('uid').doc(currentUser.uid).get();
-        const respEmail = userDoc.data()?.responsavelExpedicaoEmail;
-        if (respEmail) {
-            const snap = await db.collection('uid').where('email', '==', respEmail).get();
-            snap.forEach(async d => {
-                await db.collection('users').doc(d.id).collection('etiquetaenvio').add({ ...record });
-            });
-        }
-    } catch (e) {
-        console.error('Erro ao compartilhar etiqueta:', e);
-    }
   }
   const localUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");

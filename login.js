@@ -1,7 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, // (opcional) orderBy, limit, setDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -101,7 +103,7 @@ window.sendRecovery = () => {
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
-function showUserArea(user) {
+async function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
 
@@ -116,8 +118,22 @@ function showUserArea(user) {
       localStorage.setItem('passphraseModalShown', 'true');
     }
   }
-  checkExpedicao(user);
+try {
+  const snap = await getDoc(doc(db, 'usuarios', user.uid));
+  const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
+  window.userPerfil = perfil;
+
+  // 1) aplica restrições de UI
+  applyPerfilRestrictions(perfil);
+
+  // 2) se for expedição, executa fluxo especial
+  if (perfil === 'expedicao') {
+    await checkExpedicao(user);
+  }
+} catch (e) {
+  console.error('Erro ao carregar perfil do usuário:', e);
 }
+
 
 
 function hideUserArea() {
@@ -220,4 +236,8 @@ document.addEventListener('navbarLoaded', () => {
   });
 }
   checkLogin();
+});
+
+document.addEventListener('sidebarLoaded', () => {
+  if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
 });

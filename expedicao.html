@@ -38,12 +38,16 @@
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
-      const snap = await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').orderBy('createdAt', 'desc').get();
+      const snap = await db
+        .collection('pdfDocs')
+        .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
+        .orderBy('createdAt', 'desc')
+        .get();
       snap.forEach(doc => {
         const data = doc.data();
         const div = document.createElement('div');
         div.className = 'p-4 bg-white rounded shadow';
-        const name = data.name || 'Etiqueta';
+        const name = data.name || 'PDF';
         const url = data.url;
         div.innerHTML = `
           <p class="font-semibold">${name}</p>
@@ -51,7 +55,6 @@
             <button class="btn btn-primary" onclick="visualizar('${url}')">Visualizar</button>
             <button class="btn btn-primary" onclick="imprimir('${url}')">Imprimir</button>
             <a class="btn btn-primary" href="${url}" download="${name}">Baixar</a>
-            <button class="btn bg-red-500 text-white" onclick="excluir('${doc.id}')">Excluir</button>
           </div>`;
         list.appendChild(div);
       });
@@ -71,20 +74,6 @@
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
     window.imprimir = imprimir;
-
-    async function excluir(id) {
-      if (!confirm('Deseja excluir esta etiqueta?')) return;
-      const docRef = db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').doc(id);
-      const docSnap = await docRef.get();
-      const data = docSnap.data();
-      if (data && data.path) {
-        const fileRef = storage.ref().child(data.path);
-        try { await fileRef.delete(); } catch (e) { console.error(e); }
-      }
-      await docRef.delete();
-      carregarEtiquetas();
-    }
-    window.excluir = excluir;
 
     loadSidebar();
     loadNavbar();

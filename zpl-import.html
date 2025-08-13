@@ -28,24 +28,30 @@
         <p class="text-gray-600 text-center mb-6"> 
             Selecione um ficheiro .zpl ou .txt para extrair os dados do checklist e combiná-los na etiqueta de envio. 
         </p> 
-        <div class="flex flex-col items-center gap-4"> 
-            <input 
-                type="file" 
-                id="zplFile" 
-                accept=".zpl, .txt" 
-                class="block w-full max-w-sm text-sm text-gray-500 
-                        file:mr-4 file:py-2 file:px-4 
-                        file:rounded-full file:border-0 
-                        file:text-sm file:font-semibold 
-                        file:bg-blue-50 file:text-blue-700 
-                        hover:file:bg-blue-100 cursor-pointer" 
-            > 
-            <button 
-                id="converterButton" 
-                class="px-6 py-3 bg-blue-800 text-white font-bold text-lg rounded-full 
-                        shadow-lg hover:bg-blue-700 transition-all duration-300 transform 
-                        hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed" 
-            > 
+        <div class="flex flex-col items-center gap-4">
+            <input
+                type="file"
+                id="zplFile"
+                accept=".zpl, .txt"
+                class="block w-full max-w-sm text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100 cursor-pointer"
+            >
+            <input
+                type="text"
+                id="gestoresEmails"
+                placeholder="E-mails do gestor de expedição (separados por vírgula)"
+                class="block w-full max-w-sm text-sm text-gray-500 border border-gray-300 rounded p-2"
+            >
+            <button
+                id="converterButton"
+                class="px-6 py-3 bg-blue-800 text-white font-bold text-lg rounded-full
+                        shadow-lg hover:bg-blue-700 transition-all duration-300 transform
+                        hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
                 Extrair e Gerar 
             </button> 
         </div> 
@@ -91,9 +97,19 @@
 
         async function savePdf(blob, name) {
             if (!currentUser) return;
-            const fileRef = storage.ref().child(`etiquetas/${currentUser.uid}/${name}`);
+            const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+            const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+            const docRef = await db.collection('pdfDocs').add({
+                ownerUid: currentUser.uid,
+                ownerEmail: currentUser.email,
+                gestoresExpedicaoEmails: gestoresEmails,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                name: name
+            });
+            const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
             await fileRef.put(blob);
             const url = await fileRef.getDownloadURL();
+            await docRef.update({ url: url, storagePath: fileRef.fullPath });
             const record = {
                 name: name,
                 url: url,
@@ -101,19 +117,6 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-
-            try {
-                const userDoc = await db.collection('uid').doc(currentUser.uid).get();
-                const respEmail = userDoc.data()?.responsavelExpedicaoEmail;
-                if (respEmail) {
-                    const snap = await db.collection('uid').where('email', '==', respEmail).get();
-                    snap.forEach(async d => {
-                        await db.collection('users').doc(d.id).collection('etiquetaenvio').add({ ...record });
-                    });
-                }
-            } catch (e) {
-                console.error('Erro ao compartilhar etiqueta:', e);
-            }
         }
 
         const fileInput = document.getElementById('zplFile');

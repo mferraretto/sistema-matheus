@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /pdfs/{ownerUid}/{fileId}.pdf {
+      allow read: if request.auth != null && (
+        ownerUid == request.auth.uid ||
+        (request.auth.token.email != null &&
+          request.auth.token.email in get(/databases/(default)/documents/pdfDocs/{fileId}).data.gestoresExpedicaoEmails)
+      );
+      allow write: if request.auth != null && ownerUid == request.auth.uid;
+    }
+  }
+}
