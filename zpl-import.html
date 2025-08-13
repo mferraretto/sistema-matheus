@@ -94,12 +94,26 @@
             const fileRef = storage.ref().child(`etiquetas/${currentUser.uid}/${name}`);
             await fileRef.put(blob);
             const url = await fileRef.getDownloadURL();
-            await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
+            const record = {
                 name: name,
                 url: url,
                 path: fileRef.fullPath,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+            await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+
+            try {
+                const userDoc = await db.collection('uid').doc(currentUser.uid).get();
+                const respEmail = userDoc.data()?.responsavelExpedicaoEmail;
+                if (respEmail) {
+                    const snap = await db.collection('uid').where('email', '==', respEmail).get();
+                    snap.forEach(async d => {
+                        await db.collection('users').doc(d.id).collection('etiquetaenvio').add({ ...record });
+                    });
+                }
+            } catch (e) {
+                console.error('Erro ao compartilhar etiqueta:', e);
+            }
         }
 
         const fileInput = document.getElementById('zplFile');
