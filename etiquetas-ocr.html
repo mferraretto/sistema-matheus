@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script type="module" src="firebase-config.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -123,31 +122,35 @@
       </div>
     </div>
   </div>
-    <script>
+    <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-const db = firebase.firestore();
-let currentUser = null;
-firebase.auth().onAuthStateChanged(u => currentUser = u);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    let currentUser = null;
+    firebase.auth().onAuthStateChanged(u => currentUser = u);
 
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
 
-function showMessage(text) {
-  const messageBox = document.getElementById("messageBox");
-  const messageText = document.getElementById("messageText");
-  messageText.textContent = text;
-  messageBox.style.display = "block";
-}
+    function showMessage(text) {
+      const messageBox = document.getElementById("messageBox");
+      const messageText = document.getElementById("messageText");
+      messageText.textContent = text;
+      messageBox.style.display = "block";
+    }
 
-async function processar() {
+    async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
   const progressText = document.getElementById("progressText");
@@ -329,11 +332,10 @@ completoCtx.drawImage(
   a.click();
 
   status.textContent = "✅ PDF gerado com sucesso!";
-}
-  </script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-  </script>
+    }
+
+    window.processar = processar;
+    </script>
 
   <script src="shared.js"></script>
 </body>
