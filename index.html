@@ -47,43 +47,45 @@
       
 
       <!-- Resumo Faturamento e Top SKUs -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div id="resumoFaturamento"></div>
-        <div class="card" id="topSkusCard" data-blur-id="topSkusCard">
+        <div class="card cursor-pointer" id="topSkusCard" data-blur-id="topSkusCard" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=controleVendas';">
           <div class="card-header">
            <div class="card-header-icon">
-              <i class="fas fa-star text-xl"></i>
+              <i class="fas fa-trophy text-xl"></i>
             </div>
             <div>
               <h2 class="text-xl font-bold text-gray-800">Top 5 SKUs do Mês</h2>
             </div>
-           <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard">
+           <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard" onclick="event.stopPropagation();">
               <i class="fas fa-eye-slash"></i>
             </button>
           </div>
           <div class="card-body" id="topSkus"></div>
         </div>
-        
-      </div>
-      <!-- Gráfico de Faturamento x Meta -->
-      <div class="card mb-6" id="faturamentoMetaCard">
-        <div class="card-header">
-          <div class="card-header-icon">
-            <i class="fas fa-chart-bar text-xl"></i>
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-gray-800">Faturamento x Meta</h2>
-          </div>
-          <div class="ml-auto">
-            <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
-          </div>
-        </div>
-        <div class="card-body">
-          <canvas id="chartFaturamentoMeta" height="200"></canvas>
-        </div>
       </div>
 
-        <div class="card mb-6" id="tarefasCard">
+      <!-- Faturamento x Meta e Tarefas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="card cursor-pointer" id="faturamentoMetaCard" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas';">
+          <div class="card-header">
+            <div class="card-header-icon">
+              <i class="fas fa-bullseye text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">Faturamento x Meta</h2>
+            </div>
+            <div class="ml-auto">
+              <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
+            </div>
+          </div>
+          <div class="card-body space-y-4">
+            <canvas id="chartFaturamentoMeta" height="200"></canvas>
+            <canvas id="chartComparativoMeta" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="card" id="tarefasCard">
           <div class="card-header">
             <div class="card-header-icon">
               <i class="fas fa-tasks text-xl"></i>
@@ -106,6 +108,7 @@
             </div>
           </div>
         </div>
+      </div>
 
         <div class="card mb-6" id="atualizacoesCard" data-blur-id="atualizacoesCard">
         <div class="card-header">

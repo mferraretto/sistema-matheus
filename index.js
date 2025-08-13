@@ -121,22 +121,28 @@ let totalLiquido = 0;
     }
   }
   el.innerHTML = `
-    <div class="card" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
+    <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
       <div class="card-header">
-        <div class="card-header-icon"><i class="fas fa-chart-line text-xl"></i></div>
+        <div class="card-header-icon"><i class="fas fa-wallet text-xl"></i></div>
         <div>
           <h2 class="text-xl font-bold text-gray-800">Faturamento do Mês</h2>
           <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
         </div>
-         <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard">
+        <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard" onclick="event.preventDefault();event.stopPropagation();">
           <i class="fas fa-eye-slash"></i>
         </button>
       </div>
-      <div class="card-body">
-<div class="text-3xl font-bold text-green-600">Líquido: R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-        <div class="text-xl font-semibold text-blue-600 mt-1">Bruto: R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+      <div class="card-body space-y-4">
+        <div>
+          <div class="text-sm text-gray-500">Líquido</div>
+          <div class="text-4xl font-extrabold text-green-600">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
         </div>
-    </div>`;
+        <div>
+          <div class="text-sm text-gray-500">Bruto</div>
+          <div class="text-2xl font-bold text-blue-600">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+        </div>
+      </div>
+    </a>`;
 }
 
 async function carregarTopSkus(uid, isAdmin) {
