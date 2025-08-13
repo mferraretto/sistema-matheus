@@ -753,10 +753,27 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
     }
 
     function openAddUserModal() {
-      document.getElementById('newUserName').value = '';
-      document.getElementById('newUserEmail').value = '';
-      document.getElementById('newUserPassword').value = '';
-      document.getElementById('newUserProfile').value = 'operador';
+    const nameInput = document.getElementById('newUserName');
+      const emailInput = document.getElementById('newUserEmail');
+      const passwordInput = document.getElementById('newUserPassword');
+      const profileSelect = document.getElementById('newUserProfile');
+
+      if (nameInput) nameInput.value = '';
+
+      if (emailInput) {
+        emailInput.value = '';
+        emailInput.readOnly = false;
+      }
+
+      if (passwordInput) passwordInput.value = '';
+      if (profileSelect) profileSelect.value = 'operador';
+
+      const saveBtn = document.querySelector('#addUserModal button');
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Salvar Usuário';
+        saveBtn.onclick = addNewUser;
+      }
+
       openModal('addUserModal');
     }
 
