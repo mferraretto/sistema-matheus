@@ -180,6 +180,8 @@ async function carregarTarefas(uid, isAdmin) {
   listaFeitas.innerHTML = '';
 
   const tarefas = [];
+  tarefas.push('Conferir Faturamento');
+  tarefas.push('Conferir anúncios se não teve penalidade');
   const hoje = new Date();
   const seteDiasAtras = new Date();
   seteDiasAtras.setDate(hoje.getDate() - 7);
