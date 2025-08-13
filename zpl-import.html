@@ -223,20 +223,23 @@
                     progressStatus.textContent = `A processar etiqueta ${currentLabelIndex} de ${totalLabels}...`;
                     progressBar.style.width = `${(currentLabelIndex / totalLabels) * 100}%`;
 
-                    const labelBlock = blocks[i]; 
-                    const checklistBlock = blocks[i + 1]; 
+                    const labelBlock = blocks[i];
+                    const checklistBlock = blocks[i + 1];
+
+                    // Extração da loja a partir da etiqueta
+                    const loja = await getStoreFromLabel(labelBlock, dpmm, originalWidthIn, originalHeightIn);
 
                     // 1. Render checklist as an image for analysis
-                    const checklistImageBlob = await generateImageFromZpl(checklistBlock, dpmm, originalWidthIn, originalHeightIn); 
-                    const checklistBase64 = await blobToBase64(checklistImageBlob); 
+                   const checklistImageBlob = await generateImageFromZpl(checklistBlock, dpmm, originalWidthIn, originalHeightIn);
+                    const checklistBase64 = await blobToBase64(checklistImageBlob);
 
                     // 2. Use Gemini API to extract SKU and quantity
                     const extractedData = await extractDataFromImage(checklistBase64);
                     allExtractedItems.push(...extractedData);
 
-                    if (!extractedData || extractedData.length === 0) { 
-                        throw new Error(`Não foi possível extrair dados de SKU e quantidade da imagem do checklist da etiqueta ${currentLabelIndex}.`); 
-                    } 
+                   if (loja) {
+                        extractedData.forEach(item => item.loja = loja);
+                    }
 
                     // 3. Generate ZPL for the new combined label
                     const combinedZPL = generateCombinedZPL(labelBlock, extractedData); 
@@ -303,24 +306,125 @@
             return originalHeightIn + addedContentHeightInches; 
         } 
 
-        async function generateImageFromZpl(zplCode, dpmm, width, height) { 
-            const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`; 
-            const response = await fetch(apiUrl, { 
-                method: 'POST', 
-                headers: { 
-                    'Accept': 'image/png', 
-                    'Content-Type': 'application/x-www-form-urlencoded' 
-                }, 
-                body: zplCode 
-            }); 
-
+async function generateImageFromZpl(zplCode, dpmm, width, height) {
+            const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'image/png',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: zplCode
+            });
             if (!response.ok) { 
                 const errorText = await response.text(); 
                 throw new Error(`Erro na API Labelary (imagem): ${response.status} ${response.statusText} - ${errorText}`); 
             } 
 
-            return response.blob(); 
-        } 
+               return response.blob();
+        }
+
+        function extractStoreFromZpl(zplCode) {
+            const remRegex = /Remetente\^FS[\s\S]*?\^FD([^\^]+)\^FS/i;
+            const match = zplCode.match(remRegex);
+            if (match) {
+                return match[1].trim();
+            }
+            const sameLine = /Remetente:?\s*([^\^]+)\^FS/i;
+            const matchSame = zplCode.match(sameLine);
+            return matchSame ? matchSame[1].trim() : null;
+        }
+
+        async function getStoreFromLabel(zplCode, dpmm, width, height) {
+            try {
+                const lojaFromZpl = extractStoreFromZpl(zplCode);
+                if (lojaFromZpl) return lojaFromZpl;
+                const labelBlob = await generateImageFromZpl(zplCode, dpmm, width, height);
+                const labelBase64 = await blobToBase64(labelBlob);
+                return await extractStoreFromImage(labelBase64);
+            } catch (e) {
+                console.error('Erro ao obter loja da etiqueta:', e);
+                return null;
+            }
+        }
+
+        async function extractStoreFromImage(base64Image) {
+            const prompt = `A etiqueta de envio possui o texto \"Remetente\" seguido do nome da loja. Identifique esse nome e retorne apenas um objeto JSON com a chave \"loja\".`;
+            const payload = {
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64Image
+                                }
+                            }
+                        ]
+                    }
+                ],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "loja": { "type": "STRING" }
+                        }
+                    }
+                }
+            };
+            const apiKey = "AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            let result;
+            let attempts = 0;
+            const maxAttempts = 5;
+            let delay = 1000;
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        console.error(`Attempt ${attempts + 1} failed with status: ${response.status} - ${await response.text()}`);
+                        if (response.status === 429) {
+                            await new Promise(r => setTimeout(r, delay));
+                            delay *= 2;
+                            attempts++;
+                            continue;
+                        }
+                        throw new Error(`Erro na API Gemini: ${response.status} - ${await response.text()}`);
+                    }
+                    result = await response.json();
+                    break;
+                } catch (error) {
+                    console.error('API loja call failed, retrying...', error);
+                    attempts++;
+                    if (attempts === maxAttempts) {
+                        throw error;
+                    }
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                }
+            }
+
+            if (!result || !result.candidates || result.candidates.length === 0 ||
+                !result.candidates.at(0).content || !result.candidates.at(0).content.parts ||
+                result.candidates.at(0).content.parts.length === 0) {
+                throw new Error("Resposta da API Gemini inválida para loja.");
+            }
+
+            const json = result.candidates.at(0).content.parts.at(0).text;
+            console.log('Loja extraída da API:', json);
+            try {
+                return JSON.parse(json).loja || null;
+            } catch {
+                return null;
+            }
+        }
 
         async function extractDataFromImage(base64Image) {
             const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU, a quantidade e a loja. Retorne os resultados num array de objetos JSON, com as chaves "sku", "quantidade" e "loja". Por favor, apenas retorne o JSON e nada mais.`;
