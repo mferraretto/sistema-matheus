@@ -142,8 +142,7 @@ try {
 } catch (e) {
   console.error('Erro ao carregar perfil do usuário:', e);
 }
-
-
+}
 
 function hideUserArea() {
   document.getElementById('currentUser').textContent = 'Usuário';
@@ -176,6 +175,20 @@ function restoreSidebar() {
   if (!sidebar) return;
   sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
     link.parentElement.classList.remove('hidden');
+  });
+}
+function applyPerfilRestrictions(perfil) {
+  const currentPerfil = (perfil || '').toLowerCase();
+  document.querySelectorAll('[data-perfil]').forEach(el => {
+    const allowed = (el.getAttribute('data-perfil') || '')
+      .toLowerCase()
+      .split(',')
+      .map(p => p.trim());
+    if (!allowed.includes(currentPerfil)) {
+      el.classList.add('hidden');
+    } else {
+      el.classList.remove('hidden');
+    }
   });
 }
 
