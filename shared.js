@@ -9,11 +9,16 @@
     BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
   }
   
-  // Toggle submenu visibility
+  // Toggle submenu visibility with smooth slide animation
   window.toggleMenu = function(menuId) {
     var el = document.getElementById(menuId);
-    if (el) {
-      el.classList.toggle('hidden');
+    if (!el) return;
+    if (el.classList.contains('max-h-0')) {
+      el.classList.remove('max-h-0');
+      el.classList.add('max-h-screen');
+    } else {
+      el.classList.add('max-h-0');
+      el.classList.remove('max-h-screen');
     }
   };
   
