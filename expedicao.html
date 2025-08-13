@@ -40,11 +40,14 @@
       list.innerHTML = '';
       const snap = await db
         .collection('pdfDocs')
-        .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
         .orderBy('createdAt', 'desc')
         .get();
       snap.forEach(doc => {
         const data = doc.data();
+         const allowed =
+          data.ownerEmail === currentUser.email ||
+          (data.gestoresExpedicaoEmails || []).includes(currentUser.email);
+        if (!allowed) return;
         const div = document.createElement('div');
         div.className = 'p-4 bg-white rounded shadow';
         const name = data.name || 'PDF';
@@ -58,6 +61,9 @@
           </div>`;
         list.appendChild(div);
       });
+      if (!list.hasChildNodes()) {
+        list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
+      }
     }
 
     function visualizar(url) {
