@@ -155,6 +155,7 @@
         { element: '#menu-vendas', intro: 'Área para acompanhar vendas e sobras.' },
         { element: '#menu-precificacao', intro: 'Ferramentas para precificação de produtos.' },
         { element: '#menu-anuncios', intro: 'Seção de anúncios e promoções.' },
+        { element: '#menu-relatorios', intro: 'Relatórios de SKUs impressos do mês.' },
         { element: '#menu-configuracoes', intro: 'Configurações gerais do sistema.' },
         { element: '#menu-manual', intro: 'Acesse o manual completo do sistema.' }
       ],
