@@ -37,8 +37,6 @@
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-weight: 500;
-      font-size: 1rem;
     }
     /* Card Glassmorphism */
     .glass-card {
@@ -97,7 +95,7 @@
       <div class="mb-4">
         <label for="pdfInput" class="block text-lg font-medium mb-2 text-gray-700">
           <i class="fa-solid fa-file-pdf text-red-500"></i> Envie seu arquivo PDF:
-        </label>
+             </label>
         <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
       </div>
       <button class="btn-main w-full" onclick="processar()">
@@ -127,7 +125,7 @@
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    if (!firebase.apps.length) {
+ if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
