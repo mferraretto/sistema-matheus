@@ -19,9 +19,12 @@
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
     <div id="labelsList" class="space-y-4"></div>
   </div>
-  <script type="module">
+ <script type="module">
     import { firebaseConfig } from './firebase-config.js';
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
     const storage = firebase.storage();
     let currentUser = null;
