@@ -342,7 +342,8 @@ async function iniciarPainel(user) {
   if (uid) {
     try {
       const snap = await getDoc(doc(db, 'uid', uid));
-      isAdmin = snap.exists() && String(snap.data().perfil || '').toLowerCase() === 'adm';
+      const perfil = String(snap.data().perfil || '').toLowerCase();
+      isAdmin = snap.exists() && (perfil === 'adm' || perfil === 'admin');
     } catch (e) { console.error(e); }
   }
   await Promise.all([

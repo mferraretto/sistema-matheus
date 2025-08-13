@@ -410,7 +410,7 @@
     async function carregarProdutos() {
       try {
 let consulta;
-        if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
           consulta = db.collectionGroup('produtos');
         } else {
           consulta = db.collection('uid').doc(usuarioLogado.uid).collection('produtos');
@@ -445,7 +445,7 @@ let consulta;
           metas = {};
           // Carrega SKUs e custo dos produtos cadastrados
   let produtosSnapQuery;
-          if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+          if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
             produtosSnapQuery = db.collectionGroup('produtos');
           } else {
             produtosSnapQuery = db.collection('uid').doc(usuarioLogado.uid).collection('produtos');
@@ -464,7 +464,7 @@ let consulta;
 
           // Sobrepõe com metas salvas manualmente se existirem
           let metasSnapQuery = db.collection("metasSKU");
-          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          if (!['adm', 'admin'].includes(usuarioLogado.perfil.toLowerCase())) {
             metasSnapQuery = metasSnapQuery.where('uid', '==', usuarioLogado.uid);
           }
           const metasSnap = await metasSnapQuery.get();
@@ -493,7 +493,7 @@ let consulta;
         return await executarComRetry(async () => {
           historico = [];
           let histQuery = db.collection("historicoMetas");
-          if (usuarioLogado.perfil.toLowerCase() !== 'adm') {
+          if (!['adm', 'admin'].includes(usuarioLogado.perfil.toLowerCase())) {
             histQuery = histQuery.where('uid', '==', usuarioLogado.uid);
           }
           const snapshot = await histQuery.orderBy("data", "desc").limit(50).get();          
@@ -1594,7 +1594,7 @@ await db
     }
     async function carregarRegistrosFaturamento(idContainer = "listaFaturamento", idFiltroMes = "filtroMes") {
  let ref;
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('faturamento');
       } else {
         ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
@@ -1612,7 +1612,7 @@ await db
           if (anoFiltro !== anoData || mesFiltro !== mesData) continue;
         }
 
-const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
           ? docData.ref.parent.parent.id
           : usuarioLogado.uid;
         const subRef = db.collection(`uid/${ownerUid}/faturamento/${docData.id}/lojas`);
@@ -1677,7 +1677,7 @@ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
 
       const { decryptString } = await import('./crypto.js');
  let refs = [];
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         const q = await db.collectionGroup('faturamento')
           .where(firebase.firestore.FieldPath.documentId(), '==', dataRef)
           .get();
@@ -1716,7 +1716,7 @@ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
 
     async function excluirFaturamento(data) {
         if (!confirm(`Tem certeza que deseja excluir o faturamento do dia ${data}?`)) return;
-        if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+        if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
           const snap = await db.collectionGroup('faturamento')
             .where(firebase.firestore.FieldPath.documentId(), '==', data)
             .get();
@@ -1830,7 +1830,7 @@ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
       container.innerHTML = "🔄 Carregando...";
 
  let ref;
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('skusVendidos');
       } else {
         ref = db.collection('uid').doc(usuarioLogado.uid).collection('skusVendidos');
@@ -1847,7 +1847,7 @@ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
           if (anoFiltro !== anoDoc || mesFiltro !== mesDoc) continue;
         }
 
- const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
           ? doc.ref.parent.parent.id
           : usuarioLogado.uid;
         const listaRef = db.collection(`uid/${ownerUid}/skusVendidos/${dataDoc}/lista`);
@@ -1885,7 +1885,7 @@ const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
     }
     window.verDetalhesDia = async function (dataDoc) {
 let uids = [];
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         const q = await db.collectionGroup('skusVendidos')
           .where(firebase.firestore.FieldPath.documentId(), '==', dataDoc)
           .get();
@@ -1962,7 +1962,7 @@ let uids = [];
 
     async function exportarFaturamentoExcel() {
  let ref;
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('faturamento');
       } else {
         ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
@@ -1971,7 +1971,7 @@ let uids = [];
       const { decryptString } = await import('./crypto.js');
 
       for (const docData of snap.docs) {
- const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
           ? docData.ref.parent.parent.id
           : usuarioLogado.uid;
         const subRef = db.collection(`uid/${ownerUid}/faturamento/${docData.id}/lojas`);
@@ -2019,7 +2019,7 @@ let uids = [];
       if (metaLiquidoInput) metaLiquidoInput.value = metaLiquidoDiario || '';
       
     let ref;
-      if (usuarioLogado.perfil.toLowerCase() === 'adm') {
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('faturamento');
       } else {
         ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
@@ -2039,7 +2039,7 @@ let uids = [];
           if (ano !== anoFiltro || mes !== mesFiltro) continue;
         }
 
-  const ownerUid = usuarioLogado.perfil.toLowerCase() === 'adm'
+  const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
           ? doc.ref.parent.parent.id
           : usuarioLogado.uid;
         const subRef = db.collection(`uid/${ownerUid}/faturamento/${doc.id}/lojas`);
