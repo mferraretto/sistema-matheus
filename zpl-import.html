@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combinador de Etiqueta ZPL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- A biblioteca pdf-lib é carregada aqui -->
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+<div class="card-container w-full max-w-2xl flex flex-col gap-6">
+    <div class="card bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+        <h1 class="text-2xl font-semibold text-gray-900 text-center mb-2">Combinador de ZPL</h1>
+        <p class="text-gray-600 text-center mb-6">
+            Selecione um ficheiro .zpl ou .txt para extrair os dados do checklist e combiná-los na etiqueta de envio.
+        </p>
+        <div class="flex flex-col items-center gap-4">
+            <input 
+                type="file" 
+                id="zplFile" 
+                accept=".zpl, .txt"
+                class="block w-full max-w-sm text-sm text-gray-500
+                       file:mr-4 file:py-2 file:px-4
+                       file:rounded-full file:border-0
+                       file:text-sm file:font-semibold
+                       file:bg-blue-50 file:text-blue-700
+                       hover:file:bg-blue-100 cursor-pointer"
+            >
+            <button 
+                id="converterButton" 
+                class="px-6 py-3 bg-blue-800 text-white font-bold text-lg rounded-full 
+                       shadow-lg hover:bg-blue-700 transition-all duração-300 transform 
+                       hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+                Extrair e Gerar
+            </button>
+        </div>
+        <div id="loading" class="text-center mt-6 text-gray-500 italic hidden">
+            A processar... Por favor, aguarde, pois isso pode demorar um pouco.
+        </div>
+        <div id="error-message" class="text-red-500 font-bold text-center mt-4"></div>
+    </div>
+
+    <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;">
+        <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2>
+        <div id="preview-image-container" class="flex justify-center mb-4 p-4 border border-gray-300 rounded-lg">
+            <img id="preview-image" src="" alt="Pré-visualização da etiqueta" class="max-w-full h-auto">
+        </div>
+        <div id="pdf-links" class="flex flex-col items-center gap-2">
+            <!-- O link para o PDF será inserido aqui -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileInput = document.getElementById('zplFile');
+        const converterButton = document.getElementById('converterButton');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error-message');
+        const resultsCard = document.getElementById('results-card');
+        const pdfLinksDiv = document.getElementById('pdf-links');
+        const previewImage = document.getElementById('preview-image');
+
+        // Estado inicial da interface do utilizador
+        converterButton.disabled = true;
+
+        fileInput.addEventListener('change', () => {
+            converterButton.disabled = !fileInput.files.length;
+            errorDiv.textContent = '';
+            pdfLinksDiv.innerHTML = '';
+            resultsCard.style.display = 'none';
+            previewImage.src = '';
+        });
+
+        converterButton.addEventListener('click', processZPL);
+
+        async function processZPL() {
+            const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null;
+            errorDiv.textContent = '';
+            pdfLinksDiv.innerHTML = '';
+            resultsCard.style.display = 'none';
+            previewImage.src = '';
+
+            if (!file) {
+                errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.';
+                return;
+            }
+
+            loadingDiv.classList.remove('hidden');
+            converterButton.disabled = true;
+
+            try {
+                const zplCode = await readFileAsync(file);
+                // Regex para encontrar blocos ^XA...^XZ, ignorando ^DGR para capturar ambos os blocos.
+                const blocks = zplCode.match(/(~DGR[\s\S]*?\^XA[\s\S]*?\^XZ)/g);
+
+                if (!blocks || blocks.length < 2) {
+                    throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist.');
+                }
+
+                const labelBlock = blocks.at(0);
+                const checklistBlock = blocks.at(1);
+                
+                // Usar densidade de impressão de 8 dpmm (203 dpi) para a API Labelary
+                const dpmm = 8; 
+                
+                // Dimensões de etiqueta padrão em polegadas (ajustadas para o exemplo)
+                const originalWidthIn = 4.0;
+                const originalHeightIn = 5.2;
+
+                // 1. Renderizar o checklist como imagem para análise
+                const checklistImageBlob = await generateImageFromZpl(checklistBlock, dpmm, originalWidthIn, originalHeightIn);
+                const checklistBase64 = await blobToBase64(checklistImageBlob);
+
+                // 2. Usar o Gemini API para extrair o SKU e a quantidade
+                const extractedData = await extractDataFromImage(checklistBase64);
+
+                if (!extractedData || extractedData.length === 0) {
+                    throw new Error('Não foi possível extrair dados de SKU e quantidade da imagem do checklist.');
+                }
+
+                // 3. Gerar o ZPL para a nova etiqueta combinada
+                const combinedZPL = generateCombinedZPL(labelBlock, extractedData);
+                
+                // 4. Calcular a nova altura total da página com o novo conteúdo.
+                const newTotalHeightInches = calculateNewTotalHeight(originalHeightIn, extractedData.length, dpmm);
+                
+                // 5. Obter PNG da etiqueta combinada da API Labelary
+                const combinedPngBlob = await generateImageFromZpl(combinedZPL, dpmm, originalWidthIn, newTotalHeightInches);
+                const combinedPngUrl = URL.createObjectURL(combinedPngBlob);
+                previewImage.src = combinedPngUrl;
+
+                // 6. Aguardar o carregamento da imagem para aplicar o filtro e criar o PDF
+                previewImage.onload = async () => {
+                    URL.revokeObjectURL(combinedPngUrl); // Limpar o URL do blob
+                    
+                    // 7. Aplicar o filtro de contraste/ganho na imagem
+                    const processedPngBlob = await applyBlackContrast(previewImage);
+                    
+                    // 8. Criar o PDF a partir do PNG processado
+                    const pdfBytes = await createPdfFromPng(processedPngBlob, originalWidthIn, newTotalHeightInches);
+                    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                    // 9. Apresentar o link do PDF
+                    const link = document.createElement('a');
+                    link.href = pdfUrl;
+                    link.textContent = 'Descarregar Etiqueta Combinada (PDF com Filtro)';
+                    link.download = 'etiqueta_combinada_filtrada.pdf';
+                    link.className = 'px-4 py-2 bg-blue-500 text-white font-bold rounded-full hover:bg-blue-600 transition-colors';
+                    pdfLinksDiv.appendChild(link);
+                    resultsCard.style.display = 'block';
+                    loadingDiv.classList.add('hidden');
+                    converterButton.disabled = false;
+                };
+
+            } catch (error) {
+                errorDiv.textContent = 'Ocorreu um erro durante o processamento. Verifique o console para mais detalhes.';
+                console.error('Erro na conversão:', error);
+                loadingDiv.classList.add('hidden');
+                converterButton.disabled = false;
+            }
+        }
+        
+        function calculateNewTotalHeight(originalHeightIn, numberOfItems, dpmm) {
+            const fontH = 22; 
+            const lineStep = 30;
+            const yPadding = 250;
+
+            const addedContentHeightDots = numberOfItems * (lineStep + fontH) + yPadding;
+            
+            const dotsPerInch = dpmm * 25.4;
+            const addedContentHeightInches = addedContentHeightDots / dotsPerInch;
+            
+            return originalHeightIn + addedContentHeightInches;
+        }
+
+        async function generateImageFromZpl(zplCode, dpmm, width, height) {
+            const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'image/png',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: zplCode
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Erro na API Labelary (imagem): ${response.status} ${response.statusText} - ${errorText}`);
+            }
+
+            return response.blob();
+        }
+
+        async function extractDataFromImage(base64Image) {
+            let chatHistory = [];
+            const prompt = `
+                Dada a imagem de um checklist ZPL, extraia o SKU e a quantidade. 
+                Retorne os resultados num array de objetos JSON, com as chaves "sku" e "quantidade".
+                Por exemplo, para o SKU "TR15" e quantidade "1", o JSON seria: 
+                [ { "sku": "TR15", "quantidade": 1 } ]
+                Por favor, apenas retorne o JSON e nada mais.
+            `;
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            
+            const payload = {
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64Image
+                                }
+                            }
+                        ]
+                    }
+                ],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "sku": { "type": "STRING" },
+                                "quantidade": { "type": "NUMBER" }
+                            }
+                        }
+                    }
+                }
+            };
+            
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            let result;
+            let attempts = 0;
+            const maxAttempts = 5;
+            let delay = 1000;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 429) { // Too Many Requests
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; // Exponential backoff
+                            attempts++;
+                            continue; // Retry
+                        }
+                        const errorText = await response.text();
+                        throw new Error(`Erro na API Gemini: ${response.status} - ${errorText}`);
+                    }
+                    
+                    result = await response.json();
+                    break; // Success
+                } catch (error) {
+                    console.error('API call failed, retrying...', error);
+                    attempts++;
+                    if (attempts === maxAttempts) {
+                        throw error; // Re-throw if max attempts reached
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates.at(0).content && result.candidates.at(0).content.parts &&
+                result.candidates.at(0).content.parts.length > 0) {
+                const json = result.candidates.at(0).content.parts.at(0).text;
+                return JSON.parse(json);
+            } else {
+                throw new Error("Resposta da API Gemini inválida.");
+            }
+        }
+
+        function generateCombinedZPL(labelBlock, data) {
+            // Remove the ZPL start/end tags from the original block.
+            let originalContent = labelBlock.replace(/\^XA|\^XZ/g, '');
+
+            // A alteração solicitada pelo utilizador para padronizar a fonte.
+            originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22');
+
+            const dpmm = 8;
+            const originalHeightIn = 6.0;
+            const newContentStartX = 50; 
+            const newContentStartY = 1200; // Posição Y do novo conteúdo
+            const fontH = 22;
+            const fontW = 22;
+            const lineStep = 30;
+
+            let newContentZPL = '';
+            data.forEach((item, index) => {
+                const y = newContentStartY + (index * (lineStep + fontH));
+                const skuText = `^FO${newContentStartX},${y}^ABN,${fontH},${fontW}^FD SKU: ${item.sku} ^FS`;
+                const qtdText = `^FO${newContentStartX},${y + fontH + 5}^ABN,${fontH},${fontW}^FD Qtd: ${item.quantidade} ^FS`;
+                newContentZPL += `${skuText}${qtdText}`;
+            });
+            
+            const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm);
+            const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8);
+            
+            return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}^XZ`;
+        }
+
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve(reader.result);
+                };
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+        }
+        
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    resolve(reader.result.split(',')[1]);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function applyBlackContrast(imageElement, { contrast = 40, gamma = 0.9, threshold = 200 } = {}) {
+            const canvas = document.createElement('canvas');
+            canvas.width = imageElement.naturalWidth;
+            canvas.height = imageElement.naturalHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(imageElement, 0, 0);
+
+            const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = img.data;
+
+            // fator padrão de contraste (Photoshop/GIMP)
+            const factor = (359 * (contrast + 255)) / (255 * (259 - contrast));
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+
+                // luminância perceptual (cinza)
+                let y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                // só mexe se já for escuro (texto/traços)
+                if (y < threshold) {
+                    // aplica contraste em torno de 128
+                    let v = factor * (y - 128) + 128;
+                    // puxa levemente pro preto
+                    v = 255 * Math.pow(v / 255, gamma);
+                    // garante que não “clareie” um pixel escuro por acidente
+                    if (v > y) v = y;
+                    // clamp
+                    if (v < 0) v = 0;
+                    if (v > 255) v = 255;
+
+                    data[i] = data[i + 1] = data[i + 2] = v;
+                } else {
+                    // mantém brancos/claros intactos
+                    const v = y > 255 ? 255 : y;
+                    data[i] = data[i + 1] = data[i + 2] = v;
+                }
+                // alpha intacto
+            }
+
+            ctx.putImageData(img, 0, 0);
+            return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1));
+        }
+
+        async function createPdfFromPng(pngBlob, widthIn, heightIn) {
+            const { PDFDocument } = PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            // Define o tamanho da página com base nas dimensões da etiqueta
+            const page = pdfDoc.addPage([widthIn * 72, heightIn * 72]);
+
+            const pngBytes = await pngBlob.arrayBuffer();
+            const pngImage = await pdfDoc.embedPng(pngBytes);
+
+            // Desenha a imagem na página com as dimensões corretas (1:1)
+            page.drawImage(pngImage, { x: 0, y: 0, width: widthIn * 72, height: heightIn * 72 });
+            return await pdfDoc.save();
+        }
+    });
+</script>
+
+</body>
+</html>
