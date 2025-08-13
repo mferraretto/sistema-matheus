@@ -1,432 +1,404 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combinador de Etiqueta ZPL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- A biblioteca pdf-lib é carregada aqui -->
-    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-        }
-    </style>
-</head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<!DOCTYPE html> 
+<html lang="pt-BR"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Combinador de Etiqueta ZPL</title> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <!-- A biblioteca pdf-lib é carregada aqui --> 
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script> 
+    <style> 
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap'); 
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f0f4f8; 
+        } 
+    </style> 
+</head> 
+<body class="flex items-center justify-center min-h-screen p-4"> 
 
-<div class="card-container w-full max-w-2xl flex flex-col gap-6">
-    <div class="card bg-white p-8 rounded-xl shadow-lg border border-gray-200">
-        <h1 class="text-2xl font-semibold text-gray-900 text-center mb-2">Combinador de ZPL</h1>
-        <p class="text-gray-600 text-center mb-6">
-            Selecione um ficheiro .zpl ou .txt para extrair os dados do checklist e combiná-los na etiqueta de envio.
-        </p>
-        <div class="flex flex-col items-center gap-4">
+<div class="card-container w-full max-w-2xl flex flex-col gap-6"> 
+    <div class="card bg-white p-8 rounded-xl shadow-lg border border-gray-200"> 
+        <h1 class="text-2xl font-semibold text-gray-900 text-center mb-2">Combinador de ZPL</h1> 
+        <p class="text-gray-600 text-center mb-6"> 
+            Selecione um ficheiro .zpl ou .txt para extrair os dados do checklist e combiná-los na etiqueta de envio. 
+        </p> 
+        <div class="flex flex-col items-center gap-4"> 
             <input 
                 type="file" 
                 id="zplFile" 
-                accept=".zpl, .txt"
-                class="block w-full max-w-sm text-sm text-gray-500
-                       file:mr-4 file:py-2 file:px-4
-                       file:rounded-full file:border-0
-                       file:text-sm file:font-semibold
-                       file:bg-blue-50 file:text-blue-700
-                       hover:file:bg-blue-100 cursor-pointer"
-            >
+                accept=".zpl, .txt" 
+                class="block w-full max-w-sm text-sm text-gray-500 
+                        file:mr-4 file:py-2 file:px-4 
+                        file:rounded-full file:border-0 
+                        file:text-sm file:font-semibold 
+                        file:bg-blue-50 file:text-blue-700 
+                        hover:file:bg-blue-100 cursor-pointer" 
+            > 
             <button 
                 id="converterButton" 
                 class="px-6 py-3 bg-blue-800 text-white font-bold text-lg rounded-full 
-                       shadow-lg hover:bg-blue-700 transition-all duração-300 transform 
-                       hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-                Extrair e Gerar
-            </button>
+                        shadow-lg hover:bg-blue-700 transition-all duration-300 transform 
+                        hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+            > 
+                Extrair e Gerar 
+            </button> 
+        </div> 
+
+        <!-- Progress bar and status -->
+        <div id="progress-container" class="mt-6 hidden">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="progress-status" class="text-center text-sm text-gray-600 mt-2"></p>
         </div>
-        <div id="loading" class="text-center mt-6 text-gray-500 italic hidden">
-            A processar... Por favor, aguarde, pois isso pode demorar um pouco.
-        </div>
-        <div id="error-message" class="text-red-500 font-bold text-center mt-4"></div>
-    </div>
+        
+        <div id="error-message" class="text-red-500 font-bold text-center mt-4"></div> 
+    </div> 
 
-    <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;">
-        <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2>
-        <div id="preview-image-container" class="flex justify-center mb-4 p-4 border border-gray-300 rounded-lg">
-            <img id="preview-image" src="" alt="Pré-visualização da etiqueta" class="max-w-full h-auto">
-        </div>
-        <div id="pdf-links" class="flex flex-col items-center gap-2">
-            <!-- O link para o PDF será inserido aqui -->
-        </div>
-    </div>
-</div>
+    <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;"> 
+        <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2> 
+        <div id="preview-image-container" class="flex justify-center mb-4 p-4 border border-gray-300 rounded-lg"> 
+            <img id="preview-image" src="" alt="Pré-visualização da etiqueta" class="max-w-full h-auto"> 
+        </div> 
+        <div id="pdf-links" class="flex flex-col items-center gap-2"> 
+            <!-- O link para o PDF será inserido aqui --> 
+        </div> 
+    </div> 
+</div> 
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('zplFile');
-    const converterButton = document.getElementById('converterButton');
-    const loadingDiv = document.getElementById('loading');
-    const errorDiv = document.getElementById('error-message');
-    const resultsCard = document.getElementById('results-card');
-    const pdfLinksDiv = document.getElementById('pdf-links');
-    const previewImage = document.getElementById('preview-image');
+<script> 
+    document.addEventListener('DOMContentLoaded', () => { 
+        const fileInput = document.getElementById('zplFile'); 
+        const converterButton = document.getElementById('converterButton'); 
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressStatus = document.getElementById('progress-status');
+        const errorDiv = document.getElementById('error-message'); 
+        const resultsCard = document.getElementById('results-card'); 
+        const pdfLinksDiv = document.getElementById('pdf-links'); 
+        const previewImage = document.getElementById('preview-image'); 
 
-    // Estado inicial
-    converterButton.disabled = true;
+        // Initial state of the user interface
+        converterButton.disabled = true; 
 
-    fileInput.addEventListener('change', () => {
-      converterButton.disabled = !fileInput.files.length;
-      errorDiv.textContent = '';
-      pdfLinksDiv.innerHTML = '';
-      resultsCard.style.display = 'none';
-      previewImage.src = '';
-    });
+        fileInput.addEventListener('change', () => { 
+            converterButton.disabled = !fileInput.files.length; 
+            errorDiv.textContent = ''; 
+            pdfLinksDiv.innerHTML = ''; 
+            resultsCard.style.display = 'none'; 
+            previewImage.src = ''; 
+        }); 
 
-    converterButton.addEventListener('click', processZPLBatch);
+        converterButton.addEventListener('click', processZPL); 
 
-    async function processZPLBatch() {
-      const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null;
-      errorDiv.textContent = '';
-      pdfLinksDiv.innerHTML = '';
-      resultsCard.style.display = 'none';
-      previewImage.src = '';
+        async function processZPL() { 
+            const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null; 
+            errorDiv.textContent = ''; 
+            pdfLinksDiv.innerHTML = ''; 
+            resultsCard.style.display = 'none'; 
+            previewImage.src = ''; 
 
-      if (!file) {
-        errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.';
-        return;
-      }
+            if (!file) { 
+                errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.'; 
+                return; 
+            } 
 
-      loadingDiv.classList.remove('hidden');
-      converterButton.disabled = true;
+            // Show progress bar and disable button
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressStatus.textContent = 'A preparar...';
+            converterButton.disabled = true; 
 
-      try {
-        const zplCode = await readFileAsync(file);
+            try { 
+                const zplCode = await readFileAsync(file); 
+                // Regex to find ^XA...^XZ blocks, ignoring ^DGR to capture both blocks. 
+                const blocks = zplCode.match(/(~DGR[\s\S]*?\^XA[\s\S]*?\^XZ)/g); 
 
-        // Pega TODOS os blocos ^XA ... ^XZ (cada bloco é uma "página" ZPL)
-        const segments = zplCode.match(/\^XA[\s\S]*?\^XZ/g) || [];
+                if (!blocks || blocks.length < 2 || blocks.length % 2 !== 0) { 
+                    throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist, ou o número de blocos é ímpar.'); 
+                } 
+                
+                const dpmm = 8; 
+                const originalWidthIn = 4.0; 
+                const originalHeightIn = 5.2; 
+                const { PDFDocument } = PDFLib; 
+                const pdfDoc = await PDFDocument.create(); 
+                const totalLabels = blocks.length / 2;
 
-        if (segments.length < 2) {
-          throw new Error('Não foram encontrados blocos ZPL suficientes para etiqueta + checklist.');
-        }
+                // Loop to process each pair of ZPL blocks
+                for (let i = 0; i < blocks.length; i += 2) { 
+                    const currentLabelIndex = (i / 2) + 1;
+                    progressStatus.textContent = `A processar etiqueta ${currentLabelIndex} de ${totalLabels}...`;
+                    progressBar.style.width = `${(currentLabelIndex / totalLabels) * 100}%`;
 
-        // Agrupar de 2 em 2: [etiqueta, checklist], [etiqueta, checklist], ...
-        const pairs = [];
-        for (let i = 0; i < segments.length; i += 2) {
-          const labelBlock = segments[i];
-          const checklistBlock = segments[i + 1];
-          if (!checklistBlock) {
-            // bloco ímpar no fim: ignora ou trate como sem checklist
-            console.warn('Bloco de checklist ausente para a etiqueta no índice', i);
-            continue;
-          }
-          pairs.push({ labelBlock, checklistBlock });
-        }
+                    const labelBlock = blocks[i]; 
+                    const checklistBlock = blocks[i + 1]; 
 
-        if (pairs.length === 0) {
-          throw new Error('Não foi possível formar pares etiqueta+checklist.');
-        }
+                    // 1. Render checklist as an image for analysis
+                    const checklistImageBlob = await generateImageFromZpl(checklistBlock, dpmm, originalWidthIn, originalHeightIn); 
+                    const checklistBase64 = await blobToBase64(checklistImageBlob); 
 
-        // Configurações padrão
-        const dpmm = 8;                 // 203 dpi
-        const widthIn = 4.0;            // largura padrão em polegadas
-        const baseHeightIn = 5.2;       // altura base antes de adicionar o conteúdo OCR
+                    // 2. Use Gemini API to extract SKU and quantity
+                    const extractedData = await extractDataFromImage(checklistBase64); 
 
-        // Vamos acumular todas as páginas (PNG já filtrados) e suas alturas em polegadas
-        const processedPages = [];
+                    if (!extractedData || extractedData.length === 0) { 
+                        throw new Error(`Não foi possível extrair dados de SKU e quantidade da imagem do checklist da etiqueta ${currentLabelIndex}.`); 
+                    } 
 
-        // Processa cada par
-        for (let idx = 0; idx < pairs.length; idx++) {
-          const { labelBlock, checklistBlock } = pairs[idx];
+                    // 3. Generate ZPL for the new combined label
+                    const combinedZPL = generateCombinedZPL(labelBlock, extractedData); 
+                    
+                    // 4. Calculate new total page height
+                    const newTotalHeightInches = calculateNewTotalHeight(originalHeightIn, extractedData.length, dpmm); 
+                    
+                    // 5. Get PNG of the combined label from Labelary API
+                    const combinedPngBlob = await generateImageFromZpl(combinedZPL, dpmm, originalWidthIn, newTotalHeightInches); 
+                    const processedPngBlob = await applyBlackContrastFromBlob(combinedPngBlob); 
 
-          // 1) Renderizar checklist -> PNG base64 (para OCR)
-          const checklistPngBlob = await generateImageFromZpl(checklistBlock, dpmm, widthIn, baseHeightIn);
-          const checklistBase64 = await blobToBase64(checklistPngBlob);
+                    // 6. Create PDF from the processed PNG
+                    const pngBytes = await processedPngBlob.arrayBuffer(); 
+                    const pngImage = await pdfDoc.embedPng(pngBytes); 
+                    const page = pdfDoc.addPage([originalWidthIn * 72, newTotalHeightInches * 72]); 
+                    page.drawImage(pngImage, { x: 0, y: 0, width: originalWidthIn * 72, height: newTotalHeightInches * 72 }); 
+                } 
 
-          // 2) OCR via Gemini
-          const extractedData = await extractDataFromImage(checklistBase64);
-          if (!extractedData || extractedData.length === 0) {
-            console.warn(`Par ${idx + 1}: OCR não retornou dados; seguindo sem linhas adicionais.`);
-          }
+                // 7. Save the final PDF
+                const pdfBytes = await pdfDoc.save(); 
+                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' }); 
+                const pdfUrl = URL.createObjectURL(pdfBlob); 
 
-          // 3) Gerar ZPL combinado (etiqueta original + linhas OCR)
-          const combinedZPL = generateCombinedZPL(labelBlock, extractedData || []);
+                // Add the download link
+                const link = document.createElement('a'); 
+                link.href = pdfUrl; 
+                link.download = `etiquetas-combinadas-${Date.now()}.pdf`; 
+                link.textContent = 'Transferir PDF Combinado'; 
+                link.classList.add('px-6', 'py-3', 'bg-green-600', 'text-white', 'font-bold', 'rounded-full', 'shadow-lg', 'hover:bg-green-500', 'transition-all', 'duration-300'); 
+                pdfLinksDiv.appendChild(link); 
+                
+                // 8. Display the preview of the first label
+                const firstLabelImageBlob = await generateImageFromZpl(generateCombinedZPL(blocks[0], await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))), dpmm, originalWidthIn, calculateNewTotalHeight(originalHeightIn, (await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))).length, dpmm)); 
+                const firstLabelImageUrl = URL.createObjectURL(firstLabelImageBlob); 
+                previewImage.src = firstLabelImageUrl; 
+                previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); }; 
+                resultsCard.style.display = 'block'; 
 
-          // 4) Altura final da página considerando linhas OCR
-          const finalHeightIn = calculateNewTotalHeight(baseHeightIn, (extractedData || []).length, dpmm);
+            } catch (error) { 
+                errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`; 
+                console.error('Erro na conversão:', error); 
+            } finally { 
+                // Hide progress bar and re-enable button
+                progressContainer.classList.add('hidden');
+                converterButton.disabled = false; 
+                progressBar.style.width = '0%';
+            } 
+        } 
+        
+        function calculateNewTotalHeight(originalHeightIn, numberOfItems, dpmm) { 
+            const fontH = 22; 
+            const lineStep = 30; 
+            const yPadding = 250; 
+            const addedContentHeightDots = numberOfItems * (lineStep + fontH); 
+            
+            const dotsPerInch = dpmm * 25.4; 
+            const addedContentHeightInches = (addedContentHeightDots + yPadding) / dotsPerInch; 
+            
+            return originalHeightIn + addedContentHeightInches; 
+        } 
 
-          // 5) Renderizar ZPL combinado -> PNG
-          const combinedPngBlob = await generateImageFromZpl(combinedZPL, dpmm, widthIn, finalHeightIn);
+        async function generateImageFromZpl(zplCode, dpmm, width, height) { 
+            const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`; 
+            const response = await fetch(apiUrl, { 
+                method: 'POST', 
+                headers: { 
+                    'Accept': 'image/png', 
+                    'Content-Type': 'application/x-www-form-urlencoded' 
+                }, 
+                body: zplCode 
+            }); 
 
-          // 6) Aplicar filtro “preto” (contraste focado no escuro)
-          const tempImg = await createHTMLImageFromBlob(combinedPngBlob);
-          const processedPngBlob = await applyBlackContrast(tempImg);
+            if (!response.ok) { 
+                const errorText = await response.text(); 
+                throw new Error(`Erro na API Labelary (imagem): ${response.status} ${response.statusText} - ${errorText}`); 
+            } 
 
-          // Guarda para montagem do PDF
-          processedPages.push({ pngBlob: processedPngBlob, widthIn, heightIn: finalHeightIn });
+            return response.blob(); 
+        } 
 
-          // Prévia da primeira página
-          if (idx === 0) {
-            const url = URL.createObjectURL(processedPngBlob);
-            previewImage.src = url;
-            resultsCard.style.display = 'block';
-          }
-        }
+        async function extractDataFromImage(base64Image) { 
+            const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU e a quantidade. Retorne os resultados num array de objetos JSON, com as chaves "sku" e "quantidade". Por favor, apenas retorne o JSON e nada mais.`; 
+            const payload = { 
+                contents: [ 
+                    { 
+                        role: "user", 
+                        parts: [ 
+                            { text: prompt }, 
+                            { 
+                                inlineData: { 
+                                    mimeType: "image/png", 
+                                    data: base64Image 
+                                } 
+                            } 
+                        ] 
+                    } 
+                ], 
+                generationConfig: { 
+                    responseMimeType: "application/json", 
+                    responseSchema: { 
+                        type: "ARRAY", 
+                        items: { 
+                            type: "OBJECT", 
+                            properties: { 
+                                "sku": { "type": "STRING" }, 
+                                "quantidade": { "type": "NUMBER" } 
+                            } 
+                        } 
+                    } 
+                } 
+            }; 
+            
+            const apiKey = "AIzaSyDJWpigMGz4KV8XNcXd9r9VgbA24fy2Fec"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; 
+            
+            let result; 
+            let attempts = 0; 
+            const maxAttempts = 5; 
+            let delay = 1000; 
 
-        // 7) Criar PDF multi-página com numeração "i de N"
-        const pdfBytes = await createPdfFromPngArray(processedPages);
-        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const pdfUrl = URL.createObjectURL(pdfBlob);
+            while (attempts < maxAttempts) { 
+                try { 
+                    const response = await fetch(apiUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    }); 
+                    
+                    if (!response.ok) { 
+                        console.error(`Attempt ${attempts + 1} failed with status: ${response.status} - ${await response.text()}`); 
+                        if (response.status === 429) { // Too Many Requests 
+                            await new Promise(resolve => setTimeout(resolve, delay)); 
+                            delay *= 2; 
+                            attempts++; 
+                            continue; 
+                        } 
+                        throw new Error(`Erro na API Gemini: ${response.status} - ${await response.text()}`); 
+                    } 
+                    
+                    result = await response.json(); 
+                    break; 
+                } catch (error) { 
+                    console.error('API call failed, retrying...', error); 
+                    attempts++; 
+                    if (attempts === maxAttempts) { 
+                        throw error; 
+                    } 
+                    await new Promise(resolve => setTimeout(resolve, delay)); 
+                    delay *= 2; 
+                } 
+            } 
 
-        // 8) Link para download
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.textContent = `Descarregar Etiquetas (${processedPages.length} páginas)`;
-        link.download = 'etiquetas_combinadas.pdf';
-        link.className = 'px-4 py-2 bg-blue-500 text-white font-bold rounded-full hover:bg-blue-600 transition-colors';
-        pdfLinksDiv.appendChild(link);
+            if (!result || !result.candidates || result.candidates.length === 0 || 
+                !result.candidates.at(0).content || !result.candidates.at(0).content.parts || 
+                result.candidates.at(0).content.parts.length === 0) { 
+                throw new Error("Resposta da API Gemini inválida."); 
+            } 
+            
+            const json = result.candidates.at(0).content.parts.at(0).text; 
+            console.log('Dados extraídos da API:', json); 
+            return JSON.parse(json); 
+        } 
 
-        loadingDiv.classList.add('hidden');
-        converterButton.disabled = false;
-      } catch (error) {
-        errorDiv.textContent = 'Ocorreu um erro durante o processamento. Verifique o console para mais detalhes.';
-        console.error('Erro na conversão:', error);
-        loadingDiv.classList.add('hidden');
-        converterButton.disabled = false;
-      }
-    }
+        function generateCombinedZPL(labelBlock, data) { 
+            let originalContent = labelBlock.replace(/\^XA|\^XZ/g, ''); 
+            originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22'); 
+            const newContentStartX = 50; 
+            const newContentStartY = 1200; 
+            const fontH = 22; 
+            const fontW = 22; 
+            const lineStep = 30; 
 
-    // ====== FUNÇÕES DE APOIO ======
+            let newContentZPL = ''; 
+            if (data && data.length > 0) { 
+                data.forEach((item, index) => { 
+                    const y = newContentStartY + (index * (lineStep + fontH)); 
+                    const skuText = `^FO${newContentStartX},${y}^ABN,${fontH},${fontW}^FD SKU: ${item.sku} ^FS`; 
+                    const qtdText = `^FO${newContentStartX},${y + fontH + 5}^ABN,${fontH},${fontW}^FD Qtd: ${item.quantidade} ^FS`; 
+                    newContentZPL += `${skuText}${qtdText}`; 
+                }); 
+            } 
+            
+            const dpmm = 8; 
+            const originalHeightIn = 5.2; 
+            const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm); 
+            const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8); 
+            
+            return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}^XZ`; 
+        } 
 
-    function calculateNewTotalHeight(originalHeightIn, numberOfItems, dpmm) {
-      const fontH = 22;
-      const lineStep = 30;
-      const yPadding = 250;
-      const addedContentHeightDots = numberOfItems * (lineStep + fontH) + yPadding;
-      const dotsPerInch = dpmm * 25.4;
-      const addedContentHeightInches = addedContentHeightDots / dotsPerInch;
-      return originalHeightIn + addedContentHeightInches;
-    }
+        function readFileAsync(file) { 
+            return new Promise((resolve, reject) => { 
+                const reader = new FileReader(); 
+                reader.onload = () => { 
+                    resolve(reader.result); 
+                }; 
+                reader.onerror = reject; 
+                reader.readAsText(file); 
+            }); 
+        } 
+        
+        function blobToBase64(blob) { 
+            return new Promise((resolve, reject) => { 
+                const reader = new FileReader(); 
+                reader.onloadend = () => { 
+                    resolve(reader.result.split(',')[1]); 
+                }; 
+                reader.onerror = reject; 
+                reader.readAsDataURL(blob); 
+            }); 
+        } 
 
-    async function generateImageFromZpl(zplCode, dpmm, width, height) {
-      const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Accept': 'image/png',
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: zplCode
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro na API Labelary (imagem): ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      return response.blob();
-    }
+        async function applyBlackContrastFromBlob(imageBlob, { contrast = 40, gamma = 0.9, threshold = 200 } = {}) { 
+            return new Promise((resolve, reject) => { 
+                const imgElement = new Image(); 
+                imgElement.onload = () => { 
+                    const canvas = document.createElement('canvas'); 
+                    canvas.width = imgElement.naturalWidth; 
+                    canvas.height = imgElement.naturalHeight; 
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true }); 
+                    ctx.drawImage(imgElement, 0, 0); 
 
-    async function extractDataFromImage(base64Image) {
-      const prompt = `
-        Dada a imagem de um checklist ZPL, extraia o SKU e a quantidade.
-        Retorne os resultados num array de objetos JSON, com as chaves "sku" e "quantidade".
-        Exemplo: [ { "sku": "TR15", "quantidade": 1 } ]
-        Por favor, apenas retorne o JSON e nada mais.
-      `;
+                    const img = ctx.getImageData(0, 0, canvas.width, canvas.height); 
+                    const data = img.data; 
 
-      const payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "image/png", data: base64Image } }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                "sku": { "type": "STRING" },
-                "quantidade": { "type": "NUMBER" }
-              }
-            }
-          }
-        }
-      };
+                    const factor = (359 * (contrast + 255)) / (255 * (259 - contrast)); 
 
-      const apiKey = "AIzaSyDJWpigMGz4KV8XNcXd9r9VgbA24fy2Fec"; // sua chave
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    for (let i = 0; i < data.length; i += 4) { 
+                        const r = data[i], g = data[i + 1], b = data[i + 2]; 
+                        let y = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
 
-      let result;
-      let attempts = 0;
-      const maxAttempts = 5;
-      let delay = 1000;
+                        if (y < threshold) { 
+                            let v = factor * (y - 128) + 128; 
+                            v = 255 * Math.pow(v / 255, gamma); 
+                            if (v > y) v = y; 
+                            if (v < 0) v = 0; 
+                            if (v > 255) v = 255; 
 
-      while (attempts < maxAttempts) {
-        try {
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!response.ok) {
-            if (response.status === 429) {
-              await new Promise(r => setTimeout(r, delay));
-              delay *= 2;
-              attempts++;
-              continue;
-            }
-            const errorText = await response.text();
-            throw new Error(`Erro na API Gemini: ${response.status} - ${errorText}`);
-          }
-          result = await response.json();
-          break;
-        } catch (err) {
-          console.error('Falha na chamada Gemini, tentando novamente...', err);
-          attempts++;
-          if (attempts === maxAttempts) throw err;
-          await new Promise(r => setTimeout(r, delay));
-          delay *= 2;
-        }
-      }
+                            data[i] = data[i + 1] = data[i + 2] = v; 
+                        } else { 
+                            const v = y > 255 ? 255 : y; 
+                            data[i] = data[i + 1] = data[i + 2] = v; 
+                        } 
+                    } 
+                    ctx.putImageData(img, 0, 0); 
+                    canvas.toBlob(resolve, 'image/png', 1); 
+                    if (imgElement.src) URL.revokeObjectURL(imgElement.src); 
+                }; 
+                imgElement.onerror = reject; 
+                imgElement.src = URL.createObjectURL(imageBlob); 
+            }); 
+        } 
+    }); 
+</script> 
 
-      if (
-        result?.candidates?.length > 0 &&
-        result.candidates[0]?.content?.parts?.length > 0
-      ) {
-        const json = result.candidates[0].content.parts[0].text;
-        try {
-          return JSON.parse(json);
-        } catch {
-          console.warn('JSON inválido da Gemini, retornando array vazio.');
-          return [];
-        }
-      } else {
-        throw new Error("Resposta da API Gemini inválida.");
-      }
-    }
-
-    function generateCombinedZPL(labelBlock, data) {
-      // Remove ^XA/^XZ do bloco original
-      let originalContent = labelBlock.replace(/\^XA|\^XZ/g, '');
-      // Padronizar fonte conforme solicitado
-      originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22');
-
-      const dpmm = 8;
-      const originalHeightIn = 6.0;
-      const newContentStartX = 50;
-      const newContentStartY = 1200; // ponto de partida do texto novo
-      const fontH = 22;
-      const fontW = 22;
-      const lineStep = 30;
-
-      let newContentZPL = '';
-      (data || []).forEach((item, index) => {
-        const y = newContentStartY + (index * (lineStep + fontH));
-        const skuText = `^FO${newContentStartX},${y}^ABN,${fontH},${fontW}^FD SKU: ${item.sku} ^FS`;
-        const qtdText = `^FO${newContentStartX},${y + fontH + 5}^ABN,${fontH},${fontW}^FD Qtd: ${item.quantidade} ^FS`;
-        newContentZPL += `${skuText}${qtdText}`;
-      });
-
-      const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, (data || []).length, dpmm);
-      const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 25.4); // dpmm * mm por polegada
-
-      return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}^XZ`;
-    }
-
-    function readFileAsync(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsText(file);
-      });
-    }
-
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    function createHTMLImageFromBlob(blob) {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.src = URL.createObjectURL(blob);
-      });
-    }
-
-    async function applyBlackContrast(imageElement, { contrast = 40, gamma = 0.9, threshold = 200 } = {}) {
-      const canvas = document.createElement('canvas');
-      canvas.width = imageElement.naturalWidth;
-      canvas.height = imageElement.naturalHeight;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(imageElement, 0, 0);
-
-      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = img.data;
-
-      const factor = (359 * (contrast + 255)) / (255 * (259 - contrast));
-
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i + 1], b = data[i + 2];
-        let y = 0.2126 * r + 0.7152 * g + 0.0722 * b; // luminância
-
-        if (y < threshold) {
-          let v = factor * (y - 128) + 128;
-          v = 255 * Math.pow(v / 255, gamma);
-          if (v > y) v = y;
-          if (v < 0) v = 0;
-          if (v > 255) v = 255;
-          data[i] = data[i + 1] = data[i + 2] = v;
-        } else {
-          const v2 = y > 255 ? 255 : y;
-          data[i] = data[i + 1] = data[i + 2] = v2;
-        }
-      }
-
-      ctx.putImageData(img, 0, 0);
-      return new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1));
-    }
-
-    async function createPdfFromPngArray(pages) {
-      const { PDFDocument, StandardFonts } = PDFLib;
-      const pdfDoc = await PDFDocument.create();
-      const totalPages = pages.length;
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const fontSize = 12;
-
-      for (let i = 0; i < pages.length; i++) {
-        const { pngBlob, widthIn, heightIn } = pages[i];
-        const page = pdfDoc.addPage([widthIn * 72, heightIn * 72]);
-
-        const pngBytes = await pngBlob.arrayBuffer();
-        const pngImage = await pdfDoc.embedPng(pngBytes);
-
-        page.drawImage(pngImage, {
-          x: 0,
-          y: 0,
-          width: widthIn * 72,
-          height: heightIn * 72
-        });
-
-        // Numeração "i de N"
-        const pageNumberText = `${i + 1} de ${totalPages}`;
-        const textWidth = font.widthOfTextAtSize(pageNumberText, fontSize);
-        const x = (page.getWidth() - textWidth) / 2;
-        const y = 10;
-        page.drawText(pageNumberText, { x, y, size: fontSize, font });
-      }
-
-      return await pdfDoc.save();
-    }
-  });
-</script>
-
-</body>
+</body> 
 </html>
