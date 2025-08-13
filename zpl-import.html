@@ -4,10 +4,14 @@
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>Combinador de Etiqueta ZPL</title> 
-    <script src="https://cdn.tailwindcss.com"></script> 
-    <!-- A biblioteca pdf-lib é carregada aqui --> 
-    <script src="https://unpkg.com/pdf-lib@1.4.0"></script> 
-    <style> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- A biblioteca pdf-lib é carregada aqui -->
+    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;800&display=swap'); 
         body { 
             font-family: 'Inter', sans-serif; 
@@ -67,8 +71,32 @@
     </div> 
 </div> 
 
-<script> 
-    document.addEventListener('DOMContentLoaded', () => { 
+<script>
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
+    let currentUser = null;
+    firebase.auth().onAuthStateChanged(u => currentUser = u);
+
+    function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async function savePdf(blob, name) {
+        if (!currentUser) return;
+        const base64 = await blobToBase64(blob);
+        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({
+            name: name,
+            pdf: base64,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
         const fileInput = document.getElementById('zplFile'); 
         const converterButton = document.getElementById('converterButton'); 
         const progressContainer = document.getElementById('progress-container');
@@ -164,17 +192,21 @@
                 } 
 
                 // 7. Save the final PDF
-                const pdfBytes = await pdfDoc.save(); 
-                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' }); 
-                const pdfUrl = URL.createObjectURL(pdfBlob); 
+                const pdfBytes = await pdfDoc.save();
+                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                const fileName = `etiquetas-combinadas-${Date.now()}.pdf`;
 
                 // Add the download link
-                const link = document.createElement('a'); 
-                link.href = pdfUrl; 
-                link.download = `etiquetas-combinadas-${Date.now()}.pdf`; 
-                link.textContent = 'Transferir PDF Combinado'; 
-                link.classList.add('px-6', 'py-3', 'bg-green-600', 'text-white', 'font-bold', 'rounded-full', 'shadow-lg', 'hover:bg-green-500', 'transition-all', 'duration-300'); 
-                pdfLinksDiv.appendChild(link); 
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = fileName;
+                link.textContent = 'Transferir PDF Combinado';
+                link.classList.add('px-6', 'py-3', 'bg-green-600', 'text-white', 'font-bold', 'rounded-full', 'shadow-lg', 'hover:bg-green-500', 'transition-all', 'duration-300');
+                pdfLinksDiv.appendChild(link);
+
+                await savePdf(pdfBlob, fileName);
                 
                 // 8. Display the preview of the first label
                 const firstLabelImageBlob = await generateImageFromZpl(generateCombinedZPL(blocks[0], await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))), dpmm, originalWidthIn, calculateNewTotalHeight(originalHeightIn, (await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))).length, dpmm)); 
