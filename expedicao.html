@@ -113,7 +113,7 @@
         </div>
         <div class="mt-2 space-y-2">
           <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this.checked, this.closest('.pdf-card'))">
+            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this, this.closest('.pdf-card'))">
             <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-blue-500 peer-checked:border-blue-500">
               <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -122,7 +122,7 @@
             <span>Impresso</span>
           </label>
           <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this.checked, this.closest('.pdf-card'))">
+            <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this, this.closest('.pdf-card'))">
             <span class="w-5 h-5 flex items-center justify-center border-2 border-gray-300 rounded-sm peer-checked:bg-red-500 peer-checked:border-red-500">
               <svg class="w-3 h-3 text-white hidden peer-checked:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
@@ -167,7 +167,13 @@
     }
     window.imprimir = imprimir;
 
-    async function toggleImpresso(id, checked, card) {
+    async function toggleImpresso(id, checkbox, card) {
+      const checked = checkbox.checked;
+      const confirmMsg = `Deseja ${checked ? 'marcar como impresso' : 'marcar como não impresso'}?`;
+      if (!confirm(confirmMsg)) {
+        checkbox.checked = !checked;
+        return;
+      }
       await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
       if (card) {
         card.classList.remove('bg-yellow-100','bg-green-100','bg-white');
@@ -184,7 +190,13 @@
     }
     window.marcarConcluido = marcarConcluido;
 
-    async function toggleAtencao(id, checked, card) {
+    async function toggleAtencao(id, checkbox, card) {
+      const checked = checkbox.checked;
+      const confirmMsg = `Deseja ${checked ? 'marcar com atenção' : 'remover atenção'}?`;
+      if (!confirm(confirmMsg)) {
+        checkbox.checked = !checked;
+        return;
+      }
       await db.collection('pdfDocs').doc(id).update({ attention: checked });
       if (card) {
         if (checked) {
