@@ -57,7 +57,7 @@ window.savePassphrase = () => {
 };
 
 window.openModal = (id) => {
- const el = document.getElementById(id);
+  const el = document.getElementById(id);
   if (el) {
     el.style.display = 'block';
   }
@@ -81,9 +81,7 @@ window.login = () => {
   const passphrase = document.getElementById('loginPassphrase').value;
 
   setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-      return signInWithEmailAndPassword(auth, email, password);
-    })
+    .then(() => signInWithEmailAndPassword(auth, email, password))
     .then((cred) => {
       if (passphrase) {
         setPassphrase(passphrase);
@@ -96,7 +94,7 @@ window.login = () => {
 };
 
 window.logout = () => {
-    explicitLogout = true;
+  explicitLogout = true;
   signOut(auth).catch(err => showToast('Erro ao sair: ' + err.message, 'error'));
 };
 
@@ -114,12 +112,12 @@ window.sendRecovery = () => {
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
+
 async function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
 
   window.sistema = window.sistema || {};
- // Guarda o UID de forma unificada para outras abas/extensões
   window.sistema.uid = user.uid;
   const senha = getPassphrase();
   if (!senha) {
