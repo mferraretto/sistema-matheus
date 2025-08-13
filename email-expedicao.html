@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-mail Responsável Expedição</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4">
+    <h1 class="text-2xl font-bold mb-4">E-mail do Responsável pela Expedição</h1>
+    <form id="emailForm" class="space-y-4 max-w-lg">
+      <input type="email" id="emailExpedicao" placeholder="email@empresa.com" class="w-full p-2 border rounded">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
+    </form>
+    <p id="status" class="mt-4 text-green-600 hidden"></p>
+  </div>
+  <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    let currentUser = null;
+    const input = document.getElementById('emailExpedicao');
+    const statusEl = document.getElementById('status');
+
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+        return;
+      }
+      currentUser = user;
+      try {
+        const doc = await db.collection('uid').doc(user.uid).get();
+        const email = doc.data()?.responsavelExpedicaoEmail || '';
+        input.value = email;
+      } catch (e) {
+        console.error('Erro ao carregar e-mail:', e);
+      }
+    });
+
+    document.getElementById('emailForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      statusEl.classList.add('hidden');
+      const email = input.value.trim();
+      try {
+        await db.collection('uid').doc(currentUser.uid).set({
+          responsavelExpedicaoEmail: email || null,
+          uid: currentUser.uid,
+          email: currentUser.email
+        }, { merge: true });
+        statusEl.textContent = 'E-mail salvo com sucesso!';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-red-600');
+        statusEl.classList.add('text-green-600');
+      } catch (err) {
+        console.error('Erro ao salvar e-mail:', err);
+        statusEl.textContent = 'Erro ao salvar e-mail';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
+      }
+    });
+
+    loadSidebar();
+    loadNavbar();
+  </script>
+  <script src="shared.js"></script>
+</body>
+</html>
