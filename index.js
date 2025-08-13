@@ -234,7 +234,15 @@ async function carregarTarefas(uid, isAdmin) {
     : await getDocs(collection(db, `uid/${uid}/anuncios`));
   const pass = typeof getPassphrase === 'function' ? getPassphrase() : null;
   for (const docSnap of snapAnuncios.docs) {
-    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    let ownerUid = uid;
+    if (isAdmin) {
+      const parentDoc = docSnap.ref.parent.parent;
+      if (!parentDoc) {
+        console.warn('Documento sem pai para anuncios:', docSnap.ref.path);
+        continue;
+      }
+      ownerUid = parentDoc.id;
+    }
     const dados = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, docSnap.id, pass);
     if (!dados || !dados.dataCriacao) continue;
     const dataCriacao = new Date(dados.dataCriacao);
