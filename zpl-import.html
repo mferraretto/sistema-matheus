@@ -84,7 +84,8 @@
         const db = firebase.firestore();
         const storage = firebase.storage();
         let currentUser = null;
-firebase.auth().onAuthStateChanged(async u => {
+ let responsavelExpedicaoUid = null;
+        firebase.auth().onAuthStateChanged(async u => {
             currentUser = u;
             if (!u) return;
             try {
@@ -92,6 +93,13 @@ firebase.auth().onAuthStateChanged(async u => {
                 const data = doc.data() || {};
                 const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
                 document.getElementById('gestoresEmails').value = Array.isArray(emails) ? emails.join(', ') : emails;
+                const respEmail = Array.isArray(data.gestoresExpedicaoEmails)
+                    ? data.gestoresExpedicaoEmails[0]
+                    : data.responsavelExpedicaoEmail;
+                if (respEmail) {
+                    const snap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
+                    if (!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+                }
             } catch (e) {
                 console.error('Erro ao carregar gestor de expedição:', e);
             }
