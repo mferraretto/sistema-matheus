@@ -1,10 +1,12 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
@@ -98,7 +100,7 @@ window.sendRecovery = () => {
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
 };
 
-function showUserArea(user) {
+async function showUserArea(user) {
   document.getElementById('currentUser').textContent = user.email;
   document.getElementById('logoutBtn').classList.remove('hidden');
 
@@ -112,6 +114,34 @@ function showUserArea(user) {
       openModal('passphraseModal');
       localStorage.setItem('passphraseModalShown', 'true');
     }
+  }
+  try {
+    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
+    window.userPerfil = perfil;
+    applyPerfilRestrictions(perfil);
+  } catch (e) {
+    console.error('Erro ao carregar perfil do usuário:', e);
+  }
+}
+
+function applyPerfilRestrictions(perfil) {
+  if (perfil === 'expedicao') {
+    const links = document.querySelectorAll('#sidebar a.sidebar-link');
+    links.forEach(link => {
+      const href = link.getAttribute('href') || '';
+      const container = link.closest('a') || link;
+      if (!href.includes('expedicao.html')) {
+        container.classList.add('hidden');
+      } else {
+        container.classList.remove('hidden');
+        const submenu = link.closest('#menuConfiguracoes');
+        if (submenu) {
+          submenu.classList.remove('max-h-0');
+          submenu.classList.add('max-h-screen');
+        }
+      }
+    });
   }
 }
 
@@ -174,4 +204,8 @@ document.addEventListener('navbarLoaded', () => {
   });
 }
   checkLogin();
+});
+
+document.addEventListener('sidebarLoaded', () => {
+  if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
 });

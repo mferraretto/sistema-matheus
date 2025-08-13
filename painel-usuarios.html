@@ -29,6 +29,7 @@
       <select id="perfil" class="w-full p-2 border rounded">
         <option value="Cliente">Cliente</option>
         <option value="ADM">ADM</option>
+        <option value="EXPEDICAO">Expedição</option>
       </select>
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Usuário</button>
     </form>
@@ -92,6 +93,7 @@ const { encryptString } = await import('./crypto.js');
           responsavelExpedicaoEmail: emailExpedicao || null,
           encrypted: await encryptString(JSON.stringify({ nome, perfil }), pass)
         });
+        await db.collection('usuarios').doc(uid).set({ perfil, email }, { merge: true });
         alert("Usuário salvo com sucesso!");
         carregarUsuarios();
       }
