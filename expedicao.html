@@ -61,6 +61,7 @@
       const win = window.open('', '_blank');
       win.document.write('<iframe width="100%" height="100%" src="' + url + '"></iframe>');
     }
+    window.visualizar = visualizar;
 
     function imprimir(url) {
       const win = window.open('', '_blank');
@@ -69,6 +70,7 @@
       win.focus();
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
+    window.imprimir = imprimir;
 
     async function excluir(id) {
       if (!confirm('Deseja excluir esta etiqueta?')) return;
@@ -82,6 +84,7 @@
       await docRef.delete();
       carregarEtiquetas();
     }
+    window.excluir = excluir;
 
     loadSidebar();
     loadNavbar();
