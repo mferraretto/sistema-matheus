@@ -15,9 +15,9 @@
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <div class="main-content p-4">
-    <h1 class="text-2xl font-bold mb-4">E-mail do Responsável pela Expedição</h1>
+    <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
-      <input type="email" id="emailExpedicao" placeholder="email@empresa.com" class="w-full p-2 border rounded">
+      <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
@@ -40,8 +40,9 @@
       currentUser = user;
       try {
         const doc = await db.collection('uid').doc(user.uid).get();
-        const email = doc.data()?.responsavelExpedicaoEmail || '';
-        input.value = email;
+       const data = doc.data() || {};
+        const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
+        input.value = Array.isArray(emails) ? emails.join(', ') : emails;
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -50,10 +51,12 @@
     document.getElementById('emailForm').addEventListener('submit', async e => {
       e.preventDefault();
       statusEl.classList.add('hidden');
-      const email = input.value.trim();
+const emailsRaw = input.value.trim();
+      const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
       try {
         await db.collection('uid').doc(currentUser.uid).set({
-          responsavelExpedicaoEmail: email || null,
+responsavelExpedicaoEmail: emails[0] || null,
+          gestoresExpedicaoEmails: emails,
           uid: currentUser.uid,
           email: currentUser.email
         }, { merge: true });
