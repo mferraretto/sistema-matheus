@@ -32,12 +32,16 @@ async function carregarSkus(uid) {
   container.innerHTML = 'Carregando...';
   const snap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
   const resumo = {};
-  snap.forEach(doc => {
-    const dados = doc.data();
-    const sku = dados.sku || 'sem-sku';
-    const qtd = Number(dados.quantidade) || 0;
-    resumo[sku] = (resumo[sku] || 0) + qtd;
-  });
+  for (const docSnap of snap.docs) {
+    const listaRef = collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`);
+    const listaSnap = await getDocs(listaRef);
+    listaSnap.forEach(item => {
+      const dados = item.data();
+      const sku = dados.sku || 'sem-sku';
+      const qtd = Number(dados.total || dados.quantidade) || 0;
+      resumo[sku] = (resumo[sku] || 0) + qtd;
+    });
+  }
   container.innerHTML = '';
   if (!Object.keys(resumo).length) {
     container.innerHTML = '<p class="text-gray-500">Nenhum SKU encontrado.</p>';
