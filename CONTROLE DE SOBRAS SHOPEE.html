@@ -2025,12 +2025,14 @@ let uids = [];
         ref = db.collection('uid').doc(usuarioLogado.uid).collection('faturamento');
       }
       const snap = await ref.get();
+      const { decryptString } = await import('./crypto.js');
 
       const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value;
       let dados = [];
             dadosAcompanhamento = [];
       sobraPorSku = {};
       let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
+      let totalSaques = 0;
 
       for (const doc of snap.docs) {
         if (filtroMes) {
@@ -2044,7 +2046,6 @@ let uids = [];
           : usuarioLogado.uid;
         const subRef = db.collection(`uid/${ownerUid}/faturamento/${doc.id}/lojas`);
         const subSnap = await subRef.get();
-                const { decryptString } = await import('./crypto.js');
         let bruto = 0, liquido = 0, vendas = 0;
          for (const s of subSnap.docs) {
           let d = s.data();
@@ -2080,6 +2081,36 @@ let uids = [];
         totalLiquido += liquido;
         totalVendas += vendas;
         totalSobra += sobraDia;
+      }
+
+      try {
+        let refSaques;
+        if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
+          refSaques = db.collectionGroup('saques');
+        } else {
+          refSaques = db.collection('uid').doc(usuarioLogado.uid).collection('saques');
+        }
+        const snapSaques = await refSaques.get();
+        for (const docS of snapSaques.docs) {
+          if (filtroMes) {
+            const [anoFiltro, mesFiltro] = filtroMes.split('-');
+            const [anoS, mesS] = docS.id.split('-');
+            if (anoS !== anoFiltro || mesS !== mesFiltro) continue;
+          }
+          let dadosSaque = docS.data();
+          if (dadosSaque.encrypted) {
+            try {
+              const txt = await decryptString(dadosSaque.encrypted, getPassphrase() || `chave-${dadosSaque.uid || usuarioLogado.uid}`);
+              dadosSaque = JSON.parse(txt);
+            } catch (e) {
+              console.error('Erro ao descriptografar saque', e);
+              continue;
+            }
+          }
+          totalSaques += dadosSaque.valorTotal || dadosSaque.valor || 0;
+        }
+      } catch (e) {
+        console.error('Erro ao carregar saques', e);
       }
 
       tbody.innerHTML = '';
@@ -2119,6 +2150,7 @@ const dias = dadosAcompanhamento.length;
         <div class="resumo-card"><h4>Total Líquido</h4><p>R$ ${totais.liquido.toLocaleString('pt-BR')}</p>${resumoLiquidoMeta}</div>
         <div class="resumo-card"><h4>Total Vendido</h4><p>${totais.vendas}</p></div>
         <div class="resumo-card"><h4>Total Sobra Esperada</h4><p>R$ ${totais.sobra.toLocaleString('pt-BR')}</p><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" onclick="mostrarDetalhesSobra()">Ver mais</button></div>
+        <div class="resumo-card"><h4>Total Saques</h4><p>R$ ${totalSaques.toLocaleString('pt-BR')}</p></div>
         <div class="resumo-card"><h4>Ticket Médio</h4><p>R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>`;
     }
 
