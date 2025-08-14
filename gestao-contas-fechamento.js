@@ -1,3 +1,10 @@
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { firebaseConfig } from './firebase-config.js';
+
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 const input = document.getElementById('inputPdfFechamento');
@@ -35,6 +42,7 @@ btnProcessar?.addEventListener('click', async () => {
     paginaAtual = 1;
     renderTabela();
     statusDiv.textContent = `${lancamentos.length} lançamentos carregados.`;
+    await salvarContasFechamento();
   } else {
     statusDiv.textContent = 'Nenhum lançamento encontrado.';
   }
@@ -194,16 +202,22 @@ function renderTabela() {
 }
 
 btnExportar?.addEventListener('click', () => {
-  const headers = ['Prf', 'Numero', 'PC', 'Tipo', 'Valor Original', 'Emissao', 'Vencto', 'Baixa', 'Descontos', 'Abatimentos', 'Juros', 'Multa', 'Corr. Monet.', 'Valor Acessorio', 'Valor Baixado', 'Rec. Antecip.', 'Acrescimo', 'Decrescimo', 'Saldo Atual', 'Cliente', 'Carteira/Port.'];
-  const aoa = [headers];
-  lancamentos.filter(l => !l.invalida).forEach(l => {
-    aoa.push(headers.map(h => l[h] || ''));
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Fechamentos');
+  const table = tabelaDiv.querySelector('table');
+  if (!table) return;
+  const wb = XLSX.utils.table_to_book(table, { sheet: 'Fechamentos' });
   XLSX.writeFile(wb, 'fechamentos.xlsx');
 });
+
+async function salvarContasFechamento() {
+  try {
+    const ops = lancamentos
+      .filter(l => !l.invalida)
+      .map(l => addDoc(collection(db, 'contasfechamento'), l));
+    await Promise.all(ops);
+  } catch (err) {
+    console.error('Erro ao salvar contasfechamento', err);
+  }
+}
 
 export {}; // for module scope
 
