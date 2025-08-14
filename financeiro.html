@@ -45,6 +45,17 @@
       </div>
       <div class="card-body" id="resumoSaques">Carregando...</div>
     </div>
+
+    <div class="card">
+      <div class="card-header justify-between">
+        <h2 class="text-xl font-bold">📈 Faturamento x Meta</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoFaturamento"><i class="fa fa-eye-slash"></i></button>
+        </div>
+      </div>
+      <div class="card-body" id="resumoFaturamento">Carregando...</div>
+    </div>
   </main>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="financeiro.js"></script>

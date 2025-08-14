@@ -1,8 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
+import { decryptString } from './crypto.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -11,6 +12,7 @@ const auth = getAuth(app);
 let usuariosCache = [];
 let dadosSkusExport = [];
 let dadosSaquesExport = [];
+let dadosFaturamentoExport = [];
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -64,8 +66,10 @@ function setupFiltros(usuarios) {
   });
   const expSkus = document.getElementById('exportSkus');
   const expSaques = document.getElementById('exportSaques');
+  const expFaturamento = document.getElementById('exportFaturamento');
   if (expSkus) expSkus.addEventListener('click', exportarSkus);
   if (expSaques) expSaques.addEventListener('click', exportarSaques);
+  if (expFaturamento) expFaturamento.addEventListener('click', exportarFaturamento);
 }
 
 async function carregar() {
@@ -74,6 +78,7 @@ async function carregar() {
   const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
   await carregarSkus(listaUsuarios, mes);
   await carregarSaques(listaUsuarios, mes);
+  await carregarFaturamentoMeta(listaUsuarios, mes);
 }
 
 async function carregarSkus(usuarios, mes) {
@@ -154,14 +159,69 @@ async function carregarSaques(usuarios, mes) {
     totalGeral += total;
     totalComissaoGeral += totalComissao;
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
+    const section = document.createElement('div');
+    section.className = 'mb-4';
+    const titulo = document.createElement('h3');
+    titulo.className = 'font-bold';
+    titulo.textContent = usuario.nome;
+    section.appendChild(titulo);
     const p = document.createElement('p');
-    p.textContent = `${usuario.nome}: R$ ${total.toLocaleString('pt-BR')} | Comissões: R$ ${totalComissao.toLocaleString('pt-BR')}`;
-    container.appendChild(p);
+    p.textContent = `Total: R$ ${total.toLocaleString('pt-BR')} | Comissões: R$ ${totalComissao.toLocaleString('pt-BR')}`;
+    section.appendChild(p);
+    container.appendChild(section);
   }
   const resumoP = document.createElement('p');
   resumoP.innerHTML = `Total de Saques: <strong>R$ ${totalGeral.toLocaleString('pt-BR')}</strong><br>`+
     `Total de Comissões: <strong>R$ ${totalComissaoGeral.toLocaleString('pt-BR')}</strong>`;
   container.appendChild(resumoP);
+}
+
+async function carregarFaturamentoMeta(usuarios, mes) {
+  const container = document.getElementById('resumoFaturamento');
+  if (!container) return;
+  container.innerHTML = 'Carregando...';
+  dadosFaturamentoExport = [];
+  container.innerHTML = '';
+  for (const usuario of usuarios) {
+    let total = 0;
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
+    for (const docSnap of snap.docs) {
+      if (mes && !docSnap.id.includes(mes)) continue;
+      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
+      for (const lojaDoc of lojasSnap.docs) {
+        let dados = lojaDoc.data();
+        if (dados.encrypted) {
+          const pass = getPassphrase() || `chave-${usuario.uid}`;
+          let txt;
+          try {
+            txt = await decryptString(dados.encrypted, pass);
+          } catch (e) {
+            try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
+          }
+          if (txt) dados = JSON.parse(txt);
+        }
+        total += Number(dados.valorLiquido) || 0;
+      }
+    }
+    let meta = 0;
+    try {
+      const metaDoc = await getDoc(doc(db, `uid/${usuario.uid}/metasFaturamento`, mes));
+      if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+    } catch (err) {
+      console.error('Erro ao buscar meta de faturamento:', err);
+    }
+    dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta });
+    const section = document.createElement('div');
+    section.className = 'mb-4';
+    const titulo = document.createElement('h3');
+    titulo.className = 'font-bold';
+    titulo.textContent = usuario.nome;
+    section.appendChild(titulo);
+    const p = document.createElement('p');
+    p.textContent = `Faturado: R$ ${total.toLocaleString('pt-BR')} | Meta: R$ ${meta.toLocaleString('pt-BR')}`;
+    section.appendChild(p);
+    container.appendChild(section);
+  }
 }
 
 function exportarSkus() {
@@ -178,6 +238,14 @@ function exportarSaques() {
     return;
   }
   exportarCSV(dadosSaquesExport, ['usuario','total','comissao'], 'saques');
+}
+
+function exportarFaturamento() {
+  if (!dadosFaturamentoExport.length) {
+    alert('Sem dados para exportar');
+    return;
+  }
+  exportarCSV(dadosFaturamentoExport, ['usuario','faturado','meta'], 'faturamento_meta');
 }
 
 function exportarCSV(dados, campos, nome) {
