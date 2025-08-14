@@ -13,15 +13,35 @@
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <main class="main-content p-4 space-y-4">
+    <div class="flex flex-wrap gap-4 items-end">
+      <div>
+        <label for="usuarioFiltro" class="text-sm font-medium">Usuário</label>
+        <select id="usuarioFiltro" class="border rounded p-2"></select>
+      </div>
+      <div>
+        <label for="mesFiltro" class="text-sm font-medium">Mês</label>
+        <input type="month" id="mesFiltro" class="border rounded p-2" />
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-header">
+      <div class="card-header justify-between">
         <h2 class="text-xl font-bold">📊 Relatório de SKUs Vendidos</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoSkus"><i class="fa fa-eye-slash"></i></button>
+        </div>
       </div>
       <div class="card-body" id="resumoSkus">Carregando...</div>
     </div>
+
     <div class="card">
-      <div class="card-header">
+      <div class="card-header justify-between">
         <h2 class="text-xl font-bold">💸 Saques e Comissões</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoSaques"><i class="fa fa-eye-slash"></i></button>
+        </div>
       </div>
       <div class="card-body" id="resumoSaques">Carregando...</div>
     </div>
