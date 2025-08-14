@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script>pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -40,6 +42,9 @@
   </style>
 </head>
 <body>
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content">
   <div class="wrap">
     <div class="card pad">
       <h1>PDF → Excel (layout fiel) — v1</h1>
@@ -81,6 +86,7 @@
       <strong>Testes automatizados</strong>
       <div>Use o botão <em>🧪 Rodar testes</em> para validar o detector/parsers localmente. Resultados aparecem no log.</div>
     </div>
+  </div>
   </div>
 
 <script>
@@ -450,5 +456,6 @@ $('#btnRunTests').addEventListener('click', runTests);
 // Auto-executar uma vez ao carregar para garantir que não há syntax errors
 runTests();
 </script>
+<script src="shared.js"></script>
 </body>
 </html>
