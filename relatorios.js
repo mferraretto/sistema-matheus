@@ -34,7 +34,7 @@ export async function exportarSkuImpressos() {
   snap.forEach(doc => {
     const dados = doc.data();
     const sku = dados.sku || 'sem-sku';
-      const quantidade = dados.quantidade || 0;
+    const quantidade = Number(dados.quantidade) || 0;
     const loja = dados.loja || '';
     const data = dados.createdAt && dados.createdAt.toDate
       ? dados.createdAt.toDate().toLocaleDateString('pt-BR')
@@ -47,9 +47,18 @@ export async function exportarSkuImpressos() {
     return;
   }
 
-  const ws = XLSX.utils.json_to_sheet(linhas);
+  const wsDetalhado = XLSX.utils.json_to_sheet(linhas);
+  const resumoMap = linhas.reduce((acc, { SKU, Quantidade }) => {
+    acc[SKU] = (acc[SKU] || 0) + Quantidade;
+    return acc;
+  }, {});
+  const resumo = Object.keys(resumoMap).map(sku => ({ SKU: sku, Quantidade: resumoMap[sku] }));
+  const wsResumo = XLSX.utils.json_to_sheet(resumo);
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+  XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Relatorio');
+  XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
   const mesStr = filtroMes || `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
   XLSX.writeFile(wb, `sku_impressos_${mesStr}.xlsx`);
 }
