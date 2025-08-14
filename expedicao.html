@@ -121,7 +121,7 @@
       diaDocRef = db.collection('uid').doc(uid).collection('diasExpedicao').doc(hoje);
       const doc = await diaDocRef.get();
       if (doc.exists && doc.data().fim) {
-        startBtn.classList.add('hidden');
+        startBtn.classList.remove('hidden');
         closeBtn.classList.add('hidden');
       } else if (doc.exists) {
         startBtn.classList.add('hidden');
