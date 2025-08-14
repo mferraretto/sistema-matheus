@@ -1960,6 +1960,92 @@ let uids = [];
       });
     };
 
+    async function exportarVendasMes() {
+      const filtroMes = document.getElementById('filtroMesVendas')?.value;
+      if (!filtroMes) {
+        alert('Selecione um mês para exportar.');
+        return;
+      }
+
+      let ref;
+      if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
+        ref = db.collectionGroup('skusVendidos');
+      } else {
+        ref = db.collection('uid').doc(usuarioLogado.uid).collection('skusVendidos');
+      }
+      const snap = await ref.get();
+
+      const dados = [];
+      const resumo = {};
+
+      for (const doc of snap.docs) {
+        const dataDoc = doc.id;
+        const [anoDoc, mesDoc] = dataDoc.split('-');
+        const [anoFiltro, mesFiltro] = filtroMes.split('-');
+        if (anoDoc !== anoFiltro || mesDoc !== mesFiltro) continue;
+
+        const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
+          ? doc.ref.parent.parent.id
+          : usuarioLogado.uid;
+        const listaSnap = await db.collection(`uid/${ownerUid}/skusVendidos/${dataDoc}/lista`).get();
+        for (const skuDoc of listaSnap.docs) {
+          const { sku, total, loja, valorLiquido } = skuDoc.data();
+          let custo = 0;
+          try {
+            const produtosRef = db.collection('uid').doc(ownerUid).collection('produtos');
+            const querySnap = await produtosRef.where('sku', '==', sku).limit(1).get();
+            if (!querySnap.empty) {
+              const dadosProd = querySnap.docs[0].data();
+              custo = Number(dadosProd.custo || 0);
+            }
+          } catch (e) {
+            console.warn(`Erro ao buscar custo do SKU ${sku}:`, e);
+          }
+
+          const sobraEsperada = (total || 0) * (custo || 0);
+          const sobraReal = Number(valorLiquido || 0);
+          const chave = sku || skuDoc.id;
+
+          dados.push({
+            Data: dataDoc,
+            Loja: loja || '-',
+            SKU: chave,
+            Unidades: total || 0,
+            SobraEsperada: sobraEsperada,
+            SobraReal: sobraReal
+          });
+
+          if (!resumo[chave]) resumo[chave] = { sku: chave, total: 0, prejuizo: 0 };
+          resumo[chave].total += total || 0;
+          resumo[chave].prejuizo += (sobraEsperada - sobraReal);
+        }
+      }
+
+      if (!dados.length) {
+        alert('Nenhum dado de vendas encontrado para o mês selecionado.');
+        return;
+      }
+
+      const itemsResumo = Object.values(resumo);
+      const maiorEntrada = itemsResumo.reduce((a, b) => (b.total > a.total ? b : a));
+      const menorEntrada = itemsResumo.reduce((a, b) =>
+        (b.total > 0 && b.total < a.total ? b : a), { total: Infinity });
+      const maiorPrejuizo = itemsResumo.reduce((a, b) => (b.prejuizo > a.prejuizo ? b : a));
+
+      const resumoSheet = [
+        { Resumo: 'Maior entrada', SKU: maiorEntrada.sku, Unidades: maiorEntrada.total },
+        { Resumo: 'Menor entrada', SKU: menorEntrada.sku, Unidades: menorEntrada.total },
+        { Resumo: 'Maior prejuízo', SKU: maiorPrejuizo.sku, Valor: maiorPrejuizo.prejuizo.toFixed(2) }
+      ];
+
+      const wsDados = XLSX.utils.json_to_sheet(dados);
+      const wsResumo = XLSX.utils.json_to_sheet(resumoSheet);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, wsDados, 'Vendas');
+      XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+      XLSX.writeFile(wb, `vendas_${filtroMes}.xlsx`);
+    }
+
     async function exportarFaturamentoExcel() {
  let ref;
       if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
@@ -2315,6 +2401,7 @@ window.exportarAcompanhamentoExcel = exportarAcompanhamentoExcel;
 window.exportarAcompanhamentoPDF = exportarAcompanhamentoPDF;
 window.printAcompanhamento = printAcompanhamento;
   window.salvarMetasAcompanhamento = salvarMetasAcompanhamento;
+window.exportarVendasMes = exportarVendasMes;
 window.mostrarDetalhesSobra = mostrarDetalhesSobra;
 window.mostrarDetalhesFaturamento = mostrarDetalhesFaturamento;
 window.excluirFaturamento = excluirFaturamento;
