@@ -503,6 +503,10 @@
             text-align: center;
         }
 
+        .file-cell a {
+            color: var(--danger);
+        }
+
         .file-icon {
             color: var(--danger);
             font-size: 20px;
@@ -860,6 +864,11 @@
                         <label for="taskQuantity">Quantidade</label>
                         <input type="number" id="taskQuantity" name="quantity" value="1" min="1" placeholder="Ex: 5">
                     </div>
+                    <!-- NOVO: Campo de Arquivo PDF -->
+                    <div class="form-group">
+                        <label for="taskFile">Arquivo (PDF)</label>
+                        <input type="file" id="taskFile" accept="application/pdf">
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline" id="cancelNewTaskModalBtn">Cancelar</button>
                         <button type="submit" class="btn btn-primary" id="saveTaskBtn">
@@ -970,6 +979,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, updateDoc, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { firebaseConfig as defaultFirebaseConfig } from './firebase-config.js';
 
         // Variáveis globais fornecidas pelo ambiente
@@ -1031,6 +1041,7 @@
         const taskDescriptionInput = document.getElementById('taskDescription');
         const taskDateInput = document.getElementById('taskDate');
         const taskQuantityInput = document.getElementById('taskQuantity');
+        const taskFileInput = document.getElementById('taskFile');
         
         // Elementos do DOM do Modal de Membros
         const newMemberModal = document.getElementById('newMemberModal');
@@ -1046,7 +1057,7 @@
         const cancelConfirmationBtn = document.getElementById('cancelConfirmationBtn');
         const confirmDeletionBtn = document.getElementById('confirmDeletionBtn');
         
-        let db, auth;
+        let app, db, auth, storage;
         let userId = null;
         let isAuthReady = false;
         let currentBoardId = null;
@@ -1150,9 +1161,10 @@
             }
 
             try {
-                const app = initializeApp(firebaseConfig);
+                app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                storage = getStorage(app);
 
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
@@ -1473,7 +1485,11 @@
                     // Célula de Arquivos
                     const filesCell = document.createElement('td');
                     filesCell.classList.add('file-cell');
-                    filesCell.innerHTML = `<i class="fas fa-file-pdf file-icon"></i>`; // Ícone de exemplo
+                    if (task.fileURL) {
+                        filesCell.innerHTML = `<a href="${task.fileURL}" target="_blank"><i class="fas fa-file-pdf file-icon"></i></a>`;
+                    } else {
+                        filesCell.textContent = '—';
+                    }
                     row.appendChild(filesCell);
 
                     // Célula da Quantidade
@@ -1632,6 +1648,7 @@
             const assigneeId = taskAssigneeSelect.value;
             const date = taskDateInput.value;
             const quantity = taskQuantityInput.value;
+            const file = taskFileInput.files[0];
             
             if (!title) {
                 console.error('O título da tarefa é obrigatório.');
@@ -1648,12 +1665,21 @@
                 date: date ? new Date(date) : null, // Salva a data, se houver
                 quantity: quantity ? parseInt(quantity) : 1, // Salva a quantidade
                 lastUpdated: new Date(),
+                fileName: file ? file.name : null,
+                fileURL: null,
             };
-            
+
             try {
                 const tasksCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
-                await addDoc(tasksCollectionRef, newTaskData);
-                
+                const docRef = await addDoc(tasksCollectionRef, newTaskData);
+
+                if (file) {
+                    const storageRef = ref(storage, `tasks/${userId}/${docRef.id}/${file.name}`);
+                    await uploadBytes(storageRef, file);
+                    const downloadURL = await getDownloadURL(storageRef);
+                    await updateDoc(docRef, { fileURL: downloadURL });
+                }
+
                 console.log('Nova tarefa adicionada com sucesso:', newTaskData);
                 hideModal(newTaskModal);
                 newTaskForm.reset();
