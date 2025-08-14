@@ -1096,18 +1096,19 @@
                 }
                 
                 onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        isAuthReady = true;
-                        userIdDisplay.innerText = `UID do Usuário: ${userId}`;
-                        console.log('User authenticated with UID:', userId);
-                        
-                        setupBoardsListener();
-                        setupMembersListener();
-                        showView('myBoardsView'); // Mostra a lista de quadros por padrão
-                    } else {
+                     if (!user) {
                         window.location.href = 'index.html?login=1';
+                        return;
                     }
+
+                    userId = user.uid;
+                    isAuthReady = true;
+                    userIdDisplay.innerText = `UID do Usuário: ${userId}`;
+                    console.log('User authenticated with UID:', userId);
+
+                    setupBoardsListener();
+                    setupMembersListener();
+                    showView('myBoardsView'); // Mostra a lista de quadros por padrão
                 });
 
             } catch (e) {
