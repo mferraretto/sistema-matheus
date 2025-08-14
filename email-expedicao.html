@@ -18,6 +18,7 @@
     <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
       <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
+      <input type="email" id="emailFinanceiro" placeholder="financeiro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
@@ -43,6 +44,7 @@
     const db = firebase.firestore();
     let currentUser = null;
     const input = document.getElementById('emailExpedicao');
+    const financeInput = document.getElementById('emailFinanceiro');
     const statusEl = document.getElementById('status');
     const teamForm = document.getElementById('teamMemberForm');
     const teamMembersList = document.getElementById('teamMembersList');
@@ -56,9 +58,10 @@
       currentUser = user;
       try {
         const doc = await db.collection('uid').doc(user.uid).get();
-       const data = doc.data() || {};
+        const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         input.value = Array.isArray(emails) ? emails.join(', ') : emails;
+        financeInput.value = data.responsavelFinanceiroEmail || '';
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -79,11 +82,18 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
+      const emailFinanceiro = financeInput.value.trim();
       try {
         await db.collection('uid').doc(currentUser.uid).set({
-responsavelExpedicaoEmail: emails[0] || null,
+          responsavelExpedicaoEmail: emails[0] || null,
           gestoresExpedicaoEmails: emails,
+          responsavelFinanceiroEmail: emailFinanceiro || null,
           uid: currentUser.uid,
+          email: currentUser.email
+        }, { merge: true });
+        await db.collection('usuarios').doc(currentUser.uid).set({
+          responsavelFinanceiroEmail: emailFinanceiro || null,
+          gestoresExpedicaoEmails: emails,
           email: currentUser.email
         }, { merge: true });
         statusEl.textContent = 'E-mail salvo com sucesso!';
