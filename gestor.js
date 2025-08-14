@@ -11,21 +11,46 @@ const storage = getStorage(app);
 
 let currentUser = null;
 
-async function carregarGestoresDropdown() {
+function carregarGestoresDropdown() {
   const select = document.getElementById('relGestores');
   if (!select || !currentUser) return;
+
+  let docEmails = [];
+  let teamEmails = [];
+
+  const render = () => {
+    const set = new Set([...docEmails, ...teamEmails]);
+    select.innerHTML = '';
+    Array.from(set).forEach(email => {
+      const opt = document.createElement('option');
+      opt.value = email;
+      opt.textContent = email;
+      select.appendChild(opt);
+    });
+  };
+
+  onSnapshot(doc(db, 'uid', currentUser.uid), snap => {
+    const data = snap.data() || {};
+    if (Array.isArray(data.gestoresExpedicaoEmails)) {
+      docEmails = data.gestoresExpedicaoEmails.filter(e => e);
+    } else if (data.responsavelExpedicaoEmail) {
+      docEmails = [data.responsavelExpedicaoEmail];
+    } else {
+      docEmails = [];
+    }
+    render();
+  });
+
   const colRef = collection(db, 'uid', currentUser.uid, 'expedicaoTeam');
   onSnapshot(colRef, snap => {
-    select.innerHTML = '';
+    teamEmails = [];
     snap.forEach(docu => {
       const d = docu.data();
-      if ((d.cargo || '').toLowerCase() === 'gestor') {
-        const opt = document.createElement('option');
-        opt.value = d.email;
-        opt.textContent = d.name || d.email;
-        select.appendChild(opt);
+      if ((d.cargo || '').toLowerCase() === 'gestor' && d.email) {
+        teamEmails.push(d.email);
       }
     });
+    render();
   });
 }
 
@@ -37,6 +62,9 @@ async function enviarRelatorio(e) {
   const inicio = document.getElementById('relInicio').value;
   const fim = document.getElementById('relFim').value;
   const gestores = Array.from(document.getElementById('relGestores').selectedOptions).map(o => o.value);
+  if (!gestores.includes(currentUser.email)) {
+    gestores.push(currentUser.email);
+  }
   const mensagem = document.getElementById('relMensagem').value.trim();
   const arquivos = document.getElementById('relArquivos').files;
 
@@ -124,15 +152,15 @@ function listenMinhasSubmissoes() {
 }
 
 function listenCaixaGestor() {
-  if (!['gestor', 'adm'].includes((window.userPerfil || '').toLowerCase())) return;
   const wrap = document.getElementById('caixaGestor');
   wrap.classList.remove('hidden');
+  const isGestor = ['gestor', 'adm'].includes((window.userPerfil || '').toLowerCase());
   const q = query(collection(db, 'relatorios'), where('gestores', 'array-contains', currentUser.email));
   onSnapshot(q, snap => {
     const list = document.getElementById('listaCaixaGestor');
     list.innerHTML = '';
     snap.forEach(docSnap => {
-      list.appendChild(renderRelatorioCard(docSnap.id, docSnap.data(), true));
+      list.appendChild(renderRelatorioCard(docSnap.id, docSnap.data(), isGestor));
     });
   });
 }
