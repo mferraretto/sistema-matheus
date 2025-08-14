@@ -102,4 +102,25 @@
   </div>
 </div>
 
+<div id="displayNameModal" class="modal">
+  <div class="modal-content">
+    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('displayNameModal')">&times;</span>
+
+    <div class="text-center mb-6">
+      <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-user text-white text-3xl"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800">Nome de Identificação</h3>
+      <p class="text-gray-600 mt-2">Escolha como seu nome será exibido</p>
+    </div>
+
+    <div class="space-y-6">
+      <input type="text" id="displayNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="Seu nome">
+      <button onclick="saveDisplayName()" class="btn-primary w-full py-3.5">
+        <i class="fas fa-check mr-2"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
