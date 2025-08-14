@@ -1093,8 +1093,6 @@
 
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
-                } else if (!auth.currentUser) {
-                    console.warn('Nenhum método de autenticação disponível. Acesse com login.');
                 }
                 
                 onAuthStateChanged(auth, (user) => {
@@ -1108,12 +1106,7 @@
                         setupMembersListener();
                         showView('myBoardsView'); // Mostra a lista de quadros por padrão
                     } else {
-                        console.log('No user is signed in.');
-                        userId = null;
-                        isAuthReady = true;
-                        boardsGrid.innerHTML = '<div class="loading">Por favor, faça login para ver seus quadros.</div>';
-                        membersGrid.innerHTML = '<div class="loading">Por favor, faça login para ver seus membros.</div>';
-                        showView('dashboardView');
+                        window.location.href = 'index.html?login=1';
                     }
                 });
 
