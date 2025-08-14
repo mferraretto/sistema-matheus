@@ -193,86 +193,13 @@ async function carregarTarefas(uid, isAdmin) {
   lista.innerHTML = '<li class="placeholder text-gray-500">Carregando...</li>';
   listaFeitas.innerHTML = '';
 
-  const tarefas = [];
-  tarefas.push('Conferir Faturamento');
-  tarefas.push('Conferir anúncios se não teve penalidade');
+  const tarefas = [
+    '<a href="https://seller.shopee.com.br/portal/sale/order" target="_blank" rel="noopener">Baixar planilha vendas Shopee</a>',
+    '<a href="https://mferraretto.github.io/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento" target="_blank" rel="noopener">Registrar no sistema - Fechamento dia anterior</a>',
+    '<a href="https://seller.shopee.com.br/portal/sale/mass/ship?mass_shipment_tab=201&filter.shipping_method=91003&filter.order_item_filter_type=item0&filter.order_process_status=1&filter.sort.sort_type=1&filter.sort.ascending=true&filter.pre_order=2&filter.shipping_urgency_filter.current_time=1755177333&filter.shipping_urgency_filter.shipping_urgency=1" target="_blank" rel="noopener">Organizar coleta e imprimir etiquetas + lista de empacotamento ZPL</a>',
+    '<a href="https://mferraretto.github.io/VendedorPro/zpl-import.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
+  ];
   const hoje = new Date();
-  const seteDiasAtras = new Date();
-  seteDiasAtras.setDate(hoje.getDate() - 7);
-
-  // Top SKUs
-  const mapa = {};
-  const snapSkus = isAdmin
-    ? await getDocs(collectionGroup(db, 'skusVendidos'))
-    : await getDocs(collection(db, `uid/${uid}/skusVendidos`));
-  for (const docSnap of snapSkus.docs) {
-    const dataDoc = new Date(docSnap.id);
-    if (isNaN(dataDoc) || dataDoc < seteDiasAtras || dataDoc > hoje) continue;
-    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
-    const listaRef = collection(db, `uid/${ownerUid}/skusVendidos/${docSnap.id}/lista`);
-    const listaSnap = await getDocs(listaRef);
-    listaSnap.forEach(s => {
-      const d = s.data();
-      const chave = `${d.sku}||${d.loja || ''}`;
-      mapa[chave] = (mapa[chave] || 0) + (d.total || 0);
-    });
-  }
-  const ordenado = Object.entries(mapa).sort((a, b) => b[1] - a[1]);
-  if (ordenado[0]) {
-    const sku1 = ordenado[0][0].split('||')[0];
-    tarefas.push(`Criar 5 anúncios novos do SKU ${sku1}`);
-  }
-  if (ordenado[1]) {
-    const sku1 = ordenado[0][0].split('||')[0];
-    const sku2 = ordenado[1][0].split('||')[0];
-    tarefas.push(`Criar 3 kits com os SKUs ${sku1} e ${sku2}`);
-  }
-
-  // Anúncios para excluir ou modificar
-  const snapAnuncios = isAdmin
-    ? await getDocs(collectionGroup(db, 'anuncios'))
-    : await getDocs(collection(db, `uid/${uid}/anuncios`));
-  const pass = typeof getPassphrase === 'function' ? getPassphrase() : null;
-  for (const docSnap of snapAnuncios.docs) {
-    let ownerUid = uid;
-    if (isAdmin) {
-      const parentDoc = docSnap.ref.parent.parent;
-      if (!parentDoc) {
-        console.warn('Documento sem pai para anuncios:', docSnap.ref.path);
-        continue;
-      }
-      ownerUid = parentDoc.id;
-    }
-    const dados = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, docSnap.id, pass);
-    if (!dados || !dados.dataCriacao) continue;
-    const dataCriacao = new Date(dados.dataCriacao);
-    const diasAtivo = (hoje - dataCriacao) / (1000 * 60 * 60 * 24);
-    if (diasAtivo <= 15) continue;
-
-    const desempenhoRef = collection(db, `uid/${ownerUid}/anuncios/${docSnap.id}/desempenho`);
-    const desempenhoQuery = query(desempenhoRef, orderBy('__name__', 'desc'), limit(30));
-    const desempenhoSnap = await getDocs(desempenhoQuery);
-    let visualizacoes = 0;
-    let vendas = 0;
-    desempenhoSnap.forEach(d => {
-      const dataDoc = new Date(d.id);
-      const diffDias = (hoje - dataDoc) / (1000 * 60 * 60 * 24);
-      if (diffDias <= 15) {
-        const v = d.data();
-        visualizacoes += Number(v.visualizacoes || 0);
-        vendas += Number(v.unidadesPago || v.vendasPago || 0);
-      }
-    });
-    if (vendas === 0) {
-      const nome = dados.nome || docSnap.id;
-      if (visualizacoes < 100) {
-        tarefas.push(`Excluir anúncio ${nome} (sem vendas e poucas visualizações)`);
-      } else if (visualizacoes > 200) {
-        tarefas.push(`Modificar anúncio ${nome} (muitas visualizações sem vendas)`);
-      }
-    }
-  }
-
   const storageKey = `tarefasFeitas_${hoje.toISOString().slice(0,10)}`;
   const concluidas = JSON.parse(localStorage.getItem(storageKey) || '[]');
   const pendentes = tarefas.filter(t => !concluidas.includes(t));
