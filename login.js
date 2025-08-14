@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 
-import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 import {
   getFirestore,
@@ -16,6 +16,7 @@ import {
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
+import { encryptString, decryptString } from './crypto.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -53,6 +54,54 @@ window.savePassphrase = () => {
     closeModal('passphraseModal');
   } else {
     showToast('Digite uma senha', 'warning');
+  }
+};
+
+window.saveDisplayName = async () => {
+  const input = document.getElementById('displayNameInput');
+  const nome = input.value.trim();
+  const user = auth.currentUser;
+  if (!user || !nome) {
+    showToast('Digite um nome', 'warning');
+    return;
+  }
+  try {
+    const pass = getPassphrase() || `chave-${user.uid}`;
+    let perfil = 'Cliente';
+    const uidRef = doc(db, 'uid', user.uid);
+    const snap = await getDoc(uidRef);
+    if (snap.exists()) {
+      const enc = snap.data().encrypted;
+      if (enc) {
+        try {
+          const data = JSON.parse(await decryptString(enc, pass));
+          perfil = data.perfil || perfil;
+        } catch {}
+      }
+    }
+    await setDoc(
+      uidRef,
+      {
+        uid: user.uid,
+        email: user.email,
+        nome,
+        encrypted: await encryptString(
+          JSON.stringify({ perfil }),
+          pass
+        )
+      },
+      { merge: true }
+    );
+    try {
+      await updateProfile(user, { displayName: nome });
+    } catch {}
+    document.getElementById('currentUser').textContent = nome;
+    input.value = '';
+    closeModal('displayNameModal');
+    showToast('Nome atualizado!', 'success');
+  } catch (e) {
+    console.error('Erro ao salvar nome:', e);
+    showToast('Erro ao salvar nome', 'error');
   }
 };
 
@@ -114,7 +163,13 @@ window.sendRecovery = () => {
 
 
 async function showUserArea(user) {
-  document.getElementById('currentUser').textContent = user.email;
+  const nameEl = document.getElementById('currentUser');
+  nameEl.textContent = user.email;
+  nameEl.onclick = () => {
+    const input = document.getElementById('displayNameInput');
+    if (input) input.value = nameEl.textContent;
+    openModal('displayNameModal');
+  };
   document.getElementById('logoutBtn').classList.remove('hidden');
 
   window.sistema = window.sistema || {};
@@ -127,25 +182,44 @@ async function showUserArea(user) {
       localStorage.setItem('passphraseModalShown', 'true');
     }
   }
-try {
-  const snap = await getDoc(doc(db, 'usuarios', user.uid));
-  const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
-  window.userPerfil = perfil;
 
-  // 1) aplica restrições de UI
-  applyPerfilRestrictions(perfil);
-
-  // 2) se for expedição, executa fluxo especial
-  if (perfil === 'expedicao') {
-    await checkExpedicao(user);
+  try {
+    const uidSnap = await getDoc(doc(db, 'uid', user.uid));
+    const uidData = uidSnap.data();
+    if (uidData?.nome) {
+      nameEl.textContent = uidData.nome;
+    } else if (uidData?.encrypted) {
+      const pass = getPassphrase() || `chave-${user.uid}`;
+      const data = JSON.parse(await decryptString(uidData.encrypted, pass));
+      if (data.nome) {
+        nameEl.textContent = data.nome;
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao carregar nome do usuário:', e);
   }
-} catch (e) {
-  console.error('Erro ao carregar perfil do usuário:', e);
-}
+
+  try {
+    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
+    window.userPerfil = perfil;
+
+    // 1) aplica restrições de UI
+    applyPerfilRestrictions(perfil);
+
+    // 2) se for expedição, executa fluxo especial
+    if (perfil === 'expedicao') {
+      await checkExpedicao(user);
+    }
+  } catch (e) {
+    console.error('Erro ao carregar perfil do usuário:', e);
+  }
 }
 
 function hideUserArea() {
-  document.getElementById('currentUser').textContent = 'Usuário';
+  const nameEl = document.getElementById('currentUser');
+  nameEl.textContent = 'Usuário';
+  nameEl.onclick = null;
   document.getElementById('logoutBtn').classList.add('hidden');
   if (window.sistema) delete window.sistema.uid;
 
