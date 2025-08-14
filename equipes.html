@@ -921,7 +921,7 @@
     <script type="module">
         // Importa as funções necessárias do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, updateDoc, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { firebaseConfig as defaultFirebaseConfig } from './firebase-config.js';
 
@@ -1091,8 +1091,8 @@
 
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                } else if (!auth.currentUser) {
+                    console.warn('Nenhum método de autenticação disponível. Acesse com login.');
                 }
                 
                 onAuthStateChanged(auth, (user) => {
