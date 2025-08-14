@@ -2,9 +2,16 @@ import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
 import corsModule from "cors";
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
+const SHOPEE_CLIENT_ID = defineSecret("SHOPEE_CLIENT_ID");
+const SHOPEE_CLIENT_SECRET = defineSecret("SHOPEE_CLIENT_SECRET");
 const cors = corsModule({ origin: true });
+
+initializeApp();
+const db = getFirestore();
 
 export const proxyDeepSeek = onRequest(
   {
@@ -61,6 +68,46 @@ console.log("📤 Corpo enviado para DeepSeek:", JSON.stringify(bodyParaDeepSeek
         res.status(500).json({
           erro: "Erro ao consultar DeepSeek",
           detalhes: erroResposta || error.message,
+        });
+      }
+    });
+  }
+);
+
+export const shopeeAuthCallback = onRequest(
+  {
+    region: "us-central1",
+    secrets: [SHOPEE_CLIENT_ID, SHOPEE_CLIENT_SECRET],
+  },
+  (req, res) => {
+    cors(req, res, async () => {
+      try {
+        const { code, state } = req.query;
+        if (!code || !state) {
+          res.status(400).json({ erro: "Faltando code ou state" });
+          return;
+        }
+
+        const tokenResponse = await axios.post(
+          "https://partner.shopeemobile.com/api/v2/auth/token/get",
+          {
+            code,
+            client_id: await SHOPEE_CLIENT_ID.value(),
+            client_secret: await SHOPEE_CLIENT_SECRET.value(),
+          }
+        );
+
+        await db.collection("shopee_tokens").doc(state).set(tokenResponse.data);
+
+        res.redirect(302, "/gestao-contas.html");
+      } catch (error) {
+        console.error(
+          "Erro ao obter tokens da Shopee:",
+          error.response?.data || error.message
+        );
+        res.status(500).json({
+          erro: "Erro ao obter tokens da Shopee",
+          detalhes: error.response?.data || error.message,
         });
       }
     });
