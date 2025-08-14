@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF → Excel (layout fiel) — v2 (genérico)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <style>
+    :root{--bg:#0b1020;--card:#111834;--muted:#9fb1ff;--ink:#e9edff;--accent:#6ea8ff}
+    *{box-sizing:border-box} body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0d1430 30%,#0b1020 100%);color:var(--ink);min-height:100vh;margin:0}
+    .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+    .card{background:rgba(17,24,52,.7);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,.06);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    .pad{padding:20px}
+    h1{font-size:28px;margin:0 0 8px} .sub{color:#bcd0ff;margin:0 0 16px}
+    .row{display:flex;gap:14px;flex-wrap:wrap}
+    .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;background:#1a2550;color:#fff;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}
+    .btn:hover{background:#213074}
+    .btn.secondary{background:#182046;border:1px solid rgba(255,255,255,.08)}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#14204d;color:#cfe0ff;font-size:12px;border:1px solid rgba(255,255,255,.07)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .table{width:100%;border-collapse:collapse;font-size:12px}
+    .table th,.table td{border:1px solid rgba(255,255,255,.15);padding:6px 8px;vertical-align:top}
+    .table th{background:#132257;color:#d7e3ff;position:sticky;top:0}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .kbd{font:600 12px/1 Inter;background:#101735;border:1px solid rgba(255,255,255,.12);padding:6px 8px;border-radius:8px;color:#cfd9ff}
+    .hstack{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .muted{color:#b5c7ff}
+    .success{color:#7cf4c6}
+    .warn{color:#ffd38a}
+    .error{color:#ff9ba3}
+    .log{white-space:pre-wrap;background:#0e1533;border:1px dashed rgba(255,255,255,.15);border-radius:12px;padding:12px;color:#d6dcff;max-height:240px;overflow:auto}
+    .tests{font-size:12px;color:#cfe0ff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card pad">
+      <h1>PDF → Excel (layout fiel) — v1</h1>
+      <p class="sub">Lê PDFs <span class="pill">Rech Orçamento (SIGER)</span> e <span class="pill">TOTVS Posicao dos Clientes</span> e exporta Excel com layout, cabeçalho, bordas, mesclagens e formatos.
+      </p>
+      <div class="row" style="margin-top:8px">
+        <label class="btn">
+          <input type="file" id="file" accept="application/pdf" hidden>
+          📄 Escolher PDF
+        </label>
+        <button id="btnExport" class="btn" disabled>⬇️ Exportar para Excel</button>
+        <button id="btnRunTests" class="btn secondary">🧪 Rodar testes</button>
+        <span id="autoDetected" class="pill">—</span>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+      <div class="card pad">
+        <h3 style="margin:0 0 10px">Prévia interpretada</h3>
+        <div id="preview" class="mono" style="font-size:12px"></div>
+      </div>
+      <div class="card pad">
+        <h3 style="margin:0 0 10px">Tabela (amostra)</h3>
+        <div style="overflow:auto;max-height:480px">
+          <table id="tbl" class="table"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pad" style="margin-top:16px">
+      <div class="hstack">
+        <div class="kbd">Dica</div>
+        <div class="muted">Este protótipo está calibrado para os exemplos enviados. Se o seu layout variar, ajuste as regras de parsing dentro do código (seções <span class="mono">parseRechOrcamento</span> e <span class="mono">parseTotvsPosicaoClientes</span>).</div>
+      </div>
+      <div id="log" class="log" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card pad tests" style="margin-top:16px">
+      <strong>Testes automatizados</strong>
+      <div>Use o botão <em>🧪 Rodar testes</em> para validar o detector/parsers localmente. Resultados aparecem no log.</div>
+    </div>
+  </div>
+
+<script>
+// ===== Utilidades de log =====
+const $ = s=>document.querySelector(s);
+function log(msg){ const el = $('#log'); el.textContent += (msg + "\n"); el.scrollTop = el.scrollHeight; }
+
+// ===== PDF → linhas de texto por página (com coordenadas) =====
+async function pdfToTextLines(file){
+  const arr = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjsLib.getDocument({data:arr}).promise;
+  const pages = [];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // agrupa por linha (y aproximado)
+    const linesMap = new Map();
+    for(const item of content.items){
+      const t = item.str.trim();
+      if(!t) continue;
+      const [a,b,c,d,e,f] = item.transform; // PDF matrix
+      const x = e, y = f;
+      const key = Math.round(y); // tolerância simples
+      if(!linesMap.has(key)) linesMap.set(key, []);
+      linesMap.get(key).push({x,y,text:t});
+    }
+    const lines = [...linesMap.entries()]
+      .sort((a,b)=>b[0]-a[0]) // de cima p/ baixo (y decrescente)
+      .map(([,arr])=>arr.sort((a,b)=>a.x-b.x).map(o=>o.text).join(' ').replace(/\s+/g,' ').trim());
+    pages.push({page: p, lines});
+  }
+  return pages;
+}
+
+// ===== Detector de template =====
+function detectTemplate(allText){
+  // 🔧 FIX: juntar com \n corretamente (o erro era um line-break literal quebrando o JS)
+  const t = allText.join('\n');
+  // RECH / SIGER orçamento
+  if(/Gerado por SIGER|Rech Informática|Orçamento Cód\./i.test(t)) return 'RECH_ORCAMENTO';
+  // TOTVS Posição dos Clientes — variações de cabeçalho (inclui SIGA/FINR340.prt, TOTVS Printer Document, etc.)
+  if(/Posicao dos Clientes/i.test(t) || /SIGA\/FINR340/i.test(t) || /TOTVS Printer Document/i.test(t)) return 'TOTVS_POSICAO';
+  return 'DESCONHECIDO';
+}
+
+// ===== Parser: RECH Orçamento (SIGER) =====
+function parseRechOrcamento(pages){
+  const out = { meta:{}, itens:[], totais:{} };
+  const lines = pages.flatMap(p=>p.lines);
+
+  // Cabeçalho (cliente, orçamento, datas)
+  const lineOrc = lines.find(l=>/Orçamento Cód\./i.test(l));
+  if(lineOrc){
+    const m = lineOrc.match(/Orçamento Cód\.:?\s*(\S+)\s+Emissão:\s*(\d{2}\/\d{2}\/\d{4})\s+Validade:\s*(\d{2}\/\d{2}\/\d{4})/i);
+    if(m){ out.meta.numero=m[1]; out.meta.emissao=m[2]; out.meta.validade=m[3]; }
+  }
+  const lineCliente = lines.find(l=>/^Cliente\s*:/i.test(l));
+  if(lineCliente){
+    const m = lineCliente.match(/^Cliente\s*:\s*(.+?)\s+Código\s*:\s*(\S+)/i);
+    if(m){ out.meta.cliente=m[1]; out.meta.codCliente=m[2]; }
+  }
+
+  // Detecta cabeçalho da tabela de itens
+  const idxHeader = lines.findIndex(l=>/Código\s+Descrição\s+Qtde\s+UN\s+Qtd\.Emb\s+Unitário/i.test(l));
+  if(idxHeader>=0){
+    const headerLine = lines[idxHeader];
+    // Colunas dinamicamente conforme PDF
+    let cols = headerLine.split(/\s{2,}|\t|\s(?=UN\b)/).filter(Boolean);
+    // Corrige nomes padrão
+    const wanted = ['Código','Descrição','Qtde','UN','Qtd.Emb','Unitário','Vlr.ICMS','Vlr.ST','Total','Alíq.IPI','Vlr.IPI'];
+    cols = wanted; // força layout esperado
+
+    // Linhas até 'Volumes:'
+    for(let i=idxHeader+1;i<lines.length;i++){
+      const l = lines[i];
+      if(/^Volumes:|^Peso Bruto:|^Vendedor:|^Total das Mercadorias:/i.test(l)) break;
+      if(!/^\d{6,}\b/.test(l)) continue; // começa com código numérico
+
+      const tokens = l.split(/\s+/);
+      const code = tokens.shift();
+      // pega do fim: numeros para últimas colunas (pode faltar alguns)
+      const tailNums = [];
+      while(tokens.length && /^(?:\d{1,3}(?:\.\d{3})*,\d{2,4}|\d+,\d{2,4}|\d+)$/.test(tokens[tokens.length-1])){
+        tailNums.unshift(tokens.pop());
+        if(tailNums.length>= (cols.length - 5)) break; // depois de Qtde, UN, Qtd.Emb sobram N
+      }
+      // recupera Qtde UN Qtd.Emb do fim do que restou
+      const qtdEmb = tokens.pop();
+      const UN = tokens.pop();
+      const qtde = tokens.pop();
+      const desc = tokens.join(' ').trim();
+
+      const record = { 'Código':code, 'Descrição':desc, 'Qtde':qtde, 'UN':UN, 'Qtd.Emb':qtdEmb };
+      const tailMapOrder = ['Unitário','Vlr.ICMS','Vlr.ST','Total','Alíq.IPI','Vlr.IPI'];
+      // Preenche da direita para a esquerda
+      const offset = tailMapOrder.length - tailNums.length;
+      for(let j=0;j<tailMapOrder.length;j++){
+        const k = tailMapOrder[j];
+        const v = tailNums[j-offset] ?? '';
+        record[k] = (j<offset)?'':v;
+      }
+      out.itens.push(record);
+    }
+  }
+
+  // Totais
+  const tMerc = lines.find(l=>/Total das Mercadorias:/i.test(l));
+  if(tMerc){ out.totais.mercadorias = tMerc.match(/Total das Mercadorias:\s*([\d\.,]+)/i)?.[1]||''; }
+  const tIPI = lines.find(l=>/Total IPI:/i.test(l));
+  if(tIPI){ out.totais.ipi = tIPI.match(/Total IPI:\s*([\d\.,]+)/i)?.[1]||''; }
+  const tFrete = lines.find(l=>/Frete:/i.test(l));
+  if(tFrete){ out.totais.frete = tFrete.match(/Frete:\s*([\d\.,]+)/i)?.[1]||''; }
+  const tTotal = lines.find(l=>/TOTAL:/i.test(l));
+  if(tTotal){ out.totais.total = tTotal.match(/TOTAL:\s*([\d\.,]+)/i)?.[1]||''; }
+
+  return out;
+}
+
+// ===== Parser: TOTVS Posicao dos Clientes =====
+function parseTotvsPosicaoClientes(pages){
+  const out = { meta:{}, linhas:[] };
+  const lines = pages.flatMap(p=>p.lines);
+  const head = lines.find(l=>/Posicao dos Clientes/i.test(l));
+  if(head){
+    const m = head.match(/Dt\.Ref:\s*(\d{2}\/\d{2}\/\d{4})/i);
+    if(m) out.meta.dataReferencia = m[1];
+  }
+  // Vamos percorrer e montar registros. A linha de dados começa com CH ou CON
+  const dataLines = [];
+  for(let i=0;i<lines.length;i++){
+    const l = lines[i];
+    if(/^(CH|CON)\s+\d+\b/.test(l)){
+      const rec = parseTotvsDataRow(l);
+      // Verifica a próxima linha para pegar "Carteira ..." ou "Normal Carteira"
+      const next = lines[i+1]||'';
+      if(/^Normal Carteira/i.test(next)){ rec.Situacao = 'Normal'; rec.Port = 'Carteira'; i++; }
+      else if(/^Carteira/i.test(next)){
+        const mm = next.match(/^Carteira\s*(\S+)?/i);
+        rec.Port = mm && mm[1] ? `Carteira ${mm[1]}` : 'Carteira';
+        i++;
+      }
+      dataLines.push(rec);
+    }
+  }
+  out.linhas = dataLines;
+  return out;
+}
+
+function parseTotvsDataRow(line){
+  // Exemplo:
+  // CH 001390 2 CH 12.394,03 28/07/2025 26/09/2025        0,00 ... 12.394,03
+  const tokens = line.split(/\s+/).filter(Boolean);
+  const rec = {Prf:'',Numero:'',PC:'',Tipo:'',ValorOriginal:'',Emissao:'',Vencto:'',Baixa:'',Descontos:'',Abatimentos:'',Juros:'',Multa:'',CorrMonet:'',ValorAcessorio:'',ValorBaixado:'',RecAntecip:'',Acrescimo:'',Decrescimo:'',SaldoAtual:'',Situacao:'',Port:''};
+  let i=0;
+  rec.Prf = tokens[i++]||'';
+  rec.Numero = tokens[i++]||'';
+  rec.PC = tokens[i++]||'';
+  rec.Tipo = tokens[i++]||'';
+  rec.ValorOriginal = tokens[i++]||'';
+  rec.Emissao = tokens[i++]||'';
+  rec.Vencto = tokens[i++]||'';
+  // se próximo parece data, é Baixa
+  if(/\d{2}\/\d{2}\/\d{4}/.test(tokens[i]||'')) rec.Baixa = tokens[i++];
+  const numeric = [];
+  while(i<tokens.length){ numeric.push(tokens[i++]); }
+  // Preenche colunas numéricas na ordem, usando o fim como SaldoAtual
+  const names = ['Descontos','Abatimentos','Juros','Multa','CorrMonet','ValorAcessorio','ValorBaixado','RecAntecip','Acrescimo','Decrescimo','SaldoAtual'];
+  // Alguns relatórios têm menos colunas no miolo; vamos mapear pelo final
+  for(let k=0;k<names.length;k++){
+    const name = names[names.length-1-k];
+    const val = numeric.length ? numeric.pop() : '';
+    rec[name] = val||'';
+  }
+  return rec;
+}
+
+// ===== Excel: helpers =====
+function ptbrToNumber(s){ if(typeof s!== 'string') return s; return Number(s.replace(/\./g,'').replace(',', '.')); }
+function setCols(ws, widths){ ws.columns = widths.map(w=>({width:w})); }
+function styleHeader(cell){
+  cell.font = {bold:true,color:{argb:'FFFFFFFF'}};
+  cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF22326B'}};
+  cell.alignment = {vertical:'middle', horizontal:'center', wrapText:true};
+  cell.border = {top:{style:'thin', color:{argb:'FF7280ba'}}, left:{style:'thin', color:{argb:'FF7280ba'}}, right:{style:'thin', color:{argb:'FF7280ba'}}, bottom:{style:'thin', color:{argb:'FF7280ba'}}};
+}
+function styleCell(cell, alignRight=false){
+  cell.alignment = {vertical:'top', horizontal: alignRight?'right':'left'};
+  cell.border = {top:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'}, bottom:{style:'thin'}};
+}
+
+// ===== Excel builder: RECH =====
+async function buildExcelRech(parsed){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(parsed.meta.numero?`Orc_${parsed.meta.numero}`:'Orcamento');
+  setCols(ws,[12,60,10,8,10,12,12,12,14,10,12]);
+
+  let r=1;
+  ws.mergeCells(r,1,r,11); ws.getCell(r,1).value = 'Orçamento (SIGER / Rech)'; styleHeader(ws.getCell(r,1)); r++;
+
+  // Bloco meta
+  const metaRows = [
+    ['Cliente', parsed.meta.cliente||'', 'Código', parsed.meta.codCliente||'', '', '', 'Emissão', parsed.meta.emissao||'', 'Validade', parsed.meta.validade||''],
+  ];
+  for(const row of metaRows){
+    const rr = ws.addRow(row); rr.eachCell((c,i)=>{ styleCell(c, i%2===0); }); r++;
+  }
+  ws.addRow([]); r++;
+
+  // Cabeçalho tabela
+  const headers = ['Código','Descrição','Qtde','UN','Qtd.Emb','Unitário','Vlr.ICMS','Vlr.ST','Total','Alíq.IPI','Vlr.IPI'];
+  const head = ws.addRow(headers); head.eachCell(styleHeader);
+
+  // Linhas
+  for(const it of parsed.itens){
+    const row = headers.map(h=>it[h]??'');
+    const rr = ws.addRow(row);
+    rr.eachCell((c,i)=>{
+      const right = i>=3 && i!==2 && i!==4 ? true:false; // números à direita (aprox)
+      styleCell(c, right);
+      if(right && typeof c.value==='string' && /\d/.test(c.value)){
+        const n = ptbrToNumber(c.value);
+        if(!Number.isNaN(n)){ c.value = n; c.numFmt = '#,##0.00'; }
+      }
+    });
+  }
+
+  // Totais
+  ws.addRow([]);
+  const totMap = [ ['Total das Mercadorias', parsed.totais.mercadorias||''], ['Total IPI', parsed.totais.ipi||''], ['Frete', parsed.totais.frete||''], ['TOTAL', parsed.totais.total||''] ];
+  for(const [k,v] of totMap){
+    const rr = ws.addRow(['', '', '', '', '', '', '', '', k, v]);
+    rr.getCell(9).font = {bold:true}; rr.getCell(10).font={bold:true};
+    rr.eachCell((c,i)=>{ styleCell(c, i>=9); if(i===10){ const n=ptbrToNumber(v); if(!Number.isNaN(n)){ c.value=n; c.numFmt='#,##0.00'; }} });
+  }
+
+  // Congela cabeçalho
+  ws.views = [{state:'frozen', ySplit:5}];
+
+  const buf = await wb.xlsx.writeBuffer();
+  saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), (parsed.meta.numero?`Orcamento_${parsed.meta.numero}.xlsx`:'Orcamento.xlsx'));
+}
+
+// ===== Excel builder: TOTVS =====
+async function buildExcelTotvs(parsed){
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('PosicaoClientes');
+  setCols(ws,[6,10,6,6,14,12,12,12,12,12,12,12,14,16,14,14,12,12,14,12,12,12]);
+
+  let r=1;
+  ws.mergeCells(r,1,r,22); ws.getCell(r,1).value = `Posicao dos Clientes — Dt.Ref: ${parsed.meta.dataReferencia||''}`; styleHeader(ws.getCell(r,1)); r++;
+
+  const headers = ['Prf','Numero','PC','Tipo','Valor Original','Emissao','Vencto','Baixa','Descontos','Abatimentos','Juros','Multa','Corr. Monet.','Valor Acessorio','Valor Baixado','Rec. Antecip.','Acrescimo','Decrescimo','Saldo Atual','Situacao','Port.','Obs'];
+  const head = ws.addRow(headers); head.eachCell(styleHeader);
+
+  for(const it of parsed.linhas){
+    const row = [it.Prf,it.Numero,it.PC,it.Tipo,it.ValorOriginal,it.Emissao,it.Vencto,it.Baixa,it.Descontos,it.Abatimentos,it.Juros,it.Multa,it.CorrMonet,it.ValorAcessorio,it.ValorBaixado,it.RecAntecip,it.Acrescimo,it.Decrescimo,it.SaldoAtual,it.Situacao||'',it.Port||'', ''];
+    const rr = ws.addRow(row);
+    rr.eachCell((c,i)=>{
+      const shouldRight = i>=5;
+      styleCell(c, shouldRight);
+      if(shouldRight && typeof c.value==='string' && /\d/.test(c.value)){
+        if(/\d{2}\/\d{2}\/\d{4}/.test(c.value)){
+          // data
+          const [d,m,y]=c.value.split('/').map(Number); c.value=new Date(y,m-1,d); c.numFmt='dd/mm/yyyy';
+        }else{
+          const n = ptbrToNumber(c.value);
+          if(!Number.isNaN(n)){ c.value=n; c.numFmt='#,##0.00'; }
+        }
+      }
+    });
+  }
+
+  ws.views = [{state:'frozen', ySplit:2}];
+  const buf = await wb.xlsx.writeBuffer();
+  saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `PosicaoClientes_${(parsed.meta.dataReferencia||'').replace(/\//g,'-')}.xlsx`);
+}
+
+// ===== UI principal =====
+let parsedCache = null; let parsedKind = null;
+
+$('#file').addEventListener('change', async (ev)=>{
+  $('#tbl').innerHTML=''; $('#preview').textContent=''; $('#log').textContent='';
+  const file = ev.target.files?.[0]; if(!file) return;
+  log(`Lendo PDF: ${file.name} ...`);
+  const pages = await pdfToTextLines(file);
+  const allText = pages.flatMap(p=>p.lines);
+  parsedKind = detectTemplate(allText);
+  $('#autoDetected').textContent = `Layout: ${parsedKind}`;
+  if(parsedKind==='RECH_ORCAMENTO'){
+    parsedCache = parseRechOrcamento(pages);
+    renderPreviewRech(parsedCache);
+    renderTable(parsedCache.itens);
+    $('#btnExport').disabled = false;
+  } else if(parsedKind==='TOTVS_POSICAO') {
+    parsedCache = parseTotvsPosicaoClientes(pages);
+    renderPreviewTotvs(parsedCache);
+    renderTable(parsedCache.linhas);
+    $('#btnExport').disabled = false;
+  } else {
+    log('❗ Layout não reconhecido automaticamente. Ajuste o detector/parsers conforme seu PDF.');
+    $('#btnExport').disabled = true;
+  }
+});
+
+$('#btnExport').addEventListener('click', async ()=>{
+  if(!parsedCache || !parsedKind) return;
+  if(parsedKind==='RECH_ORCAMENTO') await buildExcelRech(parsedCache);
+  if(parsedKind==='TOTVS_POSICAO') await buildExcelTotvs(parsedCache);
+});
+
+// ===== Renderizações de prévia =====
+function renderPreviewRech(p){
+  const el = $('#preview');
+  const meta = p.meta||{}; const t = p.totais||{};
+  el.textContent = `Orçamento ${meta.numero||''}\nCliente: ${meta.cliente||''} (cód ${meta.codCliente||''})\nEmissão: ${meta.emissao||''} | Validade: ${meta.validade||''}\nItens: ${p.itens.length}\nTotais → Mercadorias: ${t.mercadorias||''} | IPI: ${t.ipi||''} | Frete: ${t.frete||''} | TOTAL: ${t.total||''}`;
+}
+function renderPreviewTotvs(p){
+  const el = $('#preview');
+  el.textContent = `Dt.Ref: ${p.meta.dataReferencia||''}\nRegistros: ${p.linhas.length}`;
+}
+
+function renderTable(rows){
+  const tbl = $('#tbl');
+  if(!rows || !rows.length){ tbl.innerHTML = '<tr><td class="muted">— sem linhas —</td></tr>'; return; }
+  const headers = Object.keys(rows[0]);
+  tbl.innerHTML = '';
+  const th = document.createElement('tr');
+  headers.forEach(h=>{ const c=document.createElement('th'); c.textContent=h; th.appendChild(c);});
+  tbl.appendChild(th);
+  rows.slice(0,200).forEach(r=>{
+    const tr = document.createElement('tr');
+    headers.forEach(h=>{ const c=document.createElement('td'); c.textContent = r[h]??''; tr.appendChild(c); });
+    tbl.appendChild(tr);
+  });
+  if(rows.length>200){
+    const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=headers.length; td.className='muted'; td.textContent=`+ ${rows.length-200} linhas não exibidas na prévia`; tr.appendChild(td); tbl.appendChild(tr);
+  }
+}
+
+// ===== Testes automatizados (unitários básicos) =====
+function expectEqual(label, got, expected){
+  const pass = got===expected; const icon = pass?'✅':'❌';
+  log(`${icon} ${label} → got: ${got} | expected: ${expected}`);
+}
+
+function runTests(){
+  log('— Iniciando testes —');
+  try{
+    // detectTemplate
+    expectEqual('detectTemplate RECH', detectTemplate(['Gerado por SIGER','Orçamento Cód. 123 Emissão: 01/01/2025 Validade: 31/01/2025']), 'RECH_ORCAMENTO');
+    expectEqual('detectTemplate TOTVS (Posicao)', detectTemplate(['Posicao dos Clientes','Dt.Ref: 10/08/2025']), 'TOTVS_POSICAO');
+    expectEqual('detectTemplate TOTVS (SIGA/FINR340)', detectTemplate(['SIGA/FINR340','Alguma outra linha']), 'TOTVS_POSICAO');
+    expectEqual('detectTemplate DESCONHECIDO', detectTemplate(['Documento qualquer','Sem palavras-chave']), 'DESCONHECIDO');
+
+    // parseTotvsDataRow (sanidade)
+    const sample = 'CH 001390 2 CH 12.394,03 28/07/2025 26/09/2025 0,00 0,00 0,00 0,00 0,00 12.394,03';
+    const rec = parseTotvsDataRow(sample);
+    log(`ℹ️ TOTVS row parse sample → Prf=${rec.Prf}, Numero=${rec.Numero}, ValorOriginal=${rec.ValorOriginal}, Emissao=${rec.Emissao}, Vencto=${rec.Vencto}, SaldoAtual=${rec.SaldoAtual}`);
+
+    log('— Testes finalizados —');
+  }catch(err){
+    log('❌ Erro durante testes: ' + (err && err.message ? err.message : String(err)));
+  }
+}
+
+$('#btnRunTests').addEventListener('click', runTests);
+// Auto-executar uma vez ao carregar para garantir que não há syntax errors
+runTests();
+</script>
+</body>
+</html>
