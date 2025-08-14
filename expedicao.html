@@ -168,11 +168,16 @@
       const resumo = {};
       snap.forEach(d => {
         const data = d.data();
+        const loja = data.loja || 'sem-loja';
         const sku = data.sku || 'sem-sku';
         const qtd = data.quantidade || 0;
-        resumo[sku] = (resumo[sku] || 0) + qtd;
+        const key = `${loja}||${sku}`;
+        resumo[key] = (resumo[key] || 0) + qtd;
       });
-      const linhas = Object.entries(resumo).map(([sku, qtd]) => ({ SKU: sku, Quantidade: qtd }));
+      const linhas = Object.entries(resumo).map(([chave, qtd]) => {
+        const [loja, sku] = chave.split('||');
+        return { Loja: loja, SKU: sku, Quantidade: qtd };
+      });
       if (!linhas.length) {
         alert('Nenhum SKU impresso no período.');
         return;
@@ -194,15 +199,19 @@
       snap.forEach(d => {
         const data = d.data();
         const usuario = data.userEmail || 'Desconhecido';
+        const loja = data.loja || 'sem-loja';
         const sku = data.sku || 'sem-sku';
         const qtd = data.quantidade || 0;
         if (!resumo[usuario]) resumo[usuario] = {};
-        resumo[usuario][sku] = (resumo[usuario][sku] || 0) + qtd;
+        if (!resumo[usuario][loja]) resumo[usuario][loja] = {};
+        resumo[usuario][loja][sku] = (resumo[usuario][loja][sku] || 0) + qtd;
       });
       const linhas = [];
-      Object.entries(resumo).forEach(([usuario, skus]) => {
-        Object.entries(skus).forEach(([sku, qtd]) => {
-          linhas.push({ Usuario: usuario, SKU: sku, Quantidade: qtd });
+      Object.entries(resumo).forEach(([usuario, lojas]) => {
+        Object.entries(lojas).forEach(([loja, skus]) => {
+          Object.entries(skus).forEach(([sku, qtd]) => {
+            linhas.push({ Usuario: usuario, Loja: loja, SKU: sku, Quantidade: qtd });
+          });
         });
       });
       if (!linhas.length) {

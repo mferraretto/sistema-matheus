@@ -257,11 +257,11 @@
 
                     // 2. Use Gemini API to extract SKU and quantity
                     const extractedData = await extractDataFromImage(checklistBase64);
-                    allExtractedItems.push(...extractedData);
-
-                   if (loja) {
+                    if (loja) {
                         extractedData.forEach(item => item.loja = loja);
                     }
+                    // keep track of all items for posterior saving
+                    allExtractedItems.push(...extractedData);
 
                     // 3. Generate ZPL for the new combined label
                     const combinedZPL = generateCombinedZPL(labelBlock, extractedData); 
