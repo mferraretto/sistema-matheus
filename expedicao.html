@@ -50,6 +50,7 @@
     let currentUser = null;
     let currentFilter = 'all';
     let diaDocRef = null;
+    let isResponsavel = false;
 
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
@@ -65,13 +66,30 @@
       });
     });
 
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged(async user => {
       if (user) {
         currentUser = user;
-        verificarDia();
+        await verificarResponsavel();
         carregarEtiquetas();
+        if (isResponsavel) {
+          verificarDia();
+        } else {
+          startBtn.classList.add('hidden');
+          closeBtn.classList.add('hidden');
+        }
       }
     });
+
+    async function verificarResponsavel() {
+      try {
+        const q1 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).limit(1).get();
+        const q2 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).limit(1).get();
+        isResponsavel = !q1.empty || !q2.empty;
+      } catch (e) {
+        console.error('Erro ao verificar responsável:', e);
+        isResponsavel = false;
+      }
+    }
 
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
@@ -133,6 +151,7 @@
       const dados = doc.data();
       const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
       await gerarRelatorioDia(inicio, fim);
+      await gerarRelatorioDiaPorUsuario(inicio, fim);
       closeBtn.classList.add('hidden');
       showToast('Dia encerrado');
       verificarDia();
@@ -163,6 +182,38 @@
       XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
       const diaStr = inicio.toISOString().split('T')[0];
       XLSX.writeFile(wb, `resumo_expedicao_${diaStr}.xlsx`);
+    }
+
+    async function gerarRelatorioDiaPorUsuario(inicio, fim) {
+      const snap = await db
+        .collectionGroup('skuimpressos')
+        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .get();
+      const resumo = {};
+      snap.forEach(d => {
+        const data = d.data();
+        const usuario = data.userEmail || 'Desconhecido';
+        const sku = data.sku || 'sem-sku';
+        const qtd = data.quantidade || 0;
+        if (!resumo[usuario]) resumo[usuario] = {};
+        resumo[usuario][sku] = (resumo[usuario][sku] || 0) + qtd;
+      });
+      const linhas = [];
+      Object.entries(resumo).forEach(([usuario, skus]) => {
+        Object.entries(skus).forEach(([sku, qtd]) => {
+          linhas.push({ Usuario: usuario, SKU: sku, Quantidade: qtd });
+        });
+      });
+      if (!linhas.length) {
+        alert('Nenhum SKU encontrado para o dia.');
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(linhas);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+      const diaStr = inicio.toISOString().split('T')[0];
+      XLSX.writeFile(wb, `relatorio_sku_usuarios_${diaStr}.xlsx`);
     }
 
     function createPdfCard(doc) {
