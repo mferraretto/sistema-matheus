@@ -30,7 +30,7 @@ async function carregarSkus(uid) {
   const container = document.getElementById('resumoSkus');
   if (!container) return;
   container.innerHTML = 'Carregando...';
-  const snap = await getDocs(collection(db, `uid/${uid}/skuimpressos`));
+  const snap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
   const resumo = {};
   snap.forEach(doc => {
     const dados = doc.data();
