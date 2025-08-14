@@ -242,6 +242,7 @@ function indexByMulti(arr, key){
     }
 
     const state={ files:{basic:null,sales:null,shipping:null,media:null}, data:{}, merged:[], joinCandidates:[], chosenKey:'' };
+    window.planilhaState = state;
     const dz = document.getElementById('dropzone');
 
     dz.addEventListener('dragover',e=>{e.preventDefault(); dz.classList.add('bg-slate-100');});
@@ -327,6 +328,110 @@ function indexByMulti(arr, key){
 });
 
     document.getElementById('btn-csv-consol').addEventListener('click',()=>{ if(!state.merged||!state.merged.length) return; exportCSV(state.merged,'shopee_consolidado.csv'); });
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+    import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
+    import { firebaseConfig, getPassphrase } from './firebase-config.js';
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    function getEffectivePass(ownerUid) {
+      try {
+        const pass = getPassphrase() || '';
+        const current = auth.currentUser?.uid;
+        return current === ownerUid && pass.trim() ? pass : ownerUid;
+      } catch {
+        return ownerUid;
+      }
+    }
+
+    function limparUndefined(obj) {
+      return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+    }
+
+    function objetosIguais(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return a == null && b == null;
+      if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+      const ka = Object.keys(a).sort();
+      const kb = Object.keys(b).sort();
+      if (ka.length !== kb.length) return false;
+      return ka.every(k => objetosIguais(a[k], b[k]));
+    }
+
+    function extractParent(row) {
+      const variantFields = ['model_id','variation_id','model_sku','sku','sku_variante','sku_variacao','sku_variation','variation_sku','variation','variante','preco','price','stock','quantity','estoque'];
+      const parent = {};
+      for (const [k, v] of Object.entries(row)) {
+        if (!variantFields.includes(k)) parent[k] = v;
+      }
+      return parent;
+    }
+
+    function buildProducts(rows) {
+      const products = {};
+      for (const r of rows) {
+        const parentId = String(r.item_id || r.product_id || r.id || r.parent_sku || r.seller_sku || r.sku || '').trim();
+        if (!parentId) continue;
+        const variantIdRaw = r.model_id || r.variation_id || r.sku || r.sku_variacao || r.sku_variation || '';
+        const variantId = String(variantIdRaw || ('unico_' + parentId)).trim();
+        if (!products[parentId]) products[parentId] = { data: extractParent(r), variantes: {} };
+        else Object.assign(products[parentId].data, extractParent(r));
+        products[parentId].variantes[variantId] = { ...r };
+      }
+      return products;
+    }
+
+    async function salvarAnuncios() {
+      const state = window.planilhaState;
+      const rows = state?.merged || [];
+      if (!rows.length) return;
+      const user = auth.currentUser;
+      if (!user) { logStatus('Usuário não autenticado'); return; }
+      const pass = getEffectivePass(user.uid);
+      const produtos = buildProducts(rows);
+      let atualizados = 0;
+      for (const [id, produto] of Object.entries(produtos)) {
+        const docPath = `uid/${user.uid}/anuncios`;
+        const docRef = doc(db, docPath, id);
+        const rawSnap = await getDoc(docRef);
+        const dadosAntigos = await loadSecureDoc(db, docPath, id, pass);
+        const docExiste = rawSnap.exists();
+
+        const dadosCompletos = limparUndefined({ ...produto.data, uid: user.uid });
+        let salvarPai = true;
+        if (docExiste && dadosAntigos && objetosIguais(dadosAntigos, dadosCompletos)) salvarPai = false;
+        if (salvarPai) {
+          await saveSecureDoc(db, docPath, id, dadosCompletos, pass);
+          atualizados++;
+        }
+
+        for (const [varId, vData] of Object.entries(produto.variantes)) {
+          const variantesPath = `uid/${user.uid}/anuncios/${id}/variantes`;
+          const antigo = (await loadSecureDoc(db, variantesPath, varId, pass)) || {};
+          const novo = limparUndefined({ ...antigo, ...vData });
+          if (!objetosIguais(antigo, novo)) {
+            await saveSecureDoc(db, variantesPath, varId, novo, pass);
+          }
+        }
+      }
+      logStatus(`Anúncios salvos/atualizados: ${atualizados}`);
+    }
+
+    document.getElementById('btn-process').addEventListener('click', () => {
+      setTimeout(() => {
+        const st = window.planilhaState;
+        if (st.merged && st.merged.length) {
+          salvarAnuncios();
+        }
+      }, 0);
+    });
   </script>
 </div>
 </body>
