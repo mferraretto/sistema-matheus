@@ -754,6 +754,10 @@
                         <label for="boardColor">Cor do Quadro</label>
                         <input type="color" id="boardColor" name="color" value="#4262ff">
                     </div>
+                    <div class="form-group">
+                        <label for="boardResponsible">Responsável</label>
+                        <select id="boardResponsible" name="responsible"></select>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline" id="cancelBoardModalBtn">Cancelar</button>
                         <button type="submit" class="btn btn-primary" id="saveBoardBtn">
@@ -914,7 +918,7 @@
         // Importa as funções necessárias do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, updateDoc, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, updateDoc, doc, deleteDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { firebaseConfig as defaultFirebaseConfig } from './firebase-config.js';
 
@@ -939,6 +943,7 @@
         const boardForm = document.getElementById('boardForm');
         const boardTitleInput = document.getElementById('boardTitle');
         const boardColorInput = document.getElementById('boardColor');
+        const boardResponsibleSelect = document.getElementById('boardResponsible');
         const boardIdInput = document.getElementById('boardIdInput');
         const newBoardModalTitle = document.getElementById('newBoardModalTitle');
         const closeNewBoardModalBtn = document.getElementById('closeNewBoardModalBtn');
@@ -1001,6 +1006,7 @@
         let membersMap = {}; // Objeto para facilitar a busca de membros por ID
         let tasksCache = []; // Cache das tarefas do quadro atual
         let currentFilters = { status: '', assigneeId: '', startDate: null, endDate: null };
+        let originalBoardResponsibleId = null;
         
         const defaultColumns = ['A Fazer', 'Em Andamento', 'Concluído'];
         const statusColors = {
@@ -1012,6 +1018,8 @@
         // Variáveis para a deleção
         let itemToDelete = null;
         let itemTypeToDelete = null;
+        let itemOwnerToDelete = null;
+        let itemResponsibleToDelete = null;
 
         // Função para mostrar um modal
         function showModal(modal) {
@@ -1084,6 +1092,25 @@
                 assigneeFilterSelect.appendChild(filterOption);
             });
         }
+
+        // Preenche o dropdown de responsável do quadro
+        function populateBoardResponsibleSelect() {
+            if (!boardResponsibleSelect) return;
+            boardResponsibleSelect.innerHTML = '';
+            const meOption = document.createElement('option');
+            meOption.value = userId || '';
+            meOption.textContent = 'Você';
+            boardResponsibleSelect.appendChild(meOption);
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name;
+                boardResponsibleSelect.appendChild(option);
+            });
+            if (originalBoardResponsibleId) {
+                boardResponsibleSelect.value = originalBoardResponsibleId;
+            }
+        }
         
         // Inicializa o Firebase e ouve o estado de autenticação
         async function initializeFirebase() {
@@ -1114,6 +1141,7 @@
 
                     userId = user.uid;
                     isAuthReady = true;
+                    originalBoardResponsibleId = userId;
                     userIdDisplay.innerText = `UID do Usuário: ${userId}`;
                     console.log('User authenticated with UID:', userId);
 
@@ -1164,6 +1192,7 @@
                 });
                 renderMembers(members);
                 populateAssigneeSelect(); // Atualiza o select do modal de tarefas
+                populateBoardResponsibleSelect(); // Atualiza o select de responsável do quadro
                 console.log('Membros da equipe atualizados:', members);
             }, (error) => {
                 console.error('Erro ao buscar membros em tempo real:', error);
@@ -1223,7 +1252,7 @@
                 deleteButton.innerHTML = `<i class="fas fa-trash-alt"></i>`;
                 deleteButton.onclick = (e) => {
                     e.stopPropagation(); // Previne a navegação para o board
-                    showConfirmationModal(board.id, 'board', `Tem certeza que deseja excluir o quadro "${board.title}"? Esta ação é irreversível.`);
+                    showConfirmationModal(board.id, 'board', `Tem certeza que deseja excluir o quadro "${board.title}"? Esta ação é irreversível.`, board.ownerId, board.responsibleId);
                 };
                 
                 boardActions.appendChild(editButton);
@@ -1260,6 +1289,8 @@
             boardIdInput.value = board.id;
             boardTitleInput.value = board.title;
             boardColorInput.value = board.color;
+            boardResponsibleSelect.value = board.responsibleId || userId;
+            originalBoardResponsibleId = board.responsibleId || userId;
             saveBoardBtn.querySelector('span').innerHTML = '<i class="fas fa-save"></i> Salvar';
             showModal(newBoardModal);
         }
@@ -1481,9 +1512,11 @@
         }
 
         // Modal de confirmação genérico
-        function showConfirmationModal(id, type, message) {
+        function showConfirmationModal(id, type, message, ownerId = null, responsibleId = null) {
             itemToDelete = id;
             itemTypeToDelete = type;
+            itemOwnerToDelete = ownerId;
+            itemResponsibleToDelete = responsibleId;
             confirmationMessage.textContent = message;
             showModal(confirmationModal);
         }
@@ -1496,15 +1529,21 @@
             
             try {
                 if (itemTypeToDelete === 'board') {
-                    // Primeiro, deletar todas as tarefas associadas
-                    const tasksRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
-                    const q = query(tasksRef, where("boardId", "==", itemToDelete));
-                    const querySnapshot = await getDocs(q);
-                    querySnapshot.forEach(async (doc) => {
-                        await deleteDoc(doc.ref);
-                    });
-                    // Depois, deletar o quadro
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/boards`, itemToDelete));
+                    const usersToClean = new Set([userId]);
+                    if (itemOwnerToDelete) usersToClean.add(itemOwnerToDelete);
+                    if (itemResponsibleToDelete) usersToClean.add(itemResponsibleToDelete);
+
+                    for (const uid of usersToClean) {
+                        const tasksRef = collection(db, `artifacts/${appId}/users/${uid}/tasks`);
+                        const q = query(tasksRef, where("boardId", "==", itemToDelete));
+                        const querySnapshot = await getDocs(q);
+                        const deletions = [];
+                        querySnapshot.forEach(docSnap => {
+                            deletions.push(deleteDoc(docSnap.ref));
+                        });
+                        await Promise.all(deletions);
+                        await deleteDoc(doc(db, `artifacts/${appId}/users/${uid}/boards`, itemToDelete));
+                    }
                     console.log(`Quadro ${itemToDelete} e suas tarefas associadas foram deletados.`);
                     showView('myBoardsView'); // Retorna à vista de quadros
                 } else if (itemTypeToDelete === 'task') {
@@ -1522,49 +1561,60 @@
                 hideModal(confirmationModal);
                 itemToDelete = null;
                 itemTypeToDelete = null;
+                itemOwnerToDelete = null;
+                itemResponsibleToDelete = null;
             }
         }
         
         // Lida com o envio do formulário para criar ou editar um novo quadro
         boardForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             saveBoardBtn.classList.add('loading');
-            
-            const boardId = boardIdInput.value;
+
+            let boardId = boardIdInput.value;
             const title = boardTitleInput.value;
             const color = boardColorInput.value;
-            
+            const responsibleId = boardResponsibleSelect.value || userId;
+
             if (!title) {
                 console.error('O título do quadro é obrigatório.');
                 saveBoardBtn.classList.remove('loading');
                 return;
             }
-            
+
             try {
-                if (boardId) {
-                    // Atualizar quadro existente
-                    const boardRef = doc(db, `artifacts/${appId}/users/${userId}/boards`, boardId);
-                    await updateDoc(boardRef, {
-                        title: title,
-                        color: color
-                    });
-                    console.log(`Quadro ${boardId} atualizado com sucesso.`);
-                } else {
-                    // Criar novo quadro
-                    const newBoardData = {
-                        title: title,
-                        description: `Quadro de equipe para ${title}`,
-                        color: color,
-                        createdAt: new Date(),
-                    };
-                    const boardsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/boards`);
-                    await addDoc(boardsCollectionRef, newBoardData);
-                    console.log('Novo quadro adicionado com sucesso:', newBoardData);
+                if (!boardId) {
+                    boardId = doc(collection(db, `artifacts/${appId}/users/${userId}/boards`)).id;
                 }
-                
+
+                const boardData = {
+                    title: title,
+                    description: `Quadro de equipe para ${title}`,
+                    color: color,
+                    ownerId: userId,
+                    responsibleId: responsibleId,
+                };
+                if (!boardIdInput.value) {
+                    boardData.createdAt = new Date();
+                }
+
+                const boardRefCreator = doc(db, `artifacts/${appId}/users/${userId}/boards`, boardId);
+                await setDoc(boardRefCreator, boardData, { merge: true });
+
+                if (responsibleId !== userId) {
+                    const boardRefResp = doc(db, `artifacts/${appId}/users/${responsibleId}/boards`, boardId);
+                    await setDoc(boardRefResp, boardData, { merge: true });
+                }
+
+                if (boardIdInput.value && originalBoardResponsibleId && originalBoardResponsibleId !== responsibleId && originalBoardResponsibleId !== userId) {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${originalBoardResponsibleId}/boards`, boardId));
+                }
+
                 hideModal(newBoardModal);
                 boardForm.reset();
+                boardResponsibleSelect.value = userId;
+                originalBoardResponsibleId = userId;
             } catch (e) {
                 console.error('Erro ao salvar o quadro: ', e);
             } finally {
@@ -1665,6 +1715,8 @@
             newBoardModalTitle.innerText = 'Criar Novo Quadro';
             boardIdInput.value = '';
             boardForm.reset();
+            boardResponsibleSelect.value = userId;
+            originalBoardResponsibleId = userId;
             saveBoardBtn.querySelector('span').innerHTML = '<i class="fas fa-plus"></i> Criar Quadro';
             showModal(newBoardModal);
         });
