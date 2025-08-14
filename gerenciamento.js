@@ -9,7 +9,7 @@ import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const BASE_PATH = new URL('.', import.meta.url);
-const tabs = ["cadastro","anuncios","analise","evolucao"];
+const tabs = ["cadastro","anuncios","analise","evolucao","planilha-shopee"];
 for (const t of tabs) {
   const container = document.getElementById(t);
   if (container) {
@@ -19,6 +19,12 @@ for (const t of tabs) {
     const doc = new DOMParser().parseFromString(text, 'text/html');
     const content = doc.getElementById('tab-content')?.innerHTML || text;
     container.innerHTML = content;
+    container.querySelectorAll('script').forEach(old => {
+      const s = document.createElement('script');
+      Array.from(old.attributes).forEach(attr => s.setAttribute(attr.name, attr.value));
+      s.appendChild(document.createTextNode(old.innerHTML));
+      old.replaceWith(s);
+    });
   }
 }
 
