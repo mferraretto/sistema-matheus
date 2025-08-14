@@ -1,6 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isGestorOrADM(uid) {
+      return exists(/databases/$(database)/documents/usuarios/$(uid)) &&
+        get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor', 'ADM'];
+    }
     match /pdfDocs/{fileId} {
       allow read: if request.auth != null && (
         resource.data.ownerUid == request.auth.uid ||
@@ -8,6 +12,28 @@ service cloud.firestore {
       );
       allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /relatorios/{relatorioId} {
+      allow create: if request.auth != null && request.resource.data.autorUid == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.autorUid == request.auth.uid ||
+        (resource.data.gestores != null && request.auth.uid in resource.data.gestores) ||
+        isGestorOrADM(request.auth.uid)
+      );
+      allow update: if request.auth != null && (
+        (resource.data.autorUid == request.auth.uid && resource.data.status != 'aprovado' && request.resource.data.status == resource.data.status) ||
+        (resource.data.gestores != null && request.auth.uid in resource.data.gestores) ||
+        isGestorOrADM(request.auth.uid)
+      );
+
+      match /comentarios/{comentId} {
+        allow read, create: if request.auth != null && (
+          get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.autorUid == request.auth.uid ||
+          (get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores != null && request.auth.uid in get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores) ||
+          isGestorOrADM(request.auth.uid)
+        );
+      }
     }
   }
 }
