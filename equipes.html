@@ -1072,6 +1072,15 @@
         
         // Inicializa o Firebase e ouve o estado de autenticação
         async function initializeFirebase() {
+            // Evita inicializar o Firebase sem as configurações mínimas necessárias.
+            if (!firebaseConfig || !firebaseConfig.projectId) {
+                console.error("Configuração do Firebase ausente ou incompleta.");
+                boardsGrid.innerHTML = '<div class="loading">Configuração do Firebase ausente.</div>';
+                membersGrid.innerHTML = '<div class="loading">Configuração do Firebase ausente.</div>';
+                showView('dashboardView');
+                return;
+            }
+
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
