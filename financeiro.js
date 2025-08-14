@@ -13,71 +13,88 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  let targetUid = user.uid;
+  let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
     const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
     if (!snap.empty) {
-      targetUid = snap.docs[0].id;
+      usuarios = snap.docs.map(d => ({ uid: d.id, nome: d.data().nome || d.id }));
     }
   } catch (err) {
     console.error('Erro ao verificar acesso financeiro:', err);
   }
-  await carregarSkus(targetUid);
-  await carregarSaques(targetUid);
+  await carregarSkus(usuarios);
+  await carregarSaques(usuarios);
 });
 
-async function carregarSkus(uid) {
+async function carregarSkus(usuarios) {
   const container = document.getElementById('resumoSkus');
   if (!container) return;
-  container.innerHTML = 'Carregando...';
-  const snap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
-  const resumo = {};
-  for (const docSnap of snap.docs) {
-    const listaRef = collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`);
-    const listaSnap = await getDocs(listaRef);
-    listaSnap.forEach(item => {
-      const dados = item.data();
-      const sku = dados.sku || 'sem-sku';
-      const qtd = Number(dados.total || dados.quantidade) || 0;
-      resumo[sku] = (resumo[sku] || 0) + qtd;
-    });
-  }
   container.innerHTML = '';
-  if (!Object.keys(resumo).length) {
-    container.innerHTML = '<p class="text-gray-500">Nenhum SKU encontrado.</p>';
-    return;
+  for (const usuario of usuarios) {
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/skusVendidos`));
+    const resumo = {};
+    for (const docSnap of snap.docs) {
+      const listaRef = collection(db, `uid/${usuario.uid}/skusVendidos/${docSnap.id}/lista`);
+      const listaSnap = await getDocs(listaRef);
+      listaSnap.forEach(item => {
+        const dados = item.data();
+        const sku = dados.sku || 'sem-sku';
+        const qtd = Number(dados.total || dados.quantidade) || 0;
+        const sobra = Number(dados.valorLiquido || dados.sobraReal || 0);
+        if (!resumo[sku]) resumo[sku] = { qtd: 0, sobra: 0 };
+        resumo[sku].qtd += qtd;
+        resumo[sku].sobra += sobra;
+      });
+    }
+    const section = document.createElement('div');
+    section.className = 'mb-4';
+    const titulo = document.createElement('h3');
+    titulo.className = 'font-bold';
+    titulo.textContent = usuario.nome;
+    section.appendChild(titulo);
+    if (!Object.keys(resumo).length) {
+      const p = document.createElement('p');
+      p.className = 'text-gray-500';
+      p.textContent = 'Nenhum SKU encontrado.';
+      section.appendChild(p);
+    } else {
+      const ul = document.createElement('ul');
+      ul.className = 'list-disc pl-4 space-y-1';
+      Object.entries(resumo).forEach(([sku, info]) => {
+        const li = document.createElement('li');
+        li.textContent = `${sku}: ${info.qtd} | Sobra: R$ ${info.sobra.toLocaleString('pt-BR')}`;
+        ul.appendChild(li);
+      });
+      section.appendChild(ul);
+    }
+    container.appendChild(section);
   }
-  const ul = document.createElement('ul');
-  ul.className = 'list-disc pl-4 space-y-1';
-  Object.entries(resumo).forEach(([sku, qtd]) => {
-    const li = document.createElement('li');
-    li.textContent = `${sku}: ${qtd}`;
-    ul.appendChild(li);
-  });
-  container.appendChild(ul);
 }
 
-async function carregarSaques(uid) {
+async function carregarSaques(usuarios) {
   const container = document.getElementById('resumoSaques');
   if (!container) return;
   container.innerHTML = 'Carregando...';
-  const pass = getPassphrase() || `chave-${uid}`;
-  const snap = await getDocs(collection(db, `uid/${uid}/saques`));
   let total = 0;
   let totalComissao = 0;
-  for (const docSnap of snap.docs) {
-    const dados = await loadSecureDoc(db, `uid/${uid}/saques`, docSnap.id, pass);
-    if (!dados) continue;
-    total += dados.valorTotal || 0;
-    const lojasSnap = await getDocs(collection(db, `uid/${uid}/saques/${docSnap.id}/lojas`));
-    for (const lojaDoc of lojasSnap.docs) {
-      const lojaDados = await loadSecureDoc(db, `uid/${uid}/saques/${docSnap.id}/lojas`, lojaDoc.id, pass);
-      if (!lojaDados) continue;
-      const valor = lojaDados.valor || 0;
-      const comissao = lojaDados.comissao || 0;
-      totalComissao += valor * (comissao / 100);
+  for (const usuario of usuarios) {
+    const pass = getPassphrase() || `chave-${usuario.uid}`;
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/saques`));
+    for (const docSnap of snap.docs) {
+      const dados = await loadSecureDoc(db, `uid/${usuario.uid}/saques`, docSnap.id, pass);
+      if (!dados) continue;
+      total += dados.valorTotal || 0;
+      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`));
+      for (const lojaDoc of lojasSnap.docs) {
+        const lojaDados = await loadSecureDoc(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`, lojaDoc.id, pass);
+        if (!lojaDados) continue;
+        const valor = lojaDados.valor || 0;
+        const comissao = lojaDados.comissao || 0;
+        totalComissao += valor * (comissao / 100);
+      }
     }
   }
-  container.innerHTML = `<p>Total de Saques: <strong>R$ ${total.toLocaleString('pt-BR')}</strong></p>
-<p>Total de Comissões: <strong>R$ ${totalComissao.toLocaleString('pt-BR')}</strong></p>`;
+  container.innerHTML = `<p>Total de Saques: <strong>R$ ${total.toLocaleString('pt-BR')}</strong></p>` +
+    `<p>Total de Comissões: <strong>R$ ${totalComissao.toLocaleString('pt-BR')}</strong></p>`;
 }
+
