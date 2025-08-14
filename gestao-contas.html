@@ -22,6 +22,8 @@
   </style>
   <!-- ZXing (browser) -->
   <script src="https://unpkg.com/@zxing/browser@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div id="sidebar-container"></div>
@@ -53,6 +55,19 @@
     <div class="card">
       <h3>Resultado</h3>
       <div id="resultado" class="grid"></div>
+    </div>
+
+    <h2>Financeiro - Fechamentos</h2>
+    <div class="card">
+      <input type="file" id="inputPdfFechamento" accept="application/pdf" multiple />
+      <div class="row" style="margin-top:8px">
+        <button id="btnProcessarPdf">Processar PDF</button>
+        <button id="btnExportarExcel" disabled>Exportar Excel</button>
+      </div>
+      <div id="statusFechamento" class="muted"></div>
+      <div id="previewFechamento" style="overflow:auto;margin-top:12px"></div>
+      <div class="row" id="paginacaoFechamento"></div>
+      <div id="totalFechamento" class="muted"></div>
     </div>
   </main>
 
@@ -274,6 +289,7 @@
     };
   </script>
 
+  <script type="module" src="gestao-contas-fechamento.js"></script>
   <script src="shared.js"></script>
 </body>
 </html>
