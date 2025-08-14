@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gestão Contas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:24px;max-width:920px}
+    .card{border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin:12px 0}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{font-weight:600}
+    input,button,select{padding:10px;border:1px solid #d1d5db;border-radius:10px}
+    video{width:100%;max-height:320px;border-radius:12px;background:#000}
+    .ok{color:#065f46}
+    .err{color:#991b1b}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .muted{color:#6b7280}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  </style>
+  <!-- ZXing (browser) -->
+  <script src="https://unpkg.com/@zxing/browser@latest"></script>
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+
+  <main class="main-content">
+    <h1>Leitor de Boletos</h1>
+    <p class="muted">Aponte a câmera para o código de barras OU cole a linha digitável abaixo.</p>
+
+    <div class="card">
+      <div class="row">
+        <button id="btnStart">Iniciar câmera</button>
+        <button id="btnStop" disabled>Parar</button>
+        <select id="cameraSelect"></select>
+      </div>
+      <video id="video" muted playsinline></video>
+      <div class="muted">Formato suportado: ITF/Code128 (a maioria dos boletos). Iluminação ajuda muito.</div>
+    </div>
+
+    <div class="card">
+      <label for="linha">Linha digitável (47/48 dígitos)</label>
+      <div class="row">
+        <input id="linha" placeholder="Ex.: 34191.79001 01043.510047 91020.150008 9 12345678901234" style="flex:1" />
+        <button id="btnParse">Analisar</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>Resultado</h3>
+      <div id="resultado" class="grid"></div>
+    </div>
+  </main>
+
+  <!-- (Opcional) Firebase: descomente e preencha para salvar -->
+  <!--
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJETO.firebaseapp.com",
+      projectId: "SEU_PROJETO"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    async function salvarNoFirestore(dados){
+      await db.collection('boletos').add({
+        ...dados,
+        createdAt: new Date()
+      });
+      alert('Salvo no Firestore!');
+    }
+  </script>
+  -->
+
+  <script>
+    // ---------- Utilidades ----------
+    const onlyDigits = s => (s || '').replace(/\D+/g, '');
+    function formatCurrency(v){
+      return (v/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    }
+    function factorToDate(factor){
+      const base = new Date(Date.UTC(1997,9,7));
+      if (!factor || isNaN(factor) || factor < 1) return null;
+      const d = new Date(base.getTime() + factor*24*60*60*1000);
+      return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    }
+
+    // ---------- Validações (resumo) ----------
+    function mod10(numStr){
+      let sum = 0, mult = 2;
+      for (let i = numStr.length - 1; i >= 0; i--){
+        let n = Number(numStr[i]) * mult;
+        if (n > 9) n = Math.floor(n/10) + (n%10);
+        sum += n;
+        mult = (mult === 2) ? 1 : 2;
+      }
+      const dv = (10 - (sum % 10)) % 10;
+      return dv;
+    }
+
+    function mod11Banco(numStr){
+      let sum = 0, weight = 2;
+      for (let i = numStr.length - 1; i >= 0; i--){
+        sum += Number(numStr[i]) * weight;
+        weight = (weight === 9) ? 2 : weight + 1;
+      }
+      const resto = sum % 11;
+      const dv = (resto === 0 || resto === 1) ? 0 : (resto === 10 ? 1 : (11 - resto));
+      return dv;
+    }
+
+    function parseLinhaDigitavel(input){
+      const raw = onlyDigits(input);
+      if (raw.length !== 47 && raw.length !== 48){
+        throw new Error('A linha digitável precisa ter 47 (bancário) ou 48 (arrecadação) dígitos.');
+      }
+
+      if (raw.length === 47){
+        const campo1 = raw.slice(0,9);
+        const dv1 = Number(raw.slice(9,10));
+        const campo2 = raw.slice(10,20);
+        const dv2 = Number(raw.slice(20,21));
+        const campo3 = raw.slice(21,31);
+        const dv3 = Number(raw.slice(31,32));
+        const dvGeral = Number(raw.slice(32,33));
+        const fator = Number(raw.slice(33,37));
+        const valor = Number(raw.slice(37,47));
+
+        if (mod10(campo1) !== dv1) throw new Error('DV do campo 1 inválido.');
+        if (mod10(campo2) !== dv2) throw new Error('DV do campo 2 inválido.');
+        if (mod10(campo3) !== dv3) throw new Error('DV do campo 3 inválido.');
+
+        const banco = raw.slice(0,3);
+        const moeda = raw.slice(3,4);
+        const campoLivre = (campo1.slice(4) + campo2 + campo3).slice(0,25);
+        const barra = banco + moeda + dvGeral + raw.slice(33);
+        const barraSemDV = banco + moeda + raw.slice(33);
+        if (mod11Banco(barraSemDV) !== dvGeral) throw new Error('DV geral inválido.');
+
+        return {
+          tipo: 'Boleto bancário (47)',
+          banco,
+          moeda,
+          codigoBarras: barra,
+          linhaDigitavel: raw,
+          valorCentavos: valor,
+          valor: formatCurrency(valor),
+          vencimento: factorToDate(fator),
+          fatorVencimento: fator
+        };
+      }
+
+      const idProduto = raw[0];
+      const idSegmento = raw[1];
+      const dvGeral = Number(raw[3]);
+      const possivelValor = Number(raw.slice(4,15));
+      const valorOk = !Number.isNaN(possivelValor) ? possivelValor : null;
+
+      return {
+        tipo: 'Arrecadação (48)',
+        idProduto,
+        idSegmento,
+        linhaDigitavel: raw,
+        valorCentavos: valorOk,
+        valor: valorOk != null ? formatCurrency(valorOk) : '—',
+        vencimento: null,
+        observacao: 'Validação completa de arrecadação varia por convênio. Para produção, implemente a regra do emissor.'
+      };
+    }
+
+    const $video = document.getElementById('video');
+    const $status = document.getElementById('status');
+    const $resultado = document.getElementById('resultado');
+    const $btnStart = document.getElementById('btnStart');
+    const $btnStop = document.getElementById('btnStop');
+    const $cameraSelect = document.getElementById('cameraSelect');
+    const $linha = document.getElementById('linha');
+    const $btnParse = document.getElementById('btnParse');
+
+    let codeReader;
+    let running = false;
+
+    function renderResultado(dados){
+      const items = [
+        ['Tipo', dados.tipo],
+        ['Banco', dados.banco || '—'],
+        ['Valor', dados.valor || '—'],
+        ['Vencimento', dados.vencimento ? dados.vencimento.toLocaleDateString('pt-BR') : '—'],
+        ['Fator', dados.fatorVencimento ?? '—'],
+        ['Código de barras', dados.codigoBarras || '—'],
+        ['Linha digitável', dados.linhaDigitavel]
+      ];
+      $resultado.innerHTML = items.map(([k,v]) => `
+        <div><div class="muted">${k}</div><div><strong>${v}</strong></div></div>
+      `).join('');
+    }
+
+    function setStatus(msg, ok){
+      $status.innerHTML = ok ? `<div class="ok">✓ ${msg}</div>` : `<div class="err">✗ ${msg}</div>`;
+    }
+
+    $btnStart.onclick = async () => {
+      try{
+        const devices = await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+        $cameraSelect.innerHTML = devices.map((d,i) =>
+          `<option value="${d.deviceId}">${d.label || 'Câmera ' + (i+1)}</option>`
+        ).join('');
+        const deviceId = $cameraSelect.value || (devices[0] && devices[0].deviceId);
+        if (!deviceId) throw new Error('Nenhuma câmera encontrada.');
+
+        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+        running = true;
+        $btnStart.disabled = true;
+        $btnStop.disabled = false;
+
+        await codeReader.decodeFromVideoDevice(deviceId, $video, (result, err) => {
+          if (result){
+            const text = onlyDigits(result.getText());
+            try{
+              let dados;
+              if (text.length === 44){
+                setStatus('Código de barras (44) lido. Cole a linha digitável para validação completa.', true);
+                dados = {
+                  tipo: 'Código de barras (44) lido',
+                  banco: text.slice(0,3),
+                  codigoBarras: text,
+                  linhaDigitavel: '—',
+                  valorCentavos: Number(text.slice(9,19)),
+                  valor: formatCurrency(Number(text.slice(9,19))),
+                  vencimento: factorToDate(Number(text.slice(5,9))),
+                  fatorVencimento: Number(text.slice(5,9))
+                };
+              } else {
+                dados = parseLinhaDigitavel(text);
+                setStatus('Boleto reconhecido e validado.', true);
+              }
+              renderResultado(dados);
+            } catch(e){
+              setStatus(e.message, false);
+            }
+          }
+        });
+      }catch(e){
+        setStatus(e.message, false);
+        $btnStart.disabled = false;
+        $btnStop.disabled = true;
+      }
+    };
+
+    $btnStop.onclick = () => {
+      if (codeReader && running){
+        codeReader.reset();
+        running = false;
+      }
+      $btnStart.disabled = false;
+      $btnStop.disabled = true;
+      setStatus('Câmera parada.', true);
+    };
+
+    $btnParse.onclick = () => {
+      try{
+        const dados = parseLinhaDigitavel($linha.value);
+        setStatus('Boleto reconhecido e validado.', true);
+        renderResultado(dados);
+      }catch(e){
+        setStatus(e.message, false);
+      }
+    };
+  </script>
+
+  <script src="shared.js"></script>
+</body>
+</html>
