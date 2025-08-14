@@ -142,6 +142,7 @@
     let sobraPorSku = {};
     let resumoSku = {};
     let totalSaquesAcompanhamento = 0;
+    let totalComissaoAcompanhamento = 0;
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
@@ -2121,7 +2122,7 @@ let uids = [];
       sobraPorSku = {};
       resumoSku = {};
       let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
-      let totalSaques = 0;
+      let totalSaques = 0, totalComissao = 0;
 
       for (const doc of snap.docs) {
         if (filtroMes) {
@@ -2203,11 +2204,34 @@ let uids = [];
             }
           }
           totalSaques += dadosSaque.valorTotal || dadosSaque.valor || 0;
+          const ownerUidSaques = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase()) ? docS.ref.parent.parent.id : usuarioLogado.uid;
+          try {
+            const subRefSaque = db.collection(`uid/${ownerUidSaques}/saques/${docS.id}/lojas`);
+            const subSnapSaque = await subRefSaque.get();
+            for (const lojaDoc of subSnapSaque.docs) {
+              let dadosLoja = lojaDoc.data();
+              if (dadosLoja.encrypted) {
+                try {
+                  const txtLoja = await decryptString(dadosLoja.encrypted, getPassphrase() || `chave-${dadosSaque.uid || ownerUidSaques}`);
+                  dadosLoja = JSON.parse(txtLoja);
+                } catch (e) {
+                  console.error('Erro ao descriptografar loja saque', e);
+                  continue;
+                }
+              }
+              const valorLoja = parseFloat(dadosLoja.valor) || 0;
+              const comissaoPct = parseFloat(dadosLoja.comissao) || 0;
+              if (comissaoPct) totalComissao += (valorLoja * comissaoPct / 100);
+            }
+          } catch (e) {
+            console.error('Erro ao carregar comissão dos saques', e);
+          }
         }
       } catch (e) {
         console.error('Erro ao carregar saques', e);
       }
       totalSaquesAcompanhamento = totalSaques;
+      totalComissaoAcompanhamento = totalComissao;
 
       tbody.innerHTML = '';
       dados.sort((a,b) => a.data.localeCompare(b.data));
@@ -2247,6 +2271,7 @@ const dias = dadosAcompanhamento.length;
         <div class="resumo-card"><h4>Total Vendido</h4><p>${totais.vendas}</p></div>
         <div class="resumo-card"><h4>Total Sobra Esperada</h4><p>R$ ${totais.sobra.toLocaleString('pt-BR')}</p><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" onclick="mostrarDetalhesSobra()">Ver mais</button></div>
         <div class="resumo-card"><h4>Total Saques</h4><p>R$ ${totalSaques.toLocaleString('pt-BR')}</p></div>
+        <div class="resumo-card"><h4>Comissão do Mês</h4><p>R$ ${totalComissao.toLocaleString('pt-BR')}</p></div>
         <div class="resumo-card"><h4>Ticket Médio</h4><p>R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>`;
     }
 
