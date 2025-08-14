@@ -24,6 +24,10 @@
       <button id="startDayBtn" class="btn btn-primary mr-2">Iniciar Dia</button>
       <button id="closeDayBtn" class="btn btn-secondary hidden">Fechar Dia</button>
     </div>
+    <div id="sobrasFields" class="mb-4 hidden">
+      <input type="number" id="sobrasQuantidade" class="form-control mr-2 w-40" placeholder="Qtd não expedida" />
+      <input type="text" id="sobrasMotivo" class="form-control w-64" placeholder="Motivo" />
+    </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
       <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition" data-status="nao_impresso">Não impresso</button>
@@ -59,6 +63,9 @@
     const closeBtn = document.getElementById('closeDayBtn');
     startBtn.addEventListener('click', iniciarDia);
     closeBtn.addEventListener('click', fecharDia);
+    const sobrasDiv = document.getElementById('sobrasFields');
+    const sobrasQtdInput = document.getElementById('sobrasQuantidade');
+    const sobrasMotivoInput = document.getElementById('sobrasMotivo');
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -158,12 +165,15 @@
       if (doc.exists && doc.data().fim) {
         startBtn.classList.remove('hidden');
         closeBtn.classList.add('hidden');
+        sobrasDiv.classList.add('hidden');
       } else if (doc.exists) {
         startBtn.classList.add('hidden');
         closeBtn.classList.remove('hidden');
+        sobrasDiv.classList.remove('hidden');
       } else {
         startBtn.classList.remove('hidden');
         closeBtn.classList.add('hidden');
+        sobrasDiv.classList.add('hidden');
       }
     }
 
@@ -175,24 +185,35 @@
       await diaDocRef.set({ inicio: firebase.firestore.FieldValue.serverTimestamp() });
       startBtn.classList.add('hidden');
       closeBtn.classList.remove('hidden');
+      sobrasDiv.classList.remove('hidden');
       showToast('Dia iniciado');
     }
 
     async function fecharDia() {
       if (!currentUser || !diaDocRef) return;
       const fim = new Date();
-      await diaDocRef.update({ fim: firebase.firestore.FieldValue.serverTimestamp() });
+      const sobrasQtd = parseInt(sobrasQtdInput.value) || 0;
+      const sobrasMotivo = sobrasMotivoInput.value.trim();
+      const updateData = { fim: firebase.firestore.FieldValue.serverTimestamp() };
+      if (sobrasQtd || sobrasMotivo) {
+        updateData.sobrasQuantidade = sobrasQtd;
+        updateData.sobrasMotivo = sobrasMotivo;
+      }
+      await diaDocRef.update(updateData);
       const doc = await diaDocRef.get();
       const dados = doc.data();
       const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
-      await gerarRelatorioDia(inicio, fim);
-      await gerarRelatorioDiaPorUsuario(inicio, fim);
+      await gerarRelatorioDia(inicio, fim, dados);
+      await gerarRelatorioDiaPorUsuario(inicio, fim, dados);
       closeBtn.classList.add('hidden');
+      sobrasDiv.classList.add('hidden');
+      sobrasQtdInput.value = '';
+      sobrasMotivoInput.value = '';
       showToast('Dia encerrado');
       verificarDia();
     }
 
-    async function gerarRelatorioDia(inicio, fim) {
+    async function gerarRelatorioDia(inicio, fim, diaDados) {
       const uid = currentUser.uid;
       const userDoc = db.collection('uid').doc(uid);
       const snap = await userDoc
@@ -220,11 +241,17 @@
       const ws = XLSX.utils.json_to_sheet(linhas);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
+      if (diaDados && (diaDados.sobrasQuantidade || diaDados.sobrasMotivo)) {
+        const wsSobras = XLSX.utils.json_to_sheet([
+          { Quantidade: diaDados.sobrasQuantidade || 0, Motivo: diaDados.sobrasMotivo || '' }
+        ]);
+        XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
+      }
       const diaStr = inicio.toISOString().split('T')[0];
       XLSX.writeFile(wb, `resumo_expedicao_${diaStr}.xlsx`);
     }
 
-    async function gerarRelatorioDiaPorUsuario(inicio, fim) {
+    async function gerarRelatorioDiaPorUsuario(inicio, fim, diaDados) {
       const snap = await db
         .collectionGroup('skuimpressos')
         .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
@@ -256,6 +283,12 @@
       const ws = XLSX.utils.json_to_sheet(linhas);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+      if (diaDados && (diaDados.sobrasQuantidade || diaDados.sobrasMotivo)) {
+        const wsSobras = XLSX.utils.json_to_sheet([
+          { Quantidade: diaDados.sobrasQuantidade || 0, Motivo: diaDados.sobrasMotivo || '' }
+        ]);
+        XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
+      }
       const diaStr = inicio.toISOString().split('T')[0];
       XLSX.writeFile(wb, `relatorio_sku_usuarios_${diaStr}.xlsx`);
     }

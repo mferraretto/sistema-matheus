@@ -12,6 +12,7 @@ onAuthStateChanged(auth, user => {
     return;
   }
   verificarGestorExpedicao();
+  carregarSobras();
 });
 
 async function verificarGestorExpedicao() {
@@ -26,6 +27,37 @@ async function verificarGestorExpedicao() {
     }
   } catch (err) {
     console.error('Erro ao verificar gestores de expedição:', err);
+  }
+}
+
+async function carregarSobras() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const uid = user.uid;
+  const filtroMes = document.getElementById('filtroMesRelatorio').value;
+  const inicio = filtroMes ? new Date(filtroMes + '-01') : new Date();
+  if (!filtroMes) inicio.setDate(1);
+  const fim = new Date(inicio);
+  fim.setMonth(fim.getMonth() + 1);
+
+  const q = query(
+    collection(db, `uid/${uid}/diasExpedicao`),
+    where('inicio', '>=', Timestamp.fromDate(inicio)),
+    where('inicio', '<', Timestamp.fromDate(fim))
+  );
+  const snap = await getDocs(q);
+  const lista = document.getElementById('sobrasList');
+  lista.innerHTML = '';
+  snap.forEach(doc => {
+    const dados = doc.data();
+    if (dados.sobrasQuantidade || dados.sobrasMotivo) {
+      const p = document.createElement('p');
+      p.textContent = `${doc.id}: ${dados.sobrasQuantidade || 0} - ${dados.sobrasMotivo || ''}`;
+      lista.appendChild(p);
+    }
+  });
+  if (!lista.hasChildNodes()) {
+    lista.innerHTML = '<p class="text-gray-500">Sem sobras no período.</p>';
   }
 }
 
@@ -57,8 +89,21 @@ export async function exportarSkuImpressos() {
       : '';
     linhas.push({ SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
   });
+  const sobras = [];
+  const qSobras = query(
+    collection(db, `uid/${uid}/diasExpedicao`),
+    where('inicio', '>=', Timestamp.fromDate(inicio)),
+    where('inicio', '<', Timestamp.fromDate(fim))
+  );
+  const sobrasSnap = await getDocs(qSobras);
+  sobrasSnap.forEach(d => {
+    const dados = d.data();
+    if (dados.sobrasQuantidade || dados.sobrasMotivo) {
+      sobras.push({ Data: d.id, Quantidade: dados.sobrasQuantidade || 0, Motivo: dados.sobrasMotivo || '' });
+    }
+  });
 
-  if (!linhas.length) {
+  if (!linhas.length && !sobras.length) {
     alert('Nenhum dado encontrado para o mês selecionado.');
     return;
   }
@@ -74,6 +119,10 @@ export async function exportarSkuImpressos() {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, wsDetalhado, 'Relatorio');
   XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+  if (sobras.length) {
+    const wsSobras = XLSX.utils.json_to_sheet(sobras);
+    XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
+  }
 
   const mesStr = filtroMes || `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
   XLSX.writeFile(wb, `sku_impressos_${mesStr}.xlsx`);
@@ -94,6 +143,7 @@ export async function exportarSkuImpressosGestor() {
   );
 
   const linhas = [];
+  const sobras = [];
   const promessas = [];
   usuariosSnap.forEach(u => {
     const uid = u.id;
@@ -117,11 +167,25 @@ export async function exportarSkuImpressosGestor() {
         });
       })
     );
+    const qSobras = query(
+      collection(db, `uid/${uid}/diasExpedicao`),
+      where('inicio', '>=', Timestamp.fromDate(inicio)),
+      where('inicio', '<', Timestamp.fromDate(fim))
+    );
+    promessas.push(
+      getDocs(qSobras).then(snapSobras => {
+        snapSobras.forEach(diaDoc => {
+          const dados = diaDoc.data();
+          if (dados.sobrasQuantidade || dados.sobrasMotivo) {
+            sobras.push({ Usuario: emailUsuario, Data: diaDoc.id, Quantidade: dados.sobrasQuantidade || 0, Motivo: dados.sobrasMotivo || '' });
+          }
+        });
+      })
+    );
   });
 
   await Promise.all(promessas);
-
-  if (!linhas.length) {
+  if (!linhas.length && !sobras.length) {
     alert('Nenhum dado encontrado para o mês selecionado.');
     return;
   }
@@ -129,9 +193,14 @@ export async function exportarSkuImpressosGestor() {
   const ws = XLSX.utils.json_to_sheet(linhas);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Relatorio');
+  if (sobras.length) {
+    const wsSobras = XLSX.utils.json_to_sheet(sobras);
+    XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
+  }
   const mesStr = filtroMes || `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
   XLSX.writeFile(wb, `sku_impressos_equipe_${mesStr}.xlsx`);
 }
 
 document.getElementById('exportarRelatorioBtn')?.addEventListener('click', exportarSkuImpressos);
 document.getElementById('exportarRelatorioGestorBtn')?.addEventListener('click', exportarSkuImpressosGestor);
+document.getElementById('filtroMesRelatorio')?.addEventListener('change', carregarSobras);
