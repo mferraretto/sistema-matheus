@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamFlow - Gestão de Equipes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos globais e variáveis */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --primary: #4262ff;
+            --primary-dark: #3351e8;
+            --secondary: #00c875;
+            --danger: #dc3545;
+            --danger-dark: #c82333;
+            --text: #333;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --border: #e0e0e0;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --table-header-bg: #e9ecef;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: fixed;
+            padding: 24px 16px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding: 0 12px;
+        }
+
+        .logo i {
+            color: var(--primary);
+            font-size: 28px;
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nav-section {
+            margin-bottom: 32px;
+        }
+
+        .nav-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 16px;
+            padding: 0 12px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(66, 98, 255, 0.1);
+            color: var(--primary);
+        }
+
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content e Vistas */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 24px;
+        }
+        
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 48px;
+            font-size: 18px;
+            color: var(--text-light);
+        }
+        
+        #userIdDisplay {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-light);
+            word-wrap: break-word;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-light);
+        }
+        
+        .btn-green {
+            background: var(--secondary);
+            color: white;
+        }
+        .btn-green:hover {
+            background: #00a861;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        /* Boards Grid */
+        .boards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .board-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .board-card-clickable {
+            cursor: pointer;
+        }
+
+        .board-card-clickable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .board-header {
+            height: 40px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .board-header .board-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .board-header .board-actions button {
+            background: none;
+            border: none;
+            color: white;
+            opacity: 0.7;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .board-header .board-actions button:hover {
+            opacity: 1;
+        }
+
+        .board-content {
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .board-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .board-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .board-stats div {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .board-members {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+        }
+
+        .member-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: -8px;
+            border: 2px solid white;
+        }
+        
+        .member-avatar-lg {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 auto 16px;
+        }
+
+        .member-avatar:first-child {
+            margin-left: 0;
+        }
+
+        /* Team Section */
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 32px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-title-with-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .member-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            position: relative;
+        }
+        .member-card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+        .member-card-actions button {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .member-card-actions button:hover {
+            color: var(--danger);
+        }
+
+        .member-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .member-role {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .member-stats {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+        }
+
+        /* Board View - Tabela */
+        .board-table-container {
+            overflow-x: auto;
+        }
+
+        .board-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .board-table thead {
+            background-color: var(--table-header-bg);
+        }
+        
+        .board-table th, .board-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        
+        .board-table th:first-child { min-width: 250px; }
+        .board-table th:nth-child(2) { min-width: 150px; }
+        .board-table th:nth-child(3) { min-width: 120px; }
+        .board-table th:nth-child(4) { min-width: 120px; }
+        .board-table th:nth-child(5) { min-width: 80px; }
+        .board-table th:nth-child(6) { min-width: 100px; }
+        .board-table th:nth-child(7) { min-width: 120px; }
+        .board-table th:nth-child(8) { min-width: 80px; }
+        
+        .board-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .board-table tbody tr:hover {
+            background-color: var(--bg-light);
+        }
+        
+        .editable-cell {
+            padding: 0;
+        }
+
+        .editable-input, .editable-select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .editable-input {
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+        
+        .editable-input:focus {
+            border-color: var(--primary);
+            background-color: white;
+        }
+        
+        .status-select {
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 6px 8px;
+        }
+        .status-select.to-do { background-color: #8c9096; }
+        .status-select.in-progress { background-color: #4262ff; }
+        .status-select.done { background-color: #00c875; }
+        
+        .assignee-cell .assignee-details {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .assignee-cell .assignee-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .assignee-cell .assignee-name {
+            font-weight: 500;
+        }
+        
+        .task-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.2s;
+        }
+        .task-actions button:hover {
+            color: var(--danger);
+        }
+        
+        .file-cell {
+            text-align: center;
+        }
+
+        .file-icon {
+            color: var(--danger);
+            font-size: 20px;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        /* Modal customizado */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s;
+        }
+
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-out;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        .modal-body {
+            line-height: 1.5;
+            color: var(--text);
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 16px;
+            background: white;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+            display: none;
+            margin-left: 10px;
+        }
+        .btn-primary .loader, .btn-green .loader, .btn-danger .loader {
+            border-top: 4px solid white;
+        }
+        
+        .btn-primary.loading .loader, .btn-green.loading .loader, .btn-danger.loading .loader {
+            display: inline-block;
+        }
+        .btn-primary.loading span, .btn-green.loading span, .btn-danger.loading span {
+            display: none;
+        }
+
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsividade */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 80px;
+            }
+            .sidebar .logo h1, .nav-title, .nav-link span, #userIdDisplay {
+                display: none;
+            }
+            .logo {
+                justify-content: center;
+            }
+            .nav-link {
+                justify-content: center;
+                padding: 16px 0;
+            }
+            .main-content {
+                margin-left: 80px;
+            }
+            .board-table th, .board-table td {
+                padding: 8px 12px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .boards-grid {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-project-diagram"></i>
+            <h1>TeamFlow</h1>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">Principal</div>
+            <a href="#" class="nav-link" data-view-id="dashboardView">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link active" data-view-id="myBoardsView">
+                <i class="fas fa-tasks"></i>
+                <span>Meus Quadros</span>
+            </a>
+            <a href="#" class="nav-link" data-view-id="teamView">
+                <i class="fas fa-users"></i>
+                <span>Equipes</span>
+            </a>
+        </div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Configurações</div>
+            <a href="#" class="nav-link">
+                <i class="fas fa-cog"></i>
+                <span>Configurações</span>
+            </a>
+            <a href="#" class="nav-link">
+                <i class="fas fa-question-circle"></i>
+                <span>Ajuda</span>
+            </a>
+        </div>
+        
+        <div id="userIdDisplay"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard View (agora como uma visão geral) -->
+        <div id="dashboardView" class="view">
+            <div class="header">
+                <h2 class="page-title">Dashboard</h2>
+            </div>
+            <p>Bem-vindo ao TeamFlow! Use o menu lateral para navegar entre os seus quadros e a sua equipe.</p>
+        </div>
+        
+        <!-- Meus Quadros View -->
+        <div id="myBoardsView" class="view active">
+            <div class="header">
+                <h2 class="page-title">Meus Quadros</h2>
+                <div class="actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-filter"></i>
+                        Filtros
+                    </button>
+                    <button class="btn btn-primary" id="newBoardBtn">
+                        <i class="fas fa-plus"></i>
+                        Novo Quadro
+                    </button>
+                </div>
+            </div>
+            <div id="boardsGrid" class="boards-grid">
+                <div class="loading">Carregando quadros...</div>
+            </div>
+        </div>
+
+        <!-- Equipes View -->
+        <div id="teamView" class="view">
+            <div class="header">
+                <h2 class="page-title">Minha Equipe</h2>
+                <div class="actions">
+                    <button class="btn btn-green" id="addMemberBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Adicionar Membro
+                    </button>
+                </div>
+            </div>
+            <div id="membersGrid" class="members-grid">
+                <div class="loading">Carregando membros da equipe...</div>
+            </div>
+        </div>
+
+        <!-- Board View (para um quadro específico) -->
+        <div id="boardView" class="view">
+            <div class="back-button" data-view-id="myBoardsView">
+                <i class="fas fa-arrow-left"></i>
+                Voltar para Meus Quadros
+            </div>
+            
+            <div class="header">
+                <h2 class="page-title" id="currentBoardTitle"></h2>
+                <div class="actions">
+                    <button class="btn btn-outline">
+                        <i class="fas fa-search"></i>
+                        Buscar
+                    </button>
+                    <button class="btn btn-primary" id="newTaskBtn">
+                        <i class="fas fa-plus"></i>
+                        Nova Tarefa
+                    </button>
+                </div>
+            </div>
+
+            <div id="boardTableContainer" class="board-table-container">
+                <!-- A tabela de tarefas será renderizada aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (sem alterações) -->
+    <!-- Modal para criar um novo quadro -->
+    <div id="newBoardModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="newBoardModalTitle">Criar Novo Quadro</h3>
+                <button class="modal-close" id="closeNewBoardModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="boardForm">
+                    <input type="hidden" id="boardIdInput">
+                    <div class="form-group">
+                        <label for="boardTitle">Título do Quadro</label>
+                        <input type="text" id="boardTitle" name="title" required placeholder="Ex: Planejamento de Lançamento">
+                    </div>
+                    <div class="form-group">
+                        <label for="boardColor">Cor do Quadro</label>
+                        <input type="color" id="boardColor" name="color" value="#4262ff">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelBoardModalBtn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="saveBoardBtn">
+                            <span><i class="fas fa-plus"></i> Criar Quadro</span>
+                            <div class="loader"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para criar uma nova tarefa -->
+    <div id="newTaskModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Criar Nova Tarefa</h3>
+                <button class="modal-close" id="closeNewTaskModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newTaskForm">
+                    <div class="form-group">
+                        <label for="taskTitle">Título da Tarefa</label>
+                        <input type="text" id="taskTitle" name="title" required placeholder="Ex: Desenvolver a tela de login">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Descrição</label>
+                        <textarea id="taskDescription" name="description" rows="4" placeholder="Detalhes sobre a tarefa..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskAssignee">Atribuir a</label>
+                        <select id="taskAssignee" class="assignee-select" required>
+                             <!-- Opções serão preenchidas dinamicamente -->
+                        </select>
+                    </div>
+                    <!-- NOVO: Campo de Data no formulário -->
+                    <div class="form-group">
+                        <label for="taskDate">Data Limite</label>
+                        <input type="date" id="taskDate" name="date">
+                    </div>
+                    <!-- NOVO: Campo de Quantidade no formulário -->
+                    <div class="form-group">
+                        <label for="taskQuantity">Quantidade</label>
+                        <input type="number" id="taskQuantity" name="quantity" value="1" min="1" placeholder="Ex: 5">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelNewTaskModalBtn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="saveTaskBtn">
+                            <span><i class="fas fa-plus"></i> Criar Tarefa</span>
+                            <div class="loader"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para adicionar um novo membro -->
+    <div id="newMemberModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Adicionar Membro</h3>
+                <button class="modal-close" id="closeNewMemberModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newMemberForm">
+                    <div class="form-group">
+                        <label for="memberName">Nome Completo</label>
+                        <input type="text" id="memberName" name="name" required placeholder="Ex: Ana Mendes">
+                    </div>
+                    <div class="form-group">
+                        <label for="memberRole">Cargo</label>
+                        <input type="text" id="memberRole" name="role" required placeholder="Ex: Desenvolvedor Front-end">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelNewMemberModalBtn">Cancelar</button>
+                        <button type="submit" class="btn btn-green" id="saveMemberBtn">
+                            <span><i class="fas fa-user-plus"></i> Adicionar</span>
+                            <div class="loader"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação (Genérico) -->
+    <div id="confirmationModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Confirmação</h3>
+                <button class="modal-close" id="closeConfirmationModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage">Tem certeza que deseja excluir este item?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="cancelConfirmationBtn">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeletionBtn">
+                    <span>Excluir</span>
+                    <div class="loader"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para Firebase e funcionalidades da UI -->
+    <script type="module">
+        // Importa as funções necessárias do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, updateDoc, doc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais fornecidas pelo ambiente
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Elementos do DOM das Vistas
+        const dashboardView = document.getElementById('dashboardView');
+        const myBoardsView = document.getElementById('myBoardsView');
+        const teamView = document.getElementById('teamView');
+        const boardView = document.getElementById('boardView');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const backButtons = document.querySelectorAll('.back-button');
+
+        // Elementos do DOM do Dashboard
+        const boardsGrid = document.getElementById('boardsGrid');
+        const newBoardBtn = document.getElementById('newBoardBtn');
+        const newBoardModal = document.getElementById('newBoardModal');
+        const boardForm = document.getElementById('boardForm');
+        const boardTitleInput = document.getElementById('boardTitle');
+        const boardColorInput = document.getElementById('boardColor');
+        const boardIdInput = document.getElementById('boardIdInput');
+        const newBoardModalTitle = document.getElementById('newBoardModalTitle');
+        const closeNewBoardModalBtn = document.getElementById('closeNewBoardModalBtn');
+        const cancelBoardModalBtn = document.getElementById('cancelBoardModalBtn');
+        const saveBoardBtn = document.getElementById('saveBoardBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Elementos do DOM de Equipes
+        const membersGrid = document.getElementById('membersGrid');
+        const addMemberBtn = document.getElementById('addMemberBtn');
+        
+        // Elementos do DOM do Board View
+        const currentBoardTitle = document.getElementById('currentBoardTitle');
+        const boardTableContainer = document.getElementById('boardTableContainer');
+        const newTaskBtn = document.getElementById('newTaskBtn');
+        const newTaskModal = document.getElementById('newTaskModal');
+        const newTaskForm = document.getElementById('newTaskForm');
+        const closeNewTaskModalBtn = document.getElementById('closeNewTaskModalBtn');
+        const cancelNewTaskModalBtn = document.getElementById('cancelNewTaskModalBtn');
+        const saveTaskBtn = document.getElementById('saveTaskBtn');
+        const taskAssigneeSelect = document.getElementById('taskAssignee');
+        
+        // Novos inputs do modal de tarefa
+        const taskTitleInput = document.getElementById('taskTitle');
+        const taskDescriptionInput = document.getElementById('taskDescription');
+        const taskDateInput = document.getElementById('taskDate');
+        const taskQuantityInput = document.getElementById('taskQuantity');
+        
+        // Elementos do DOM do Modal de Membros
+        const newMemberModal = document.getElementById('newMemberModal');
+        const newMemberForm = document.getElementById('newMemberForm');
+        const closeNewMemberModalBtn = document.getElementById('closeNewMemberModalBtn');
+        const cancelNewMemberModalBtn = document.getElementById('cancelNewMemberModalBtn');
+        const saveMemberBtn = document.getElementById('saveMemberBtn');
+
+        // Elementos do DOM do Modal de Confirmação
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        const closeConfirmationModalBtn = document.getElementById('closeConfirmationModalBtn');
+        const cancelConfirmationBtn = document.getElementById('cancelConfirmationBtn');
+        const confirmDeletionBtn = document.getElementById('confirmDeletionBtn');
+        
+        let db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        let currentBoardId = null;
+        let members = []; // Array para armazenar os membros da equipe
+        let membersMap = {}; // Objeto para facilitar a busca de membros por ID
+        
+        const defaultColumns = ['A Fazer', 'Em Andamento', 'Concluído'];
+        const statusColors = {
+            'A Fazer': '#8c9096',
+            'Em Andamento': '#4262ff',
+            'Concluído': '#00c875'
+        };
+
+        // Variáveis para a deleção
+        let itemToDelete = null;
+        let itemTypeToDelete = null;
+
+        // Função para mostrar um modal
+        function showModal(modal) {
+            modal.classList.add('visible');
+        }
+
+        // Função para esconder um modal
+        function hideModal(modal) {
+            modal.classList.remove('visible');
+        }
+
+        // Função principal para alternar entre as views
+        function showView(viewId) {
+            // Esconde todas as views
+            const views = document.querySelectorAll('.view');
+            views.forEach(view => view.classList.remove('active'));
+
+            // Mostra a view solicitada
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.add('active');
+            }
+
+            // Remove a classe 'active' de todos os links de navegação
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            // Adiciona a classe 'active' ao link de navegação da view atual
+            const activeNavLink = document.querySelector(`.nav-link[data-view-id="${viewId}"]`);
+            if (activeNavLink) {
+                activeNavLink.classList.add('active');
+            }
+            
+            // Se for a boardView, iniciamos o listener das tarefas
+            if (viewId === 'boardView' && currentBoardId) {
+                setupTasksListener(currentBoardId);
+            }
+        }
+        
+        // Função para abrir a visão de um quadro específico
+        function showBoardView(boardId, boardTitle) {
+            currentBoardId = boardId;
+            currentBoardTitle.innerText = boardTitle;
+            showView('boardView');
+        }
+        
+        // Função para gerar iniciais de um nome
+        function getInitials(name) {
+            if (!name) return '??';
+            const nameParts = name.split(' ');
+            if (nameParts.length > 1) {
+                return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+            }
+            return nameParts[0][0].toUpperCase();
+        }
+        
+        // Preenche o dropdown de atribuição de tarefas com os membros da equipe
+        function populateAssigneeSelect() {
+            // Limpa e preenche o select no modal de nova tarefa
+            taskAssigneeSelect.innerHTML = '<option value="">Não atribuído</option>';
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name;
+                taskAssigneeSelect.appendChild(option);
+            });
+        }
+        
+        // Inicializa o Firebase e ouve o estado de autenticação
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        userIdDisplay.innerText = `UID do Usuário: ${userId}`;
+                        console.log('User authenticated with UID:', userId);
+                        
+                        setupBoardsListener();
+                        setupMembersListener();
+                        showView('myBoardsView'); // Mostra a lista de quadros por padrão
+                    } else {
+                        console.log('No user is signed in.');
+                        userId = null;
+                        isAuthReady = true;
+                        boardsGrid.innerHTML = '<div class="loading">Por favor, faça login para ver seus quadros.</div>';
+                        membersGrid.innerHTML = '<div class="loading">Por favor, faça login para ver seus membros.</div>';
+                        showView('dashboardView');
+                    }
+                });
+
+            } catch (e) {
+                console.error("Erro ao inicializar Firebase ou autenticar: ", e);
+                boardsGrid.innerHTML = '<div class="loading">Erro ao carregar os dados. Tente novamente.</div>';
+                showView('dashboardView');
+            }
+        }
+        
+        // Listener em tempo real para os quadros do usuário
+        function setupBoardsListener() {
+            if (!isAuthReady || !userId) return;
+
+            const boardsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/boards`);
+            
+            onSnapshot(boardsCollectionRef, (snapshot) => {
+                const boards = [];
+                snapshot.forEach(doc => {
+                    boards.push({ id: doc.id, ...doc.data() });
+                });
+                renderBoards(boards);
+                console.log('Quadros atualizados:', boards);
+            }, (error) => {
+                console.error('Erro ao buscar quadros em tempo real:', error);
+                boardsGrid.innerHTML = '<div class="loading">Erro ao carregar os quadros.</div>';
+            });
+        }
+        
+        // Listener em tempo real para os membros da equipe
+        function setupMembersListener() {
+            if (!isAuthReady || !userId) return;
+
+            const membersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/members`);
+            
+            onSnapshot(membersCollectionRef, (snapshot) => {
+                members = [];
+                membersMap = {};
+                snapshot.forEach(doc => {
+                    const member = { id: doc.id, ...doc.data() };
+                    members.push(member);
+                    membersMap[member.id] = member;
+                });
+                renderMembers(members);
+                populateAssigneeSelect(); // Atualiza o select do modal de tarefas
+                console.log('Membros da equipe atualizados:', members);
+            }, (error) => {
+                console.error('Erro ao buscar membros em tempo real:', error);
+                membersGrid.innerHTML = '<div class="loading">Erro ao carregar os membros.</div>';
+            });
+        }
+        
+        // Listener em tempo real para as tarefas de um quadro específico
+        function setupTasksListener(boardId) {
+            if (!isAuthReady || !userId || !boardId) return;
+            
+            const tasksCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
+            const q = query(tasksCollectionRef, where("boardId", "==", boardId));
+            
+            onSnapshot(q, (snapshot) => {
+                const tasks = [];
+                snapshot.forEach(doc => {
+                    tasks.push({ id: doc.id, ...doc.data() });
+                });
+                renderTasks(tasks);
+                console.log('Tarefas atualizadas para o quadro', boardId, ':', tasks);
+            }, (error) => {
+                console.error('Erro ao buscar tarefas em tempo real:', error);
+            });
+        }
+        
+        // Função para renderizar os quadros dinamicamente
+        function renderBoards(boards) {
+            boardsGrid.innerHTML = '';
+            if (boards.length === 0) {
+                boardsGrid.innerHTML = '<div class="loading">Nenhum quadro encontrado. Crie um novo!</div>';
+                return;
+            }
+            
+            boards.forEach(board => {
+                const boardCard = document.createElement('div');
+                boardCard.classList.add('board-card');
+                
+                const boardHeader = document.createElement('div');
+                boardHeader.classList.add('board-header');
+                boardHeader.style.backgroundColor = board.color;
+
+                const boardTitleIcon = document.createElement('div');
+                boardTitleIcon.innerHTML = `<i class="fas fa-briefcase"></i> ${board.title}`;
+                
+                const boardActions = document.createElement('div');
+                boardActions.classList.add('board-actions');
+
+                const editButton = document.createElement('button');
+                editButton.innerHTML = `<i class="fas fa-edit"></i>`;
+                editButton.onclick = (e) => {
+                    e.stopPropagation();
+                    openEditBoardModal(board);
+                };
+
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = `<i class="fas fa-trash-alt"></i>`;
+                deleteButton.onclick = (e) => {
+                    e.stopPropagation(); // Previne a navegação para o board
+                    showConfirmationModal(board.id, 'board', `Tem certeza que deseja excluir o quadro "${board.title}"? Esta ação é irreversível.`);
+                };
+                
+                boardActions.appendChild(editButton);
+                boardActions.appendChild(deleteButton);
+                
+                boardHeader.appendChild(boardTitleIcon);
+                boardHeader.appendChild(boardActions);
+                
+                const boardContent = document.createElement('div');
+                boardContent.classList.add('board-content');
+                boardContent.onclick = () => showBoardView(board.id, board.title);
+                boardContent.innerHTML = `
+                    <div class="board-title">${board.description || 'Nenhuma descrição'}</div>
+                    <div class="board-stats">
+                        <div><i class="fas fa-tasks"></i> 0 tarefas</div>
+                        <div><i class="fas fa-check-circle"></i> 0 concluídas</div>
+                    </div>
+                    <div class="board-members">
+                        <div class="member-avatar">AM</div>
+                        <div class="member-avatar">+1</div>
+                    </div>
+                `;
+
+                boardCard.appendChild(boardHeader);
+                boardCard.appendChild(boardContent);
+                
+                boardsGrid.appendChild(boardCard);
+            });
+        }
+        
+        // Abre o modal de edição de quadro
+        function openEditBoardModal(board) {
+            newBoardModalTitle.innerText = 'Editar Quadro';
+            boardIdInput.value = board.id;
+            boardTitleInput.value = board.title;
+            boardColorInput.value = board.color;
+            saveBoardBtn.querySelector('span').innerHTML = '<i class="fas fa-save"></i> Salvar';
+            showModal(newBoardModal);
+        }
+        
+        // Função para renderizar os membros da equipe dinamicamente
+        function renderMembers(teamMembers) {
+            membersGrid.innerHTML = '';
+            if (teamMembers.length === 0) {
+                membersGrid.innerHTML = '<div class="loading">Nenhum membro na equipe. Adicione um!</div>';
+                return;
+            }
+            
+            teamMembers.forEach(member => {
+                const memberCard = document.createElement('div');
+                memberCard.classList.add('member-card');
+                
+                memberCard.innerHTML = `
+                    <div class="member-avatar-lg">${getInitials(member.name)}</div>
+                    <div class="member-name">${member.name}</div>
+                    <div class="member-role">${member.role}</div>
+                    <div class="member-stats">
+                        <div>
+                            <div class="stat-value">0</div>
+                            <div>Projetos</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">0</div>
+                            <div>Tarefas</div>
+                        </div>
+                    </div>
+                    <div class="member-card-actions">
+                        <button class="delete-member-btn" data-member-id="${member.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+                membersGrid.appendChild(memberCard);
+            });
+            
+            document.querySelectorAll('.delete-member-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const memberId = e.currentTarget.dataset.memberId;
+                    const member = members.find(m => m.id === memberId);
+                    if (member) {
+                        showConfirmationModal(memberId, 'member', `Tem certeza que deseja excluir o membro "${member.name}"? Esta ação é irreversível.`);
+                    }
+                });
+            });
+        }
+
+        // Função para renderizar as tarefas dinamicamente em uma tabela
+        function renderTasks(tasks) {
+            boardTableContainer.innerHTML = '';
+            
+            const table = document.createElement('table');
+            table.classList.add('board-table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Responsável</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Arquivos</th>
+                        <th>Quantidade</th>
+                        <th>Última atualização</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tableBody = table.querySelector('tbody');
+            
+            if (tasks.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="8" class="loading">Nenhuma tarefa encontrada.</td></tr>`;
+            } else {
+                tasks.forEach(task => {
+                    const assignee = membersMap[task.assigneeId];
+                    const assigneeName = assignee ? assignee.name : 'Não Atribuído';
+                    const assigneeInitials = assignee ? getInitials(assignee.name) : '??';
+                    const date = task.date && task.date.seconds ? new Date(task.date.seconds * 1000).toLocaleDateString() : 'N/A';
+                    const lastUpdated = task.lastUpdated && task.lastUpdated.seconds ? new Date(task.lastUpdated.seconds * 1000).toLocaleDateString() : 'N/A';
+                    
+                    const row = document.createElement('tr');
+                    
+                    // Célula do Título
+                    const titleCell = document.createElement('td');
+                    titleCell.innerHTML = `
+                        <input type="text" class="editable-input" value="${task.title || ''}" data-task-id="${task.id}" data-field="title">
+                    `;
+                    row.appendChild(titleCell);
+                    
+                    // Célula do Responsável
+                    const assigneeCell = document.createElement('td');
+                    const assigneeSelect = document.createElement('select');
+                    assigneeSelect.classList.add('editable-select');
+                    assigneeSelect.dataset.taskId = task.id;
+                    assigneeSelect.dataset.field = 'assigneeId';
+                    assigneeSelect.innerHTML = '<option value="">Não Atribuído</option>';
+                    members.forEach(member => {
+                        const option = document.createElement('option');
+                        option.value = member.id;
+                        option.textContent = member.name;
+                        if (task.assigneeId === member.id) {
+                            option.selected = true;
+                        }
+                        assigneeSelect.appendChild(option);
+                    });
+                    assigneeSelect.addEventListener('change', async (e) => {
+                        await updateTaskField(task.id, 'assigneeId', e.target.value);
+                    });
+                    assigneeCell.appendChild(assigneeSelect);
+                    row.appendChild(assigneeCell);
+
+                    // Célula do Status
+                    const statusCell = document.createElement('td');
+                    const statusSelect = document.createElement('select');
+                    statusSelect.classList.add('editable-select', 'status-select');
+                    statusSelect.classList.add((task.status || 'A Fazer').toLowerCase().replace(' ', '-'));
+                    statusSelect.dataset.taskId = task.id;
+                    statusSelect.dataset.field = 'status';
+                    defaultColumns.forEach(status => {
+                        const option = document.createElement('option');
+                        option.value = status;
+                        option.textContent = status;
+                        if (task.status === status) {
+                            option.selected = true;
+                        }
+                        statusSelect.appendChild(option);
+                    });
+                    statusSelect.style.backgroundColor = statusColors[task.status || 'A Fazer'] || '#ccc';
+                    statusSelect.addEventListener('change', async (e) => {
+                        await updateTaskField(task.id, 'status', e.target.value);
+                        e.target.style.backgroundColor = statusColors[e.target.value] || '#ccc';
+                    });
+                    statusCell.appendChild(statusSelect);
+                    row.appendChild(statusCell);
+                    
+                    // Célula da Data
+                    const dateCell = document.createElement('td');
+                    dateCell.innerHTML = `<input type="date" class="editable-input" value="${task.date && task.date.seconds ? new Date(task.date.seconds * 1000).toISOString().split('T')[0] : ''}" data-task-id="${task.id}" data-field="date">`;
+                    dateCell.querySelector('input').addEventListener('change', async (e) => {
+                        await updateTaskField(task.id, 'date', new Date(e.target.value));
+                    });
+                    row.appendChild(dateCell);
+                    
+                    // Célula de Arquivos
+                    const filesCell = document.createElement('td');
+                    filesCell.classList.add('file-cell');
+                    filesCell.innerHTML = `<i class="fas fa-file-pdf file-icon"></i>`; // Ícone de exemplo
+                    row.appendChild(filesCell);
+
+                    // Célula da Quantidade
+                    const quantityCell = document.createElement('td');
+                    quantityCell.innerHTML = `<input type="number" class="editable-input" value="${task.quantity || ''}" data-task-id="${task.id}" data-field="quantity" min="1">`;
+                    row.appendChild(quantityCell);
+                    
+                    // Célula da Última atualização
+                    const lastUpdatedCell = document.createElement('td');
+                    lastUpdatedCell.textContent = lastUpdated;
+                    row.appendChild(lastUpdatedCell);
+                    
+                    // Célula de Ações
+                    const actionsCell = document.createElement('td');
+                    actionsCell.classList.add('task-actions');
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = `<i class="fas fa-trash-alt"></i>`;
+                    deleteButton.onclick = (e) => {
+                        showConfirmationModal(task.id, 'task', `Tem certeza que deseja excluir a tarefa "${task.title}"?`);
+                    };
+                    actionsCell.appendChild(deleteButton);
+                    row.appendChild(actionsCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            boardTableContainer.appendChild(table);
+
+            // Adiciona event listeners para os inputs editáveis
+            document.querySelectorAll('.editable-input').forEach(input => {
+                input.addEventListener('change', async (e) => {
+                    const taskId = e.target.dataset.taskId;
+                    const field = e.target.dataset.field;
+                    const value = e.target.value;
+                    await updateTaskField(taskId, field, value);
+                });
+            });
+        }
+        
+        async function updateTaskField(taskId, field, value) {
+            if (!isAuthReady || !userId) return;
+            try {
+                const taskRef = doc(db, `artifacts/${appId}/users/${userId}/tasks`, taskId);
+                // Prepara os dados para atualização, incluindo a data da última atualização
+                const updateData = { [field]: value, lastUpdated: new Date() };
+
+                await updateDoc(taskRef, updateData);
+                console.log(`Campo ${field} da tarefa ${taskId} atualizado para: ${value}`);
+            } catch (error) {
+                console.error("Erro ao atualizar o campo da tarefa:", error);
+            }
+        }
+
+        // Modal de confirmação genérico
+        function showConfirmationModal(id, type, message) {
+            itemToDelete = id;
+            itemTypeToDelete = type;
+            confirmationMessage.textContent = message;
+            showModal(confirmationModal);
+        }
+
+        // Deleção de item
+        async function deleteItem() {
+            if (!itemToDelete || !itemTypeToDelete) return;
+
+            confirmDeletionBtn.classList.add('loading');
+            
+            try {
+                if (itemTypeToDelete === 'board') {
+                    // Primeiro, deletar todas as tarefas associadas
+                    const tasksRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
+                    const q = query(tasksRef, where("boardId", "==", itemToDelete));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach(async (doc) => {
+                        await deleteDoc(doc.ref);
+                    });
+                    // Depois, deletar o quadro
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/boards`, itemToDelete));
+                    console.log(`Quadro ${itemToDelete} e suas tarefas associadas foram deletados.`);
+                    showView('myBoardsView'); // Retorna à vista de quadros
+                } else if (itemTypeToDelete === 'task') {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/tasks`, itemToDelete));
+                    console.log(`Tarefa ${itemToDelete} deletada.`);
+                } else if (itemTypeToDelete === 'member') {
+                    // TODO: Adicionar lógica para remover atribuição de tarefas antes de deletar o membro
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/members`, itemToDelete));
+                    console.log(`Membro ${itemToDelete} deletado.`);
+                }
+            } catch (error) {
+                console.error(`Erro ao deletar o item ${itemToDelete} do tipo ${itemTypeToDelete}:`, error);
+            } finally {
+                confirmDeletionBtn.classList.remove('loading');
+                hideModal(confirmationModal);
+                itemToDelete = null;
+                itemTypeToDelete = null;
+            }
+        }
+        
+        // Lida com o envio do formulário para criar ou editar um novo quadro
+        boardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            saveBoardBtn.classList.add('loading');
+            
+            const boardId = boardIdInput.value;
+            const title = boardTitleInput.value;
+            const color = boardColorInput.value;
+            
+            if (!title) {
+                console.error('O título do quadro é obrigatório.');
+                saveBoardBtn.classList.remove('loading');
+                return;
+            }
+            
+            try {
+                if (boardId) {
+                    // Atualizar quadro existente
+                    const boardRef = doc(db, `artifacts/${appId}/users/${userId}/boards`, boardId);
+                    await updateDoc(boardRef, {
+                        title: title,
+                        color: color
+                    });
+                    console.log(`Quadro ${boardId} atualizado com sucesso.`);
+                } else {
+                    // Criar novo quadro
+                    const newBoardData = {
+                        title: title,
+                        description: `Quadro de equipe para ${title}`,
+                        color: color,
+                        createdAt: new Date(),
+                    };
+                    const boardsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/boards`);
+                    await addDoc(boardsCollectionRef, newBoardData);
+                    console.log('Novo quadro adicionado com sucesso:', newBoardData);
+                }
+                
+                hideModal(newBoardModal);
+                boardForm.reset();
+            } catch (e) {
+                console.error('Erro ao salvar o quadro: ', e);
+            } finally {
+                saveBoardBtn.classList.remove('loading');
+                saveBoardBtn.querySelector('span').innerHTML = '<i class="fas fa-plus"></i> Criar Quadro';
+            }
+        });
+        
+        // Lida com o envio do formulário para criar uma nova tarefa (LÓGICA ATUALIZADA)
+        newTaskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            saveTaskBtn.classList.add('loading');
+
+            const title = taskTitleInput.value;
+            const description = taskDescriptionInput.value;
+            const assigneeId = taskAssigneeSelect.value;
+            const date = taskDateInput.value;
+            const quantity = taskQuantityInput.value;
+            
+            if (!title) {
+                console.error('O título da tarefa é obrigatório.');
+                saveTaskBtn.classList.remove('loading');
+                return;
+            }
+            
+            const newTaskData = {
+                title: title,
+                description: description,
+                status: 'A Fazer',
+                boardId: currentBoardId,
+                assigneeId: assigneeId,
+                date: date ? new Date(date) : null, // Salva a data, se houver
+                quantity: quantity ? parseInt(quantity) : 1, // Salva a quantidade
+                lastUpdated: new Date(),
+            };
+            
+            try {
+                const tasksCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
+                await addDoc(tasksCollectionRef, newTaskData);
+                
+                console.log('Nova tarefa adicionada com sucesso:', newTaskData);
+                hideModal(newTaskModal);
+                newTaskForm.reset();
+            } catch (e) {
+                console.error('Erro ao adicionar a tarefa: ', e);
+            } finally {
+                saveTaskBtn.classList.remove('loading');
+            }
+        });
+        
+        // Lida com o envio do formulário para adicionar um novo membro
+        newMemberForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            saveMemberBtn.classList.add('loading');
+            
+            const name = newMemberForm.elements['memberName'].value;
+            const role = newMemberForm.elements['memberRole'].value;
+            
+            if (!name || !role) {
+                console.error('Nome e cargo do membro são obrigatórios.');
+                saveMemberBtn.classList.remove('loading');
+                return;
+            }
+            
+            const newMemberData = {
+                name: name,
+                role: role,
+            };
+            
+            try {
+                const membersCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/members`);
+                await addDoc(membersCollectionRef, newMemberData);
+                
+                console.log('Novo membro adicionado com sucesso:', newMemberData);
+                hideModal(newMemberModal);
+                newMemberForm.reset();
+            } catch (e) {
+                console.error('Erro ao adicionar o membro: ', e);
+            } finally {
+                saveMemberBtn.classList.remove('loading');
+            }
+        });
+        
+        // Event listeners para os botões dos modais
+        newBoardBtn.addEventListener('click', () => {
+            newBoardModalTitle.innerText = 'Criar Novo Quadro';
+            boardIdInput.value = '';
+            boardForm.reset();
+            saveBoardBtn.querySelector('span').innerHTML = '<i class="fas fa-plus"></i> Criar Quadro';
+            showModal(newBoardModal);
+        });
+        closeNewBoardModalBtn.addEventListener('click', () => hideModal(newBoardModal));
+        cancelBoardModalBtn.addEventListener('click', () => hideModal(newBoardModal));
+
+        newTaskBtn.addEventListener('click', () => showModal(newTaskModal));
+        closeNewTaskModalBtn.addEventListener('click', () => hideModal(newTaskModal));
+        cancelNewTaskModalBtn.addEventListener('click', () => hideModal(newTaskModal));
+        
+        addMemberBtn.addEventListener('click', () => showModal(newMemberModal));
+        closeNewMemberModalBtn.addEventListener('click', () => hideModal(newMemberModal));
+        cancelNewMemberModalBtn.addEventListener('click', () => hideModal(newMemberModal));
+        
+        confirmDeletionBtn.addEventListener('click', deleteItem);
+        closeConfirmationModalBtn.addEventListener('click', () => hideModal(confirmationModal));
+        cancelConfirmationBtn.addEventListener('click', () => hideModal(confirmationModal));
+
+        // Adiciona os event listeners para os links de navegação e botões de voltar
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const viewId = link.getAttribute('data-view-id');
+                if (viewId) {
+                    showView(viewId);
+                }
+            });
+        });
+
+        backButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const viewId = btn.getAttribute('data-view-id');
+                if (viewId) {
+                    showView(viewId);
+                }
+            });
+        });
+
+        // Inicia a aplicação Firebase
+        initializeFirebase();
+    </script>
+</body>
+</html>
