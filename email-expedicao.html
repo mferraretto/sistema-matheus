@@ -26,6 +26,7 @@
     <form id="teamMemberForm" class="space-y-2 max-w-lg">
       <input type="text" id="memberName" placeholder="Nome do membro" class="w-full p-2 border rounded">
       <input type="email" id="memberEmail" placeholder="email@empresa.com" class="w-full p-2 border rounded">
+      <input type="text" id="memberRole" placeholder="Cargo (ex: Gestor)" class="w-full p-2 border rounded">
       <label class="flex items-center space-x-2">
         <input type="checkbox" id="memberPermission" class="form-checkbox">
         <span>Permitir interação com quadros e tarefas</span>
@@ -67,7 +68,7 @@
         snapshot.forEach(doc => {
           const member = doc.data();
           const li = document.createElement('li');
-          li.textContent = `${member.name} - ${member.email}${member.allowEquipes ? ' (Permissão Equipes)' : ''}`;
+          li.textContent = `${member.name} - ${member.email} - ${member.cargo || ''}${member.allowEquipes ? ' (Permissão Equipes)' : ''}`;
           teamMembersList.appendChild(li);
         });
       });
@@ -103,15 +104,16 @@ responsavelExpedicaoEmail: emails[0] || null,
       if (!teamCollectionRef) return;
       const name = document.getElementById('memberName').value.trim();
       const email = document.getElementById('memberEmail').value.trim();
+      const cargo = document.getElementById('memberRole').value.trim();
       const allow = document.getElementById('memberPermission').checked;
       if (!name || !email) return;
       try {
-        await teamCollectionRef.add({ name, email, allowEquipes: allow });
+        await teamCollectionRef.add({ name, email, cargo, allowEquipes: allow });
         if (allow) {
           await db.collection('artifacts').doc('equipes').collection('users').doc(currentUser.uid).collection('members').add({
             name,
             email,
-            role: 'Expedição'
+            role: cargo
           });
         }
         teamForm.reset();

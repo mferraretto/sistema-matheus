@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, query, where, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
@@ -13,15 +13,19 @@ let currentUser = null;
 
 async function carregarGestoresDropdown() {
   const select = document.getElementById('relGestores');
-  if (!select) return;
-  select.innerHTML = '';
-  const snap = await getDocs(query(collection(db, 'usuarios'), where('perfil', '==', 'Gestor')));
-  snap.forEach(docu => {
-    const opt = document.createElement('option');
-    opt.value = docu.id;
-    const d = docu.data();
-    opt.textContent = d.nome || d.email || docu.id;
-    select.appendChild(opt);
+  if (!select || !currentUser) return;
+  const colRef = collection(db, 'uid', currentUser.uid, 'expedicaoTeam');
+  onSnapshot(colRef, snap => {
+    select.innerHTML = '';
+    snap.forEach(docu => {
+      const d = docu.data();
+      if ((d.cargo || '').toLowerCase() === 'gestor') {
+        const opt = document.createElement('option');
+        opt.value = d.email;
+        opt.textContent = d.name || d.email;
+        select.appendChild(opt);
+      }
+    });
   });
 }
 
@@ -123,7 +127,7 @@ function listenCaixaGestor() {
   if (!['gestor', 'adm'].includes((window.userPerfil || '').toLowerCase())) return;
   const wrap = document.getElementById('caixaGestor');
   wrap.classList.remove('hidden');
-  const q = query(collection(db, 'relatorios'), where('gestores', 'array-contains', currentUser.uid));
+  const q = query(collection(db, 'relatorios'), where('gestores', 'array-contains', currentUser.email));
   onSnapshot(q, snap => {
     const list = document.getElementById('listaCaixaGestor');
     list.innerHTML = '';
@@ -163,11 +167,11 @@ document.addEventListener('click', async e => {
 });
 
 function initAbaGestor() {
-  carregarGestoresDropdown();
   document.getElementById('btnEnviarRelatorio').addEventListener('click', enviarRelatorio);
   onAuthStateChanged(auth, async user => {
     if (user) {
       currentUser = user;
+      await carregarGestoresDropdown();
       listenMinhasSubmissoes();
       listenCaixaGestor();
     }
