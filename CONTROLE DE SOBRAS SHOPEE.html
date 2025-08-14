@@ -140,6 +140,8 @@
     let produtos = {};
         let dadosAcompanhamento = [];
     let sobraPorSku = {};
+    let resumoSku = {};
+    let totalSaquesAcompanhamento = 0;
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
@@ -2117,6 +2119,7 @@ let uids = [];
       let dados = [];
             dadosAcompanhamento = [];
       sobraPorSku = {};
+      resumoSku = {};
       let totalBruto = 0, totalLiquido = 0, totalVendas = 0, totalSobra = 0;
       let totalSaques = 0;
 
@@ -2152,11 +2155,17 @@ let uids = [];
 
           const listaSnap = await listaRef.get();
           listaSnap.forEach(item => {
-            const { sku, total } = item.data();
+            const { sku, total, valorLiquido } = item.data();
             const custo = Number(produtos[sku] || 0);
-            const valor = (total || 0) * custo;
+            const quantidade = total || 0;
+            const valor = quantidade * custo;
+            const liquidoSku = valorLiquido || 0;
             sobraDia += valor;
             sobraPorSku[sku] = (sobraPorSku[sku] || 0) + valor;
+            resumoSku[sku] = resumoSku[sku] || { vendas: 0, sobra: 0, liquido: 0 };
+            resumoSku[sku].vendas += quantidade;
+            resumoSku[sku].sobra += valor;
+            resumoSku[sku].liquido += liquidoSku;
           });
         } catch (e) {
           console.warn('Erro ao calcular sobra esperada do dia', e);
@@ -2198,6 +2207,7 @@ let uids = [];
       } catch (e) {
         console.error('Erro ao carregar saques', e);
       }
+      totalSaquesAcompanhamento = totalSaques;
 
       tbody.innerHTML = '';
       dados.sort((a,b) => a.data.localeCompare(b.data));
@@ -2294,9 +2304,61 @@ function mostrarDetalhesSobra(data = sobraPorSku) {
 
      function exportarAcompanhamentoExcel() {
       if (!dadosAcompanhamento.length) return;
-      const ws = XLSX.utils.json_to_sheet(dadosAcompanhamento);
+
+      const mediaSaques = totalSaquesAcompanhamento / (dadosAcompanhamento.length || 1);
+      const sheetData = dadosAcompanhamento.map(d => ({
+        Data: d.data,
+        Bruto: d.bruto,
+        Liquido: d.liquido,
+        Vendas: d.vendas,
+        SobraEsperada: d.sobra,
+        SobraReal: d.sobra - mediaSaques
+      }));
+
+      const wsVendas = XLSX.utils.json_to_sheet(sheetData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Acompanhamento');
+      XLSX.utils.book_append_sheet(wb, wsVendas, 'Vendas');
+
+      const totais = dadosAcompanhamento.reduce((acc, item) => {
+        acc.bruto += item.bruto || 0;
+        acc.liquido += item.liquido || 0;
+        acc.vendas += item.vendas || 0;
+        acc.sobra += item.sobra || 0;
+        return acc;
+      }, { bruto: 0, liquido: 0, vendas: 0, sobra: 0 });
+      const sobraRealTotal = totais.sobra - totalSaquesAcompanhamento;
+
+      const entries = Object.entries(sobraPorSku || {});
+      let maiorEntrada = ['', 0], menorEntrada = ['', 0], prejuizo = ['', 0];
+      if (entries.length) {
+        maiorEntrada = entries.reduce((a,b)=>b[1]>a[1]?b:a, entries[0]);
+        menorEntrada = entries.reduce((a,b)=>b[1]<a[1]?b:a, entries[0]);
+        const negativos = entries.filter(([,v])=>v<0);
+        if (negativos.length) prejuizo = negativos.reduce((a,b)=>b[1]<a[1]?b:a, negativos[0]);
+      }
+
+      const resumo = [
+        { Campo: 'Sobra Esperada Total', Valor: totais.sobra },
+        { Campo: 'Sobra Real Total', Valor: sobraRealTotal },
+        { Campo: 'Produto Maior Entrada', SKU: maiorEntrada[0], Valor: maiorEntrada[1] },
+        { Campo: 'Produto Menor Entrada', SKU: menorEntrada[0], Valor: menorEntrada[1] }
+      ];
+      if (prejuizo[0]) resumo.push({ Campo: 'Produto Prejuízo', SKU: prejuizo[0], Valor: prejuizo[1] });
+
+      const resumoSkus = Object.entries(resumoSku || {})
+        .map(([sku, info]) => ({
+          SKU: sku,
+          Vendas: info.vendas,
+          SobraEsperada: info.sobra,
+          Liquido: info.liquido
+        }))
+        .sort((a, b) => b.Vendas - a.Vendas);
+
+      const wsResumo = XLSX.utils.json_to_sheet(resumo);
+      XLSX.utils.sheet_add_aoa(wsResumo, [[]], { origin: -1 });
+      XLSX.utils.sheet_add_json(wsResumo, resumoSkus, { origin: -1 });
+      XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+
       XLSX.writeFile(wb, 'acompanhamento.xlsx');
     }
 
