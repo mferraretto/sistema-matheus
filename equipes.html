@@ -33,61 +33,22 @@
         body {
             background-color: #f5f7fb;
             color: var(--text);
-            display: flex;
             min-height: 100vh;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            background: white;
-            border-right: 1px solid var(--border);
-            height: 100vh;
-            position: fixed;
-            padding: 24px 16px;
-            overflow-y: auto;
-            z-index: 50;
-        }
-
-        .logo {
+        /* Navegação interna */
+        .team-nav {
             display: flex;
-            align-items: center;
             gap: 12px;
-            margin-bottom: 32px;
-            padding: 0 12px;
-        }
-
-        .logo i {
-            color: var(--primary);
-            font-size: 28px;
-        }
-
-        .logo h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .nav-section {
-            margin-bottom: 32px;
-        }
-
-        .nav-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--text-light);
-            margin-bottom: 16px;
-            padding: 0 12px;
+            margin-bottom: 24px;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 4px;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             color: var(--text);
             text-decoration: none;
             font-weight: 500;
@@ -100,7 +61,7 @@
         }
 
         .nav-link i {
-            width: 24px;
+            width: 20px;
             text-align: center;
         }
 
@@ -647,21 +608,11 @@
 
         /* Responsividade */
         @media (max-width: 900px) {
-            .sidebar {
-                width: 80px;
-            }
-            .sidebar .logo h1, .nav-title, .nav-link span, #userIdDisplay {
-                display: none;
-            }
-            .logo {
-                justify-content: center;
-            }
-            .nav-link {
-                justify-content: center;
-                padding: 16px 0;
+            .team-nav {
+                flex-direction: column;
             }
             .main-content {
-                margin-left: 80px;
+                margin-left: 0;
             }
             .board-table th, .board-table td {
                 padding: 8px 12px;
@@ -685,15 +636,12 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <i class="fas fa-project-diagram"></i>
-            <h1>TeamFlow</h1>
-        </div>
+    <div id="sidebar-container"></div>
+    <div id="navbar-container"></div>
 
-        <div class="nav-section">
-            <div class="nav-title">Principal</div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="team-nav">
             <a href="#" class="nav-link" data-view-id="dashboardView">
                 <i class="fas fa-home"></i>
                 <span>Dashboard</span>
@@ -707,24 +655,8 @@
                 <span>Equipes</span>
             </a>
         </div>
-        
-        <div class="nav-section">
-            <div class="nav-title">Configurações</div>
-            <a href="#" class="nav-link">
-                <i class="fas fa-cog"></i>
-                <span>Configurações</span>
-            </a>
-            <a href="#" class="nav-link">
-                <i class="fas fa-question-circle"></i>
-                <span>Ajuda</span>
-            </a>
-        </div>
-        
         <div id="userIdDisplay"></div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
         <!-- Dashboard View (agora como uma visão geral) -->
         <div id="dashboardView" class="view">
             <div class="header">
@@ -971,7 +903,8 @@
     </div>
 
     <!-- Script para Firebase e funcionalidades da UI -->
-        <script type="module" src="firebase-config.js"></script>
+    <script src="shared.js"></script>
+    <script type="module" src="firebase-config.js"></script>
 
     <script type="module">
         
