@@ -361,7 +361,9 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
   const labels = dados.map(d => d.dia);
   const valores = dados.map(d => d.liquido);
 
-  if (window.chartFaturamentoMeta) window.chartFaturamentoMeta.destroy();
+  // Destroy previous chart instance if it exists and supports destroy
+  if (window.chartFaturamentoMeta?.destroy)
+    window.chartFaturamentoMeta.destroy();
   window.chartFaturamentoMeta = new Chart(ctxLinha, {
     type: 'line',
     data: {
@@ -394,7 +396,9 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
       if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
     }
 
-    if (window.chartComparativoMeta) window.chartComparativoMeta.destroy();
+    // Destroy previous comparative chart if available
+    if (window.chartComparativoMeta?.destroy)
+      window.chartComparativoMeta.destroy();
     window.chartComparativoMeta = new Chart(ctxBar, {
       type: 'bar',
       data: {
