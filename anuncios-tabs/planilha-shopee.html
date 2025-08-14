@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Consolidador Shopee v2 — Variantes compactadas</title>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+  <div id="tab-content">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+    :root { color-scheme: light; }
+    .dropzone { border: 2px dashed rgb(203 213 225); }
+    .table-scroll { max-height: 360px; overflow:auto; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; }
+  </style>
+  <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="text-xl sm:text-2xl font-semibold">Consolidador Shopee v2</h1>
+      <div class="text-sm text-slate-500">Importa 4 planilhas • consolida • <span class="font-medium">compacta variantes</span></div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid gap-6">
+    <section class="grid md:grid-cols-2 gap-4">
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h2 class="font-medium mb-2">1) Importar planilhas (.xlsx)</h2>
+        <div class="grid gap-3">
+          <label class="block text-sm">Basic info
+            <input id="file-basic" type="file" accept=".xlsx" class="mt-1 block w-full rounded-lg border-slate-300" />
+          </label>
+          <label class="block text-sm">Sales info
+            <input id="file-sales" type="file" accept=".xlsx" class="mt-1 block w-full rounded-lg border-slate-300" />
+          </label>
+          <label class="block text-sm">Shipping info
+            <input id="file-shipping" type="file" accept=".xlsx" class="mt-1 block w-full rounded-lg border-slate-300" />
+          </label>
+          <label class="block text-sm">Media info
+            <input id="file-media" type="file" accept=".xlsx" class="mt-1 block w-full rounded-lg border-slate-300" />
+          </label>
+          <div class="text-xs text-slate-500">Dica: você pode soltar os arquivos diretamente aqui na página.</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h2 class="font-medium mb-2">2) Opções</h2>
+        <label class="block text-sm">Chave de junção sugerida
+          <select id="join-key" class="mt-1 w-full rounded-lg border-slate-300"></select>
+        </label>
+        <div class="mt-3 flex items-center gap-2 text-sm">
+          <input id="opt-compact" type="checkbox" checked class="h-4 w-4" />
+          <label for="opt-compact">Compactar dados repetidos por <span class="font-medium">produto</span> no Consolidado (mostrar campos repetidos apenas na 1ª linha do produto)</label>
+        </div>
+        <div class="mt-2 flex items-center gap-2 text-sm">
+          <input id="opt-drop2" type="checkbox" checked class="h-4 w-4" />
+          <label for="opt-drop2">Remover as 2 primeiras linhas antes do Consolidado</label>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button id="btn-process" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700">Processar</button>
+          <button id="btn-reset" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200">Limpar</button>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">A chave é detectada automaticamente após carregar os arquivos. Você pode alterar antes de processar.</p>
+      </div>
+    </section>
+
+    <section id="dropzone" class="dropzone rounded-2xl bg-white p-6 text-center text-slate-500">
+      Arraste e solte os 4 arquivos XLSX aqui (basic, sales, shipping, media)
+    </section>
+
+    <section class="grid md:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h3 class="font-medium mb-2">Status</h3>
+        <pre id="status" class="mono text-xs whitespace-pre-wrap"></pre>
+      </div>
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h3 class="font-medium mb-2">Relatório</h3>
+        <pre id="join-report" class="mono text-xs whitespace-pre-wrap"></pre>
+      </div>
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h3 class="font-medium mb-2">Exportar</h3>
+        <div class="grid gap-2">
+          <button id="btn-xlsx" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-40" disabled>Baixar Excel (tratadas + consolidado)</button>
+          <button id="btn-csv-consol" class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-medium hover:bg-emerald-100 disabled:opacity-40" disabled>Baixar CSV (consolidado)</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid md:grid-cols-2 gap-4">
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-medium">Amostras — Planilhas tratadas</h3>
+          <select id="preview-select" class="rounded-lg border-slate-300 text-sm"></select>
+        </div>
+        <div id="preview" class="table-scroll"></div>
+      </div>
+      <div class="bg-white p-4 rounded-2xl shadow border border-slate-200">
+        <h3 class="font-medium mb-2">Amostra — Consolidado</h3>
+        <div id="preview-merged" class="table-scroll"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    function logStatus(msg, reset=false) {
+      const el = $('#status');
+      el.textContent = reset ? msg : (el.textContent + (el.textContent ? "\n" : "") + msg);
+    }
+    function logJoin(msg, reset=false) {
+      const el = $('#join-report');
+      el.textContent = reset ? msg : (el.textContent + (el.textContent ? "\n" : "") + msg);
+    }
+
+    const PREFERRED_KEYS = ['et_title_product_id','item_id','model_id','parent_sku','seller_sku','sku','item_sku','product_id','id','codigo','referencia'];
+
+    function normalizeHeader(h){
+      if(h==null) return '';
+      return String(h).trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'col';
+    }
+    function detectHeaderRow(rows){
+      for(let i=0;i<Math.min(10,rows.length);i++){
+        const nonEmpty = rows[i].filter(v => String(v??'').trim()!=='').length;
+        if(nonEmpty>=2) return i;
+      }
+      return 0;
+    }
+    function rowsToObjects(rows){
+      const hIdx = detectHeaderRow(rows);
+      const header = rows[hIdx].map(normalizeHeader);
+      const seen = {};
+      const safe = header.map(h=>{ if(!seen[h]){seen[h]=1; return h;} seen[h]++; return `${h}_${seen[h]}`; });
+      const out=[];
+      for(let r=hIdx+1;r<rows.length;r++){
+        const row = rows[r]||[];
+        if(row.every(v=>String(v??'').trim()==='')) continue;
+        const o={};
+        for(let c=0;c<safe.length;c++) o[safe[c]] = String(row[c]??'').trim();
+        out.push(o);
+      }
+      return out;
+    }
+    async function readXlsxFile(file){
+      const ab = await file.arrayBuffer();
+      const wb = XLSX.read(ab,{type:'array',cellDates:false,raw:false});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
+      return rowsToObjects(rows);
+    }
+    function toTable(container, rows, limit=50){
+      container.innerHTML='';
+      if(!rows||!rows.length){container.innerHTML='<div class="text-sm text-slate-500">Sem dados</div>';return;}
+      const headers = Array.from(new Set(rows.flatMap(r=>Object.keys(r))));
+      const table = document.createElement('table');
+      table.className='w-full text-sm border border-slate-200';
+      const thead=document.createElement('thead');
+      thead.innerHTML='<tr>'+headers.map(h=>`<th class="sticky top-0 bg-slate-50 border-b p-2 text-left">${h}</th>`).join('')+'</tr>';
+      const tbody=document.createElement('tbody');
+      rows.slice(0,limit).forEach(r=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=headers.map(h=>`<td class="border-b p-2 align-top">${r[h]??''}</td>`).join('');
+        tbody.appendChild(tr);
+      });
+      table.appendChild(thead); table.appendChild(tbody); container.appendChild(table);
+      if(rows.length>limit){
+        const note=document.createElement('div'); note.className='mt-2 text-xs text-slate-500';
+        note.textContent=`Mostrando ${limit} de ${rows.length} linhas.`; container.appendChild(note);
+      }
+    }
+// antes: function indexBy(arr, key) { ... }  (apaga essa versão)
+function indexByMulti(arr, key){
+  const m = new Map();
+  for (const r of arr) {
+    const k = String(r[key] ?? '').trim();
+    if (!k) continue;
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(r); // mantém TODAS as variações dessa chave
+  }
+  return m;
+}
+
+    function findJoinCandidates(datasets){
+      const colSets = datasets.map(d=> new Set(d.rows.length? Object.keys(d.rows[0]) : Object.keys(Object.assign({},...d.rows))));
+      const all=new Set(); colSets.forEach(s=>s.forEach(c=>all.add(c)));
+      const inter=[...all].filter(c=>colSets.every(s=>s.has(c)));
+      const fillScore = col => datasets.reduce((acc,d)=>acc+d.rows.reduce((a,r)=>a+(String(r[col]??'').trim()?1:0),0),0);
+      const pref = PREFERRED_KEYS.filter(k=>inter.includes(k));
+      const others = inter.filter(c=>!pref.includes(c)).sort((a,b)=>fillScore(b)-fillScore(a));
+      return [...pref,...others];
+    }
+    function leftMerge(base, right, key, suffix){
+  const idx = indexByMulti(right, key);  // chave -> [linhas]
+  const out = [];
+  let matched = 0;
+
+  for (const lrow of base) {
+    const k = String(lrow[key] ?? '').trim();
+    const rlist = idx.get(k) || [null];  // se não casar, ainda preserva a linha base
+    if (idx.has(k)) matched += rlist.length;
+
+    for (const r of rlist) {
+      const row = { ...lrow };
+      if (r) {
+        for (const [col, val] of Object.entries(r)) {
+          if (col === key) continue;
+          const newCol = (col in row) ? `${col}_${suffix}` : col;
+          row[newCol] = val;
+        }
+      }
+      out.push(row); // duplica a base para cada variação casada
+    }
+  }
+
+  return { rows: out, matched };
+}
+
+
+    // Compactação por produto: remove valores repetidos dentro do mesmo grupo (mantém só na 1ª linha)
+    function compactByGroup(rows, key){
+      if(!rows || !rows.length) return rows;
+      const groups = new Map();
+      for(const r of rows){ const k = String(r[key]??'').trim(); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(r); }
+      const result=[];
+      for(const [gk, arr] of groups){
+        if(!arr || !arr.length){ continue; }
+        const headers = Array.from(new Set(arr.flatMap(r=>Object.keys(r))));
+        // Detecta colunas constantes no grupo
+        const constantCols = new Set();
+        for(const h of headers){
+          let first = arr[0][h]; let allEqual = true;
+          for(let i=1;i<arr.length;i++){ if((arr[i][h]??'') !== (first??'')){ allEqual=false; break; } }
+          if(allEqual && h !== key){ constantCols.add(h); }
+        }
+        // Mantém valor nas constantes apenas na 1ª linha do grupo
+        for(let i=0;i<arr.length;i++){
+          const row = {...arr[i]};
+          if(i>0){ for(const h of constantCols){ row[h] = ''; } }
+          result.push(row);
+        }
+      }
+      return result;
+    }
+
+    const state={ files:{basic:null,sales:null,shipping:null,media:null}, data:{}, merged:[], joinCandidates:[], chosenKey:'' };
+    const dz = document.getElementById('dropzone');
+
+    dz.addEventListener('dragover',e=>{e.preventDefault(); dz.classList.add('bg-slate-100');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('bg-slate-100'));
+    dz.addEventListener('drop',e=>{e.preventDefault(); dz.classList.remove('bg-slate-100'); const files=[...e.dataTransfer.files||[]]; assignFilesByGuess(files); parseAllLoaded();});
+
+    function fileListFrom(arr){ const dt=new DataTransfer(); arr.forEach(f=>dt.items.add(f)); return dt.files; }
+    function assignFilesByGuess(files){
+      const guess = name => { const n=name.toLowerCase(); if(n.includes('basic')) return 'basic'; if(n.includes('sale')) return 'sales'; if(n.includes('ship')) return 'shipping'; if(n.includes('media')) return 'media'; return null; };
+      for(const f of files){ const slot = guess(f.name) || (state.files.basic?(!state.files.sales? 'sales':(!state.files.shipping?'shipping':'media')):'basic'); if(slot && !state.files[slot]) state.files[slot]=f; }
+      if(state.files.basic) document.getElementById('file-basic').files=fileListFrom([state.files.basic]);
+      if(state.files.sales) document.getElementById('file-sales').files=fileListFrom([state.files.sales]);
+      if(state.files.shipping) document.getElementById('file-shipping').files=fileListFrom([state.files.shipping]);
+      if(state.files.media) document.getElementById('file-media').files=fileListFrom([state.files.media]);
+    }
+
+    document.getElementById('file-basic').addEventListener('change',e=>{state.files.basic=e.target.files[0]||null; parseAllLoaded();});
+    document.getElementById('file-sales').addEventListener('change',e=>{state.files.sales=e.target.files[0]||null; parseAllLoaded();});
+    document.getElementById('file-shipping').addEventListener('change',e=>{state.files.shipping=e.target.files[0]||null; parseAllLoaded();});
+    document.getElementById('file-media').addEventListener('change',e=>{state.files.media=e.target.files[0]||null; parseAllLoaded();});
+
+    document.getElementById('join-key').addEventListener('change',e=>{state.chosenKey=e.target.value;});
+
+    document.getElementById('btn-reset').addEventListener('click',()=>{
+      state.files={basic:null,sales:null,shipping:null,media:null}; state.data={}; state.merged=[]; state.joinCandidates=[]; state.chosenKey='';
+      document.getElementById('file-basic').value=''; document.getElementById('file-sales').value=''; document.getElementById('file-shipping').value=''; document.getElementById('file-media').value='';
+      logStatus('',true); logJoin('',true); document.getElementById('join-key').innerHTML=''; document.getElementById('preview').innerHTML=''; document.getElementById('preview-merged').innerHTML=''; document.getElementById('preview-select').innerHTML='';
+      document.getElementById('btn-xlsx').disabled=true; document.getElementById('btn-csv-consol').disabled=true;
+    });
+
+    document.getElementById('btn-process').addEventListener('click',()=>{
+      logJoin('',true);
+      if(!Object.keys(state.data).length){ logJoin('Carregue as planilhas primeiro.'); return; }
+      const key = state.chosenKey || state.joinCandidates[0];
+      if(!key){ logJoin('Não foi possível sugerir uma chave em comum.'); return; }
+
+      const order=['basic','sales','shipping','media'].filter(n=>state.data[n]);
+      const baseName=order[0]; let merged = state.data[baseName];
+      logJoin(`Base: ${baseName} (${merged.length} linhas)`);
+      for(let i=1;i<order.length;i++){
+        const name=order[i]; const {rows,matched}=leftMerge(merged,state.data[name],key,name); logJoin(`Unido '${name}' por '${key}' → casados: ${matched}`); merged=rows;
+      }
+
+      // Remover as 2 primeiras linhas se marcado
+      if(document.getElementById('opt-drop2').checked && Array.isArray(merged) && merged.length>2){ merged = merged.slice(2); logJoin('Ajuste: removidas as 2 primeiras linhas.'); }
+
+      // Compactar dados repetidos por produto (chave)
+      if(document.getElementById('opt-compact').checked){ merged = compactByGroup(merged, key); logJoin('Compactação: campos repetidos por produto ocultados nas linhas das variações.'); }
+
+      state.merged = merged; toTable(document.getElementById('preview-merged'), merged);
+      document.getElementById('btn-xlsx').disabled=false; document.getElementById('btn-csv-consol').disabled=false;
+    });
+
+    async function parseAllLoaded(){
+      logStatus('Iniciando leitura das planilhas...',true); state.data={};
+      const entries = Object.entries(state.files).filter(([k,f])=>!!f);
+      for(const [name,file] of entries){
+        logStatus(`Lendo ${name} → ${file.name} ...`);
+        try{ const rows = await readXlsxFile(file); state.data[name]=rows; logStatus(`✔ ${name}: ${rows.length} linhas`); }
+        catch(e){ console.error(e); logStatus(`✖ Erro ao ler ${name}: ${e.message||e}`); }
+      }
+      const datasets = Object.entries(state.data).map(([name,rows])=>({name,rows}));
+      if(datasets.length<2){ logStatus('Carregue pelo menos 2 planilhas para sugerir a chave.'); return; }
+      const candidates = findJoinCandidates(datasets); state.joinCandidates=candidates;
+      const sel=document.getElementById('join-key'); sel.innerHTML=''; candidates.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; sel.appendChild(opt); });
+      if(candidates.length){ sel.value=candidates[0]; state.chosenKey=candidates[0]; }
+      const prevSel=document.getElementById('preview-select'); prevSel.innerHTML=''; for(const [name] of Object.entries(state.data)){ const opt=document.createElement('option'); opt.value=name; opt.textContent=name; prevSel.appendChild(opt);} prevSel.value=Object.keys(state.data)[0];
+      prevSel.onchange = e => toTable(document.getElementById('preview'), state.data[e.target.value]);
+      toTable(document.getElementById('preview'), state.data[prevSel.value]);
+    }
+
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.getElementById('preview-select').addEventListener('change', e=>{ const name=e.target.value; toTable(document.getElementById('preview'), state.data[name]); });
+    });
+
+    function downloadFile(filename, blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }
+    function exportXLSX(sheets){ const wb=XLSX.utils.book_new(); for(const {name,rows} of sheets){ const ws=XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws, name.substring(0,31)); } const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'}); downloadFile('shopee_consolidado.xlsx', new Blob([wbout],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); }
+    function exportCSV(rows, filename){ const headers = Array.from(new Set(rows.flatMap(r=>Object.keys(r)))); const csv=[headers.join(',')].concat(rows.map(r=>headers.map(h=>`"${String(r[h]??'').replaceAll('"','""')}"`).join(','))).join('\n'); downloadFile(filename, new Blob([csv],{type:'text/csv;charset=utf-8'})); }
+
+    document.getElementById('btn-xlsx').addEventListener('click',()=>{
+  if(!state.merged || !state.merged.length) return;
+  exportXLSX([{ name:'consolidado', rows: state.merged }]);
+});
+
+    document.getElementById('btn-csv-consol').addEventListener('click',()=>{ if(!state.merged||!state.merged.length) return; exportCSV(state.merged,'shopee_consolidado.csv'); });
+  </script>
+</div>
+</body>
+</html>
