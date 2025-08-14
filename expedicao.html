@@ -40,7 +40,8 @@
   </div>
 
  <script type="module">
-    import { firebaseConfig } from './firebase-config.js';
+    import { firebaseConfig, getPassphrase } from './firebase-config.js';
+    import { decryptString } from './crypto.js';
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -51,6 +52,7 @@
     let currentFilter = 'all';
     let diaDocRef = null;
     let isResponsavel = false;
+    const userNameCache = {};
 
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
@@ -91,6 +93,33 @@
       }
     }
 
+    async function getOwnerName(uid, email) {
+      if (uid && userNameCache[uid]) return userNameCache[uid];
+      try {
+        if (uid) {
+          const snap = await db.collection('uid').doc(uid).get();
+          if (snap.exists) {
+            const data = snap.data();
+            let nome = data.nome;
+            if (!nome && data.encrypted) {
+              try {
+                const pass = getPassphrase() || `chave-${uid}`;
+                const dec = await decryptString(data.encrypted, pass);
+                nome = JSON.parse(dec).nome;
+              } catch (_) {}
+            }
+            if (nome) {
+              userNameCache[uid] = nome;
+              return nome;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao obter nome do usuário:', e);
+      }
+      return email || 'Desconhecido';
+    }
+
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
@@ -99,17 +128,18 @@
         .collection('pdfDocs')
         .orderBy('createdAt', 'desc')
         .get();
-      snap.forEach(doc => {
+      for (const doc of snap.docs) {
         const data = doc.data();
         const allowed =
           data.ownerEmail === currentUser.email ||
           (data.gestoresExpedicaoEmails || []).includes(currentUser.email);
-        if (!allowed) return;
+        if (!allowed) continue;
         const status = data.status || 'nao_impresso';
-        if (filter !== 'all' && status !== filter) return;
-        const card = createPdfCard(doc);
+        if (filter !== 'all' && status !== filter) continue;
+        const ownerName = await getOwnerName(data.ownerUid, data.ownerEmail);
+        const card = createPdfCard(doc, ownerName);
         list.appendChild(card);
-      });
+      }
       if (!list.hasChildNodes()) {
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
       }
@@ -225,14 +255,14 @@
       XLSX.writeFile(wb, `relatorio_sku_usuarios_${diaStr}.xlsx`);
     }
 
-    function createPdfCard(doc) {
+    function createPdfCard(doc, ownerName) {
       const data = doc.data();
       const status = data.status || 'nao_impresso';
       const attention = data.attention || false;
       const observacao = data.observacao || '';
       const name = data.name || 'PDF';
       const url = data.url;
-      const owner = data.ownerEmail || 'Desconhecido';
+      const owner = ownerName || 'Desconhecido';
       const createdAt = data.createdAt && data.createdAt.toDate
         ? data.createdAt.toDate().toLocaleString('pt-BR')
         : 'Data desconhecida';
