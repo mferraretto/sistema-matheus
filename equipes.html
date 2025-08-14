@@ -775,6 +775,10 @@
             <div class="header">
                 <h2 class="page-title" id="currentBoardTitle"></h2>
                 <div class="actions">
+                    <button class="btn btn-outline" id="filterTasksBtn">
+                        <i class="fas fa-filter"></i>
+                        Filtros
+                    </button>
                     <button class="btn btn-outline">
                         <i class="fas fa-search"></i>
                         Buscar
@@ -867,7 +871,47 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Modal de filtros -->
+    <div id="filterModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Filtrar Tarefas</h3>
+                <button class="modal-close" id="closeFilterModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="filterForm">
+                    <div class="form-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter">
+                            <option value="">Todos</option>
+                            <option value="A Fazer">A Fazer</option>
+                            <option value="Em Progresso">Em Progresso</option>
+                            <option value="Concluído">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="assigneeFilter">Responsável</label>
+                        <select id="assigneeFilter">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Intervalo de datas</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="date" id="startDateFilter">
+                            <input type="date" id="endDateFilter">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelFilterBtn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="applyFilterBtn">Aplicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para adicionar um novo membro -->
     <div id="newMemberModal" class="modal-overlay">
         <div class="modal-content">
@@ -970,6 +1014,17 @@
         const cancelNewTaskModalBtn = document.getElementById('cancelNewTaskModalBtn');
         const saveTaskBtn = document.getElementById('saveTaskBtn');
         const taskAssigneeSelect = document.getElementById('taskAssignee');
+
+        // Elementos do DOM de filtros
+        const filterTasksBtn = document.getElementById('filterTasksBtn');
+        const filterModal = document.getElementById('filterModal');
+        const filterForm = document.getElementById('filterForm');
+        const closeFilterModalBtn = document.getElementById('closeFilterModalBtn');
+        const statusFilterSelect = document.getElementById('statusFilter');
+        const assigneeFilterSelect = document.getElementById('assigneeFilter');
+        const startDateFilterInput = document.getElementById('startDateFilter');
+        const endDateFilterInput = document.getElementById('endDateFilter');
+        const cancelFilterBtn = document.getElementById('cancelFilterBtn');
         
         // Novos inputs do modal de tarefa
         const taskTitleInput = document.getElementById('taskTitle');
@@ -997,6 +1052,8 @@
         let currentBoardId = null;
         let members = []; // Array para armazenar os membros da equipe
         let membersMap = {}; // Objeto para facilitar a busca de membros por ID
+        let tasksCache = []; // Cache das tarefas do quadro atual
+        let currentFilters = { status: '', assigneeId: '', startDate: null, endDate: null };
         
         const defaultColumns = ['A Fazer', 'Em Andamento', 'Concluído'];
         const statusColors = {
@@ -1067,11 +1124,17 @@
         function populateAssigneeSelect() {
             // Limpa e preenche o select no modal de nova tarefa
             taskAssigneeSelect.innerHTML = '<option value="">Não atribuído</option>';
+            assigneeFilterSelect.innerHTML = '<option value="">Todos</option>';
             members.forEach(member => {
                 const option = document.createElement('option');
                 option.value = member.id;
                 option.textContent = member.name;
                 taskAssigneeSelect.appendChild(option);
+
+                const filterOption = document.createElement('option');
+                filterOption.value = member.id;
+                filterOption.textContent = member.name;
+                assigneeFilterSelect.appendChild(filterOption);
             });
         }
         
@@ -1168,12 +1231,12 @@
             const q = query(tasksCollectionRef, where("boardId", "==", boardId));
             
             onSnapshot(q, (snapshot) => {
-                const tasks = [];
+                tasksCache = [];
                 snapshot.forEach(doc => {
-                    tasks.push({ id: doc.id, ...doc.data() });
+                    tasksCache.push({ id: doc.id, ...doc.data() });
                 });
-                renderTasks(tasks);
-                console.log('Tarefas atualizadas para o quadro', boardId, ':', tasks);
+                renderTasks(tasksCache);
+                console.log('Tarefas atualizadas para o quadro', boardId, ':', tasksCache);
             }, (error) => {
                 console.error('Erro ao buscar tarefas em tempo real:', error);
             });
@@ -1299,8 +1362,20 @@
             });
         }
 
+        function applyTaskFilters(tasks) {
+            return tasks.filter(task => {
+                if (currentFilters.status && task.status !== currentFilters.status) return false;
+                if (currentFilters.assigneeId && task.assigneeId !== currentFilters.assigneeId) return false;
+                const taskDate = task.date && task.date.seconds ? new Date(task.date.seconds * 1000) : null;
+                if (currentFilters.startDate && (!taskDate || taskDate < currentFilters.startDate)) return false;
+                if (currentFilters.endDate && (!taskDate || taskDate > currentFilters.endDate)) return false;
+                return true;
+            });
+        }
+
         // Função para renderizar as tarefas dinamicamente em uma tabela
         function renderTasks(tasks) {
+            tasks = applyTaskFilters(tasks);
             boardTableContainer.innerHTML = '';
             
             const table = document.createElement('table');
@@ -1637,7 +1712,20 @@
         newTaskBtn.addEventListener('click', () => showModal(newTaskModal));
         closeNewTaskModalBtn.addEventListener('click', () => hideModal(newTaskModal));
         cancelNewTaskModalBtn.addEventListener('click', () => hideModal(newTaskModal));
-        
+
+        filterTasksBtn.addEventListener('click', () => showModal(filterModal));
+        closeFilterModalBtn.addEventListener('click', () => hideModal(filterModal));
+        cancelFilterBtn.addEventListener('click', () => hideModal(filterModal));
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentFilters.status = statusFilterSelect.value;
+            currentFilters.assigneeId = assigneeFilterSelect.value;
+            currentFilters.startDate = startDateFilterInput.value ? new Date(startDateFilterInput.value) : null;
+            currentFilters.endDate = endDateFilterInput.value ? new Date(endDateFilterInput.value) : null;
+            renderTasks(tasksCache);
+            hideModal(filterModal);
+        });
+
         addMemberBtn.addEventListener('click', () => showModal(newMemberModal));
         closeNewMemberModalBtn.addEventListener('click', () => hideModal(newMemberModal));
         cancelNewMemberModalBtn.addEventListener('click', () => hideModal(newMemberModal));
