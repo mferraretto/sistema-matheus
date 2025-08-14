@@ -21,6 +21,18 @@
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
+
+    <h2 class="text-xl font-bold mt-8 mb-4">Equipe de Expedição</h2>
+    <form id="teamMemberForm" class="space-y-2 max-w-lg">
+      <input type="text" id="memberName" placeholder="Nome do membro" class="w-full p-2 border rounded">
+      <input type="email" id="memberEmail" placeholder="email@empresa.com" class="w-full p-2 border rounded">
+      <label class="flex items-center space-x-2">
+        <input type="checkbox" id="memberPermission" class="form-checkbox">
+        <span>Permitir interação com quadros e tarefas</span>
+      </label>
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Adicionar Membro</button>
+    </form>
+    <ul id="teamMembersList" class="mt-4 space-y-2 max-w-lg"></ul>
   </div>
   <script type="module">
     import { firebaseConfig } from './firebase-config.js';
@@ -31,6 +43,9 @@
     let currentUser = null;
     const input = document.getElementById('emailExpedicao');
     const statusEl = document.getElementById('status');
+    const teamForm = document.getElementById('teamMemberForm');
+    const teamMembersList = document.getElementById('teamMembersList');
+    let teamCollectionRef = null;
 
     firebase.auth().onAuthStateChanged(async user => {
       if (!user) {
@@ -46,12 +61,22 @@
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
+      teamCollectionRef = db.collection('uid').doc(user.uid).collection('expedicaoTeam');
+      teamCollectionRef.onSnapshot(snapshot => {
+        teamMembersList.innerHTML = '';
+        snapshot.forEach(doc => {
+          const member = doc.data();
+          const li = document.createElement('li');
+          li.textContent = `${member.name} - ${member.email}${member.allowEquipes ? ' (Permissão Equipes)' : ''}`;
+          teamMembersList.appendChild(li);
+        });
+      });
     });
 
     document.getElementById('emailForm').addEventListener('submit', async e => {
       e.preventDefault();
       statusEl.classList.add('hidden');
-const emailsRaw = input.value.trim();
+      const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
       try {
         await db.collection('uid').doc(currentUser.uid).set({
@@ -70,6 +95,28 @@ responsavelExpedicaoEmail: emails[0] || null,
         statusEl.classList.remove('hidden');
         statusEl.classList.remove('text-green-600');
         statusEl.classList.add('text-red-600');
+      }
+    });
+
+    teamForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!teamCollectionRef) return;
+      const name = document.getElementById('memberName').value.trim();
+      const email = document.getElementById('memberEmail').value.trim();
+      const allow = document.getElementById('memberPermission').checked;
+      if (!name || !email) return;
+      try {
+        await teamCollectionRef.add({ name, email, allowEquipes: allow });
+        if (allow) {
+          await db.collection('artifacts').doc('equipes').collection('users').doc(currentUser.uid).collection('members').add({
+            name,
+            email,
+            role: 'Expedição'
+          });
+        }
+        teamForm.reset();
+      } catch (err) {
+        console.error('Erro ao adicionar membro:', err);
       }
     });
 
