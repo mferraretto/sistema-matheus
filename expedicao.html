@@ -12,12 +12,17 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
+    <div class="mb-4">
+      <button id="startDayBtn" class="btn btn-primary mr-2">Iniciar Dia</button>
+      <button id="closeDayBtn" class="btn btn-secondary hidden">Fechar Dia</button>
+    </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-3 py-1 rounded-full bg-blue-500 text-white" data-status="all">Todas</button>
       <button class="filter-btn px-3 py-1 rounded-full bg-gray-200" data-status="nao_impresso">Não impresso</button>
@@ -44,6 +49,12 @@
     const storage = firebase.storage();
     let currentUser = null;
     let currentFilter = 'all';
+    let diaDocRef = null;
+
+    const startBtn = document.getElementById('startDayBtn');
+    const closeBtn = document.getElementById('closeDayBtn');
+    startBtn.addEventListener('click', iniciarDia);
+    closeBtn.addEventListener('click', fecharDia);
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -57,6 +68,7 @@
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         currentUser = user;
+        verificarDia();
         carregarEtiquetas();
       }
     });
@@ -83,6 +95,74 @@
       if (!list.hasChildNodes()) {
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
       }
+    }
+
+    async function verificarDia() {
+      const uid = currentUser.uid;
+      const hoje = new Date().toISOString().split('T')[0];
+      diaDocRef = db.collection('uid').doc(uid).collection('diasExpedicao').doc(hoje);
+      const doc = await diaDocRef.get();
+      if (doc.exists && doc.data().fim) {
+        startBtn.classList.add('hidden');
+        closeBtn.classList.add('hidden');
+      } else if (doc.exists) {
+        startBtn.classList.add('hidden');
+        closeBtn.classList.remove('hidden');
+      } else {
+        startBtn.classList.remove('hidden');
+        closeBtn.classList.add('hidden');
+      }
+    }
+
+    async function iniciarDia() {
+      if (!currentUser) return;
+      const uid = currentUser.uid;
+      const hoje = new Date().toISOString().split('T')[0];
+      diaDocRef = db.collection('uid').doc(uid).collection('diasExpedicao').doc(hoje);
+      await diaDocRef.set({ inicio: firebase.firestore.FieldValue.serverTimestamp() });
+      startBtn.classList.add('hidden');
+      closeBtn.classList.remove('hidden');
+      showToast('Dia iniciado');
+    }
+
+    async function fecharDia() {
+      if (!currentUser || !diaDocRef) return;
+      const fim = new Date();
+      await diaDocRef.update({ fim: firebase.firestore.FieldValue.serverTimestamp() });
+      const doc = await diaDocRef.get();
+      const dados = doc.data();
+      const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
+      await gerarRelatorioDia(inicio, fim);
+      closeBtn.classList.add('hidden');
+      showToast('Dia encerrado');
+      verificarDia();
+    }
+
+    async function gerarRelatorioDia(inicio, fim) {
+      const uid = currentUser.uid;
+      const userDoc = db.collection('uid').doc(uid);
+      const snap = await userDoc
+        .collection('skuimpressos')
+        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .get();
+      const resumo = {};
+      snap.forEach(d => {
+        const data = d.data();
+        const sku = data.sku || 'sem-sku';
+        const qtd = data.quantidade || 0;
+        resumo[sku] = (resumo[sku] || 0) + qtd;
+      });
+      const linhas = Object.entries(resumo).map(([sku, qtd]) => ({ SKU: sku, Quantidade: qtd }));
+      if (!linhas.length) {
+        alert('Nenhum SKU impresso no período.');
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(linhas);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Resumo');
+      const diaStr = inicio.toISOString().split('T')[0];
+      XLSX.writeFile(wb, `resumo_expedicao_${diaStr}.xlsx`);
     }
 
     function createPdfCard(doc) {
