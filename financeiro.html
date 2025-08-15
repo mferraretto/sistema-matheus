@@ -1,72 +1,720 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Financeiro</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/components.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Financeira | Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --info: #2980b9;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, var(--primary), var(--dark));
+            color: white;
+            padding: 20px 0;
+            transition: var(--transition);
+            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        .logo-container {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: var(--secondary);
+        }
+        
+        .nav-links {
+            padding: 0 15px;
+        }
+        
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        
+        .header h1 {
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-profile {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Section Title */
+        .section-title {
+            margin: 30px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary);
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            background-color: var(--secondary);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Cards */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(120deg, var(--primary), var(--info));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .card-header i {
+            font-size: 20px;
+        }
+        
+        .card-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* Vendedores Section */
+        .vendedores-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .vendedor-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .vendedor-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .vendedor-header {
+            background: linear-gradient(120deg, var(--info), var(--secondary));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .vendedor-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .vendedor-content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .vendedor-subcard {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid var(--info);
+            transition: var(--transition);
+        }
+        
+        .vendedor-subcard:hover {
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .subcard-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        
+        .subcard-header i {
+            background: var(--secondary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .subcard-header h4 {
+            font-size: 16px;
+            color: var(--dark);
+        }
+        
+        /* Stats */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e0e6ed;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 4px;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo span, .sidebar .nav-item span {
+                display: none;
+            }
+            
+            .sidebar .logo {
+                justify-content: center;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .vendedor-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
-  <main class="main-content p-4 space-y-4">
-    <div class="flex flex-wrap gap-4 items-end">
-      <div>
-        <label for="usuarioFiltro" class="text-sm font-medium">Usuário</label>
-        <select id="usuarioFiltro" class="border rounded p-2"></select>
-      </div>
-      <div>
-        <label for="mesFiltro" class="text-sm font-medium">Mês</label>
-        <input type="month" id="mesFiltro" class="border rounded p-2" />
-      </div>
-    </div>
-
-    <div id="metaSection" class="hidden flex flex-wrap gap-2 items-end">
-      <div>
-        <label for="metaValor" class="text-sm font-medium">Meta Mensal (R$)</label>
-        <input type="number" id="metaValor" class="border rounded p-2" placeholder="0" />
-      </div>
-      <button id="salvarMeta" class="btn btn-primary text-sm">Salvar Meta</button>
-    </div>
-
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">📊 Relatório de SKUs Vendidos</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoSkus"><i class="fa fa-eye-slash"></i></button>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span>FinanControl</span>
+                </div>
+            </div>
+            
+            <div class="nav-links">
+                <div class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Vendedores</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-shipping-fast"></i>
+                    <span>Expedição</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Relatórios</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Configurações</span>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="card-body" id="resumoSkus">Carregando...</div>
-    </div>
-
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">💸 Saques e Comissões</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoSaques"><i class="fa fa-eye-slash"></i></button>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1>Dashboard Financeiro</h1>
+                <div class="user-info">
+                    <div class="notification">
+                        <i class="fas fa-bell fa-lg"></i>
+                    </div>
+                    <div class="user-profile">
+                        GF
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cards Resumo -->
+            <div class="cards-container">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-wallet"></i>
+                        <h3>Faturamento Total</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">R$ 245.680,00</div>
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Mensal</span>
+                                <span>78%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-trophy"></i>
+                        <h3>Meta Geral</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">R$ 315.000,00</div>
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Progresso</span>
+                                <span>62%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 62%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <h3>Comissões</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">R$ 18.450,00</div>
+                        <div class="stats-container">
+                            <div class="stat">
+                                <div class="stat-value">12</div>
+                                <div class="stat-label">Pendentes</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">8</div>
+                                <div class="stat-label">Pagas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção Vendedores -->
+            <div class="section-title">
+                <i class="fas fa-users"></i>
+                <h2>Desempenho dos Vendedores</h2>
+            </div>
+            
+            <div class="vendedores-container">
+                <!-- Vendedor 1 -->
+                <div class="vendedor-card">
+                    <div class="vendedor-header">
+                        <i class="fas fa-user-tie"></i>
+                        <h3>Carlos Silva</h3>
+                    </div>
+                    <div class="vendedor-content">
+                        <!-- Subcard Faturamento x Meta -->
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-bullseye"></i>
+                                <h4>Faturamento x Meta</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">R$ 68.450</div>
+                                    <div class="stat-label">Faturamento</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">R$ 80.000</div>
+                                    <div class="stat-label">Meta</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Progresso</span>
+                                    <span>85.6%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 85.6%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Subcard Saques e Comissões -->
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <h4>Saques e Comissões</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">R$ 5.476</div>
+                                    <div class="stat-label">Comissões</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">R$ 4.200</div>
+                                    <div class="stat-label">Saques</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Saldo Pendente</span>
+                                    <span>R$ 1.276</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Subcard SKUs Vendidos -->
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-boxes"></i>
+                                <h4>SKUs Vendidos</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">48</div>
+                                    <div class="stat-label">SKUs</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">124</div>
+                                    <div class="stat-label">Unidades</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Top SKU: PROD-789</span>
+                                    <span>32 unid.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vendedor 2 -->
+                <div class="vendedor-card">
+                    <div class="vendedor-header">
+                        <i class="fas fa-user-tie"></i>
+                        <h3>Ana Rodrigues</h3>
+                    </div>
+                    <div class="vendedor-content">
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-bullseye"></i>
+                                <h4>Faturamento x Meta</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">R$ 92.310</div>
+                                    <div class="stat-label">Faturamento</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">R$ 85.000</div>
+                                    <div class="stat-label">Meta</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Progresso</span>
+                                    <span>108.6%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%; background: #27ae60"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <h4>Saques e Comissões</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">R$ 7.385</div>
+                                    <div class="stat-label">Comissões</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">R$ 5.000</div>
+                                    <div class="stat-label">Saques</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Saldo Pendente</span>
+                                    <span>R$ 2.385</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="vendedor-subcard">
+                            <div class="subcard-header">
+                                <i class="fas fa-boxes"></i>
+                                <h4>SKUs Vendidos</h4>
+                            </div>
+                            <div class="stats-container">
+                                <div class="stat">
+                                    <div class="stat-value">56</div>
+                                    <div class="stat-label">SKUs</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value">187</div>
+                                    <div class="stat-label">Unidades</div>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span>Top SKU: PROD-456</span>
+                                    <span>45 unid.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção Expedição -->
+            <div class="section-title">
+                <i class="fas fa-shipping-fast"></i>
+                <h2>Controle de Expedição</h2>
+            </div>
+            
+            <div class="cards-container">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-truck-loading"></i>
+                        <h3>Pedidos para Expedir</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">24</div>
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Prioridade Alta</span>
+                                <span>8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-shipping-fast"></i>
+                        <h3>Pedidos em Trânsito</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">42</div>
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Prev. Entrega</span>
+                                <span>Hoje: 5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Pedidos Entregues</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-value">128</div>
+                        <div class="progress-container">
+                            <div class="progress-label">
+                                <span>Este Mês</span>
+                                <span>+18%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="card-body" id="resumoSaques">Carregando...</div>
     </div>
-
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">📈 Faturamento x Meta</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoFaturamento"><i class="fa fa-eye-slash"></i></button>
-        </div>
-      </div>
-      <div class="card-body" id="resumoFaturamento">Carregando...</div>
-    </div>
-  </main>
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="financeiro.js"></script>
-  <script src="shared.js"></script>
+    
+    <script>
+        // Simulação de interatividade
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Atualização dinâmica de dados (simulação)
+        setInterval(() => {
+            const elements = document.querySelectorAll('.stat-value');
+            elements.forEach(el => {
+                if(el.textContent.includes('R$')) {
+                    const num = parseFloat(el.textContent.replace(/[^\d.]/g, ''));
+                    const newVal = num + Math.floor(Math.random() * 100);
+                    el.textContent = `R$ ${newVal.toLocaleString('pt-BR')}`;
+                }
+            });
+        }, 5000);
+    </script>
 </body>
 </html>
