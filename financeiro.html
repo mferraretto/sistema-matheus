@@ -12,124 +12,59 @@
 <body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
- <main class="main-content p-4">
-  <div class="main-wrap space-y-5">
-
-    <h1 class="text-2xl font-bold text-slate-800">Dashboard Financeiro</h1>
-
-    <!-- Linha de KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-      <!-- Faturamento Total -->
-      <div class="tile">
-        <div class="tile-head">
-          <div class="icon"><i class="fa-solid fa-receipt"></i></div>
-          <span>Faturamento Total</span>
-        </div>
-        <div class="tile-body">
-          <div class="kpi" id="kpiFaturamento">R$ 0,00</div>
-          <div class="flex items-center justify-between mt-2">
-            <span class="kpi-sub">Mensal</span>
-            <span class="kpi-sub" id="kpiFaturamentoPct">0%</span>
-          </div>
-          <div class="progress mt-2"><span id="kpiFaturamentoBar" style="width:0%"></span></div>
-        </div>
+  <main class="main-content p-4 space-y-4">
+    <div class="flex flex-wrap gap-4 items-end">
+      <div>
+        <label for="usuarioFiltro" class="text-sm font-medium">Usuário</label>
+        <select id="usuarioFiltro" class="border rounded p-2"></select>
       </div>
-
-      <!-- Meta Geral -->
-      <div class="tile">
-        <div class="tile-head">
-          <div class="icon"><i class="fa-solid fa-trophy"></i></div>
-          <span>Meta Geral</span>
-        </div>
-        <div class="tile-body">
-          <div class="kpi" id="kpiMeta">R$ 0,00</div>
-          <div class="flex items-center justify-between mt-2">
-            <span class="kpi-sub">Progresso</span>
-            <span class="kpi-sub" id="kpiMetaPct">0%</span>
-          </div>
-          <div class="progress mt-2"><span id="kpiMetaBar" style="width:0%"></span></div>
-        </div>
+      <div>
+        <label for="mesFiltro" class="text-sm font-medium">Mês</label>
+        <input type="month" id="mesFiltro" class="border rounded p-2" />
       </div>
-
-      <!-- Comissões -->
-      <div class="tile">
-        <div class="tile-head">
-          <div class="icon"><i class="fa-solid fa-wallet"></i></div>
-          <span>Comissões</span>
-        </div>
-        <div class="tile-body">
-          <div class="kpi" id="kpiComissoes">R$ 0,00</div>
-          <div class="grid grid-cols-2 gap-2 mt-2 text-xs text-slate-500">
-            <div><b id="kpiPendentes">0</b> Pendentes</div>
-            <div class="text-right"><b id="kpiPagas">0</b> Pagas</div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Desempenho dos Vendedores -->
-    <div class="space-y-4">
-      <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
-        <i class="fa-solid fa-users"></i> Desempenho dos Vendedores
-      </h2>
-
-      <!-- Painel: exemplo Carlos -->
-      <section class="panel">
-        <div class="panel-head"><i class="fa-solid fa-user"></i> Carlos Silva</div>
-        <div class="panel-grid">
-          <!-- Card 1 -->
-          <div class="tile">
-            <div class="tile-head"><div class="icon"><i class="fa-solid fa-gauge"></i></div><span>Faturamento x Meta</span></div>
-            <div class="tile-body">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="kpi" id="carlosFat">R$ 0,00</div>
-                  <div class="kpi-sub">Faturamento</div>
-                </div>
-                <div class="text-right">
-                  <div class="kpi" id="carlosMeta">R$ 0,00</div>
-                  <div class="kpi-sub">Meta</div>
-                </div>
-              </div>
-              <div class="progress mt-2"><span id="carlosBar" style="width:0%"></span></div>
-            </div>
-          </div>
-          <!-- Card 2 -->
-          <div class="tile">
-            <div class="tile-head"><div class="icon"><i class="fa-solid fa-sack-dollar"></i></div><span>Saques e Comissões</span></div>
-            <div class="tile-body">
-              <div class="kpi" id="carlosComissoes">R$ 0,00</div>
-              <div class="kpi-sub">Saldo Pendente</div>
-            </div>
-          </div>
-          <!-- Card 3 -->
-          <div class="tile">
-            <div class="tile-head"><div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div><span>SKUs Vendidos</span></div>
-            <div class="tile-body">
-              <div class="flex items-center justify-between">
-                <div class="text-center">
-                  <div class="kpi" id="carlosSkus">0</div>
-                  <div class="kpi-sub">SKUs</div>
-                </div>
-                <div class="text-center">
-                  <div class="kpi" id="carlosUnidades">0</div>
-                  <div class="kpi-sub">Unidades</div>
-                </div>
-              </div>
-              <div class="kpi-sub mt-2" id="carlosTopSku">Top SKU: —</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Duplique o bloco <section class="panel"> para cada vendedor (Ana, etc.) mudando os IDs -->
+    <div id="metaSection" class="hidden flex flex-wrap gap-2 items-end">
+      <div>
+        <label for="metaValor" class="text-sm font-medium">Meta Mensal (R$)</label>
+        <input type="number" id="metaValor" class="border rounded p-2" placeholder="0" />
+      </div>
+      <button id="salvarMeta" class="btn btn-primary text-sm">Salvar Meta</button>
     </div>
 
-  </div>
-</main>
+    <div class="card">
+      <div class="card-header justify-between">
+        <h2 class="text-xl font-bold">📊 Relatório de SKUs Vendidos</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoSkus"><i class="fa fa-eye-slash"></i></button>
+        </div>
+      </div>
+      <div class="card-body" id="resumoSkus">Carregando...</div>
+    </div>
 
+    <div class="card">
+      <div class="card-header justify-between">
+        <h2 class="text-xl font-bold">💸 Saques e Comissões</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoSaques"><i class="fa fa-eye-slash"></i></button>
+        </div>
+      </div>
+      <div class="card-body" id="resumoSaques">Carregando...</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header justify-between">
+        <h2 class="text-xl font-bold">📈 Faturamento x Meta</h2>
+        <div class="flex items-center gap-2">
+          <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
+          <button class="toggle-btn" data-target="resumoFaturamento"><i class="fa fa-eye-slash"></i></button>
+        </div>
+      </div>
+      <div class="card-body" id="resumoFaturamento">Carregando...</div>
+    </div>
+  </main>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="financeiro.js"></script>
   <script src="shared.js"></script>
