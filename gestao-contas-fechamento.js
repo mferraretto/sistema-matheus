@@ -1,11 +1,13 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getStorage, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
@@ -17,6 +19,18 @@ const paginacaoDiv = document.getElementById('paginacaoFechamento');
 const totalDiv = document.getElementById('totalFechamento');
 const statusDiv = document.getElementById('statusFechamento');
 
+async function ensureAuth() {
+  if (!auth.currentUser) {
+    try {
+      await signInAnonymously(auth);
+    } catch (err) {
+      console.error('Erro ao autenticar no Firebase', err);
+      statusDiv.textContent = 'Não foi possível autenticar.';
+      throw err;
+    }
+  }
+}
+
 let lancamentos = [];
 let paginaAtual = 1;
 const pageSize = 20;
@@ -27,6 +41,8 @@ btnProcessar?.addEventListener('click', async () => {
     statusDiv.textContent = 'Selecione um ou mais arquivos PDF.';
     return;
   }
+  // Garante que exista um usuário autenticado para respeitar as regras do Firebase
+  await ensureAuth();
   statusDiv.textContent = 'Processando...';
   lancamentos = [];
   for (const file of files) {
