@@ -97,68 +97,81 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   el.innerHTML = 'Carregando...';
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7); // YYYY-MM
-let totalLiquido = 0;
+  let totalLiquido = 0;
   let totalBruto = 0;
   let pedidos = 0;
- const snap = isAdmin
+  const dias = {};
+  const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'faturamento'))
     : await getDocs(collection(db, `uid/${uid}/faturamento`));
   for (const docSnap of snap.docs) {
-    const [ano, mes] = docSnap.id.split('-');
+    const [ano, mes, dia] = docSnap.id.split('-');
     if (`${ano}-${mes}` !== mesAtual) continue;
-  const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
     const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
+    let liquidoDia = 0;
     for (const s of subSnap.docs) {
       let d = s.data();
       if (d.encrypted) {
-        const passFn =
-          typeof window !== 'undefined' ? window.getPassphrase : null;
+        const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
         const pass = passFn ? await passFn() : null;
         let txt;
         try {
- txt = await decryptString(d.encrypted, pass || ownerUid);
+          txt = await decryptString(d.encrypted, pass || ownerUid);
         } catch (e) {
           if (pass) {
-            try {
-              txt = await decryptString(d.encrypted, ownerUid);
-            } catch (err) {
+            try { txt = await decryptString(d.encrypted, ownerUid); } catch (err) {
               console.error('Erro ao descriptografar faturamento', err);
             }
           } else {
             console.error('Erro ao descriptografar faturamento', e);
           }
         }
-                if (txt) d = JSON.parse(txt);
+        if (txt) d = JSON.parse(txt);
       }
       totalLiquido += d.valorLiquido || 0;
       totalBruto += d.valorBruto || 0;
       pedidos += d.qtdVendas || 0;
+      liquidoDia += d.valorLiquido || 0;
     }
+    dias[dia] = (dias[dia] || 0) + liquidoDia;
   }
+  const labels = Object.keys(dias).sort((a,b)=>a.localeCompare(b));
+  const valores = labels.map(d=>dias[d]);
   el.innerHTML = `
-    <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
-      <div class="card-header">
-        <div class="card-header-icon"><i class="fas fa-wallet text-xl"></i></div>
-        <div>
-          <h2 class="text-xl font-bold text-gray-800">Faturamento do Mês</h2>
-          <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
+      <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
+        <div class="card-header">
+          <div class="card-header-icon"><i class="fas fa-wallet text-xl"></i></div>
+          <div>
+            <h2 class="text-xl font-extrabold text-gray-800">Faturamento do Mês</h2>
+            <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
+          </div>
+          <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard" onclick="event.preventDefault();event.stopPropagation();">
+            <i class="fas fa-eye-slash"></i>
+          </button>
         </div>
-        <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard" onclick="event.preventDefault();event.stopPropagation();">
-          <i class="fas fa-eye-slash"></i>
-        </button>
-      </div>
-      <div class="card-body space-y-4">
-        <div>
-          <div class="text-sm text-gray-500">Líquido</div>
-          <div class="text-4xl font-extrabold" style="color: var(--primary)">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+        <div class="card-body space-y-4">
+          <div>
+            <div class="text-sm text-gray-500">Líquido</div>
+            <div class="text-4xl font-extrabold" style="color: var(--primary)">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+          </div>
+          <div>
+            <div class="text-sm text-gray-500">Bruto</div>
+            <div class="text-2xl font-bold" style="color: var(--secondary)">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+          </div>
+          <canvas id="miniChartFaturamento" height="80"></canvas>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Bruto</div>
-          <div class="text-2xl font-bold" style="color: var(--secondary)">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-        </div>
-      </div>
-    </a>`;
+      </a>`;
+  const ctxMini = document.getElementById('miniChartFaturamento')?.getContext('2d');
+  if (ctxMini && typeof Chart !== 'undefined') {
+    const { primary } = getPalette();
+    new Chart(ctxMini, {
+      type: 'line',
+      data: { labels, datasets: [{ data: valores, borderColor: primary, backgroundColor: hexToRgba(primary,0.2), tension: 0.3, fill: true }] },
+      options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+    });
+  }
 }
 
 async function carregarTopSkus(uid, isAdmin) {
@@ -196,11 +209,22 @@ async function carregarTopSkus(uid, isAdmin) {
     el.innerHTML = '<p class="text-gray-500">Sem dados</p>';
     return;
   }
-  const linhas = ordenado.map(([ch,q]) => {
-    const [sku, loja] = ch.split('||');
-    return `<tr><td>${sku}</td><td>${q}</td><td>${loja || '-'}</td></tr>`;
+  const max = ordenado[0][1];
+  const cores = ['var(--primary)', 'var(--success)', 'var(--secondary)', '#3b82f6', '#a855f7'];
+  const linhas = ordenado.map(([ch,q],i) => {
+    const [sku] = ch.split('||');
+    const largura = (q / max) * 100;
+    const cor = cores[i % cores.length];
+    return `
+      <div class="relative p-2 rounded bg-white overflow-hidden">
+        <div class="absolute inset-0" style="width:${largura}%;background:${cor};opacity:0.2;"></div>
+        <div class="relative flex justify-between text-sm font-medium">
+          <span>${sku}</span>
+          <span>${q}</span>
+        </div>
+      </div>`;
   }).join('');
-  el.innerHTML = `<table class="data-table"><thead><tr><th>SKU</th><th>Qtd.</th><th>Loja</th></tr></thead><tbody>${linhas}</tbody></table>`;
+  el.innerHTML = `<div class="space-y-2">${linhas}</div>`;
 }
 async function carregarTarefas(uid, isAdmin) {
   const lista = document.getElementById('listaTarefas');
@@ -397,38 +421,23 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
     options: { scales: { y: { beginAtZero: true } } }
   });
 
-  // --- Gráfico comparativo (opcional) ---
-  const canvasBar = document.getElementById('chartComparativoMeta');
-  if (canvasBar) {
-    const ctxBar = canvasBar.getContext('2d');
-
-    let meta = 0;
-    if (isAdmin) {
-      const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
-      metasSnap.forEach(m => {
-        if (m.id === mesFiltro) meta += Number(m.data().valor || 0);
-      });
-    } else if (uid) {
-      const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesFiltro));
-      if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
-    }
-
-    // Destroy previous comparative chart if available
-    if (window.chartComparativoMeta?.destroy)
-      window.chartComparativoMeta.destroy();
-    window.chartComparativoMeta = new Chart(ctxBar, {
-      type: 'bar',
-      data: {
-        labels: ['Faturado', 'Meta'],
-        datasets: [{
-          data: [totalLiquido, meta],
-          backgroundColor: [primary, secondary]
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
+  const metaBar = document.getElementById('metaProgressBar');
+  const metaText = document.getElementById('metaProgressText');
+  let meta = 0;
+  if (isAdmin) {
+    const metasSnap = await getDocs(collectionGroup(db, 'metasFaturamento'));
+    metasSnap.forEach(m => {
+      if (m.id === mesFiltro) meta += Number(m.data().valor || 0);
     });
+  } else if (uid) {
+    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesFiltro));
+    if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+  }
+  if (metaBar && metaText) {
+    let percent = meta > 0 ? (totalLiquido / meta) * 100 : 0;
+    percent = Math.min(100, percent);
+    metaBar.style.width = percent + '%';
+    metaBar.style.background = percent >= 100 ? 'var(--success)' : 'var(--primary)';
+    metaText.textContent = `${percent.toFixed(0)}% da meta alcançada`;
   }
 }
