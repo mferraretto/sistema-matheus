@@ -13,6 +13,7 @@ let usuariosCache = [];
 let dadosSkusExport = [];
 let dadosSaquesExport = [];
 let dadosFaturamentoExport = [];
+let resumoUsuarios = {};
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -77,29 +78,6 @@ function setupFiltros(usuarios) {
   atualizarMeta();
   atualizarContexto();
 
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = document.getElementById(btn.dataset.target);
-      if (!target) return;
-      target.classList.toggle('max-h-40');
-      target.classList.toggle('overflow-hidden');
-      target.classList.toggle('overflow-auto');
-      const expanded = !target.classList.contains('max-h-40');
-      const icon = btn.querySelector('i');
-      const span = btn.querySelector('span');
-      if (icon) {
-        icon.classList.toggle('fa-plus', !expanded);
-        icon.classList.toggle('fa-minus', expanded);
-      }
-      if (span) span.textContent = expanded ? 'Ver menos' : 'Ver mais';
-    });
-  });
-  const expSkus = document.getElementById('exportSkus');
-  const expSaques = document.getElementById('exportSaques');
-  const expFaturamento = document.getElementById('exportFaturamento');
-  if (expSkus) expSkus.addEventListener('click', exportarSkus);
-  if (expSaques) expSaques.addEventListener('click', exportarSaques);
-  if (expFaturamento) expFaturamento.addEventListener('click', exportarFaturamento);
 }
 
 async function salvarMeta() {
@@ -130,9 +108,12 @@ async function carregar() {
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
   const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
   atualizarContexto();
+  resumoUsuarios = {};
+  listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { nome: u.nome });
   await carregarSkus(listaUsuarios, mes);
   await carregarSaques(listaUsuarios, mes);
   await carregarFaturamentoMeta(listaUsuarios, mes);
+  renderResumoUsuarios(Object.values(resumoUsuarios));
 }
 
 function atualizarContexto() {
@@ -150,9 +131,6 @@ function atualizarContexto() {
 }
 
 async function carregarSkus(usuarios, mes) {
-  const container = document.getElementById('resumoSkus');
-  if (!container) return;
-  container.innerHTML = '';
   dadosSkusExport = [];
   for (const usuario of usuarios) {
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/skusVendidos`));
@@ -181,50 +159,39 @@ async function carregarSkus(usuarios, mes) {
         resumo[sku].sobraReal += sobraReal;
       });
     }
-    const section = document.createElement('div');
-    section.className = 'mb-4';
-    const titulo = document.createElement('h3');
-    titulo.className = 'font-bold';
-    titulo.textContent = usuario.nome;
-    section.appendChild(titulo);
-    if (!Object.keys(resumo).length) {
-      const p = document.createElement('p');
-      p.className = 'text-gray-500';
-      p.textContent = 'Nenhum SKU encontrado.';
-      section.appendChild(p);
-    } else {
-      const ul = document.createElement('ul');
-      ul.className = 'list-disc pl-4 space-y-1';
-      Object.entries(resumo).forEach(([sku, info]) => {
-        dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: info.qtd, sobraEsperada: info.sobraEsperada, sobraReal: info.sobraReal });
-        const li = document.createElement('li');
-        li.textContent = `${sku}: ${info.qtd} | Sobra Esperada: R$ ${info.sobraEsperada.toLocaleString('pt-BR')} | Sobra Real: R$ ${info.sobraReal.toLocaleString('pt-BR')}`;
-        ul.appendChild(li);
-      });
-      section.appendChild(ul);
-    }
-    container.appendChild(section);
+    let totalUnidades = 0;
+    let topSku = '-';
+    let topQtd = 0;
+    Object.entries(resumo).forEach(([sku, info]) => {
+      totalUnidades += info.qtd;
+      if (info.qtd > topQtd) {
+        topSku = sku;
+        topQtd = info.qtd;
+      }
+      dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: info.qtd, sobraEsperada: info.sobraEsperada, sobraReal: info.sobraReal });
+    });
+    resumoUsuarios[usuario.uid].skus = {
+      topSku,
+      totalSkus: Object.keys(resumo).length,
+      totalUnidades
+    };
   }
 }
 
 async function carregarSaques(usuarios, mes) {
-  const container = document.getElementById('resumoSaques');
-  if (!container) return;
-  container.innerHTML = 'Carregando...';
   dadosSaquesExport = [];
-  let totalGeral = 0;
-  let totalComissaoGeral = 0;
-  container.innerHTML = '';
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/saques`));
     let total = 0;
     let totalComissao = 0;
+    let qtdSaques = 0;
     for (const docSnap of snap.docs) {
       if (mes && !docSnap.id.includes(mes)) continue;
       const dados = await loadSecureDoc(db, `uid/${usuario.uid}/saques`, docSnap.id, pass);
       if (!dados) continue;
       total += dados.valorTotal || 0;
+      qtdSaques++;
       const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`));
       for (const lojaDoc of lojasSnap.docs) {
         const lojaDados = await loadSecureDoc(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`, lojaDoc.id, pass);
@@ -234,32 +201,17 @@ async function carregarSaques(usuarios, mes) {
         totalComissao += valor * (comissao / 100);
       }
     }
-    totalGeral += total;
-    totalComissaoGeral += totalComissao;
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
-    const section = document.createElement('div');
-    section.className = 'mb-4';
-    const titulo = document.createElement('h3');
-    titulo.className = 'font-bold';
-    titulo.textContent = usuario.nome;
-    section.appendChild(titulo);
-    const p = document.createElement('p');
-    p.textContent = `Total: R$ ${total.toLocaleString('pt-BR')} | Comissões: R$ ${totalComissao.toLocaleString('pt-BR')}`;
-    section.appendChild(p);
-    container.appendChild(section);
+    resumoUsuarios[usuario.uid].saques = {
+      total,
+      comissao: totalComissao,
+      qtdSaques
+    };
   }
-  const resumoP = document.createElement('p');
-  resumoP.innerHTML = `Total de Saques: <strong>R$ ${totalGeral.toLocaleString('pt-BR')}</strong><br>`+
-    `Total de Comissões: <strong>R$ ${totalComissaoGeral.toLocaleString('pt-BR')}</strong>`;
-  container.appendChild(resumoP);
 }
 
 async function carregarFaturamentoMeta(usuarios, mes) {
-  const container = document.getElementById('resumoFaturamento');
-  if (!container) return;
-  container.innerHTML = 'Carregando...';
   dadosFaturamentoExport = [];
-  container.innerHTML = '';
   for (const usuario of usuarios) {
     let total = 0;
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
@@ -301,17 +253,107 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       diferenca = total - esperado;
     }
     dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta, esperado, diferenca });
-    const section = document.createElement('div');
-    section.className = 'mb-4';
-    const titulo = document.createElement('h3');
-    titulo.className = 'font-bold';
-    titulo.textContent = usuario.nome;
-    section.appendChild(titulo);
-    const p = document.createElement('p');
-    p.textContent = `Faturado: R$ ${total.toLocaleString('pt-BR')} | Meta: R$ ${meta.toLocaleString('pt-BR')} | Esperado até hoje: R$ ${esperado.toLocaleString('pt-BR')} | Diferença: R$ ${diferenca.toLocaleString('pt-BR')}`;
-    section.appendChild(p);
-    container.appendChild(section);
+    resumoUsuarios[usuario.uid].faturamento = {
+      faturado: total,
+      meta,
+      esperado,
+      diferenca
+    };
   }
+}
+
+function renderResumoUsuarios(lista) {
+  const container = document.getElementById('cardsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  lista.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+    row.appendChild(createSkusCard(u));
+    row.appendChild(createSaquesCard(u));
+    row.appendChild(createFaturamentoCard(u));
+    container.appendChild(row);
+  });
+}
+
+function createSkusCard(u) {
+  const card = document.createElement('div');
+  card.className = 'card card-blue';
+  card.innerHTML = `
+    <div class="card-header">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> ${u.nome} - SKUs Vendidos</h2>
+    </div>
+    <div class="card-body">
+      <div class="grid grid-cols-3 text-center gap-2">
+        <div>
+          <div class="text-xl font-bold">${u.skus?.topSku || '-'}</div>
+          <div class="text-sm text-gray-500">Top SKU</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">${u.skus?.totalSkus || 0}</div>
+          <div class="text-sm text-gray-500">SKUs</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">${u.skus?.totalUnidades || 0}</div>
+          <div class="text-sm text-gray-500">Unidades</div>
+        </div>
+      </div>
+    </div>`;
+  return card;
+}
+
+function createSaquesCard(u) {
+  const card = document.createElement('div');
+  card.className = 'card card-green';
+  card.innerHTML = `
+    <div class="card-header">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> ${u.nome} - Saques e Comissões</h2>
+    </div>
+    <div class="card-body">
+      <div class="grid grid-cols-3 text-center gap-2">
+        <div>
+          <div class="text-xl font-bold">R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-sm text-gray-500">Total</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-sm text-gray-500">Comissões</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">${u.saques?.qtdSaques || 0}</div>
+          <div class="text-sm text-gray-500">Total de Saques</div>
+        </div>
+      </div>
+    </div>`;
+  return card;
+}
+
+function createFaturamentoCard(u) {
+  const card = document.createElement('div');
+  card.className = 'card card-orange';
+  const progresso = u.faturamento?.meta ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100) : 0;
+  card.innerHTML = `
+    <div class="card-header">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> ${u.nome} - Faturamento x Meta</h2>
+    </div>
+    <div class="card-body space-y-2">
+      <div class="grid grid-cols-3 text-center gap-2">
+        <div>
+          <div class="text-xl font-bold">R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-sm text-gray-500">Faturado</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">R$ ${(u.faturamento?.meta || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-sm text-gray-500">Meta</div>
+        </div>
+        <div>
+          <div class="text-xl font-bold">R$ ${(u.faturamento?.esperado || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-sm text-gray-500">Esperado até hoje</div>
+        </div>
+      </div>
+      <div class="progress text-orange-600"><div class="progress-bar" style="width: ${progresso.toFixed(0)}%"></div></div>
+    </div>`;
+  return card;
 }
 
 function exportarSkus() {

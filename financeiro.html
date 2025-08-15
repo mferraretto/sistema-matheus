@@ -40,40 +40,7 @@
       <button id="salvarMeta" class="btn btn-primary text-sm">Salvar Meta</button>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div class="card card-blue">
-        <div class="card-header justify-between">
-          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> Relatório de SKUs Vendidos</h2>
-          <div class="flex items-center gap-2">
-            <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
-            <button class="toggle-btn flex items-center gap-1 text-blue-600 text-sm" data-target="resumoSkus"><i class="fa fa-plus"></i><span>Ver mais</span></button>
-          </div>
-        </div>
-        <div class="card-body overflow-hidden max-h-40" id="resumoSkus">Carregando...</div>
-      </div>
-
-      <div class="card card-green">
-        <div class="card-header justify-between">
-          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> Saques e Comissões</h2>
-          <div class="flex items-center gap-2">
-            <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
-            <button class="toggle-btn flex items-center gap-1 text-green-600 text-sm" data-target="resumoSaques"><i class="fa fa-plus"></i><span>Ver mais</span></button>
-          </div>
-        </div>
-        <div class="card-body overflow-hidden max-h-40" id="resumoSaques">Carregando...</div>
-      </div>
-
-      <div class="card card-purple md:col-span-2">
-        <div class="card-header justify-between">
-          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> Faturamento x Meta</h2>
-          <div class="flex items-center gap-2">
-            <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
-            <button class="toggle-btn flex items-center gap-1 text-purple-600 text-sm" data-target="resumoFaturamento"><i class="fa fa-plus"></i><span>Ver mais</span></button>
-          </div>
-        </div>
-        <div class="card-body overflow-hidden max-h-40" id="resumoFaturamento">Carregando...</div>
-      </div>
-    </div>
+    <div id="cardsContainer" class="space-y-6"></div>
   </main>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="financeiro.js"></script>
