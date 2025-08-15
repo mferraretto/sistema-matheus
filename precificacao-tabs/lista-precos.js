@@ -282,6 +282,7 @@ function exportarExcelLista() {
     SKU: p.sku || '',
     Produto: p.produto,
     Loja: p.plataforma,
+    Custo: parseFloat(p.custo || 0).toFixed(2),
     'Preço Mínimo': parseFloat(p.precoMinimo).toFixed(2),
     'Preço Ideal': parseFloat(p.precoIdeal).toFixed(2),
     'Preço Médio': parseFloat(p.precoMedio).toFixed(2),
@@ -296,11 +297,12 @@ function exportarExcelLista() {
 function exportarPDFLista() {
   if (!produtos.length) return;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const headers = ['Produto','SKU','Loja','Preço Mín.','Preço Ideal','Preço Médio','Preço Promo'];
+  const headers = ['Produto','SKU','Loja','Custo','Preço Mín.','Preço Ideal','Preço Médio','Preço Promo'];
   const body = produtos.map(p => [
     p.produto,
     p.sku || '',
     p.plataforma,
+    parseFloat(p.custo || 0).toFixed(2),
     parseFloat(p.precoMinimo).toFixed(2),
     parseFloat(p.precoIdeal).toFixed(2),
     parseFloat(p.precoMedio).toFixed(2),
@@ -308,6 +310,30 @@ function exportarPDFLista() {
   ]);
   doc.autoTable({ head:[headers], body, startY:20, styles:{ fontSize:8 } });
   doc.save('lista_precos.pdf');
+}
+
+function recalcularPrecos(prod, novoCusto) {
+  const taxas = prod.taxas || {};
+  const totals = Object.entries(taxas).reduce(
+    (acc, [key, val]) => {
+      const num = parseFloat(val) || 0;
+      if (key.includes('(%)')) acc.percent += num;
+      else acc.fix += num;
+      return acc;
+    },
+    { percent: 0, fix: 0 }
+  );
+  const precoMinimo = (novoCusto + totals.fix) / (1 - totals.percent / 100);
+  const precoPromo = precoMinimo;
+  const precoMedio = precoMinimo * 1.05;
+  const precoIdeal = precoMinimo * 1.1;
+  return {
+    custo: novoCusto,
+    precoMinimo: parseFloat(precoMinimo.toFixed(2)),
+    precoPromo: parseFloat(precoPromo.toFixed(2)),
+    precoMedio: parseFloat(precoMedio.toFixed(2)),
+    precoIdeal: parseFloat(precoIdeal.toFixed(2))
+  };
 }
 
 function importarExcelLista() {
@@ -323,6 +349,7 @@ function importarExcelLista() {
     if (!rows.length) return;
     const headers = rows[0].map(h => String(h).toLowerCase());
     const idxSku = headers.indexOf('sku');
+    const idxCusto = headers.indexOf('custo');
     const idxMin = headers.findIndex(h => h.includes('mín'));
     const idxIdeal = headers.findIndex(h => h.includes('ideal'));
     const idxMedio = headers.findIndex(h => h.includes('médio'));
@@ -335,10 +362,15 @@ function importarExcelLista() {
       const prod = produtos.find(p => String(p.sku) === String(sku));
       if (!prod) continue;
       const updateData = {};
-      if (idxMin !== -1 && row[idxMin] !== undefined) updateData.precoMinimo = parseFloat(row[idxMin]) || 0;
-      if (idxIdeal !== -1 && row[idxIdeal] !== undefined) updateData.precoIdeal = parseFloat(row[idxIdeal]) || 0;
-      if (idxMedio !== -1 && row[idxMedio] !== undefined) updateData.precoMedio = parseFloat(row[idxMedio]) || 0;
-      if (idxPromo !== -1 && row[idxPromo] !== undefined) updateData.precoPromo = parseFloat(row[idxPromo]) || 0;
+      if (idxCusto !== -1 && row[idxCusto] !== undefined) {
+        const novoCusto = parseFloat(row[idxCusto]) || 0;
+        Object.assign(updateData, recalcularPrecos(prod, novoCusto));
+      } else {
+        if (idxMin !== -1 && row[idxMin] !== undefined) updateData.precoMinimo = parseFloat(row[idxMin]) || 0;
+        if (idxIdeal !== -1 && row[idxIdeal] !== undefined) updateData.precoIdeal = parseFloat(row[idxIdeal]) || 0;
+        if (idxMedio !== -1 && row[idxMedio] !== undefined) updateData.precoMedio = parseFloat(row[idxMedio]) || 0;
+        if (idxPromo !== -1 && row[idxPromo] !== undefined) updateData.precoPromo = parseFloat(row[idxPromo]) || 0;
+      }
       if (Object.keys(updateData).length) {
     await dbListaPrecos
           .collection('uid')
