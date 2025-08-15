@@ -13,16 +13,24 @@
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <main class="main-content p-4 space-y-4">
-    <div class="flex flex-wrap gap-4 items-end">
-      <div>
-        <label for="usuarioFiltro" class="text-sm font-medium">Usuário</label>
-        <select id="usuarioFiltro" class="border rounded p-2"></select>
+    <div class="card p-4 flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2">
+        <i class="fa fa-user text-blue-500"></i>
+        <div class="flex flex-col">
+          <label for="usuarioFiltro" class="text-xs font-medium">Usuário</label>
+          <select id="usuarioFiltro" class="border rounded p-2 text-sm"></select>
+        </div>
       </div>
-      <div>
-        <label for="mesFiltro" class="text-sm font-medium">Mês</label>
-        <input type="month" id="mesFiltro" class="border rounded p-2" />
+      <div class="flex items-center gap-2">
+        <i class="fa fa-calendar text-blue-500"></i>
+        <div class="flex flex-col">
+          <label for="mesFiltro" class="text-xs font-medium">Mês</label>
+          <input type="month" id="mesFiltro" class="border rounded p-2 text-sm" />
+        </div>
       </div>
     </div>
+
+    <h3 id="contexto" class="text-sm text-gray-500"></h3>
 
     <div id="metaSection" class="hidden flex flex-wrap gap-2 items-end">
       <div>
@@ -32,37 +40,39 @@
       <button id="salvarMeta" class="btn btn-primary text-sm">Salvar Meta</button>
     </div>
 
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">📊 Relatório de SKUs Vendidos</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoSkus"><i class="fa fa-eye-slash"></i></button>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="card card-blue">
+        <div class="card-header justify-between">
+          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> Relatório de SKUs Vendidos</h2>
+          <div class="flex items-center gap-2">
+            <button id="exportSkus" class="btn btn-primary text-sm">Exportar Excel</button>
+            <button class="toggle-btn flex items-center gap-1 text-blue-600 text-sm" data-target="resumoSkus"><i class="fa fa-plus"></i><span>Ver mais</span></button>
+          </div>
         </div>
+        <div class="card-body overflow-hidden max-h-40" id="resumoSkus">Carregando...</div>
       </div>
-      <div class="card-body" id="resumoSkus">Carregando...</div>
-    </div>
 
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">💸 Saques e Comissões</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoSaques"><i class="fa fa-eye-slash"></i></button>
+      <div class="card card-green">
+        <div class="card-header justify-between">
+          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> Saques e Comissões</h2>
+          <div class="flex items-center gap-2">
+            <button id="exportSaques" class="btn btn-primary text-sm">Exportar Excel</button>
+            <button class="toggle-btn flex items-center gap-1 text-green-600 text-sm" data-target="resumoSaques"><i class="fa fa-plus"></i><span>Ver mais</span></button>
+          </div>
         </div>
+        <div class="card-body overflow-hidden max-h-40" id="resumoSaques">Carregando...</div>
       </div>
-      <div class="card-body" id="resumoSaques">Carregando...</div>
-    </div>
 
-    <div class="card">
-      <div class="card-header justify-between">
-        <h2 class="text-xl font-bold">📈 Faturamento x Meta</h2>
-        <div class="flex items-center gap-2">
-          <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
-          <button class="toggle-btn" data-target="resumoFaturamento"><i class="fa fa-eye-slash"></i></button>
+      <div class="card card-purple md:col-span-2">
+        <div class="card-header justify-between">
+          <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> Faturamento x Meta</h2>
+          <div class="flex items-center gap-2">
+            <button id="exportFaturamento" class="btn btn-primary text-sm">Exportar Excel</button>
+            <button class="toggle-btn flex items-center gap-1 text-purple-600 text-sm" data-target="resumoFaturamento"><i class="fa fa-plus"></i><span>Ver mais</span></button>
+          </div>
         </div>
+        <div class="card-body overflow-hidden max-h-40" id="resumoFaturamento">Carregando...</div>
       </div>
-      <div class="card-body" id="resumoFaturamento">Carregando...</div>
     </div>
   </main>
   <script type="module" src="firebase-config.js"></script>

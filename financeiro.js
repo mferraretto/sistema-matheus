@@ -71,21 +71,27 @@ function setupFiltros(usuarios) {
     }
   }
 
-  userSel.addEventListener('change', () => { atualizarMeta(); carregar(); });
-  mesSel.addEventListener('change', () => { atualizarMeta(); carregar(); });
+  userSel.addEventListener('change', () => { atualizarMeta(); atualizarContexto(); carregar(); });
+  mesSel.addEventListener('change', () => { atualizarMeta(); atualizarContexto(); carregar(); });
   if (salvarMetaBtn) salvarMetaBtn.addEventListener('click', salvarMeta);
   atualizarMeta();
+  atualizarContexto();
 
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.target);
       if (!target) return;
-      target.classList.toggle('hidden');
+      target.classList.toggle('max-h-40');
+      target.classList.toggle('overflow-hidden');
+      target.classList.toggle('overflow-auto');
+      const expanded = !target.classList.contains('max-h-40');
       const icon = btn.querySelector('i');
+      const span = btn.querySelector('span');
       if (icon) {
-        icon.classList.toggle('fa-eye');
-        icon.classList.toggle('fa-eye-slash');
+        icon.classList.toggle('fa-plus', !expanded);
+        icon.classList.toggle('fa-minus', expanded);
       }
+      if (span) span.textContent = expanded ? 'Ver menos' : 'Ver mais';
     });
   });
   const expSkus = document.getElementById('exportSkus');
@@ -123,9 +129,24 @@ async function carregar() {
   const mes = document.getElementById('mesFiltro')?.value || '';
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
   const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
+  atualizarContexto();
   await carregarSkus(listaUsuarios, mes);
   await carregarSaques(listaUsuarios, mes);
   await carregarFaturamentoMeta(listaUsuarios, mes);
+}
+
+function atualizarContexto() {
+  const contextoEl = document.getElementById('contexto');
+  const mes = document.getElementById('mesFiltro')?.value;
+  const uid = document.getElementById('usuarioFiltro')?.value;
+  if (!contextoEl) return;
+  const mesTxt = mes ? new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
+  let usuarioTxt = 'Todos os usuários';
+  if (uid && uid !== 'todos') {
+    const u = usuariosCache.find(x => x.uid === uid);
+    usuarioTxt = u ? u.nome : uid;
+  }
+  contextoEl.textContent = `${mesTxt} – ${usuarioTxt}`;
 }
 
 async function carregarSkus(usuarios, mes) {
