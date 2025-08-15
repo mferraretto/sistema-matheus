@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
@@ -36,6 +36,9 @@ onAuthStateChanged(auth, async user => {
 function setupFiltros(usuarios) {
   const userSel = document.getElementById('usuarioFiltro');
   const mesSel = document.getElementById('mesFiltro');
+  const metaSection = document.getElementById('metaSection');
+  const metaInput = document.getElementById('metaValor');
+  const salvarMetaBtn = document.getElementById('salvarMeta');
   if (!userSel || !mesSel) return;
   userSel.innerHTML = '';
   const optTodos = document.createElement('option');
@@ -50,8 +53,29 @@ function setupFiltros(usuarios) {
   });
   userSel.value = 'todos';
   mesSel.value = new Date().toISOString().slice(0,7);
-  userSel.addEventListener('change', carregar);
-  mesSel.addEventListener('change', carregar);
+
+  async function atualizarMeta() {
+    if (!metaSection) return;
+    if (userSel.value === 'todos') {
+      metaSection.classList.add('hidden');
+      if (metaInput) metaInput.value = '';
+      return;
+    }
+    metaSection.classList.remove('hidden');
+    if (!metaInput) return;
+    try {
+      const metaDoc = await getDoc(doc(db, `uid/${userSel.value}/metasFaturamento`, mesSel.value));
+      metaInput.value = metaDoc.exists() ? metaDoc.data().valor || '' : '';
+    } catch (_) {
+      metaInput.value = '';
+    }
+  }
+
+  userSel.addEventListener('change', () => { atualizarMeta(); carregar(); });
+  mesSel.addEventListener('change', () => { atualizarMeta(); carregar(); });
+  if (salvarMetaBtn) salvarMetaBtn.addEventListener('click', salvarMeta);
+  atualizarMeta();
+
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = document.getElementById(btn.dataset.target);
@@ -70,6 +94,29 @@ function setupFiltros(usuarios) {
   if (expSkus) expSkus.addEventListener('click', exportarSkus);
   if (expSaques) expSaques.addEventListener('click', exportarSaques);
   if (expFaturamento) expFaturamento.addEventListener('click', exportarFaturamento);
+}
+
+async function salvarMeta() {
+  const uid = document.getElementById('usuarioFiltro')?.value;
+  const mes = document.getElementById('mesFiltro')?.value;
+  const input = document.getElementById('metaValor');
+  const valor = Number(input?.value || 0);
+  if (!uid || uid === 'todos') {
+    alert('Selecione um usuário');
+    return;
+  }
+  if (!mes) {
+    alert('Selecione um mês');
+    return;
+  }
+  try {
+    await setDoc(doc(db, `uid/${uid}/metasFaturamento`, mes), { valor });
+    alert('Meta salva com sucesso!');
+    await carregar();
+  } catch (err) {
+    console.error('Erro ao salvar meta:', err);
+    alert('Erro ao salvar meta');
+  }
 }
 
 async function carregar() {
@@ -204,13 +251,25 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       }
     }
     let meta = 0;
+    let esperado = 0;
+    let diferenca = 0;
     try {
       const metaDoc = await getDoc(doc(db, `uid/${usuario.uid}/metasFaturamento`, mes));
       if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
     } catch (err) {
       console.error('Erro ao buscar meta de faturamento:', err);
     }
-    dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta });
+    if (meta && mes) {
+      const [ano, mesNum] = mes.split('-').map(Number);
+      const totalDias = new Date(ano, mesNum, 0).getDate();
+      let diasDecorridos = totalDias;
+      const hoje = new Date();
+      if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+      const metaDiaria = meta / totalDias;
+      esperado = metaDiaria * diasDecorridos;
+      diferenca = total - esperado;
+    }
+    dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta, esperado, diferenca });
     const section = document.createElement('div');
     section.className = 'mb-4';
     const titulo = document.createElement('h3');
@@ -218,7 +277,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     titulo.textContent = usuario.nome;
     section.appendChild(titulo);
     const p = document.createElement('p');
-    p.textContent = `Faturado: R$ ${total.toLocaleString('pt-BR')} | Meta: R$ ${meta.toLocaleString('pt-BR')}`;
+    p.textContent = `Faturado: R$ ${total.toLocaleString('pt-BR')} | Meta: R$ ${meta.toLocaleString('pt-BR')} | Esperado até hoje: R$ ${esperado.toLocaleString('pt-BR')} | Diferença: R$ ${diferenca.toLocaleString('pt-BR')}`;
     section.appendChild(p);
     container.appendChild(section);
   }
@@ -245,7 +304,7 @@ function exportarFaturamento() {
     alert('Sem dados para exportar');
     return;
   }
-  exportarCSV(dadosFaturamentoExport, ['usuario','faturado','meta'], 'faturamento_meta');
+  exportarCSV(dadosFaturamentoExport, ['usuario','faturado','meta','esperado','diferenca'], 'faturamento_meta');
 }
 
 function exportarCSV(dados, campos, nome) {
