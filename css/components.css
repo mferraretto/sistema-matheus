@@ -127,12 +127,23 @@
   color: #065f46;
 }
 
-.card-purple {
-  border-top: 4px solid #8b5cf6;
+.card-orange {
+  border-top: 4px solid #f97316;
 }
-.card-purple .card-header {
-  background-color: #f5f3ff;
+.card-orange .card-header {
+  background-color: #fff7ed;
 }
-.card-purple .card-header h2 {
-  color: #4c1d95;
+.card-orange .card-header h2 {
+  color: #9a3412;
+}
+
+.progress {
+  background-color: #e5e7eb;
+  height: 6px;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress .progress-bar {
+  height: 100%;
+  background-color: currentColor;
 }
