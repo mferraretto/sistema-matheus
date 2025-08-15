@@ -1,32 +1,32 @@
 
 :root {
-  /* Adjusted primary palette for a softer orange tone */
-  --primary: #f97316;
-  --primary-hover: #fb923c;
-  --primary-dark: #c2410c;
-  --primary-light: #fde68a;
-  --brand: #f97316;
-  --hover: #fb923c;
+  /* Modern orange & purple palette */
+  --primary: #FF7043;
+  --primary-hover: #FF8A65;
+  --primary-dark: #E64A19;
+  --primary-light: #FFE0B2;
+  --brand: #FF7043;
+  --hover: #FF8A65;
   --dark: #1C2B36;
-  --secondary: #273746;
-  --nav-bg: #1e3a8a;
+  --secondary: #7E57C2;
+  --nav-bg: #7E57C2;
   --success: #4CAF50;
   --error: #F44336;
   --danger: #F44336;
   --bg-light: #F5F7FA;
-  --background: #FFFFFF;
-  --bg: #FFFFFF;
-  --border: #E5E7EB;
+  --background: #FAFAFA;
+  --bg: #FAFAFA;
+  --border: #E0E0E0;
   --card: #FFFFFF;
   --card-bg: #FFFFFF;
-  --card-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
   --gray: #6B7280;
-  --text: #1F2937;
-  --text-dark: #111827;
-  --text-light: #6B7280;
+  --text: #616161;
+  --text-dark: #424242;
+  --text-light: #9E9E9E;
   --transition: all 0.3s ease;
-  --navbar-height: 70px;
-  --sidebar-width: 16rem
+  --navbar-height: 60px;
+  --sidebar-width: 16rem;
 }
     
   
@@ -35,14 +35,14 @@
   top: 0;
   right: 0;
   left: var(--sidebar-width);
-  height: 70px;
+  height: 60px;
   background-color: var(--nav-bg);
   box-shadow: 0 2px 10px rgba(0,0,0,.05);
   z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
+  padding: 0 20px;
 transition: .3s;
   color: #fff
 
@@ -51,7 +51,7 @@ transition: .3s;
 .content-wrapper {
   flex: 1;
   margin-left: var(--sidebar-width);
-  margin-top: 70px;
+  margin-top: 60px;
   padding: 30px
 }
 
@@ -77,7 +77,7 @@ transition: .3s;
   align-items: center;
  justify-content: center;
   margin-right: 15px;
-  background-color: rgba(249,115,22,0.1); /* subtle highlight */
+  background-color: rgba(255,112,67,0.1); /* subtle highlight */
   color: var(--primary);
 }
 
@@ -232,7 +232,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .card-header-icon {
-  background-color: rgba(249,115,22,0.1);
+  background-color: rgba(255,112,67,0.1);
   color: var(--primary);
 }
 
@@ -260,26 +260,25 @@ input:checked + .dark-mode-slider:before {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
   border-radius: 0.5rem;
   background-color: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
   transition: background-color .2s, box-shadow .2s, transform .2s;
 }
 
 #tarefasCard .task-item:hover {
   background-color: #f3f4f6;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 8px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
 
 #tarefasCard .task-item.completed {
-  background-color: #ecfdf5;
+  background-color: rgba(126,87,194,0.1);
 }
 
 #tarefasCard .task-text.completed {
   text-decoration: line-through;
-  color: #6b7280;
+  color: var(--text-light);
 }
 
 #tarefasCard input[type="checkbox"] {

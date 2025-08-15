@@ -8,6 +8,22 @@ import { firebaseConfig } from './firebase-config.js';
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+function getPalette() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    primary: styles.getPropertyValue('--primary').trim(),
+    secondary: styles.getPropertyValue('--secondary').trim()
+  };
+}
+
+function hexToRgba(hex, opacity) {
+  const bigint = parseInt(hex.replace('#', ''), 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r},${g},${b},${opacity})`;
+}
 function toggleBlur(cardId) {
   const card = document.getElementById(cardId);
   if (!card) return;
@@ -135,11 +151,11 @@ let totalLiquido = 0;
       <div class="card-body space-y-4">
         <div>
           <div class="text-sm text-gray-500">Líquido</div>
-          <div class="text-4xl font-extrabold text-green-600">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+          <div class="text-4xl font-extrabold" style="color: var(--primary)">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
         </div>
         <div>
           <div class="text-sm text-gray-500">Bruto</div>
-          <div class="text-2xl font-bold text-blue-600">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+          <div class="text-2xl font-bold" style="color: var(--secondary)">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
         </div>
       </div>
     </a>`;
@@ -194,10 +210,10 @@ async function carregarTarefas(uid, isAdmin) {
   listaFeitas.innerHTML = '';
 
   const tarefas = [
-    '<a href="https://seller.shopee.com.br/portal/sale/order" target="_blank" rel="noopener">Baixar planilha vendas Shopee</a>',
-    '<a href="https://mferraretto.github.io/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento" target="_blank" rel="noopener">Registrar no sistema - Fechamento dia anterior</a>',
-    '<a href="https://seller.shopee.com.br/portal/sale/mass/ship?mass_shipment_tab=201&filter.shipping_method=91003&filter.order_item_filter_type=item0&filter.order_process_status=1&filter.sort.sort_type=1&filter.sort.ascending=true&filter.pre_order=2&filter.shipping_urgency_filter.current_time=1755177333&filter.shipping_urgency_filter.shipping_urgency=1" target="_blank" rel="noopener">Organizar coleta e imprimir etiquetas + lista de empacotamento ZPL</a>',
-    '<a href="https://mferraretto.github.io/VendedorPro/zpl-import.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
+    '<a class="action-link" href="https://seller.shopee.com.br/portal/sale/order" target="_blank" rel="noopener">Baixar planilha vendas Shopee</a>',
+    '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento" target="_blank" rel="noopener">Registrar no sistema - Fechamento dia anterior</a>',
+    '<a class="action-link" href="https://seller.shopee.com.br/portal/sale/mass/ship?mass_shipment_tab=201&filter.shipping_method=91003&filter.order_item_filter_type=item0&filter.order_process_status=1&filter.sort.sort_type=1&filter.sort.ascending=true&filter.pre_order=2&filter.shipping_urgency_filter.current_time=1755177333&filter.shipping_urgency_filter.shipping_urgency=1" target="_blank" rel="noopener">Organizar coleta e imprimir etiquetas + lista de empacotamento ZPL</a>',
+    '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/zpl-import.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
   ];
   const hoje = new Date();
   const storageKey = `tarefasFeitas_${hoje.toISOString().slice(0,10)}`;
@@ -315,6 +331,7 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
   const canvasLinha = document.getElementById('chartFaturamentoMeta');
   if (!canvasLinha || typeof Chart === 'undefined') return;
   const ctxLinha = canvasLinha.getContext('2d');
+  const { primary, secondary } = getPalette();
 
   const filtro = document.getElementById('filtroMesFaturamento');
   const mesFiltro = filtro?.value || new Date().toISOString().slice(0, 7);
@@ -371,8 +388,8 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
       datasets: [{
         label: 'Líquido',
         data: valores,
-        borderColor: '#34D399',
-        backgroundColor: 'rgba(52,211,153,0.2)',
+        borderColor: primary,
+        backgroundColor: hexToRgba(primary, 0.2),
         tension: 0.1,
         fill: true
       }]
@@ -405,7 +422,7 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
         labels: ['Faturado', 'Meta'],
         datasets: [{
           data: [totalLiquido, meta],
-          backgroundColor: ['#34D399', '#F87171']
+          backgroundColor: [primary, secondary]
         }]
       },
       options: {
