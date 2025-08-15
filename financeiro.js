@@ -135,6 +135,13 @@ async function carregarSkus(usuarios, mes) {
   dadosSkusExport = [];
   for (const usuario of usuarios) {
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/skusVendidos`));
+    const produtosSnap = await getDocs(collection(db, `uid/${usuario.uid}/produtos`));
+    const custos = {};
+    produtosSnap.forEach(p => {
+      const dados = p.data();
+      const chave = dados.sku || p.id;
+      custos[chave] = Number(dados.custo || 0);
+    });
     const resumo = {};
     for (const docSnap of snap.docs) {
       if (mes && !docSnap.id.includes(mes)) continue;
@@ -144,10 +151,13 @@ async function carregarSkus(usuarios, mes) {
         const dados = item.data();
         const sku = dados.sku || 'sem-sku';
         const qtd = Number(dados.total || dados.quantidade) || 0;
-        const sobra = Number(dados.valorLiquido || dados.sobraReal || 0);
-        if (!resumo[sku]) resumo[sku] = { qtd: 0, sobra: 0 };
+        const sobraReal = Number(dados.valorLiquido || dados.sobraReal || 0);
+        const custo = custos[sku] || 0;
+        const sobraEsperada = qtd * custo;
+        if (!resumo[sku]) resumo[sku] = { qtd: 0, sobraEsperada: 0, sobraReal: 0 };
         resumo[sku].qtd += qtd;
-        resumo[sku].sobra += sobra;
+        resumo[sku].sobraEsperada += sobraEsperada;
+        resumo[sku].sobraReal += sobraReal;
       });
     }
     const section = document.createElement('div');
@@ -165,9 +175,9 @@ async function carregarSkus(usuarios, mes) {
       const ul = document.createElement('ul');
       ul.className = 'list-disc pl-4 space-y-1';
       Object.entries(resumo).forEach(([sku, info]) => {
-        dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: info.qtd, sobra: info.sobra });
+        dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: info.qtd, sobraEsperada: info.sobraEsperada, sobraReal: info.sobraReal });
         const li = document.createElement('li');
-        li.textContent = `${sku}: ${info.qtd} | Sobra: R$ ${info.sobra.toLocaleString('pt-BR')}`;
+        li.textContent = `${sku}: ${info.qtd} | Sobra Esperada: R$ ${info.sobraEsperada.toLocaleString('pt-BR')} | Sobra Real: R$ ${info.sobraReal.toLocaleString('pt-BR')}`;
         ul.appendChild(li);
       });
       section.appendChild(ul);
@@ -288,7 +298,7 @@ function exportarSkus() {
     alert('Sem dados para exportar');
     return;
   }
-  exportarCSV(dadosSkusExport, ['usuario','sku','quantidade','sobra'], 'skus_vendidos');
+  exportarCSV(dadosSkusExport, ['usuario','sku','quantidade','sobraEsperada','sobraReal'], 'skus_vendidos');
 }
 
 function exportarSaques() {
