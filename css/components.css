@@ -76,3 +76,28 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+/* Layout geral */
+.main-wrap{max-width:1280px;margin:0 auto}
+
+/* Cartões estilo "tile" */
+.tile{background:#fff;border-radius:14px;box-shadow:0 6px 18px rgba(16,24,40,.08);overflow:hidden}
+.tile-head{background:linear-gradient(180deg,#2e6db4 0%,#1f4e82 100%);color:#fff;
+  display:flex;align-items:center;gap:.6rem;padding:.75rem 1rem}
+.tile-head .icon{width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.15);
+  display:grid;place-items:center}
+
+/* Corpo do cartão */
+.tile-body{padding:1rem 1.1rem}
+.kpi{font-size:1.6rem;font-weight:800;color:#0f172a}
+.kpi-sub{font-size:.75rem;color:#64748b}
+
+/* Barra de progresso */
+.progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.progress > span{display:block;height:100%;background:#16a34a}
+
+/* Seções por vendedor */
+.panel{border-radius:14px;background:#fff;box-shadow:0 6px 18px rgba(16,24,40,.08);overflow:hidden}
+.panel-head{background:linear-gradient(180deg,#2e6db4 0%,#1f4e82 100%);color:#fff;
+  padding:.7rem 1rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.panel-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:14px}
+@media (max-width:1024px){.panel-grid{grid-template-columns:1fr}}
