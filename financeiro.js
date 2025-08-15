@@ -413,4 +413,43 @@ function exportarCSV(dados, campos, nome) {
   a.click();
   URL.revokeObjectURL(url);
 }
+// >>> ADICIONE AO FINAL DO ARQUIVO:
+function renderDashboard(mesSelecionado){
+  // ---- KPIs Topo ----
+  const progFat = state.totais.meta ? (state.totais.faturamento / state.totais.meta)*100 : 0;
+  const hoje = new Date(); 
+  let progMeta = 0;
+  if (state.totais.meta && mesSelecionado){
+    const [ano, m] = mesSelecionado.split('-').map(Number);
+    const totalDias = new Date(ano, m, 0).getDate();
+    const diasDec = (mesSelecionado === hoje.toISOString().slice(0,7)) ? hoje.getDate() : totalDias;
+    progMeta = (diasDec/totalDias)*100;
+  }
+  state.totais.progFat = progFat;
+  state.totais.progMeta = progMeta;
+
+  setKpi('kpiFaturamento', state.totais.faturamento.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+  setKpi('kpiMeta', state.totais.meta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+  setKpi('kpiComissoes', state.totais.comissoes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+  setKpi('kpiFaturamentoPct', `${Math.round(progFat)}%`);
+  setKpi('kpiMetaPct', `${Math.round(progMeta)}%`);
+  setKpi('kpiPendentes', state.totais.pendentes);
+  setKpi('kpiPagas', state.totais.pagas);
+  setBar('kpiFaturamentoBar', progFat);
+  setBar('kpiMetaBar', progMeta);
+
+  // ---- Painéis por vendedor ----
+  Object.entries(state.vendedores).forEach(([uid, v])=>{
+    if (/carlos/i.test(v.nome)){
+      if (v.faturado != null) setKpi('carlosFat', v.faturado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+      if (v.meta != null) setKpi('carlosMeta', v.meta.toLocaleString('pt-BR',{style:'currency','currency':'BRL'}));
+      if (v.prog != null) setBar('carlosBar', v.prog);
+      if (v.comissoes != null) setKpi('carlosComissoes', v.comissoes.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}));
+      if (v.skus != null) document.getElementById('carlosSkus').textContent = v.skus;
+      if (v.unidades != null) document.getElementById('carlosUnidades').textContent = v.unidades;
+      if (v.topSku) document.getElementById('carlosTopSku').textContent = `Top SKU: ${v.topSku}`;
+    }
+    // Repita para outros vendedores (Ana, João, etc.)
+  });
+}
 
