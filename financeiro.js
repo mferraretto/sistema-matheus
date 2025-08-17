@@ -109,7 +109,7 @@ async function carregar() {
   const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
   atualizarContexto();
   resumoUsuarios = {};
-  listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { nome: u.nome });
+  listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { uid: u.uid, nome: u.nome });
   await carregarSkus(listaUsuarios, mes);
   await carregarSaques(listaUsuarios, mes);
   await carregarFaturamentoMeta(listaUsuarios, mes);
@@ -175,6 +175,7 @@ async function carregarSkus(usuarios, mes) {
       totalSkus: Object.keys(resumo).length,
       totalUnidades
     };
+    resumoUsuarios[usuario.uid].skusDetalhes = resumo;
   }
 }
 
@@ -186,11 +187,13 @@ async function carregarSaques(usuarios, mes) {
     let total = 0;
     let totalComissao = 0;
     let qtdSaques = 0;
+    const detalhes = [];
     for (const docSnap of snap.docs) {
       if (mes && !docSnap.id.includes(mes)) continue;
       const dados = await loadSecureDoc(db, `uid/${usuario.uid}/saques`, docSnap.id, pass);
       if (!dados) continue;
-      total += dados.valorTotal || 0;
+      const docTotal = dados.valorTotal || 0;
+      let docComissao = 0;
       qtdSaques++;
       const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`));
       for (const lojaDoc of lojasSnap.docs) {
@@ -198,8 +201,11 @@ async function carregarSaques(usuarios, mes) {
         if (!lojaDados) continue;
         const valor = lojaDados.valor || 0;
         const comissao = lojaDados.comissao || 0;
-        totalComissao += valor * (comissao / 100);
+        docComissao += valor * (comissao / 100);
       }
+      total += docTotal;
+      totalComissao += docComissao;
+      detalhes.push({ data: docSnap.id, valor: docTotal, comissao: docComissao });
     }
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
     resumoUsuarios[usuario.uid].saques = {
@@ -207,6 +213,7 @@ async function carregarSaques(usuarios, mes) {
       comissao: totalComissao,
       qtdSaques
     };
+    resumoUsuarios[usuario.uid].saquesDetalhes = detalhes;
   }
 }
 
@@ -214,10 +221,12 @@ async function carregarFaturamentoMeta(usuarios, mes) {
   dadosFaturamentoExport = [];
   for (const usuario of usuarios) {
     let total = 0;
+    const diario = {};
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
     for (const docSnap of snap.docs) {
       if (mes && !docSnap.id.includes(mes)) continue;
       const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
+      let totalDia = 0;
       for (const lojaDoc of lojasSnap.docs) {
         let dados = lojaDoc.data();
         if (dados.encrypted) {
@@ -230,12 +239,15 @@ async function carregarFaturamentoMeta(usuarios, mes) {
           }
           if (txt) dados = JSON.parse(txt);
         }
-        total += Number(dados.valorLiquido) || 0;
+        totalDia += Number(dados.valorLiquido) || 0;
       }
+      total += totalDia;
+      diario[docSnap.id] = totalDia;
     }
     let meta = 0;
     let esperado = 0;
     let diferenca = 0;
+    let metaDiaria = 0;
     try {
       const metaDoc = await getDoc(doc(db, `uid/${usuario.uid}/metasFaturamento`, mes));
       if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
@@ -248,7 +260,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       let diasDecorridos = totalDias;
       const hoje = new Date();
       if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
-      const metaDiaria = meta / totalDias;
+      metaDiaria = meta / totalDias;
       esperado = metaDiaria * diasDecorridos;
       diferenca = total - esperado;
     }
@@ -259,6 +271,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       esperado,
       diferenca
     };
+    resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
   }
 }
 
@@ -280,8 +293,9 @@ function createSkusCard(u) {
   const card = document.createElement('div');
   card.className = 'card card-blue';
   card.innerHTML = `
-    <div class="card-header">
+    <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> ${u.nome} - SKUs Vendidos</h2>
+      <button class="text-sm text-blue-600 ver-mais">Ver mais</button>
     </div>
     <div class="card-body">
       <div class="grid grid-cols-3 text-center gap-2">
@@ -299,6 +313,14 @@ function createSkusCard(u) {
         </div>
       </div>
     </div>`;
+  card.querySelector('.ver-mais')?.addEventListener('click', () => {
+    const detalhes = u.skusDetalhes || {};
+    const linhas = Object.entries(detalhes)
+      .map(([sku, info]) => `<tr><td>${sku}</td><td>${info.qtd}</td><td>R$ ${info.sobraEsperada.toLocaleString('pt-BR')}</td><td>R$ ${info.sobraReal.toLocaleString('pt-BR')}</td></tr>`)
+      .join('');
+    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>SKU</th><th>Unidades</th><th>Sobra Esperada</th><th>Sobra Real</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    showModal(`${u.nome} - SKUs Vendidos`, tabela);
+  });
   return card;
 }
 
@@ -306,8 +328,9 @@ function createSaquesCard(u) {
   const card = document.createElement('div');
   card.className = 'card card-green';
   card.innerHTML = `
-    <div class="card-header">
+    <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> ${u.nome} - Saques e Comissões</h2>
+      <button class="text-sm text-green-600 ver-mais">Ver mais</button>
     </div>
     <div class="card-body">
       <div class="grid grid-cols-3 text-center gap-2">
@@ -325,6 +348,14 @@ function createSaquesCard(u) {
         </div>
       </div>
     </div>`;
+  card.querySelector('.ver-mais')?.addEventListener('click', () => {
+    const detalhes = u.saquesDetalhes || [];
+    const linhas = detalhes
+      .map(d => `<tr><td>${formatarData(d.data)}</td><td>R$ ${d.valor.toLocaleString('pt-BR')}</td><td>R$ ${d.comissao.toLocaleString('pt-BR')}</td></tr>`)
+      .join('');
+    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Data</th><th>Valor</th><th>Comissão</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    showModal(`${u.nome} - Saques`, tabela);
+  });
   return card;
 }
 
@@ -333,8 +364,9 @@ function createFaturamentoCard(u) {
   card.className = 'card card-orange';
   const progresso = u.faturamento?.meta ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100) : 0;
   card.innerHTML = `
-    <div class="card-header">
+    <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> ${u.nome} - Faturamento x Meta</h2>
+      <button class="text-sm text-orange-600 ver-mais">Ver mais</button>
     </div>
     <div class="card-body space-y-2">
       <div class="grid grid-cols-3 text-center gap-2">
@@ -353,7 +385,48 @@ function createFaturamentoCard(u) {
       </div>
       <div class="progress text-orange-600"><div class="progress-bar" style="width: ${progresso.toFixed(0)}%"></div></div>
     </div>`;
+  card.querySelector('.ver-mais')?.addEventListener('click', () => {
+    const diario = u.faturamentoDetalhes?.diario || {};
+    const metaDiaria = u.faturamentoDetalhes?.metaDiaria || 0;
+    const linhas = Object.entries(diario)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([data, valor]) => {
+        const diff = valor - metaDiaria;
+        return `<tr><td>${formatarData(data)}</td><td>R$ ${valor.toLocaleString('pt-BR')}</td><td>R$ ${metaDiaria.toLocaleString('pt-BR')}</td><td>R$ ${diff.toLocaleString('pt-BR')}</td></tr>`;
+      })
+      .join('');
+    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Data</th><th>Faturado</th><th>Meta Diária</th><th>Diferença</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    showModal(`${u.nome} - Faturamento Diário`, tabela);
+  });
   return card;
+}
+
+function formatarData(str) {
+  const d = new Date(str);
+  return isNaN(d) ? str : d.toLocaleDateString('pt-BR');
+}
+
+function showModal(titulo, corpo) {
+  let modal = document.getElementById('detalhesModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'detalhesModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <h3 id="detalhesTitulo" class="text-xl font-bold mb-4"></h3>
+        <div id="detalhesCorpo" class="space-y-2"></div>
+        <div class="mt-4 text-right">
+          <button id="detalhesFechar" class="btn btn-primary">Fechar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    modal.querySelector('#detalhesFechar').addEventListener('click', () => modal.style.display = 'none');
+  }
+  modal.querySelector('#detalhesTitulo').textContent = titulo;
+  modal.querySelector('#detalhesCorpo').innerHTML = corpo;
+  modal.style.display = 'flex';
 }
 
 function exportarSkus() {
