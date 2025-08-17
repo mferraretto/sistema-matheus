@@ -10,6 +10,24 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 let currentUser = null;
+let initialLoad = true;
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `fixed bottom-4 right-4 px-4 py-4 rounded-lg shadow-lg text-white ${
+    type === 'success' ? 'bg-green-500' :
+    type === 'error' ? 'bg-red-500' :
+    type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+  }`;
+  notification.innerHTML = `
+    <div class="flex items-center">
+      <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+      <span>${message}</span>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 5000);
+}
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -77,6 +95,17 @@ function carregarAtualizacoes() {
   const colRef = collection(db, 'financeiroAtualizacoes');
   const q = query(colRef, orderBy('createdAt', 'desc'));
   onSnapshot(q, snap => {
+    if (!initialLoad) {
+      snap.docChanges().forEach(change => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          const dests = data.destinatarios || [];
+          if (data.autorUid !== currentUser.uid && dests.includes(currentUser.uid) && data.tipo === 'faturamento') {
+            showNotification(data.descricao || 'Novo faturamento registrado');
+          }
+        }
+      });
+    }
     lista.innerHTML = '';
     snap.forEach(docSnap => {
       const data = docSnap.data();
@@ -84,6 +113,7 @@ function carregarAtualizacoes() {
       if (data.autorUid !== currentUser.uid && !dests.includes(currentUser.uid)) return;
       lista.appendChild(renderCard(docSnap.id, data));
     });
+    initialLoad = false;
   });
 }
 
