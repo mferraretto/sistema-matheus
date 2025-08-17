@@ -334,6 +334,31 @@
       }
     }
 
+    async function notificarResponsavelFinanceiro(dataRef, loja, bruto, liquido, qtdVendas) {
+      try {
+        const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
+        const dadosUsuario = usuarioDoc.data() || {};
+        const autorNome = dadosUsuario.nome || firebase.auth().currentUser?.email || '';
+        const respEmail = dadosUsuario.responsavelFinanceiroEmail;
+        if (!respEmail) return;
+        const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+        if (respSnap.empty) return;
+        const responsavelUid = respSnap.docs[0].id;
+        const descricao = `Faturamento de ${dataRef} da loja ${loja} atualizado. Bruto: R$ ${bruto.toFixed(2)}, Líquido: R$ ${liquido.toFixed(2)}, Vendas: ${qtdVendas}`;
+        await db.collection('financeiroAtualizacoes').add({
+          descricao,
+          autorUid: usuarioLogado.uid,
+          autorNome,
+          destinatarios: [responsavelUid, usuarioLogado.uid],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          anexos: [],
+          tipo: 'faturamento'
+        });
+      } catch (e) {
+        console.error('Erro ao notificar responsável financeiro:', e);
+      }
+    }
+
     async function executarComRetry(operacao, maxTentativas = 3, delay = 1000) {
       let tentativas = 0;
       
@@ -1552,6 +1577,7 @@ await db
               <strong>Qtd. Vendas:</strong> ${qtdVendas}
             </div>
           `;
+          await notificarResponsavelFinanceiro(dataReferencia, loja, bruto, liquido, qtdVendas);
 
         } catch (err) {
           mostrarErro("Erro ao importar: " + err.message);
