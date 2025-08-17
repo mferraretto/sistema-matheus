@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Atualizações Financeiras</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <main class="main-content p-4 space-y-4">
+    <h1 class="text-2xl font-bold">Atualizações</h1>
+    <form id="formAtualizacao" class="card p-4 space-y-4">
+      <div>
+        <label for="descricao" class="text-sm font-medium">Descrição</label>
+        <textarea id="descricao" class="border rounded p-2 w-full" placeholder="Ex: Atualização de preços"></textarea>
+      </div>
+      <div>
+        <label for="destinatarios" class="text-sm font-medium">Destinatários</label>
+        <select id="destinatarios" multiple class="border rounded p-2 w-full"></select>
+      </div>
+      <div>
+        <label for="arquivos" class="text-sm font-medium">Anexos</label>
+        <input type="file" id="arquivos" multiple class="border rounded p-2 w-full" />
+      </div>
+      <button type="submit" class="btn btn-primary text-sm">Enviar</button>
+    </form>
+    <div id="listaAtualizacoes" class="space-y-4"></div>
+  </main>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="atualizacoes.js"></script>
+  <script src="shared.js"></script>
+</body>
+</html>

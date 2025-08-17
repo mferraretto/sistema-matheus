@@ -36,6 +36,16 @@ service cloud.firestore {
       }
     }
 
+    match /financeiroAtualizacoes/{docId} {
+      allow create: if request.auth != null && request.resource.data.autorUid == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.autorUid == request.auth.uid ||
+        (resource.data.destinatarios != null && request.auth.uid in resource.data.destinatarios) ||
+        isGestorOrADM(request.auth.uid)
+      );
+      allow update, delete: if request.auth != null && resource.data.autorUid == request.auth.uid;
+    }
+
     match /contasfechamento/{docId} {
       allow read, write: if request.auth != null;
     }
