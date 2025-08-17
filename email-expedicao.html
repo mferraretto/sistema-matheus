@@ -35,6 +35,8 @@
       <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Adicionar Membro</button>
     </form>
     <ul id="teamMembersList" class="mt-4 space-y-2 max-w-lg"></ul>
+    <h2 id="financialUsersTitle" class="text-xl font-bold mt-8 mb-4 hidden">Usuários sob sua responsabilidade financeira</h2>
+    <ul id="financialUsersList" class="mt-4 space-y-2 max-w-lg"></ul>
   </div>
   <script type="module">
     import { firebaseConfig } from './firebase-config.js';
@@ -48,6 +50,8 @@
     const statusEl = document.getElementById('status');
     const teamForm = document.getElementById('teamMemberForm');
     const teamMembersList = document.getElementById('teamMembersList');
+    const financialUsersTitle = document.getElementById('financialUsersTitle');
+    const financialUsersList = document.getElementById('financialUsersList');
     let teamCollectionRef = null;
 
     firebase.auth().onAuthStateChanged(async user => {
@@ -73,6 +77,22 @@
           const li = document.createElement('li');
           li.textContent = `${member.name} - ${member.email} - ${member.cargo || ''}${member.allowEquipes ? ' (Permissão Equipes)' : ''}`;
           teamMembersList.appendChild(li);
+        });
+      });
+
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
+        financialUsersList.innerHTML = '';
+        if (snap.empty) {
+          financialUsersTitle.classList.add('hidden');
+          return;
+        }
+        financialUsersTitle.classList.remove('hidden');
+        snap.forEach(doc => {
+          const dados = doc.data();
+          const li = document.createElement('li');
+          const nome = dados.nome || dados.email || doc.id;
+          li.textContent = `${nome} - ${dados.email || ''}`;
+          financialUsersList.appendChild(li);
         });
       });
     });
