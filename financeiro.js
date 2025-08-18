@@ -105,7 +105,12 @@ async function salvarMeta() {
 }
 
 async function carregar() {
-  const mes = document.getElementById('mesFiltro')?.value || '';
+  const mesSel = document.getElementById('mesFiltro');
+  let mes = mesSel?.value;
+  if (!mes) {
+    mes = new Date().toISOString().slice(0,7);
+    if (mesSel) mesSel.value = mes;
+  }
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
   const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
   atualizarContexto();
