@@ -510,9 +510,46 @@
     window.toggleImpresso = toggleImpresso;
 
     async function marcarConcluido(id, card) {
-      await db.collection('pdfDocs').doc(id).update({ status: 'concluido' });
-      if (card) card.remove();
-      showToast('Marcado como concluído');
+      try {
+        const docRef = db.collection('pdfDocs').doc(id);
+        const snap = await docRef.get();
+        const data = snap.data() || {};
+
+        if (data.url) {
+          const link = document.createElement('a');
+          link.href = data.url;
+          link.download = data.name || 'etiqueta.pdf';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        const skus = data.skus || data.skuList || [];
+        for (const sku of skus) {
+          await db.collection('pedidosconcluidos').add({
+            sku: sku,
+            pdfDocId: id,
+            ownerUid: data.ownerUid || null,
+            ownerEmail: data.ownerEmail || null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        if (data.storagePath) {
+          try {
+            await storage.ref(data.storagePath).delete();
+          } catch (e) {
+            console.error('Erro ao excluir do Storage:', e);
+          }
+        }
+
+        await docRef.update({ status: 'concluido' });
+        if (card) card.remove();
+        showToast('Marcado como concluído');
+      } catch (e) {
+        console.error('Erro ao concluir etiqueta:', e);
+        alert('Erro ao concluir etiqueta');
+      }
     }
     window.marcarConcluido = marcarConcluido;
 
