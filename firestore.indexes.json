@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "financeiroAtualizacoes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "destinatarios", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
