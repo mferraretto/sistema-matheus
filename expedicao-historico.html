@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico Expedição</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-gray-100" style="font-family: 'Poppins', sans-serif;">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4">
+    <h1 class="text-2xl font-bold mb-4">Histórico Expedição</h1>
+    <div class="bg-white rounded shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead>
+          <tr class="bg-gray-200 text-left">
+            <th class="p-2">SKU</th>
+            <th class="p-2">Usuário</th>
+            <th class="p-2">Data</th>
+          </tr>
+        </thead>
+        <tbody id="historicoTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+        return;
+      }
+      carregarHistorico();
+    });
+
+    async function carregarHistorico() {
+      const tbody = document.getElementById('historicoTable');
+      tbody.innerHTML = '';
+      try {
+        const snap = await db.collection('pedidosconcluidos').orderBy('createdAt', 'desc').limit(100).get();
+        if (snap.empty) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="3">Sem registros.</td>';
+          tbody.appendChild(tr);
+          return;
+        }
+        snap.forEach(doc => {
+          const data = doc.data();
+          const tr = document.createElement('tr');
+          tr.className = 'border-b';
+          const sku = data.sku || '';
+          const usuario = data.ownerEmail || '';
+          const dataHora = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleString('pt-BR') : '';
+          tr.innerHTML = `<td class="p-2">${sku}</td><td class="p-2">${usuario}</td><td class="p-2">${dataHora}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error('Erro ao carregar histórico:', e);
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td class="p-2 text-center text-red-500" colspan="3">Erro ao carregar histórico</td>';
+        tbody.appendChild(tr);
+      }
+    }
+
+    loadSidebar();
+    loadNavbar();
+  </script>
+  <script type="module" src="login.js"></script>
+  <script src="shared.js"></script>
+</body>
+</html>
