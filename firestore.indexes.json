@@ -6,7 +6,22 @@
       "fields": [
         { "fieldPath": "destinatarios", "arrayConfig": "CONTAINS" },
         { "fieldPath": "tipo", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "faturamento",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "skusVendidos",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
     }
   ],

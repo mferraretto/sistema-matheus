@@ -329,6 +329,8 @@ function initNotificationListener(uid) {
     } else {
       badge.classList.add('hidden');
     }
+  }, err => {
+    console.error('Erro no listener de notificações:', err);
   });
   btn.addEventListener('click', () => {
     list.classList.toggle('hidden');
