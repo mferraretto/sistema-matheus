@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
@@ -32,6 +32,7 @@ onAuthStateChanged(auth, async user => {
   usuariosCache = usuarios;
   setupFiltros(usuarios);
   await carregar();
+  initFaturamentoFeed(usuarios);
 });
 
 function setupFiltros(usuarios) {
@@ -273,6 +274,51 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     };
     resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
   }
+}
+
+async function calcularFaturamentoDia(uid, dia) {
+  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+  let totalDia = 0;
+  for (const lojaDoc of lojasSnap.docs) {
+    let dados = lojaDoc.data();
+    if (dados.encrypted) {
+      const pass = getPassphrase() || `chave-${uid}`;
+      let txt;
+      try {
+        txt = await decryptString(dados.encrypted, pass);
+      } catch (e) {
+        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+      }
+      if (txt) dados = JSON.parse(txt);
+    }
+    totalDia += Number(dados.valorLiquido) || 0;
+  }
+  return totalDia;
+}
+
+function initFaturamentoFeed(usuarios) {
+  const card = document.getElementById('faturamentoUpdatesCard');
+  const feed = document.getElementById('faturamentoFeed');
+  if (!card || !feed) return;
+  feed.innerHTML = '';
+  usuarios.forEach(u => {
+    const ref = collection(db, `uid/${u.uid}/faturamento`);
+    let initialized = false;
+    onSnapshot(ref, snapshot => {
+      if (!initialized) { initialized = true; return; }
+      snapshot.docChanges().forEach(async change => {
+        if (change.type === 'added' || change.type === 'modified') {
+          const totalDia = await calcularFaturamentoDia(u.uid, change.doc.id);
+          const item = document.createElement('div');
+          item.className = 'border-b pb-1 text-sm';
+          item.textContent = `${u.nome} - ${formatarData(change.doc.id)}: R$ ${totalDia.toLocaleString('pt-BR')}`;
+          feed.prepend(item);
+          card.classList.remove('hidden');
+          while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+        }
+      });
+    });
+  });
 }
 
 function renderResumoUsuarios(lista) {
