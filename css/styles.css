@@ -63,10 +63,11 @@ transition: .3s;
  align-items: center;
   gap: 10px;
   margin-bottom: 1rem;
-  color: var(--secondary);
+  color: #fff;
   font-weight: 600;
   font-size: 1.1rem;
-  font-family: Inter,sans-serif
+  font-family: Inter,sans-serif;
+  background: linear-gradient(90deg, #ff7a00, #e0bbff);
 }
 
 .card-header-icon {
@@ -341,13 +342,25 @@ input:checked + .dark-mode-slider:before {
   }
 }
 body.dark {
-  background-color: #121212;
-  color: #f0f0f0
+  --background: #121212;
+  --primary: #ff8a65;
+  --primary-hover: #ff7043;
+  --secondary: #b39ddb;
+  --card: #1e1e1e;
+  --card-bg: #1e1e1e;
+  --text: #f0f0f0;
+  --border: #374151;
+  background-color: var(--background);
+  color: var(--text);
 }
 body.dark .sidebar-link.active,
 body.dark .sidebar-link:hover {
   background-color: rgba(255,255,255,.1);
   color: #fff
+}
+body.dark .card-header {
+  background: linear-gradient(90deg, #ff8a65, #7e57c2);
+  color: #f0f0f0;
 }
 .badge {
   margin-left: 5px
@@ -1569,7 +1582,9 @@ tr:hover td {
 }
 body.dark-mode {
   --background: #1a202c;
-  --secondary: #e2e8f0;
+  --primary: #ff8a65;
+  --primary-hover: #ff7043;
+  --secondary: #b39ddb;
   --bg: #1E293B;
   --card: #2D3748;
   --card-bg: #2D3748;
@@ -1577,7 +1592,7 @@ body.dark-mode {
   --text-light: #94A3B8;
   --border: #475569;
   color: var(--text);
-  background: var(--background)
+  background: var(--background);
 }
 body.dark-mode .card,
 body.dark-mode .chart-container,
@@ -1614,7 +1629,8 @@ body.dark-mode .sidebar {
   background: #1a202c
 }
 body.dark-mode .card-header {
-  color: #e2e8f0
+  color: #f0f0f0;
+  background: linear-gradient(90deg, #ff8a65, #7e57c2);
 }
 .submenu {
   background-color: rgba(255,255,255,.05);
