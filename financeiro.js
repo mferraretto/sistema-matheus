@@ -453,6 +453,17 @@ function createFaturamentoCard(u) {
 }
 
 function formatarData(str) {
+  // Evita problemas de fuso horário ao converter datas (ex.: "2024-05-01" 
+  // sendo interpretado como 30/04 em localidades UTC-3). Quando a string
+  // está no formato YYYY-MM-DD construímos a data utilizando o construtor
+  // `new Date(ano, mesIndex, dia)` que considera o fuso local sem deslocar
+  // para UTC.
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(str);
+  if (match) {
+    const [_, a, m, d] = match;
+    const data = new Date(Number(a), Number(m) - 1, Number(d));
+    return data.toLocaleDateString('pt-BR');
+  }
   const d = new Date(str);
   return isNaN(d) ? str : d.toLocaleDateString('pt-BR');
 }
