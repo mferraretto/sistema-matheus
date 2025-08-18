@@ -259,6 +259,7 @@ input:checked + .dark-mode-slider:before {
 #tarefasCard .task-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -282,8 +283,27 @@ input:checked + .dark-mode-slider:before {
   color: var(--text-light);
 }
 
-#tarefasCard input[type="checkbox"] {
-  accent-color: var(--primary);
+#tarefasCard .task-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#tarefasCard .task-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+#tarefasCard .task-actions button {
+  background-color: #e5e7eb;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color .2s;
+}
+
+#tarefasCard .task-actions button:hover {
+  background-color: #d1d5db;
 }
 @keyframes skeleton-loading {
   0%,
