@@ -1,9 +1,10 @@
 /* Consolidated component styles without Tailwind's @apply */
 .card {
-  background-color: #f9f9f9;
+  background-color: #ffffff;
   border-radius: 1rem; /* rounded-2xl */
   box-shadow: 0 10px 15px rgba(0,0,0,0.1);
   transition: box-shadow .2s;
+  padding: 1.5rem;
 }
 .card:hover {
   box-shadow: 0 15px 25px rgba(0,0,0,0.1);
@@ -13,11 +14,16 @@
   align-items: center;
   border-bottom: 1px solid var(--border, #e5e7eb);
   padding: 0.75rem 1rem;
-  background: linear-gradient(90deg, #ff7a00, #e0bbff);
+  background: linear-gradient(135deg, #4F46E5, #9333EA);
+  color: #fff;
+}
+.card-header i {
+  font-size: 1.6rem;
+  margin-right: 0.5rem;
   color: #fff;
 }
 .card-body {
-  padding: 1rem;
+  padding: 1.5rem;
 }
 .btn {
   display: inline-flex;
@@ -166,6 +172,6 @@
 }
 
 body.dark-mode .card-header {
-  background: linear-gradient(90deg, #ff8a65, #7e57c2);
+  background: linear-gradient(135deg, #4F46E5, #9333EA);
   color: #f0f0f0;
 }

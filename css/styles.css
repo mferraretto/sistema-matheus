@@ -60,14 +60,14 @@ transition: .3s;
   padding: 20px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
- align-items: center;
+  align-items: center;
   gap: 10px;
   margin-bottom: 1rem;
   color: #fff;
   font-weight: 600;
   font-size: 1.1rem;
   font-family: Inter,sans-serif;
-  background: linear-gradient(90deg, #ff7a00, #e0bbff);
+  background: linear-gradient(135deg, #4F46E5, #9333EA);
 }
 
 .card-header-icon {
@@ -83,8 +83,7 @@ transition: .3s;
 }
 
 .card-body {
-  padding: 20px
-
+  padding: 24px;
 }
 
 .data-table {
@@ -379,7 +378,7 @@ body.dark .sidebar-link:hover {
   color: #fff
 }
 body.dark .card-header {
-  background: linear-gradient(90deg, #ff8a65, #7e57c2);
+  background: linear-gradient(135deg, #4F46E5, #9333EA);
   color: #f0f0f0;
 }
 .badge {
@@ -1062,8 +1061,8 @@ tr:hover {
 }
 
 .card-header i {
-  font-size: 1.3rem;
-  color: var(--primary)
+  font-size: 1.6rem;
+  color: #fff;
 }
 .alert {
   padding: 1rem;
@@ -1650,7 +1649,7 @@ body.dark-mode .sidebar {
 }
 body.dark-mode .card-header {
   color: #f0f0f0;
-  background: linear-gradient(90deg, #ff8a65, #7e57c2);
+  background: linear-gradient(135deg, #4F46E5, #9333EA);
 }
 .submenu {
   background-color: rgba(255,255,255,.05);
@@ -1844,7 +1843,7 @@ body.dark .submenu a:hover {
   background: var(--card);
   border-radius: 1rem;
   box-shadow: 0 10px 15px rgba(0,0,0,.1);
-  padding: 20px;
+  padding: 24px;
   border: 1px solid var(--border);
   margin-bottom: 1.5rem;
   border-left: 4px solid var(--primary);
