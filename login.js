@@ -13,7 +13,9 @@ import {
   setDoc,
   updateDoc,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot,
+  orderBy
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 import { encryptString, decryptString } from './crypto.js';
@@ -25,6 +27,7 @@ let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
 let isExpedicao = false;
+let notifUnsub = null;
 
 
 function showToast(message, type = 'success') {
@@ -294,12 +297,51 @@ window.requireLogin = (event) => {
   return true;
 };
 
+function initNotificationListener(uid) {
+  const btn = document.getElementById('notificationBtn');
+  const badge = document.getElementById('notificationBadge');
+  const list = document.getElementById('notificationList');
+  if (!btn || !badge || !list) return;
+  if (notifUnsub) notifUnsub();
+  const q = query(
+    collection(db, 'financeiroAtualizacoes'),
+    where('destinatarios', 'array-contains', uid),
+    where('tipo', '==', 'faturamento'),
+    orderBy('createdAt', 'desc')
+  );
+  notifUnsub = onSnapshot(q, snap => {
+    list.innerHTML = '';
+    let count = 0;
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.autorUid === uid) return;
+      const email = data.autorEmail || data.autorNome || '';
+      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
+      const item = document.createElement('div');
+      item.className = 'px-4 py-2 hover:bg-gray-100';
+      item.textContent = `${email} - ${dataFat}`;
+      list.appendChild(item);
+      count++;
+    });
+    if (count > 0) {
+      badge.textContent = count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  });
+  btn.addEventListener('click', () => {
+    list.classList.toggle('hidden');
+  });
+}
+
 function checkLogin() {
  if (authListenerRegistered) return;
   authListenerRegistered = true;
   onAuthStateChanged(auth, user => {
     if (user) {
       showUserArea(user);
+      initNotificationListener(user.uid);
       wasLoggedIn = true;
     } else {
       if (wasLoggedIn && explicitLogout) {
@@ -309,6 +351,7 @@ function checkLogin() {
       }
       wasLoggedIn = false;
       hideUserArea();
+      if (notifUnsub) { notifUnsub(); notifUnsub = null; }
 
       // Sempre exibe o modal se estiver no index.html
       const path = window.location.pathname.toLowerCase();

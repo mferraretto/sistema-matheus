@@ -339,6 +339,7 @@
         const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
         const dadosUsuario = usuarioDoc.data() || {};
         const autorNome = dadosUsuario.nome || firebase.auth().currentUser?.email || '';
+        const autorEmail = firebase.auth().currentUser?.email || '';
         const respEmail = dadosUsuario.responsavelFinanceiroEmail;
         if (!respEmail) return;
         const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
@@ -349,6 +350,8 @@
           descricao,
           autorUid: usuarioLogado.uid,
           autorNome,
+          autorEmail,
+          dataFaturamento: dataRef,
           destinatarios: [responsavelUid, usuarioLogado.uid],
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           anexos: [],
