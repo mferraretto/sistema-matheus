@@ -14,6 +14,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   </head>
   <body class="bg-gray-100" style="font-family: 'Poppins', sans-serif;">
   <div id="sidebar-container"></div>
@@ -61,6 +63,7 @@
     }
     const db = firebase.firestore();
     const storage = firebase.storage();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     let currentUser = null;
     let currentFilter = 'all';
     let viewMode = 'cards';
@@ -69,6 +72,7 @@
     const userNameCache = {};
     let gestoresEmails = [];
     let currentUserName = '';
+    let responsavelExpedicaoUid = null;
 
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
@@ -167,6 +171,17 @@
         const data = snap.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || [];
         gestoresEmails = Array.isArray(emails) ? emails : [emails];
+        const respEmail = Array.isArray(data.gestoresExpedicaoEmails)
+          ? data.gestoresExpedicaoEmails[0]
+          : data.responsavelExpedicaoEmail;
+        if (respEmail) {
+          try {
+            const respSnap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
+            if (!respSnap.empty) responsavelExpedicaoUid = respSnap.docs[0].id;
+          } catch (err) {
+            console.error('Erro ao obter UID do responsável:', err);
+          }
+        }
       } catch (e) {
         console.error('Erro ao carregar dados do usuário:', e);
         gestoresEmails = [];
@@ -258,6 +273,89 @@
       verificarDia();
     }
 
+    function extractStoreFromText(text) {
+      const match = text.match(/(?:Remetente|Loja)[:\s]+([^\n]+)/i);
+      if (match) return match[1].trim();
+      const lines = text.split(/\n/);
+      for (const line of lines) {
+        const m = line.match(/(?:Remetente|Loja)\s*[:\-]?\s*(.+)/i);
+        if (m) return m[1].trim();
+      }
+      return '';
+    }
+
+    function extractSkuQuantitiesFromText(text) {
+      const items = [];
+      const regex = /SKU\s*[:\-]?\s*([\w\.\-\/]+).*?(?:QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/gis;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        items.push({ sku: match[1], quantidade: parseInt(match[2], 10) || 0 });
+      }
+      if (items.length === 0) {
+        const lines = text.split(/\n/).map(l => l.trim());
+        for (let i = 0; i < lines.length; i++) {
+          const skuMatch = lines[i].match(/SKU\s*[:\-]?\s*([\w\.\-\/]+)/i);
+          if (skuMatch) {
+            const next = lines[i + 1] || '';
+            const qtdMatch = next.match(/(QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/i);
+            items.push({ sku: skuMatch[1], quantidade: qtdMatch ? parseInt(qtdMatch[2], 10) || 0 : 0 });
+          }
+        }
+      }
+      return items;
+    }
+
+    async function extractDataFromPdf(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let itens = [];
+      let loja = '';
+      for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale: 2 });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+        if (!loja) loja = extractStoreFromText(text);
+        itens.push(...extractSkuQuantitiesFromText(text));
+      }
+      return { loja, itens };
+    }
+
+    async function savePrintedSkuQuantities(items, loja) {
+      if (!currentUser || !items || items.length === 0) return;
+      const batch = db.batch();
+      const userDoc = db.collection('uid').doc(currentUser.uid);
+      const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
+      items.forEach(item => {
+        const data = {
+          sku: item.sku,
+          quantidade: item.quantidade,
+          loja: loja || '',
+          userUid: currentUser.uid,
+          userEmail: currentUser.email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        batch.set(userDoc.collection('skuimpressos').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+      });
+      await batch.commit();
+    }
+
+    async function processManualLabel(file) {
+      try {
+        const { loja, itens } = await extractDataFromPdf(file);
+        if (itens.length) {
+          await savePrintedSkuQuantities(itens, loja);
+        }
+      } catch (e) {
+        console.error('Erro ao processar OCR da etiqueta:', e);
+      }
+    }
+
     async function uploadManualLabel() {
       const file = manualPdfInput.files[0];
       if (!currentUser || !file) {
@@ -278,6 +376,7 @@
         await fileRef.put(file);
         const url = await fileRef.getDownloadURL();
         await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        await processManualLabel(file);
         manualPdfInput.value = '';
         showToast('Etiqueta adicionada');
         carregarEtiquetas();
