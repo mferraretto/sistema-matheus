@@ -873,15 +873,17 @@ let consulta;
     function processarPlanilha() {
       const fileInput = document.getElementById('inputExcel');
       const file = fileInput.files[0];
-      
+      const feedback = document.getElementById('feedbackImportacao');
+      feedback.innerHTML = '';
+
       if (!file) {
-        mostrarErro('Por favor, selecione um arquivo antes de processar.');
+        feedback.innerHTML = '<span class="badge badge-warning">⚠️ Selecione um arquivo</span>';
         return;
       }
-      
+
       try {
         toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
-        
+
         const reader = new FileReader();
         reader.onload = function(e) {
           try {
@@ -889,24 +891,25 @@ let consulta;
             const wb = XLSX.read(data, { type: 'array' });
             const sheet = wb.Sheets[wb.SheetNames[0]];
             const pedidos = XLSX.utils.sheet_to_json(sheet);
-            
+
             processarPedidos(pedidos);
+            feedback.innerHTML = '<span class="badge badge-success">✔️ Importado com sucesso</span>';
           } catch (error) {
-            mostrarErro(`Erro ao ler o arquivo: ${error.message}`);
+            feedback.innerHTML = '<span class="badge badge-danger">⚠️ Erro no arquivo</span>';
             console.error("Erro ao ler arquivo:", error);
           } finally {
             toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
           }
         };
-        
+
         reader.onerror = function() {
-          mostrarErro('Erro ao ler o arquivo. Por favor, tente novamente.');
+          feedback.innerHTML = '<span class="badge badge-danger">⚠️ Erro no arquivo</span>';
           toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
         };
-        
+
         reader.readAsArrayBuffer(file);
       } catch (error) {
-        mostrarErro(`Erro ao processar o arquivo: ${error.message}`);
+        feedback.innerHTML = '<span class="badge badge-danger">⚠️ Erro no arquivo</span>';
         console.error("Erro ao processar arquivo:", error);
         toggleLoading(document.getElementById('btnProcessar'), 'Processar Planilha');
       }
@@ -951,29 +954,33 @@ let consulta;
 
         const tr = document.createElement('tr');
         
-        // Determinar classe CSS baseada no desempenho
-        let statusClass = '';
+        // Determinar status e ícones
         let statusText = '';
-        
+        let statusIcon = '';
+        let rowClass = '';
+
         if (meta) {
           if (percentual <= -10) {
-            statusClass = 'danger';
             statusText = 'Crítico';
+            statusIcon = '❌';
+            rowClass = 'status-critico';
           } else if (percentual <= -5) {
-            statusClass = 'warning';
             statusText = 'Atenção';
+            statusIcon = '⚠️';
           } else if (percentual >= 5) {
-            statusClass = 'success';
             statusText = 'Bom';
+            statusIcon = '✔️';
+            rowClass = 'status-correto';
           } else {
-            statusClass = 'info';
             statusText = 'Normal';
+            statusIcon = '✔️';
           }
         } else {
-          statusClass = 'secondary';
           statusText = 'Sem meta';
+          statusIcon = '⚠️';
         }
 
+        tr.className = rowClass;
         tr.innerHTML = `
           <td>${id}</td>
           <td>${sku}</td>
@@ -984,7 +991,7 @@ let consulta;
           <td>R$ ${servico.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
           <td><strong>R$ ${sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong><br><small>Meta: R$ ${meta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</small></td>
           <td>${percentual.toFixed(2)}%</td>
-          <td><span class="badge badge-${statusClass}">${statusText}</span></td>
+          <td class="status-only" data-status="${statusText}">${statusIcon} ${statusText}</td>
         `;
         
         tbody.appendChild(tr);
@@ -1122,6 +1129,11 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
 
         const tr = document.createElement('tr');
         tr.dataset.status = statusLinha;
+
+        const progresso = (item.status === 'postado' ? 1 : 0) + (item.checklist.itens ? 1 : 0) + (item.checklist.etiqueta ? 1 : 0) + (item.checklist.lacre ? 1 : 0);
+        const progressoPercent = (progresso / 4) * 100;
+        const corProgresso = progressoPercent === 100 ? 'var(--success)' : (progressoPercent >= 50 ? '#f59e0b' : 'var(--danger)');
+
         tr.innerHTML = `
           <td>${p.id}</td>
           <td class="${statusLinha !== 'postado' ? 'text-red-600 font-bold' : ''}">
@@ -1136,6 +1148,7 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
             <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','etiqueta', this.checked)" ${item.checklist.etiqueta ? 'checked' : ''}/> Etiqueta</label><br>
             <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','lacre', this.checked)" ${item.checklist.lacre ? 'checked' : ''}/> Lacre</label>
           </td>
+          <td><div class="progress-wrapper"><div class="progress-bar" style="width:${progressoPercent}%; background:${corProgresso};"></div></div></td>
           <td>${postadoPrazo === null ? '-' : postadoPrazo ? 'Sim' : 'Não'}</td>
         `;
         tbody.appendChild(tr);
@@ -1594,6 +1607,22 @@ await db
     // =============================================
     // FUNÇÕES DE EXPORTAÇÃO
     // =============================================
+
+    function toggleExportMenu() {
+      const menu = document.getElementById('exportMenu');
+      if (menu) {
+        menu.classList.toggle('show');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('exportMenu');
+      const btn = document.getElementById('btnExportar');
+      if (!menu || !btn) return;
+      if (!btn.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.remove('show');
+      }
+    });
     
     function exportarCSV() {
       if (pedidosProcessados.length === 0) {
@@ -2491,7 +2520,7 @@ function filtrarPorSKU() {
 
   linhas.forEach(linha => {
     const sku = linha.children[1].textContent.toLowerCase();
-    const status = linha.children[9].textContent.trim().toLowerCase();
+    const status = linha.querySelector('.status-only')?.dataset.status.toLowerCase() || '';
 
     let corresponde = false;
 
@@ -2522,6 +2551,7 @@ window.mostrarDetalhesSobra = mostrarDetalhesSobra;
 window.mostrarDetalhesFaturamento = mostrarDetalhesFaturamento;
 window.excluirFaturamento = excluirFaturamento;
 window.analisarSobrasIA = analisarSobrasIA;
+window.exportarCSV = exportarCSV;
 window.exportarJSON = exportarJSON;
 window.verificarConexao = verificarConexao;
 window.editarMeta = editarMeta;
@@ -2532,6 +2562,7 @@ window.atualizarRastreio = atualizarRastreio;
 window.atualizarChecklist = atualizarChecklist;
 window.aplicarFiltroLogistica = aplicarFiltroLogistica;
   window.processarPlanilha = processarPlanilha;
+window.toggleExportMenu = toggleExportMenu;
 
 </script>
 <script src="shared.js"></script>

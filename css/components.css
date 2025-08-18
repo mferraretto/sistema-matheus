@@ -7,6 +7,7 @@
 }
 .card:hover {
   box-shadow: 0 15px 25px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 .card-header {
   display: flex;
@@ -30,6 +31,14 @@
   transition: background-color .2s, color .2s, box-shadow .2s;
   border: none;
   cursor: pointer;
+}
+.btn:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
 }
 .btn-primary {
   background-color: var(--primary);
@@ -56,6 +65,32 @@
 }
 .btn-ghost:hover {
   background-color: rgba(255,112,67,0.1);
+}
+
+.dropdown {
+  position: relative;
+}
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.5rem;
+  min-width: 150px;
+  z-index: 100;
+}
+.dropdown-menu.show {
+  display: block;
+}
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  display: block;
+  cursor: pointer;
+}
+.dropdown-item:hover {
+  background: #f3f4f6;
 }
 
 .action-link {
@@ -163,6 +198,15 @@
   width: 0%;
   background: var(--primary);
   transition: width 0.3s ease;
+}
+
+body.dark-mode .card {
+  background-color: #2d2d2d;
+  color: #eee;
+}
+body.dark-mode .dropdown-menu {
+  background: #333;
+  border-color: #555;
 }
 
 body.dark-mode .card-header {
