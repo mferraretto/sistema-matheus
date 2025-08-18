@@ -105,13 +105,19 @@
             <div class="progress-wrapper">
               <div id="tarefasProgressBar" class="progress-bar"></div>
             </div>
-            <div>
-              <h3 class="font-semibold mb-2">Pendentes</h3>
-              <ul id="listaTarefas" class="space-y-2"></ul>
-            </div>
-            <div>
-              <h3 class="font-semibold mb-2">Concluídas</h3>
-              <ul id="listaTarefasFeitas" class="space-y-2 text-gray-600"></ul>
+            <div class="kanban-board grid gap-4 md:grid-cols-3">
+              <div>
+                <h3 class="font-semibold mb-2">Pendentes</h3>
+                <ul id="listaTarefasPendentes" class="space-y-2"></ul>
+              </div>
+              <div>
+                <h3 class="font-semibold mb-2">Em andamento</h3>
+                <ul id="listaTarefasAndamento" class="space-y-2"></ul>
+              </div>
+              <div>
+                <h3 class="font-semibold mb-2">Concluídas</h3>
+                <ul id="listaTarefasFeitas" class="space-y-2 text-gray-600"></ul>
+              </div>
             </div>
           </div>
         </div>

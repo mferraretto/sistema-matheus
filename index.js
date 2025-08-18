@@ -244,10 +244,12 @@ async function carregarTopSkus(uid, isAdmin) {
   el.innerHTML = `<div class="space-y-2">${linhas}</div>`;
 }
 async function carregarTarefas(uid, isAdmin) {
-  const lista = document.getElementById('listaTarefas');
+  const listaPend = document.getElementById('listaTarefasPendentes');
+  const listaAnd = document.getElementById('listaTarefasAndamento');
   const listaFeitas = document.getElementById('listaTarefasFeitas');
-  if (!lista || !listaFeitas) return;
-  lista.innerHTML = '<li class="placeholder text-gray-500">Carregando...</li>';
+  if (!listaPend || !listaAnd || !listaFeitas) return;
+  listaPend.innerHTML = '<li class="placeholder text-gray-500">Carregando...</li>';
+  listaAnd.innerHTML = '';
   listaFeitas.innerHTML = '';
 
   const tarefas = [
@@ -257,75 +259,65 @@ async function carregarTarefas(uid, isAdmin) {
     '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/zpl-import.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
   ];
   const hoje = new Date();
-  const storageKey = `tarefasFeitas_${hoje.toISOString().slice(0,10)}`;
-  const concluidas = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  const pendentes = tarefas.filter(t => !concluidas.includes(t));
-  const feitas = tarefas.filter(t => concluidas.includes(t));
+  const storageKey = `tarefasStatus_${hoje.toISOString().slice(0,10)}`;
+  const statusMap = JSON.parse(localStorage.getItem(storageKey) || '{}');
 
-const render = (t, done = false) => {
-    const checked = done ? 'checked' : '';
-    const completedClass = done ? ' completed' : '';
-    return `<li class="task-item${completedClass}"><input type="checkbox" class="task-checkbox" data-tarefa="${t}" ${checked}><span class="task-text${completedClass}">${t}</span></li>`;
-  };
+  const pendentes = tarefas.filter(t => statusMap[t] === 'pendente' || !statusMap[t]);
+  const andamento = tarefas.filter(t => statusMap[t] === 'andamento');
+  const feitas = tarefas.filter(t => statusMap[t] === 'feito');
 
-  lista.innerHTML = pendentes.length
-    ? pendentes.map(t => render(t)).join('')
+  function iconFor(status) {
+    return status === 'feito' ? '✔️' : status === 'andamento' ? '🔄' : '⏳';
+  }
+
+  function render(t, status) {
+    const leftBtn = status !== 'pendente'
+      ? `<button class="task-btn" data-move="-1" data-tarefa="${t}">&#8592;</button>`
+      : '';
+    const rightBtn = status !== 'feito'
+      ? `<button class="task-btn" data-move="1" data-tarefa="${t}">&#8594;</button>`
+      : '';
+    const textClass = status === 'feito' ? ' completed' : '';
+    return `<li class="task-item${status === 'feito' ? ' completed' : ''}">`+
+           `<span class="task-text${textClass}"><span class="status-icon">${iconFor(status)}</span>${t}</span>`+
+           `<div class="task-actions">${leftBtn}${rightBtn}</div>`+
+           `</li>`;
+  }
+
+  listaPend.innerHTML = pendentes.length
+    ? pendentes.map(t => render(t, 'pendente')).join('')
     : '<li class="placeholder text-gray-500">Sem tarefas pendentes</li>';
+  listaAnd.innerHTML = andamento.length
+    ? andamento.map(t => render(t, 'andamento')).join('')
+    : '<li class="placeholder text-gray-500">Nenhuma tarefa em andamento</li>';
   listaFeitas.innerHTML = feitas.length
-    ? feitas.map(t => render(t, true)).join('')
+    ? feitas.map(t => render(t, 'feito')).join('')
     : '<li class="placeholder text-gray-500">Nenhuma tarefa concluída</li>';
-function atualizarProgresso() {
-    const total = lista.querySelectorAll('li:not(.placeholder)').length +
-                  listaFeitas.querySelectorAll('li:not(.placeholder)').length;
-    const concluidasQtd = listaFeitas.querySelectorAll('li:not(.placeholder)').length;
+
+  function atualizarProgresso() {
+    const total = tarefas.length;
+    const concluidasQtd = feitas.length;
     const percent = total ? (concluidasQtd / total) * 100 : 0;
     const bar = document.getElementById('tarefasProgressBar');
     if (bar) bar.style.width = `${percent}%`;
   }
 
-  function updateStorage(desc, done) {
-    const arr = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const idx = arr.indexOf(desc);
-    if (done && idx === -1) arr.push(desc);
-    if (!done && idx !== -1) arr.splice(idx, 1);
-    localStorage.setItem(storageKey, JSON.stringify(arr));
+  function moveTask(desc, direction) {
+    const order = ['pendente', 'andamento', 'feito'];
+    const current = statusMap[desc] || 'pendente';
+    let idx = order.indexOf(current) + direction;
+    if (idx < 0) idx = 0;
+    if (idx >= order.length) idx = order.length - 1;
+    statusMap[desc] = order[idx];
+    localStorage.setItem(storageKey, JSON.stringify(statusMap));
+    carregarTarefas(uid, isAdmin);
   }
 
-  function updatePlaceholders() {
-    if (!lista.children.length) {
-      lista.innerHTML = '<li class="placeholder text-gray-500">Sem tarefas pendentes</li>';
-    }
-    if (!listaFeitas.children.length) {
-      listaFeitas.innerHTML = '<li class="placeholder text-gray-500">Nenhuma tarefa concluída</li>';
-    }
-  }
-
-  function moverTarefa(chk) {
-    const li = chk.closest('li');
-    const desc = chk.getAttribute('data-tarefa');
-    if (chk.checked) {
-      const ph = listaFeitas.querySelector('.placeholder');
-      if (ph) ph.remove();
-li.classList.add('completed');
-      li.querySelector('.task-text').classList.add('completed');
-      listaFeitas.appendChild(li);
-      updateStorage(desc, true);
-    } else {
-      const ph = lista.querySelector('.placeholder');
-      if (ph) ph.remove();
-        li.classList.remove('completed');
-      li.querySelector('.task-text').classList.remove('completed');
-      lista.appendChild(li);
-      updateStorage(desc, false);
-    }
-    updatePlaceholders();
-        atualizarProgresso();
-  }
-
-  document.querySelectorAll('#listaTarefas input[type="checkbox"], #listaTarefasFeitas input[type="checkbox"]').forEach(chk => {
-    chk.addEventListener('change', () => moverTarefa(chk));
+  document.querySelectorAll('#tarefasCard .task-actions button').forEach(btn => {
+    btn.addEventListener('click', () => moveTask(btn.dataset.tarefa, parseInt(btn.dataset.move)));
   });
-    atualizarProgresso();
+
+  atualizarProgresso();
 }
 
 async function iniciarPainel(user) {
