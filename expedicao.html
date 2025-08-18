@@ -38,6 +38,10 @@
       <button class="view-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-view="cards" title="Exibição em cartões"><i class="fas fa-th"></i></button>
       <button class="view-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition" data-view="list" title="Exibição em lista"><i class="fas fa-list"></i></button>
     </div>
+    <div id="manualUpload" class="mb-4 flex flex-wrap items-center gap-2">
+      <input type="file" id="manualPdfInput" accept="application/pdf" class="form-control" />
+      <button id="uploadManualBtn" class="btn btn-primary">Adicionar etiqueta</button>
+    </div>
     <div id="labelsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
 
@@ -63,6 +67,8 @@
     let diaDocRef = null;
     let isResponsavel = false;
     const userNameCache = {};
+    let gestoresEmails = [];
+    let currentUserName = '';
 
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
@@ -71,6 +77,9 @@
     const sobrasDiv = document.getElementById('sobrasFields');
     const sobrasQtdInput = document.getElementById('sobrasQuantidade');
     const sobrasMotivoInput = document.getElementById('sobrasMotivo');
+    const manualPdfInput = document.getElementById('manualPdfInput');
+    const uploadManualBtn = document.getElementById('uploadManualBtn');
+    uploadManualBtn.addEventListener('click', uploadManualLabel);
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -101,6 +110,7 @@
     firebase.auth().onAuthStateChanged(async user => {
       if (user) {
         currentUser = user;
+        await carregarDadosUsuario();
         await verificarResponsavel();
         carregarEtiquetas();
         if (isResponsavel) {
@@ -150,6 +160,20 @@
       return email || 'Desconhecido';
     }
 
+    async function carregarDadosUsuario() {
+      try {
+        currentUserName = await getOwnerName(currentUser.uid, currentUser.email);
+        const snap = await db.collection('uid').doc(currentUser.uid).get();
+        const data = snap.data() || {};
+        const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || [];
+        gestoresEmails = Array.isArray(emails) ? emails : [emails];
+      } catch (e) {
+        console.error('Erro ao carregar dados do usuário:', e);
+        gestoresEmails = [];
+        currentUserName = currentUser.email;
+      }
+    }
+
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
@@ -169,7 +193,7 @@
         if (!allowed) continue;
         const status = data.status || 'nao_impresso';
         if (filter !== 'all' && status !== filter) continue;
-        const ownerName = await getOwnerName(data.ownerUid, data.ownerEmail);
+        const ownerName = data.ownerName || await getOwnerName(data.ownerUid, data.ownerEmail);
         const item = viewMode === 'cards' ? createPdfCard(doc, ownerName) : createPdfListItem(doc, ownerName);
         list.appendChild(item);
       }
@@ -232,6 +256,35 @@
       sobrasMotivoInput.value = '';
       showToast('Dia encerrado');
       verificarDia();
+    }
+
+    async function uploadManualLabel() {
+      const file = manualPdfInput.files[0];
+      if (!currentUser || !file) {
+        alert('Selecione um arquivo PDF.');
+        return;
+      }
+      try {
+        const docRef = await db.collection('pdfDocs').add({
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email,
+          ownerName: currentUserName,
+          gestoresExpedicaoEmails: gestoresEmails,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          name: file.name,
+          status: 'nao_impresso'
+        });
+        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        await fileRef.put(file);
+        const url = await fileRef.getDownloadURL();
+        await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        manualPdfInput.value = '';
+        showToast('Etiqueta adicionada');
+        carregarEtiquetas();
+      } catch (e) {
+        console.error('Erro ao enviar etiqueta:', e);
+        alert('Erro ao enviar etiqueta');
+      }
     }
 
     async function gerarRelatorioDia(inicio, fim, diaDados) {
