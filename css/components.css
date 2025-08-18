@@ -13,6 +13,8 @@
   align-items: center;
   border-bottom: 1px solid var(--border, #e5e7eb);
   padding: 0.75rem 1rem;
+  background: linear-gradient(90deg, #ff7a00, #e0bbff);
+  color: #fff;
 }
 .card-body {
   padding: 1rem;
@@ -161,4 +163,9 @@
   width: 0%;
   background: var(--primary);
   transition: width 0.3s ease;
+}
+
+body.dark-mode .card-header {
+  background: linear-gradient(90deg, #ff8a65, #7e57c2);
+  color: #f0f0f0;
 }
