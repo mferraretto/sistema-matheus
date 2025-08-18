@@ -1215,6 +1215,32 @@ tr:hover {
   min-width: 200px;
   margin-bottom: 0
 }
+.form-row .form-group.compact {
+  flex: 0 0 150px;
+  min-width: 150px;
+}
+.form-row button.compact {
+  flex: 0 0 auto;
+}
+
+.actions-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.status-critico {
+  background-color: #ffebee;
+  color: #b71c1c;
+  font-weight: bold;
+}
+
+.status-correto {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+}
 .input-with-icon {
   position: relative
 }

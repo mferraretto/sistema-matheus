@@ -1,127 +1,128 @@
-    <div class="card">
-          <div class="card-header">
-            <i class="fas fa-file-import"></i>
-            <h3>Importar Planilha</h3>
-             <span class="tooltip tooltip-lg ml-2" data-tooltip="Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas. Para conferir pedidos, exporte a planilha da Shopee acessando Home > Meus Pedidos > Todos > Exportar e escolhendo o período desejado. Importe esse arquivo para preencher a tabela.">
-              <i class="fas fa-question-circle text-blue-600"></i>
-            </span>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
-            </div>
-            <button onclick="processarPlanilha()" class="btn btn-primary" id="btnProcessar">
-              <span id="btnProcessarText"><i class="fas fa-cogs"></i> Processar Planilha</span>
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-filter"></i>
-            <h3>Filtrar Resultados</h3>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <select id="tipoFiltro" class="form-control">
-                <option value="exata">Correspondência Exata</option>
-                <option value="comeca">Começa com</option>
-                <option value="contem">Contém</option>
-              </select>
-            </div>
-            <div class="form-group input-with-icon">
-              <i class="fas fa-search"></i>
-              <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
-            </div>
-            <div class="form-group">
-   <select id="filtroStatus" class="form-control">
-      <option value="">Todos os Status</option>
-      <option value="Crítico">Crítico</option>
-      <option value="Atenção">Atenção</option>
-      <option value="Bom">Bom</option>
-      <option value="Normal">Normal</option>
-      <option value="Sem meta">Sem meta</option>
-    </select>
+<div class="card import-card">
+  <div class="card-header">
+    <i class="fas fa-file-import"></i>
+    <h3>Importar Planilha</h3>
+    <span class="tooltip tooltip-lg ml-2" data-tooltip="Importe o relatório de pedidos da Shopee para calcular automaticamente as sobras e comparar com suas metas cadastradas. Para conferir pedidos, exporte a planilha da Shopee acessando Home &gt; Meus Pedidos &gt; Todos &gt; Exportar e escolhendo o período desejado. Importe esse arquivo para preencher a tabela.">
+      <i class="fas fa-question-circle text-blue-600"></i>
+    </span>
   </div>
+  <div class="form-row">
+    <div class="form-group">
+      <input type="file" id="inputExcel" accept=".xlsx, .xls" class="form-control" />
+    </div>
+    <button onclick="processarPlanilha()" class="btn btn-success btn-lg" id="btnProcessar" style="margin-left:auto;">
+      <span id="btnProcessarText"><i class="fas fa-upload"></i> Processar Planilha</span>
+    </button>
+  </div>
+  <div id="feedbackImportacao" class="mt-2"></div>
+</div>
 
+<div class="card filtros-resultados-card">
+  <div class="card-header">
+    <i class="fas fa-filter"></i>
+    <h3>Filtros e Resultados</h3>
+  </div>
+  <div class="form-row">
+    <div class="form-group compact">
+      <select id="tipoFiltro" class="form-control">
+        <option value="exata">Correspondência Exata</option>
+        <option value="comeca">Começa com</option>
+        <option value="contem">Contém</option>
+      </select>
+    </div>
+    <div class="form-group input-with-icon">
+      <i class="fas fa-search"></i>
+      <input type="text" id="filtroSKU" placeholder="Digite o SKU..." class="form-control" />
+    </div>
+    <div class="form-group compact">
+      <select id="filtroStatus" class="form-control">
+        <option value="">Todos os Status</option>
+        <option value="Crítico">Crítico</option>
+        <option value="Atenção">Atenção</option>
+        <option value="Bom">Bom</option>
+        <option value="Normal">Normal</option>
+        <option value="Sem meta">Sem meta</option>
+      </select>
+    </div>
+    <button onclick="limparFiltros()" class="btn btn-outline compact">
+      <i class="fas fa-times"></i> Limpar
+    </button>
+  </div>
+  <div class="table-container">
+    <table id="resultado" class="data-table">
+      <thead>
+        <tr>
+          <th>ID do Pedido</th>
+          <th>SKU</th>
+          <th>Subtotal</th>
+          <th>Reembolso</th>
+          <th>Cupom</th>
+          <th>Comissão</th>
+          <th>Serviço</th>
+          <th>Sobra</th>
+          <th>% vs Meta</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div id="totalSobra" style="margin-top: 1.5rem;"></div>
+</div>
 
-            <button onclick="limparFiltros()" class="btn btn-outline">
-              <i class="fas fa-times"></i> Limpar Filtros
-            </button>
-          </div>
-        </div>
-        
-        <div class="card">
-          <div class="card-header">
-            <i class="fas fa-table"></i>
-            <h3>Resultados da Conferência</h3>
-          </div>
-          <div class="table-container">
-            <table id="resultado">
-              <thead>
-                <tr>
-                  <th>ID do Pedido</th>
-                  <th>SKU</th>
-                  <th>Subtotal</th>
-                  <th>Reembolso</th>
-                  <th>Cupom</th>
-                  <th>Comissão</th>
-                  <th>Serviço</th>
-                  <th>Sobra</th>
-                  <th>% vs Meta</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="mt-4">
-            <button onclick="analisarSobrasIA()" class="btn btn-primary">
-              <i class="fas fa-robot"></i> Analisar Sobras com IA
-            </button>
-            <input type="hidden" id="dadosSobrasIA">
-            <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
-          </div>
-          <div id="totalSobra" style="margin-top: 1.5rem;"></div>
-          
-          <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-            <button onclick="exportarCSV()" class="btn btn-primary">
-              <i class="fas fa-file-export"></i> Exportar CSV
-            </button>
-            <button onclick="exportarJSON()" class="btn btn-outline">
-              <i class="fas fa-file-code"></i> Exportar JSON
-            </button>
-          </div>
-        </div>
+<div class="card acoes-card">
+  <div class="card-header">
+    <i class="fas fa-bolt"></i>
+    <h3>Ações</h3>
+  </div>
+  <div class="actions-row">
+    <div class="dropdown">
+      <button class="btn btn-primary btn-lg" onclick="toggleExportMenu()" id="btnExportar">
+        <i class="fas fa-file-export"></i> Exportar como...
+      </button>
+      <div class="dropdown-menu" id="exportMenu">
+        <a class="dropdown-item" onclick="exportarCSV()">CSV</a>
+        <a class="dropdown-item" onclick="exportarJSON()">JSON</a>
+      </div>
+    </div>
+    <button onclick="analisarSobrasIA()" class="btn btn-secondary btn-lg">
+      <i class="fas fa-robot"></i> Analisar com IA
+    </button>
+  </div>
+  <input type="hidden" id="dadosSobrasIA">
+  <div id="resultadoIA" class="bg-gray-100 border border-gray-300 rounded p-3 mt-3 whitespace-pre-wrap"></div>
+</div>
 
-        <div class="card" id="controleLogistico">
-          <div class="card-header">
-            <i class="fas fa-truck"></i>
-            <h3>Controle Logístico</h3>
-            <span id="alertasLogistica" class="ml-4 text-red-600 font-semibold"></span>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <select id="filtroStatusLogistica" class="form-control" onchange="aplicarFiltroLogistica()">
-                <option value="">Todos os Status</option>
-                <option value="pendente">Pendente</option>
-                <option value="prazo">Prazo Próximo</option>
-                <option value="postado">Postado</option>
-              </select>
-            </div>
-          </div>
-          <div class="table-container">
-            <table id="tabelaLogistica">
-              <thead>
-                <tr>
-                  <th>Pedido</th>
-                  <th>Status</th>
-                  <th>Código de Rastreio</th>
-                  <th>Checklist</th>
-                  <th>Postado no Prazo</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
+<div class="card" id="controleLogistico">
+  <div class="card-header">
+    <i class="fas fa-truck"></i>
+    <h3>Controle Logístico</h3>
+    <span id="alertasLogistica" class="ml-4 text-red-600 font-semibold"></span>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <select id="filtroStatusLogistica" class="form-control" onchange="aplicarFiltroLogistica()">
+        <option value="">Todos os Status</option>
+        <option value="pendente">Pendente</option>
+        <option value="prazo">Prazo Próximo</option>
+        <option value="postado">Postado</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-container">
+    <table id="tabelaLogistica">
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Status</th>
+          <th>Código de Rastreio</th>
+          <th>Checklist</th>
+          <th>Progresso</th>
+          <th>Postado no Prazo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
