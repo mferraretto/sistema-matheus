@@ -65,9 +65,10 @@
     });
   }
 // Load sidebar HTML into placeholder
-  window.loadSidebar = function(containerId) {
+  window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
-    return fetch(BASE_PATH + 'partials/sidebar.html')
+    sidebarPath = sidebarPath || 'partials/sidebar.html';
+    return fetch(BASE_PATH + sidebarPath)
       .then(function(res) { return res.text(); })
       .then(function(html) {
         var container = document.getElementById(containerId);
@@ -172,7 +173,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   loadTailwind().then(function () {
-    window.loadSidebar().then(function () {
+    window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH).then(function () {
       window.initDarkMode();
     });
     window.loadNavbar();
