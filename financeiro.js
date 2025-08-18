@@ -14,6 +14,7 @@ let dadosSkusExport = [];
 let dadosSaquesExport = [];
 let dadosFaturamentoExport = [];
 let resumoUsuarios = {};
+let kpiUnsubs = [];
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -33,6 +34,7 @@ onAuthStateChanged(auth, async user => {
   setupFiltros(usuarios);
   await carregar();
   initFaturamentoFeed(usuarios);
+  initKpiRealtime();
 });
 
 function setupFiltros(usuarios) {
@@ -324,6 +326,68 @@ function initFaturamentoFeed(usuarios) {
       });
     });
   });
+}
+
+function initKpiRealtime() {
+  const userSel = document.getElementById('usuarioFiltro');
+  const mesSel = document.getElementById('mesFiltro');
+  if (userSel) userSel.addEventListener('change', subscribeKPIs);
+  if (mesSel) mesSel.addEventListener('change', subscribeKPIs);
+  subscribeKPIs();
+}
+
+function subscribeKPIs() {
+  kpiUnsubs.forEach(fn => fn());
+  kpiUnsubs = [];
+  const uid = document.getElementById('usuarioFiltro')?.value;
+  const mes = document.getElementById('mesFiltro')?.value;
+  const vendasEl = document.getElementById('kpiVendasDia');
+  const metaEl = document.getElementById('kpiMetaAtingida');
+  const devEl = document.getElementById('kpiDevolucoes');
+  if (!vendasEl || !metaEl || !devEl) return;
+  if (!uid || uid === 'todos') {
+    vendasEl.textContent = '-';
+    metaEl.textContent = '-';
+    devEl.textContent = '-';
+    return;
+  }
+  const diaAtual = new Date().toISOString().slice(0,10);
+  let metaValor = 0;
+  const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
+  const unsubMeta = onSnapshot(metaRef, snap => {
+    metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
+  });
+  kpiUnsubs.push(unsubMeta);
+
+  const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
+  const unsubFat = onSnapshot(faturamentoRef, async snap => {
+    let totalMes = 0;
+    let vendasDia = 0;
+    for (const d of snap.docs) {
+      if (mes && !d.id.includes(mes)) continue;
+      const totalDia = await calcularFaturamentoDia(uid, d.id);
+      totalMes += totalDia;
+      if (d.id === diaAtual) vendasDia = totalDia;
+    }
+    vendasEl.textContent = `R$ ${vendasDia.toLocaleString('pt-BR')}`;
+    const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+    metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
+  });
+  kpiUnsubs.push(unsubFat);
+
+  const devolucoesRef = collection(db, `uid/${uid}/devolucoes`);
+  const unsubDev = onSnapshot(devolucoesRef, snap => {
+    const hoje = new Date().toISOString().slice(0,10);
+    let qtd = 0;
+    snap.forEach(docSnap => {
+      if (docSnap.id.includes(hoje)) {
+        const dados = docSnap.data();
+        qtd += Number(dados.quantidade || dados.total || 1);
+      }
+    });
+    devEl.textContent = qtd;
+  });
+  kpiUnsubs.push(unsubDev);
 }
 
 function renderResumoUsuarios(lista) {
