@@ -93,8 +93,10 @@ function maybeStartTour() {
 
 async function carregarResumoFaturamento(uid, isAdmin) {
   const el = document.getElementById('resumoFaturamento');
+  const kpiEl = document.getElementById('kpiCards');
   if (!el) return;
   el.innerHTML = 'Carregando...';
+  if (kpiEl) kpiEl.innerHTML = 'Carregando...';
   const hoje = new Date();
   const mesAtual = hoje.toISOString().slice(0,7); // YYYY-MM
   let totalLiquido = 0;
@@ -139,10 +141,25 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   }
   const labels = Object.keys(dias).sort((a,b)=>a.localeCompare(b));
   const valores = labels.map(d=>dias[d]);
+  const lucro = totalLiquido - totalBruto;
+  if (kpiEl) {
+    const kpis = [
+      { titulo: 'Lucro', valor: lucro, moeda: true },
+      { titulo: 'Receita Bruta', valor: totalBruto, moeda: true },
+      { titulo: 'Receita Líquida', valor: totalLiquido, moeda: true },
+      { titulo: 'Pedidos', valor: pedidos, moeda: false }
+    ];
+    kpiEl.innerHTML = kpis.map(k => `
+      <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+        <div class="text-sm text-gray-500">${k.titulo}</div>
+        <div class="text-2xl font-bold">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
+      </div>
+    `).join('');
+  }
   el.innerHTML = `
       <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
         <div class="card-header">
-          <div class="card-header-icon"><i class="fas fa-wallet text-xl"></i></div>
+          <div class="card-header-icon"><span class="text-2xl">💰</span></div>
           <div>
             <h2 class="text-xl font-extrabold text-gray-800">Faturamento do Mês</h2>
             <p class="text-gray-600 text-sm">${pedidos} pedidos</p>

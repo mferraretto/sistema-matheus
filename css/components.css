@@ -1,12 +1,12 @@
 /* Consolidated component styles without Tailwind's @apply */
 .card {
   background-color: #f9f9f9;
-  border-radius: 0.75rem; /* rounded-xl */
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 1rem; /* rounded-2xl */
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
   transition: box-shadow .2s;
 }
 .card:hover {
-  box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 15px 25px rgba(0,0,0,0.1);
 }
 .card-header {
   display: flex;
