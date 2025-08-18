@@ -70,6 +70,20 @@
     let gestoresEmails = [];
     let currentUserName = '';
 
+    async function registrarHistorico(acao, detalhes = '') {
+      if (!currentUser) return;
+      try {
+        await db.collection('historicoExpedicao').add({
+          acao,
+          detalhes: typeof detalhes === 'string' ? detalhes : JSON.stringify(detalhes),
+          usuario: currentUser.email,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        console.error('Erro ao registrar histórico:', e);
+      }
+    }
+
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
     startBtn.addEventListener('click', iniciarDia);
@@ -232,6 +246,7 @@
       closeBtn.classList.remove('hidden');
       sobrasDiv.classList.remove('hidden');
       showToast('Dia iniciado');
+      await registrarHistorico('iniciarDia');
     }
 
     async function fecharDia() {
@@ -255,6 +270,10 @@
       sobrasQtdInput.value = '';
       sobrasMotivoInput.value = '';
       showToast('Dia encerrado');
+      await registrarHistorico('fecharDia', {
+        sobrasQuantidade: sobrasQtd,
+        sobrasMotivo: sobrasMotivo
+      });
       verificarDia();
     }
 
@@ -280,6 +299,7 @@
         await docRef.update({ url: url, storagePath: fileRef.fullPath });
         manualPdfInput.value = '';
         showToast('Etiqueta adicionada');
+        await registrarHistorico('uploadManualLabel', file.name);
         carregarEtiquetas();
       } catch (e) {
         console.error('Erro ao enviar etiqueta:', e);
@@ -506,6 +526,7 @@
         card.classList.add(checked ? 'bg-green-100' : 'bg-yellow-100');
       }
       showToast('Status atualizado');
+      await registrarHistorico('toggleImpresso', { id, status: checked ? 'impresso' : 'nao_impresso' });
     }
     window.toggleImpresso = toggleImpresso;
 
@@ -513,6 +534,7 @@
       await db.collection('pdfDocs').doc(id).update({ status: 'concluido' });
       if (card) card.remove();
       showToast('Marcado como concluído');
+      await registrarHistorico('marcarConcluido', { id });
     }
     window.marcarConcluido = marcarConcluido;
 
@@ -532,12 +554,14 @@
         }
       }
       showToast('Atualizado');
+      await registrarHistorico('toggleAtencao', { id, atencao: checked });
     }
     window.toggleAtencao = toggleAtencao;
 
     async function salvarObservacao(id, texto) {
       await db.collection('pdfDocs').doc(id).update({ observacao: texto });
       showToast('Observação salva');
+      await registrarHistorico('salvarObservacao', { id, observacao: texto });
     }
     window.salvarObservacao = salvarObservacao;
 

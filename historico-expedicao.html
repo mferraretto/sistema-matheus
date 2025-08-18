@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico da Expedição</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <main class="main-content p-4 space-y-4">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-bold">📚 Histórico da Expedição</h2>
+      </div>
+      <div class="card-body overflow-x-auto">
+        <table class="min-w-full text-sm" id="historicoTable">
+          <thead>
+            <tr>
+              <th class="px-2 py-1 text-left">Data</th>
+              <th class="px-2 py-1 text-left">Usuário</th>
+              <th class="px-2 py-1 text-left">Ação</th>
+              <th class="px-2 py-1 text-left">Detalhes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="historico-expedicao.js"></script>
+  <script src="shared.js"></script>
+</body>
+</html>
