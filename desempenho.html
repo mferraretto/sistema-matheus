@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Desempenho</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <main class="main-content p-4 space-y-4">
+    <div class="card p-4 flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2">
+        <i class="fa fa-calendar text-blue-500"></i>
+        <div class="flex flex-col">
+          <label for="inicio" class="text-xs font-medium">Início</label>
+          <input type="date" id="inicio" class="border rounded p-2 text-sm" />
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <i class="fa fa-calendar text-blue-500"></i>
+        <div class="flex flex-col">
+          <label for="fim" class="text-xs font-medium">Fim</label>
+          <input type="date" id="fim" class="border rounded p-2 text-sm" />
+        </div>
+      </div>
+      <button id="carregar" class="btn btn-primary text-sm">Carregar</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-trophy"></i> Ranking dos vendedores</h2>
+      </div>
+      <div class="card-body">
+        <table id="rankingTable" class="data-table w-full text-sm"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> Evolução das vendas</h2>
+      </div>
+      <div class="card-body space-y-4">
+        <div>
+          <h3 class="font-medium">Diária</h3>
+          <table id="diarioTable" class="data-table w-full text-sm"></table>
+        </div>
+        <div>
+          <h3 class="font-medium">Semanal</h3>
+          <table id="semanalTable" class="data-table w-full text-sm"></table>
+        </div>
+        <div>
+          <h3 class="font-medium">Mensal</h3>
+          <table id="mensalTable" class="data-table w-full text-sm"></table>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="desempenho.js"></script>
+  <script>window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-financeiro.html';</script>
+  <script src="shared.js"></script>
+</body>
+</html>
