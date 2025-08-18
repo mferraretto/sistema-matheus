@@ -42,6 +42,12 @@
 
     <div id="cardsContainer" class="space-y-6"></div>
   </main>
+  <div id="faturamentoUpdatesCard" class="card card-orange fixed top-20 right-4 w-72 max-h-96 overflow-y-auto hidden">
+    <div class="card-header">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> Faturamento Diário</h2>
+    </div>
+    <div class="card-body space-y-2" id="faturamentoFeed"></div>
+  </div>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="financeiro.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-financeiro.html';</script>
