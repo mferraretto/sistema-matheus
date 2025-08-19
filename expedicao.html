@@ -236,6 +236,7 @@
         sobrasDiv.classList.add('hidden');
       }
     }
+    window.visualizar = visualizar;
 
     async function iniciarDia() {
       if (!currentUser) return;
@@ -710,6 +711,7 @@
       setTimeout(() => toast.classList.add('opacity-0'), 2000);
       setTimeout(() => toast.remove(), 2500);
     }
+    window.excluir = excluir;
 
     loadSidebar();
     loadNavbar();
