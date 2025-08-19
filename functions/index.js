@@ -130,6 +130,12 @@ export const shopeeAuthCallback = onRequest(
 export const connectTiny = onRequest({ region: "southamerica-east1", timeoutSeconds: 30 }, (req, res) => {
   cors(req, res, async () => {
     try {
+      if (req.method === "OPTIONS") {
+        res.set("Access-Control-Allow-Origin", "https://mferraretto.github.io");
+        res.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+        res.set("Access-Control-Allow-Methods", "POST");
+        return res.status(204).send("");
+      }
       if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
       const uid = await requireAuth(req);
 
