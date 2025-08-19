@@ -56,6 +56,14 @@
       <!-- Config -->
       <div id="tab-config" class="hidden">
         <p class="text-sm text-gray-600">Esta aba usa o Token Tiny salvo como segredo no backend. Nenhum dado sensível é salvo no navegador.</p>
+        <div class="rounded-2xl border p-4 space-y-3">
+          <h3 class="font-semibold">Conectar Tiny</h3>
+          <label class="block text-sm">Token do Tiny</label>
+          <input id="tinyToken" class="border rounded-xl px-3 py-2 w-full" placeholder="Cole seu token aqui">
+          <button id="btnConectarTiny" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Conectar</button>
+          <button id="btnDesconectarTiny" class="px-3 py-2 rounded-xl border">Desconectar</button>
+          <div id="tinyStatus" class="text-sm text-gray-600"></div>
+        </div>
       </div>
     </section>
   </div>

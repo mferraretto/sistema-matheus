@@ -14,6 +14,7 @@
   },
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/secret-manager": "^6.1.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",

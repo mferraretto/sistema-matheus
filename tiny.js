@@ -7,6 +7,18 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+async function getIdToken() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Não logado");
+  return await user.getIdToken();
+}
+
+// URLs públicas das Cloud Functions
+const URL_CONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/connectTiny";
+const URL_DISCONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/disconnectTiny";
+const URL_SYNC_PRODUCTS = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyProducts";
+const URL_SYNC_ORDERS   = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyOrders";
+
 const stateTiny = {
   produtos: { pageSize: 30, lastDoc: null, stack: [], search: '', page: 1 },
   pedidos:  { pageSize: 20, lastDoc: null, stack: [], page: 1 }
@@ -31,12 +43,7 @@ document.querySelectorAll('.tabTiny').forEach(btn => {
 });
 
 document.getElementById('btnSyncProdutos').onclick = async () => {
-  const uid = auth.currentUser.uid;
-  await fetch('/syncTinyProducts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, modo: 'scan' })
-  });
+  await syncProdutos();
   stateTiny.produtos.lastDoc = null;
   stateTiny.produtos.stack = [];
   stateTiny.produtos.page = 1;
@@ -44,18 +51,7 @@ document.getElementById('btnSyncProdutos').onclick = async () => {
 };
 
 document.getElementById('btnSyncPedidos').onclick = async () => {
-  const uid = auth.currentUser.uid;
-  const hoje = new Date();
-  const d = new Date(hoje.getTime() - 7*24*60*60*1000);
-  const dd = String(d.getDate()).padStart(2,'0');
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const yyyy = d.getFullYear();
-  const dataAtualizacao = `${dd}/${mm}/${yyyy} 00:00:00`;
-  await fetch('/syncTinyOrders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, dataAtualizacao })
-  });
+  await syncPedidosUltimos7d();
   stateTiny.pedidos.lastDoc = null;
   stateTiny.pedidos.stack = [];
   stateTiny.pedidos.page = 1;
@@ -63,23 +59,92 @@ document.getElementById('btnSyncPedidos').onclick = async () => {
 };
 
 document.getElementById('btnSyncPedidosPeriodo').onclick = async () => {
-  const uid = auth.currentUser.uid;
-  const di = document.getElementById('dataInicial').value;
-  const df = document.getElementById('dataFinal').value;
-  if (!di || !df) return alert('Preencha data inicial e final');
-  const [yi,mi,di2] = di.split('-');
-  const [yf,mf,df2] = df.split('-');
-  const dataInicial = `${di2}/${mi}/${yi}`;
-  const dataFinal   = `${df2}/${mf}/${yf}`;
-  await fetch('/syncTinyOrders', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, dataInicial, dataFinal })
-  });
-  stateTiny.pedidos.lastDoc = null;
-  stateTiny.pedidos.stack = [];
-  stateTiny.pedidos.page = 1;
-  carregarPedidos();
+  try {
+    const di = document.getElementById('dataInicial').value;
+    const df = document.getElementById('dataFinal').value;
+    if (!di || !df) return alert('Preencha data inicial e final');
+    const [yi,mi,di2] = di.split('-');
+    const [yf,mf,df2] = df.split('-');
+    const dataInicial = `${di2}/${mi}/${yi}`;
+    const dataFinal   = `${df2}/${mf}/${yf}`;
+    const idToken = await getIdToken();
+    const resp = await fetch(URL_SYNC_ORDERS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+      body: JSON.stringify({ dataInicial, dataFinal })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha no sync de pedidos');
+    stateTiny.pedidos.lastDoc = null;
+    stateTiny.pedidos.stack = [];
+    stateTiny.pedidos.page = 1;
+    carregarPedidos();
+  } catch (e) {
+    alert(e.message);
+  }
 };
+
+document.getElementById('btnConectarTiny').onclick = async () => {
+  try {
+    const token = document.getElementById('tinyToken').value.trim();
+    if (!token) return alert("Cole o token do Tiny.");
+    const idToken = await getIdToken();
+    const resp = await fetch(URL_CONNECT, {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
+      body: JSON.stringify({ token: token, integradorId: 12228, validar: true })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao conectar.");
+    document.getElementById('tinyStatus').textContent = "Tiny conectado com sucesso.";
+  } catch (e) {
+    alert("Erro ao conectar: " + e.message);
+  }
+};
+
+document.getElementById('btnDesconectarTiny').onclick = async () => {
+  try {
+    const idToken = await getIdToken();
+    const resp = await fetch(URL_DISCONNECT, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${idToken}` }
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao desconectar.");
+    document.getElementById('tinyStatus').textContent = "Tiny desconectado.";
+  } catch (e) {
+    alert("Erro ao desconectar: " + e.message);
+  }
+};
+
+async function syncProdutos() {
+  const idToken = await getIdToken();
+  const resp = await fetch(URL_SYNC_PRODUCTS, {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
+    body: JSON.stringify({ modo: "scan" })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || "Falha no sync de produtos");
+  return data;
+}
+
+async function syncPedidosUltimos7d() {
+  const idToken = await getIdToken();
+  const d = new Date(Date.now() - 7*24*60*60*1000);
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  const dataAtualizacao = `${dd}/${mm}/${yyyy} 00:00:00`;
+  const resp = await fetch(URL_SYNC_ORDERS, {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
+    body: JSON.stringify({ dataAtualizacao })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || "Falha no sync de pedidos");
+  return data;
+}
 
 document.getElementById('btnFiltrarProdutos').onclick = () => {
   stateTiny.produtos.search = document.getElementById('buscaProduto').value.trim().toLowerCase();
