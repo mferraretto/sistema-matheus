@@ -123,14 +123,19 @@ async function carregarResumoFaturamento(uid, isAdmin) {
           txt = await decryptString(d.encrypted, pass || ownerUid);
         } catch (e) {
           if (pass) {
-            try { txt = await decryptString(d.encrypted, ownerUid); } catch (err) {
-              console.error('Erro ao descriptografar faturamento', err);
+            try {
+              txt = await decryptString(d.encrypted, ownerUid);
+            } catch (_) {
+              // ignoramos erros de descriptografia para não interromper o resumo
             }
-          } else {
-            console.error('Erro ao descriptografar faturamento', e);
           }
         }
-        if (txt) d = JSON.parse(txt);
+        if (!txt) continue; // não soma dados se a descriptografia falhar
+        try {
+          d = JSON.parse(txt);
+        } catch (_) {
+          continue;
+        }
       }
       totalLiquido += d.valorLiquido || 0;
       totalBruto += d.valorBruto || 0;
