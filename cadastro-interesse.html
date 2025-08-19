@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Interesse - VendedorPro</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100">
+  <div class="main-container">
+    <div id="navbar-container"></div>
+    <div class="content-wrapper max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">
+      <h1 class="text-2xl font-bold mb-4 text-center">Seja Cliente VendedorPro</h1>
+      <p class="mb-6 text-gray-700 text-center">Plano mensal de <strong>R$29,90</strong>. Preencha o formulário e enviaremos os dados de pagamento via e-mail.</p>
+      <form action="https://formsubmit.co/malexandreferraretto@gmail.com" method="POST" class="space-y-4">
+        <input type="hidden" name="_subject" value="Novo cadastro de interesse">
+        <input type="hidden" name="_captcha" value="false">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+          <input type="text" name="nome" required class="w-full p-2 border rounded" placeholder="Seu nome">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+          <input type="email" name="email" required class="w-full p-2 border rounded" placeholder="seu@email.com">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+          <input type="text" name="telefone" class="w-full p-2 border rounded" placeholder="(00) 00000-0000">
+        </div>
+        <button type="submit" class="btn btn-primary w-full">Enviar</button>
+      </form>
+    </div>
+  </div>
+  <script src="shared.js"></script>
+</body>
+</html>
