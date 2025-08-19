@@ -11,7 +11,7 @@ import { tinyTestToken, pesquisarPedidos, obterPedido, pesquisarProdutos } from 
 const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
 const SHOPEE_CLIENT_ID = defineSecret("SHOPEE_CLIENT_ID");
 const SHOPEE_CLIENT_SECRET = defineSecret("SHOPEE_CLIENT_SECRET");
-const cors = corsModule({ origin: true });
+const cors = corsModule({ origin: ["https://mferraretto.github.io"] });
 
 initializeApp();
 const db = getFirestore();
