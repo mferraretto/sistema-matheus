@@ -427,7 +427,16 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
         fill: true
       }]
     },
-    options: { scales: { y: { beginAtZero: true } } }
+    options: {
+      plugins: {
+        tooltip: { enabled: true },
+        legend: { display: false }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Dia' } },
+        y: { beginAtZero: true, title: { display: true, text: 'Valor (R$)' } }
+      }
+    }
   });
 
   const metaBar = document.getElementById('metaProgressBar');

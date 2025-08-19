@@ -6,14 +6,14 @@
   <title>VendedorPro - Sistema Premium</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
   <div class="main-container">
     <!-- Sidebar -->
   <div id="sidebar-container"></div>
@@ -25,7 +25,7 @@
 
 
     <!-- Conteúdo Principal -->
-    <div class="content-wrapper">
+    <div class="content-wrapper space-y-10">
       <!-- Mensagens de status -->
       <div class="alert-success hidden">
         <i class="fas fa-check-circle mr-2"></i>Produto salvo com sucesso
@@ -46,105 +46,123 @@
       </div>
       
 
-      <!-- KPI Cards -->
-      <div id="kpiCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+      <!-- Visão Geral -->
+      <section class="section">
+        <h2 class="section-title">Visão Geral</h2>
+        <div id="kpiCards" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+      </section>
 
-      <!-- Cards Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-        <div id="resumoFaturamento"></div>
+      <!-- Análise de Vendas -->
+      <section class="section">
+        <h2 class="section-title">Análise de Vendas</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div id="resumoFaturamento"></div>
 
-        <div class="card" id="topSkusCard" data-blur-id="topSkusCard">
-          <div class="card-header">
-           <div class="card-header-icon">
-              <span class="text-2xl">📦</span>
-            </div>
-            <div>
-              <h2 class="text-xl font-extrabold text-gray-800">Top 5 SKUs do Mês</h2>
-            </div>
-           <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard" onclick="event.stopPropagation();">
-              <i class="fas fa-eye-slash"></i>
-            </button>
-          </div>
-          <div class="card-body" id="topSkus"></div>
-          <div class="p-4 pt-0">
-            <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=controleVendas" class="btn btn-primary w-full">Ver lista</a>
-          </div>
-        </div>
-
-        <div class="card cursor-pointer" id="faturamentoMetaCard" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas';">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <i class="fas fa-bullseye text-xl"></i>
-            </div>
-            <div>
-              <h2 class="text-xl font-extrabold text-gray-800">Faturamento x Meta</h2>
-            </div>
-            <div class="ml-auto">
-              <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
-            </div>
-          </div>
-          <div class="card-body space-y-4">
-            <canvas id="chartFaturamentoMeta" height="200"></canvas>
-            <div class="progress-wrapper">
-              <div id="metaProgressBar" class="progress-bar"></div>
-            </div>
-            <div id="metaProgressText" class="text-sm text-gray-600"></div>
-          </div>
-        </div>
-
-        <div class="card" id="tarefasCard">
-          <div class="card-header">
-            <div class="card-header-icon">
-              <span class="text-2xl">✅</span>
-            </div>
-            <div>
-              <h2 class="text-xl font-extrabold">Tarefas do Dia</h2>
-            </div>
-          </div>
-          <div class="card-body space-y-4">
-            <div class="progress-wrapper">
-              <div id="tarefasProgressBar" class="progress-bar"></div>
-            </div>
-            <div class="kanban-board grid gap-4 md:grid-cols-3">
-              <div>
-                <h3 class="font-semibold mb-2">Pendentes</h3>
-                <ul id="listaTarefasPendentes" class="space-y-2"></ul>
+          <div class="card cursor-pointer" id="faturamentoMetaCard" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas';">
+            <div class="card-header">
+              <div class="card-header-icon">
+                <i class="fas fa-bullseye text-xl"></i>
               </div>
               <div>
-                <h3 class="font-semibold mb-2">Em andamento</h3>
-                <ul id="listaTarefasAndamento" class="space-y-2"></ul>
+                <h2 class="text-xl font-extrabold text-gray-800">Faturamento x Meta</h2>
+              </div>
+              <div class="ml-auto">
+                <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
+              </div>
+            </div>
+            <div class="card-body space-y-4">
+              <canvas id="chartFaturamentoMeta" height="200"></canvas>
+              <div class="progress-wrapper">
+                <div id="metaProgressBar" class="progress-bar"></div>
+              </div>
+              <div id="metaProgressText" class="text-sm text-gray-600"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Produtos em Destaque -->
+      <section class="section">
+        <h2 class="section-title">Produtos em Destaque</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card" id="topSkusCard" data-blur-id="topSkusCard">
+            <div class="card-header">
+             <div class="card-header-icon">
+                <span class="text-2xl">📦</span>
               </div>
               <div>
-                <h3 class="font-semibold mb-2">Concluídas</h3>
-                <ul id="listaTarefasFeitas" class="space-y-2 text-gray-600"></ul>
+                <h2 class="text-xl font-extrabold text-gray-800">Top 5 SKUs do Mês</h2>
+              </div>
+             <button type="button" class="ml-auto toggle-blur" data-card="topSkusCard" onclick="event.stopPropagation();">
+                <i class="fas fa-eye-slash"></i>
+              </button>
+            </div>
+            <div class="card-body" id="topSkus"></div>
+            <div class="p-4 pt-0">
+              <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=controleVendas" class="btn btn-primary w-full">Ver lista</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Organização -->
+      <section class="section">
+        <h2 class="section-title">Organização</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card" id="tarefasCard">
+            <div class="card-header">
+              <div class="card-header-icon">
+                <span class="text-2xl">✅</span>
+              </div>
+              <div>
+                <h2 class="text-xl font-extrabold">Tarefas do Dia</h2>
+              </div>
+            </div>
+            <div class="card-body space-y-4">
+              <div class="progress-wrapper">
+                <div id="tarefasProgressBar" class="progress-bar"></div>
+              </div>
+              <div class="kanban-board grid gap-4 md:grid-cols-3">
+                <div>
+                  <h3 class="font-semibold mb-2">Pendentes</h3>
+                  <ul id="listaTarefasPendentes" class="space-y-2"></ul>
+                </div>
+                <div>
+                  <h3 class="font-semibold mb-2">Em andamento</h3>
+                  <ul id="listaTarefasAndamento" class="space-y-2"></ul>
+                </div>
+                <div>
+                  <h3 class="font-semibold mb-2">Concluídas</h3>
+                  <ul id="listaTarefasFeitas" class="space-y-2 text-gray-600"></ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="card mb-6" id="atualizacoesCard" data-blur-id="atualizacoesCard">
-        <div class="card-header">
-          <div class="card-header-icon">
-            <i class="fas fa-newspaper text-xl"></i>
-          </div>
-          <div>
-            <h2 class="text-xl font-extrabold text-gray-800">Atualizações da Shopee</h2>
-          </div>
-            <button type="button" class="ml-auto toggle-blur" data-card="atualizacoesCard">
-              <i class="fas fa-eye-slash"></i>
-            </button>
-        </div>
-        <div class="card-body">
-          <div id="atualizacoesShopee" class="space-y-4 max-h-60 overflow-y-auto">
-            <div class="border-b pb-2">
-              <div class="font-semibold">Exemplo de Atualização</div>
-              <p class="text-sm text-gray-600">Breve descrição da novidade.</p>
+          <div class="card" id="atualizacoesCard" data-blur-id="atualizacoesCard">
+            <div class="card-header">
+              <div class="card-header-icon">
+                <i class="fas fa-newspaper text-xl"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-extrabold text-gray-800">Atualizações da Shopee</h2>
+              </div>
+              <button type="button" class="ml-auto toggle-blur" data-card="atualizacoesCard">
+                <i class="fas fa-eye-slash"></i>
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="atualizacoesShopee" class="space-y-4 max-h-60 overflow-y-auto">
+                <div class="border-b pb-2">
+                  <div class="font-semibold">Exemplo de Atualização</div>
+                  <p class="text-sm text-gray-600">Breve descrição da novidade.</p>
+                </div>
+              </div>
+              <a href="https://shopee.com.br" target="_blank" class="text-blue-600 underline block mt-2">Ver Mais</a>
             </div>
           </div>
-          <a href="https://shopee.com.br" target="_blank" class="text-blue-600 underline block mt-2">Ver Mais</a>
         </div>
-      </div>
-      </div>
+      </section>
       
     </div>
   </div>

@@ -30,6 +30,25 @@
 }
     
   
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.section {
+  background-color: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
 .top-navbar {
   position: fixed;
   top: 0;
@@ -66,7 +85,7 @@ transition: .3s;
   color: #fff;
   font-weight: 600;
   font-size: 1.1rem;
-  font-family: Inter,sans-serif;
+  font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #4F46E5, #9333EA);
 }
 
