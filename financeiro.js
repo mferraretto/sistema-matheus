@@ -337,46 +337,61 @@ function initKpiRealtime() {
   subscribeKPIs();
 }
 
-function subscribeKPIs() {
+async function subscribeKPIs() {
   kpiUnsubs.forEach(fn => fn());
   kpiUnsubs = [];
   const uid = document.getElementById('usuarioFiltro')?.value;
   const mes = document.getElementById('mesFiltro')?.value;
   const vendasEl = document.getElementById('kpiVendasDia');
   const metaEl = document.getElementById('kpiMetaAtingida');
+  const projEl = document.getElementById('kpiMetaProjecao');
+  const respEl = document.getElementById('kpiMetaResponsavel');
+  const respProjEl = document.getElementById('kpiMetaRespProjecao');
   const metaBar = document.getElementById('kpiMetaProgress');
   const metaWrap = document.getElementById('kpiMetaProgressWrapper');
   const devEl = document.getElementById('kpiDevolucoes');
-  if (!vendasEl || !metaEl || !devEl) return;
+  if (!vendasEl || !metaEl || !projEl || !respEl || !respProjEl || !devEl) return;
   if (!uid || uid === 'todos') {
     vendasEl.textContent = '-';
     metaEl.textContent = '-';
+    projEl.textContent = 'Projeção: -';
+    respEl.textContent = 'Resp. Financeiro: -';
+    respProjEl.textContent = 'Proj. Resp.: -';
     devEl.textContent = '-';
     return;
   }
   const diaAtual = new Date().toISOString().slice(0,10);
-  let metaValor = 0;
-  const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
-  const unsubMeta = onSnapshot(metaRef, snap => {
-    metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
-  });
-  kpiUnsubs.push(unsubMeta);
+  const hoje = new Date();
+  const diaNum = hoje.getDate();
+  const diasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
 
-  const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
-  const unsubFat = onSnapshot(faturamentoRef, async snap => {
-    let totalMes = 0;
-    let vendasDia = 0;
-    const diarios = [];
-    for (const d of snap.docs) {
-      if (mes && !d.id.includes(mes)) continue;
-      const totalDia = await calcularFaturamentoDia(uid, d.id);
-      totalMes += totalDia;
-      if (d.id === diaAtual) vendasDia = totalDia;
-      diarios.push({ data: d.id, valor: totalDia });
+  let respUid = auth.currentUser?.uid || null;
+  if (uid === respUid) {
+    try {
+      const uDoc = await getDoc(doc(db, 'usuarios', uid));
+      const respEmail = uDoc.exists() ? uDoc.data().responsavelFinanceiroEmail : null;
+      if (respEmail) {
+        const q = query(collection(db, 'usuarios'), where('email', '==', respEmail));
+        const snap = await getDocs(q);
+        if (!snap.empty) respUid = snap.docs[0].id; else respUid = null;
+      } else {
+        respUid = null;
+      }
+    } catch (_) {
+      respUid = null;
     }
-    vendasEl.textContent = `R$ ${vendasDia.toLocaleString('pt-BR')}`;
+  }
+
+  let metaValor = 0;
+  let totalMes = 0;
+  let metaValorResp = 0;
+  let totalRespMes = 0;
+
+  function atualizarKPIs() {
     const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+    const proj = metaValor ? Math.min(100, ((totalMes / diaNum) * diasMes / metaValor) * 100) : 0;
     metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
+    projEl.textContent = metaValor ? `Projeção: ${proj.toFixed(1)}%` : 'Projeção: 0%';
     if (metaBar && metaWrap) {
       metaBar.style.width = `${prog.toFixed(0)}%`;
       metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
@@ -392,17 +407,71 @@ function subscribeKPIs() {
         metaEl.classList.add('text-red-600');
       }
     }
+    if (respUid) {
+      const progResp = metaValorResp ? Math.min(100, (totalRespMes / metaValorResp) * 100) : 0;
+      const projResp = metaValorResp ? Math.min(100, ((totalRespMes / diaNum) * diasMes / metaValorResp) * 100) : 0;
+      respEl.textContent = metaValorResp ? `Resp. Financeiro: ${progResp.toFixed(1)}%` : 'Resp. Financeiro: 0%';
+      respProjEl.textContent = metaValorResp ? `Proj. Resp.: ${projResp.toFixed(1)}%` : 'Proj. Resp.: 0%';
+    } else {
+      respEl.textContent = 'Resp. Financeiro: -';
+      respProjEl.textContent = 'Proj. Resp.: -';
+    }
+  }
+
+  const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
+  const unsubMeta = onSnapshot(metaRef, snap => {
+    metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
+    atualizarKPIs();
+  });
+  kpiUnsubs.push(unsubMeta);
+
+  if (respUid) {
+    const metaRespRef = doc(db, `uid/${respUid}/metasFaturamento`, mes);
+    const unsubMetaResp = onSnapshot(metaRespRef, snap => {
+      metaValorResp = snap.exists() ? Number(snap.data().valor) || 0 : 0;
+      atualizarKPIs();
+    });
+    kpiUnsubs.push(unsubMetaResp);
+  }
+
+  const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
+  const unsubFat = onSnapshot(faturamentoRef, async snap => {
+    totalMes = 0;
+    let vendasDia = 0;
+    const diarios = [];
+    for (const d of snap.docs) {
+      if (mes && !d.id.includes(mes)) continue;
+      const totalDia = await calcularFaturamentoDia(uid, d.id);
+      totalMes += totalDia;
+      if (d.id === diaAtual) vendasDia = totalDia;
+      diarios.push({ data: d.id, valor: totalDia });
+    }
+    vendasEl.textContent = `R$ ${vendasDia.toLocaleString('pt-BR')}`;
     diarios.sort((a,b) => a.data.localeCompare(b.data));
     updateSalesChart(diarios.map(d => formatarData(d.data)), diarios.map(d => d.valor));
+    atualizarKPIs();
   });
   kpiUnsubs.push(unsubFat);
 
+  if (respUid) {
+    const faturamentoRespRef = collection(db, `uid/${respUid}/faturamento`);
+    const unsubFatResp = onSnapshot(faturamentoRespRef, async snap => {
+      totalRespMes = 0;
+      for (const d of snap.docs) {
+        if (mes && !d.id.includes(mes)) continue;
+        totalRespMes += await calcularFaturamentoDia(respUid, d.id);
+      }
+      atualizarKPIs();
+    });
+    kpiUnsubs.push(unsubFatResp);
+  }
+
   const devolucoesRef = collection(db, `uid/${uid}/devolucoes`);
   const unsubDev = onSnapshot(devolucoesRef, snap => {
-    const hoje = new Date().toISOString().slice(0,10);
+    const hojeStr = new Date().toISOString().slice(0,10);
     let qtd = 0;
     snap.forEach(docSnap => {
-      if (docSnap.id.includes(hoje)) {
+      if (docSnap.id.includes(hojeStr)) {
         const dados = docSnap.data();
         qtd += Number(dados.quantidade || dados.total || 1);
       }
