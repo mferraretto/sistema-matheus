@@ -15,6 +15,7 @@ let dadosSaquesExport = [];
 let dadosFaturamentoExport = [];
 let resumoUsuarios = {};
 let kpiUnsubs = [];
+let vendasChart;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -343,6 +344,8 @@ function subscribeKPIs() {
   const mes = document.getElementById('mesFiltro')?.value;
   const vendasEl = document.getElementById('kpiVendasDia');
   const metaEl = document.getElementById('kpiMetaAtingida');
+  const metaBar = document.getElementById('kpiMetaProgress');
+  const metaWrap = document.getElementById('kpiMetaProgressWrapper');
   const devEl = document.getElementById('kpiDevolucoes');
   if (!vendasEl || !metaEl || !devEl) return;
   if (!uid || uid === 'todos') {
@@ -363,15 +366,34 @@ function subscribeKPIs() {
   const unsubFat = onSnapshot(faturamentoRef, async snap => {
     let totalMes = 0;
     let vendasDia = 0;
+    const diarios = [];
     for (const d of snap.docs) {
       if (mes && !d.id.includes(mes)) continue;
       const totalDia = await calcularFaturamentoDia(uid, d.id);
       totalMes += totalDia;
       if (d.id === diaAtual) vendasDia = totalDia;
+      diarios.push({ data: d.id, valor: totalDia });
     }
     vendasEl.textContent = `R$ ${vendasDia.toLocaleString('pt-BR')}`;
     const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
     metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
+    if (metaBar && metaWrap) {
+      metaBar.style.width = `${prog.toFixed(0)}%`;
+      metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
+      metaEl.classList.remove('text-green-600','text-yellow-500','text-red-600');
+      if (prog >= 100) {
+        metaWrap.classList.add('text-green-600');
+        metaEl.classList.add('text-green-600');
+      } else if (prog >= 50) {
+        metaWrap.classList.add('text-yellow-500');
+        metaEl.classList.add('text-yellow-500');
+      } else {
+        metaWrap.classList.add('text-red-600');
+        metaEl.classList.add('text-red-600');
+      }
+    }
+    diarios.sort((a,b) => a.data.localeCompare(b.data));
+    updateSalesChart(diarios.map(d => formatarData(d.data)), diarios.map(d => d.valor));
   });
   kpiUnsubs.push(unsubFat);
 
@@ -388,6 +410,31 @@ function subscribeKPIs() {
     devEl.textContent = qtd;
   });
   kpiUnsubs.push(unsubDev);
+}
+
+function updateSalesChart(labels, data) {
+  const ctx = document.getElementById('vendasChart')?.getContext('2d');
+  if (!ctx) return;
+  if (vendasChart) {
+    vendasChart.data.labels = labels;
+    vendasChart.data.datasets[0].data = data;
+    vendasChart.update();
+  } else {
+    vendasChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Vendas',
+          data,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.2)',
+          tension: 0.3
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+  }
 }
 
 function renderResumoUsuarios(lista) {
@@ -410,20 +457,20 @@ function createSkusCard(u) {
   card.innerHTML = `
     <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> ${u.nome} - SKUs Vendidos</h2>
-      <button class="text-sm text-blue-600 ver-mais">Ver mais</button>
+      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
     </div>
     <div class="card-body">
       <div class="grid grid-cols-3 text-center gap-2">
         <div>
-          <div class="text-xl font-bold">${u.skus?.topSku || '-'}</div>
+          <div class="text-2xl font-extrabold">${u.skus?.topSku || '-'}</div>
           <div class="text-sm text-gray-500">Top SKU</div>
         </div>
         <div>
-          <div class="text-xl font-bold">${u.skus?.totalSkus || 0}</div>
+          <div class="text-2xl font-extrabold">${u.skus?.totalSkus || 0}</div>
           <div class="text-sm text-gray-500">SKUs</div>
         </div>
         <div>
-          <div class="text-xl font-bold">${u.skus?.totalUnidades || 0}</div>
+          <div class="text-2xl font-extrabold">${u.skus?.totalUnidades || 0}</div>
           <div class="text-sm text-gray-500">Unidades</div>
         </div>
       </div>
@@ -445,20 +492,20 @@ function createSaquesCard(u) {
   card.innerHTML = `
     <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> ${u.nome} - Saques e Comissões</h2>
-      <button class="text-sm text-green-600 ver-mais">Ver mais</button>
+      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
     </div>
     <div class="card-body">
       <div class="grid grid-cols-3 text-center gap-2">
         <div>
-          <div class="text-xl font-bold">R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-2xl font-extrabold text-green-600">R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
           <div class="text-sm text-gray-500">Total</div>
         </div>
         <div>
-          <div class="text-xl font-bold">R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-2xl font-extrabold text-green-600">R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
           <div class="text-sm text-gray-500">Comissões</div>
         </div>
         <div>
-          <div class="text-xl font-bold">${u.saques?.qtdSaques || 0}</div>
+          <div class="text-2xl font-extrabold">${u.saques?.qtdSaques || 0}</div>
           <div class="text-sm text-gray-500">Total de Saques</div>
         </div>
       </div>
@@ -478,27 +525,28 @@ function createFaturamentoCard(u) {
   const card = document.createElement('div');
   card.className = 'card card-orange';
   const progresso = u.faturamento?.meta ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100) : 0;
+  const statusColor = progresso >= 100 ? 'text-green-600' : progresso >= 50 ? 'text-yellow-500' : 'text-red-600';
   card.innerHTML = `
     <div class="card-header justify-between">
       <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> ${u.nome} - Faturamento x Meta</h2>
-      <button class="text-sm text-orange-600 ver-mais">Ver mais</button>
+      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
     </div>
     <div class="card-body space-y-2">
       <div class="grid grid-cols-3 text-center gap-2">
         <div>
-          <div class="text-xl font-bold">R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-2xl font-extrabold ${statusColor}">R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
           <div class="text-sm text-gray-500">Faturado</div>
         </div>
         <div>
-          <div class="text-xl font-bold">R$ ${(u.faturamento?.meta || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-2xl font-extrabold">R$ ${(u.faturamento?.meta || 0).toLocaleString('pt-BR')}</div>
           <div class="text-sm text-gray-500">Meta</div>
         </div>
         <div>
-          <div class="text-xl font-bold">R$ ${(u.faturamento?.esperado || 0).toLocaleString('pt-BR')}</div>
+          <div class="text-2xl font-extrabold">R$ ${(u.faturamento?.esperado || 0).toLocaleString('pt-BR')}</div>
           <div class="text-sm text-gray-500">Esperado até hoje</div>
         </div>
       </div>
-      <div class="progress text-orange-600"><div class="progress-bar" style="width: ${progresso.toFixed(0)}%"></div></div>
+      <div class="progress ${statusColor}"><div class="progress-bar" style="width: ${progresso.toFixed(0)}%"></div></div>
     </div>`;
   card.querySelector('.ver-mais')?.addEventListener('click', () => {
     const diario = u.faturamentoDetalhes?.diario || {};
