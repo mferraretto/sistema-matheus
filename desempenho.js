@@ -9,6 +9,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let usuarios = [];
+let diarioChart, semanalChart, mensalChart;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -31,6 +32,7 @@ onAuthStateChanged(auth, async user => {
   if (inicioInput) inicioInput.value = inicio.toISOString().slice(0,10);
   if (fimInput) fimInput.value = hoje.toISOString().slice(0,10);
   document.getElementById('carregar')?.addEventListener('click', carregar);
+  document.getElementById('evolucaoTabs')?.addEventListener('click', mudarAba);
   await carregar();
 });
 
@@ -49,12 +51,13 @@ async function carregar() {
       const valor = await calcularFaturamentoDia(u.uid, dia);
       totalUsuario += valor;
       evolucaoDiaria[dia] = (evolucaoDiaria[dia] || 0) + valor;
-    }
-    ranking.push({ usuario: u.nome, total: totalUsuario });
+  }
+  ranking.push({ usuario: u.nome, total: totalUsuario });
   }
   ranking.sort((a,b) => b.total - a.total);
   renderRanking(ranking);
   renderEvolucao(evolucaoDiaria);
+  renderKpis(ranking, evolucaoDiaria);
 }
 
 async function calcularFaturamentoDia(uid, dia) {
@@ -80,7 +83,11 @@ async function calcularFaturamentoDia(uid, dia) {
 function renderRanking(lista) {
   const table = document.getElementById('rankingTable');
   if (!table) return;
-  const rows = lista.map((r, i) => `<tr><td>${i+1}</td><td>${r.usuario}</td><td>R$ ${r.total.toLocaleString('pt-BR')}</td></tr>`).join('');
+  const rows = lista.map((r, i) => {
+    const pos = i + 1;
+    const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos;
+    return `<tr><td>${medal}</td><td>${r.usuario}</td><td class="text-green-600 font-bold">R$ ${r.total.toLocaleString('pt-BR')}</td></tr>`;
+  }).join('');
   table.innerHTML = `<thead><tr><th>#</th><th>Vendedor</th><th>Vendas</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
@@ -90,7 +97,7 @@ function renderEvolucao(diaria) {
   const semanalEl = document.getElementById('semanalTable');
   const mensalEl = document.getElementById('mensalTable');
   if (diarioEl) {
-    const rows = dias.map(d => `<tr><td>${formatarData(d)}</td><td>R$ ${diaria[d].toLocaleString('pt-BR')}</td></tr>`).join('');
+    const rows = dias.map(d => `<tr><td>${formatarData(d)}</td><td class="text-green-600 font-bold">R$ ${diaria[d].toLocaleString('pt-BR')}</td></tr>`).join('');
     diarioEl.innerHTML = `<thead><tr><th>Data</th><th>Vendas</th></tr></thead><tbody>${rows}</tbody>`;
   }
   const semanal = {};
@@ -102,12 +109,68 @@ function renderEvolucao(diaria) {
     mensal[mes] = (mensal[mes] || 0) + diaria[d];
   });
   if (semanalEl) {
-    const rows = Object.keys(semanal).sort().map(s => `<tr><td>${s}</td><td>R$ ${semanal[s].toLocaleString('pt-BR')}</td></tr>`).join('');
+    const rows = Object.keys(semanal).sort().map(s => `<tr><td>${s}</td><td class="text-green-600 font-bold">R$ ${semanal[s].toLocaleString('pt-BR')}</td></tr>`).join('');
     semanalEl.innerHTML = `<thead><tr><th>Semana</th><th>Vendas</th></tr></thead><tbody>${rows}</tbody>`;
   }
   if (mensalEl) {
-    const rows = Object.keys(mensal).sort().map(m => `<tr><td>${formatarMes(m)}</td><td>R$ ${mensal[m].toLocaleString('pt-BR')}</td></tr>`).join('');
+    const rows = Object.keys(mensal).sort().map(m => `<tr><td>${formatarMes(m)}</td><td class="text-green-600 font-bold">R$ ${mensal[m].toLocaleString('pt-BR')}</td></tr>`).join('');
     mensalEl.innerHTML = `<thead><tr><th>Mês</th><th>Vendas</th></tr></thead><tbody>${rows}</tbody>`;
+  }
+
+  if (diarioChart) diarioChart.destroy();
+  if (semanalChart) semanalChart.destroy();
+  if (mensalChart) mensalChart.destroy();
+
+  const diarioCtx = document.getElementById('diarioChart');
+  if (diarioCtx) {
+    diarioChart = new Chart(diarioCtx, {
+      type: 'line',
+      data: {
+        labels: dias.map(formatarData),
+        datasets: [{
+          label: 'Vendas diárias',
+          data: dias.map(d => diaria[d]),
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.2)',
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  const semanalCtx = document.getElementById('semanalChart');
+  if (semanalCtx) {
+    const semanas = Object.keys(semanal).sort();
+    semanalChart = new Chart(semanalCtx, {
+      type: 'bar',
+      data: {
+        labels: semanas,
+        datasets: [{
+          label: 'Vendas semanais',
+          data: semanas.map(s => semanal[s]),
+          backgroundColor: '#6366f1'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  const mensalCtx = document.getElementById('mensalChart');
+  if (mensalCtx) {
+    const meses = Object.keys(mensal).sort();
+    mensalChart = new Chart(mensalCtx, {
+      type: 'bar',
+      data: {
+        labels: meses.map(formatarMes),
+        datasets: [{
+          label: 'Vendas mensais',
+          data: meses.map(m => mensal[m]),
+          backgroundColor: '#3b82f6'
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
   }
 }
 
@@ -132,4 +195,30 @@ function formatarMes(str) {
   const [ano, mes] = str.split('-').map(Number);
   const data = new Date(ano, mes - 1, 1);
   return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+}
+
+function renderKpis(ranking, diaria) {
+  const container = document.getElementById('kpiCards');
+  if (!container) return;
+  const total = Object.values(diaria).reduce((a,b)=>a+b,0);
+  const melhorVendedor = ranking[0]?.usuario || '-';
+  const dias = Object.keys(diaria).length;
+  const media = dias ? total / dias : 0;
+  const melhorDia = Object.entries(diaria).sort((a,b)=>b[1]-a[1])[0];
+  container.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3"><span class="text-2xl">📈</span><div><p class="text-sm text-gray-500 uppercase tracking-wide">Vendas no período</p><p class="text-lg font-bold text-green-600">R$ ${total.toLocaleString('pt-BR')}</p></div></div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3"><span class="text-2xl">👤</span><div><p class="text-sm text-gray-500 uppercase tracking-wide">Melhor vendedor</p><p class="text-lg font-bold text-green-600">${melhorVendedor}</p></div></div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3"><span class="text-2xl">💰</span><div><p class="text-sm text-gray-500 uppercase tracking-wide">Média diária</p><p class="text-lg font-bold text-green-600">R$ ${media.toLocaleString('pt-BR')}</p></div></div>
+    <div class="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-3"><span class="text-2xl">🔥</span><div><p class="text-sm text-gray-500 uppercase tracking-wide">Melhor dia do mês</p><p class="text-lg font-bold text-green-600">${melhorDia ? formatarData(melhorDia[0]) : '-'}</p></div></div>
+  `;
+}
+
+function mudarAba(ev) {
+  const btn = ev.target.closest('.tab-btn');
+  if (!btn) return;
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-gray-200','text-gray-700'));
+  btn.classList.add('bg-gray-200','text-gray-700');
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
 }
