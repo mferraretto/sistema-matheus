@@ -284,9 +284,10 @@ async function carregarFaturamentoMeta(usuarios, mes) {
   }
 }
 
-async function calcularFaturamentoDia(uid, dia) {
+async function calcularFaturamentoDiaDetalhado(uid, dia) {
   const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
-  let totalDia = 0;
+  let liquido = 0;
+  let bruto = 0;
   for (const lojaDoc of lojasSnap.docs) {
     let dados = lojaDoc.data();
     if (dados.encrypted) {
@@ -299,9 +300,15 @@ async function calcularFaturamentoDia(uid, dia) {
       }
       if (txt) dados = JSON.parse(txt);
     }
-    totalDia += Number(dados.valorLiquido) || 0;
+    liquido += Number(dados.valorLiquido) || 0;
+    bruto += Number(dados.valorBruto) || 0;
   }
-  return totalDia;
+  return { liquido, bruto };
+}
+
+async function calcularFaturamentoDia(uid, dia) {
+  const { liquido } = await calcularFaturamentoDiaDetalhado(uid, dia);
+  return liquido;
 }
 
 function initFaturamentoFeed(usuarios) {
@@ -342,19 +349,25 @@ function subscribeKPIs() {
   kpiUnsubs = [];
   const uid = document.getElementById('usuarioFiltro')?.value;
   const mes = document.getElementById('mesFiltro')?.value;
-  const vendasEl = document.getElementById('kpiVendasDia');
+  const brutoEl = document.getElementById('kpiVendasBruto');
+  const liquidoEl = document.getElementById('kpiVendasLiquido');
+  const skusEl = document.getElementById('kpiVendasSkus');
   const metaEl = document.getElementById('kpiMetaAtingida');
   const metaBar = document.getElementById('kpiMetaProgress');
   const metaWrap = document.getElementById('kpiMetaProgressWrapper');
   const devEl = document.getElementById('kpiDevolucoes');
-  if (!vendasEl || !metaEl || !devEl) return;
+  if (!brutoEl || !liquidoEl || !skusEl || !metaEl || !devEl) return;
   if (!uid || uid === 'todos') {
-    vendasEl.textContent = '-';
+    brutoEl.textContent = '-';
+    liquidoEl.textContent = '-';
+    skusEl.textContent = '-';
     metaEl.textContent = '-';
     devEl.textContent = '-';
     return;
   }
-  const diaAtual = new Date().toISOString().slice(0,10);
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+  const diaAnterior = ontem.toISOString().slice(0,10);
   let metaValor = 0;
   const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
   const unsubMeta = onSnapshot(metaRef, snap => {
@@ -365,16 +378,21 @@ function subscribeKPIs() {
   const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
   const unsubFat = onSnapshot(faturamentoRef, async snap => {
     let totalMes = 0;
-    let vendasDia = 0;
+    let vendasLiquido = 0;
+    let vendasBruto = 0;
     const diarios = [];
     for (const d of snap.docs) {
       if (mes && !d.id.includes(mes)) continue;
-      const totalDia = await calcularFaturamentoDia(uid, d.id);
+      const { liquido: totalDia, bruto: brutoDia } = await calcularFaturamentoDiaDetalhado(uid, d.id);
       totalMes += totalDia;
-      if (d.id === diaAtual) vendasDia = totalDia;
+      if (d.id === diaAnterior) {
+        vendasLiquido = totalDia;
+        vendasBruto = brutoDia;
+      }
       diarios.push({ data: d.id, valor: totalDia });
     }
-    vendasEl.textContent = `R$ ${vendasDia.toLocaleString('pt-BR')}`;
+    brutoEl.textContent = `R$ ${vendasBruto.toLocaleString('pt-BR')}`;
+    liquidoEl.textContent = `R$ ${vendasLiquido.toLocaleString('pt-BR')}`;
     const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
     metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
     if (metaBar && metaWrap) {
@@ -396,6 +414,17 @@ function subscribeKPIs() {
     updateSalesChart(diarios.map(d => formatarData(d.data)), diarios.map(d => d.valor));
   });
   kpiUnsubs.push(unsubFat);
+
+  const skusRef = collection(db, `uid/${uid}/skusVendidos/${diaAnterior}/lista`);
+  const unsubSkus = onSnapshot(skusRef, snap => {
+    let totalSkus = 0;
+    snap.forEach(item => {
+      const dados = item.data();
+      totalSkus += Number(dados.total || dados.quantidade) || 0;
+    });
+    skusEl.textContent = totalSkus;
+  });
+  kpiUnsubs.push(unsubSkus);
 
   const devolucoesRef = collection(db, `uid/${uid}/devolucoes`);
   const unsubDev = onSnapshot(devolucoesRef, snap => {
