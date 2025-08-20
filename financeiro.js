@@ -344,7 +344,7 @@ function initKpiRealtime() {
   subscribeKPIs();
 }
 
-function subscribeKPIs() {
+async function subscribeKPIs() {
   kpiUnsubs.forEach(fn => fn());
   kpiUnsubs = [];
   const uid = document.getElementById('usuarioFiltro')?.value;
@@ -353,16 +353,65 @@ function subscribeKPIs() {
   const liquidoEl = document.getElementById('kpiVendasLiquido');
   const skusEl = document.getElementById('kpiVendasSkus');
   const metaEl = document.getElementById('kpiMetaAtingida');
+  const metaProjEl = document.getElementById('kpiMetaProjection');
   const metaBar = document.getElementById('kpiMetaProgress');
   const metaWrap = document.getElementById('kpiMetaProgressWrapper');
   const devEl = document.getElementById('kpiDevolucoes');
   if (!brutoEl || !liquidoEl || !skusEl || !metaEl || !devEl) return;
-  if (!uid || uid === 'todos') {
+  if (!uid) {
     brutoEl.textContent = '-';
     liquidoEl.textContent = '-';
     skusEl.textContent = '-';
     metaEl.textContent = '-';
+    if (metaProjEl) metaProjEl.textContent = 'Proj: -';
     devEl.textContent = '-';
+    return;
+  }
+  if (uid === 'todos') {
+    brutoEl.textContent = '-';
+    liquidoEl.textContent = '-';
+    skusEl.textContent = '-';
+    devEl.textContent = '-';
+    let totalMes = 0;
+    let metaValor = 0;
+    for (const u of usuariosCache) {
+      try {
+        const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mes));
+        if (metaDoc.exists()) metaValor += Number(metaDoc.data().valor) || 0;
+      } catch (_) {}
+      const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+      for (const d of fatSnap.docs) {
+        if (mes && !d.id.startsWith(mes)) continue;
+        const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
+        totalMes += totalDia;
+      }
+    }
+    const [ano, mesNum] = mes.split('-').map(Number);
+    const totalDias = new Date(ano, mesNum, 0).getDate();
+    const hoje = new Date();
+    let diasDecorridos = totalDias;
+    if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+    const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
+    const projTotal = mediaDiaria * totalDias;
+    const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+    const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
+    metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
+    if (metaProjEl) metaProjEl.textContent = metaValor ? `Proj: ${projPerc.toFixed(1)}%` : 'Proj: 0%';
+    if (metaBar && metaWrap) {
+      metaBar.style.width = `${prog.toFixed(0)}%`;
+      metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
+      metaEl.classList.remove('text-green-600','text-yellow-500','text-red-600');
+      if (prog >= 100) {
+        metaWrap.classList.add('text-green-600');
+        metaEl.classList.add('text-green-600');
+      } else if (prog >= 50) {
+        metaWrap.classList.add('text-yellow-500');
+        metaEl.classList.add('text-yellow-500');
+      } else {
+        metaWrap.classList.add('text-red-600');
+        metaEl.classList.add('text-red-600');
+      }
+    }
     return;
   }
   const ontem = new Date();
@@ -394,7 +443,16 @@ function subscribeKPIs() {
     brutoEl.textContent = `R$ ${vendasBruto.toLocaleString('pt-BR')}`;
     liquidoEl.textContent = `R$ ${vendasLiquido.toLocaleString('pt-BR')}`;
     const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+    const [ano, mesNum] = mes.split('-').map(Number);
+    const totalDias = new Date(ano, mesNum, 0).getDate();
+    const hoje = new Date();
+    let diasDecorridos = totalDias;
+    if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+    const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
+    const projTotal = mediaDiaria * totalDias;
+    const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
     metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
+    if (metaProjEl) metaProjEl.textContent = metaValor ? `Proj: ${projPerc.toFixed(1)}%` : 'Proj: 0%';
     if (metaBar && metaWrap) {
       metaBar.style.width = `${prog.toFixed(0)}%`;
       metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
