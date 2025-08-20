@@ -356,6 +356,7 @@ async function subscribeKPIs() {
   const metaProjEl = document.getElementById('kpiMetaProjection');
   const metaBar = document.getElementById('kpiMetaProgress');
   const metaWrap = document.getElementById('kpiMetaProgressWrapper');
+  const metaMulti = document.getElementById('kpiMetaMulti');
   const devEl = document.getElementById('kpiDevolucoes');
   if (!brutoEl || !liquidoEl || !skusEl || !metaEl || !devEl) return;
   if (!uid) {
@@ -372,47 +373,48 @@ async function subscribeKPIs() {
     liquidoEl.textContent = '-';
     skusEl.textContent = '-';
     devEl.textContent = '-';
-    let totalMes = 0;
-    let metaValor = 0;
-    for (const u of usuariosCache) {
-      try {
-        const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mes));
-        if (metaDoc.exists()) metaValor += Number(metaDoc.data().valor) || 0;
-      } catch (_) {}
-      const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
-      for (const d of fatSnap.docs) {
-        if (mes && !d.id.startsWith(mes)) continue;
-        const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
-        totalMes += totalDia;
-      }
-    }
-    const [ano, mesNum] = mes.split('-').map(Number);
-    const totalDias = new Date(ano, mesNum, 0).getDate();
-    const hoje = new Date();
-    let diasDecorridos = totalDias;
-    if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
-    const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
-    const projTotal = mediaDiaria * totalDias;
-    const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
-    const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
-    metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
-    if (metaProjEl) metaProjEl.textContent = metaValor ? `Proj: ${projPerc.toFixed(1)}%` : 'Proj: 0%';
-    if (metaBar && metaWrap) {
-      metaBar.style.width = `${prog.toFixed(0)}%`;
-      metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
-      metaEl.classList.remove('text-green-600','text-yellow-500','text-red-600');
-      if (prog >= 100) {
-        metaWrap.classList.add('text-green-600');
-        metaEl.classList.add('text-green-600');
-      } else if (prog >= 50) {
-        metaWrap.classList.add('text-yellow-500');
-        metaEl.classList.add('text-yellow-500');
-      } else {
-        metaWrap.classList.add('text-red-600');
-        metaEl.classList.add('text-red-600');
+    if (metaEl && metaProjEl && metaWrap && metaMulti) {
+      metaEl.classList.add('hidden');
+      metaProjEl.classList.add('hidden');
+      metaWrap.classList.add('hidden');
+      metaMulti.classList.remove('hidden');
+      metaMulti.innerHTML = '';
+      for (const u of usuariosCache) {
+        let metaValor = 0;
+        try {
+          const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mes));
+          if (metaDoc.exists()) metaValor = Number(metaDoc.data().valor) || 0;
+        } catch (_) {}
+        const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+        let totalMes = 0;
+        for (const d of fatSnap.docs) {
+          if (mes && !d.id.startsWith(mes)) continue;
+          const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
+          totalMes += totalDia;
+        }
+        const [ano, mesNum] = mes.split('-').map(Number);
+        const totalDias = new Date(ano, mesNum, 0).getDate();
+        const hoje = new Date();
+        let diasDecorridos = totalDias;
+        if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+        const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
+        const projTotal = mediaDiaria * totalDias;
+        const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+        const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
+        const color = prog >= 100 ? 'text-green-600' : prog >= 50 ? 'text-yellow-500' : 'text-red-600';
+        const item = document.createElement('div');
+        item.innerHTML = `\n          <div class="text-sm font-medium">${u.nome}</div>\n          <div class="flex items-baseline gap-2">\n            <span class="text-2xl font-bold ${color}">${metaValor ? prog.toFixed(1) : '0'}%</span>\n            <span class="text-xs text-gray-500">Proj: ${metaValor ? projPerc.toFixed(1) : '0'}%</span>\n          </div>\n          <div class="progress mt-1 ${color}">\n            <div class="progress-bar" style="width:${prog.toFixed(0)}%"></div>\n          </div>`;
+        metaMulti.appendChild(item);
       }
     }
     return;
+  }
+  if (metaEl && metaProjEl && metaWrap && metaMulti) {
+    metaEl.classList.remove('hidden');
+    metaProjEl.classList.remove('hidden');
+    metaWrap.classList.remove('hidden');
+    metaMulti.classList.add('hidden');
+    metaMulti.innerHTML = '';
   }
   const ontem = new Date();
   ontem.setDate(ontem.getDate() - 1);
