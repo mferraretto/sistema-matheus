@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Desempenho</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
@@ -12,54 +11,62 @@
 <body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <main class="main-content p-4 space-y-4">
-    <div class="card p-4 flex flex-wrap items-center gap-4">
+  <main class="main-content p-4 space-y-6">
+    <div class="bg-white rounded-2xl shadow-lg p-4 flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
-        <i class="fa fa-calendar text-blue-500"></i>
+        <span class="text-xl">📅</span>
         <div class="flex flex-col">
           <label for="inicio" class="text-xs font-medium">Início</label>
           <input type="date" id="inicio" class="border rounded p-2 text-sm" />
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <i class="fa fa-calendar text-blue-500"></i>
+        <span class="text-xl">📅</span>
         <div class="flex flex-col">
           <label for="fim" class="text-xs font-medium">Fim</label>
           <input type="date" id="fim" class="border rounded p-2 text-sm" />
         </div>
       </div>
-      <button id="carregar" class="btn btn-primary text-sm">Carregar</button>
+      <button id="carregar" class="bg-green-500 hover:bg-green-600 text-white rounded-full px-4 py-2 text-sm">Carregar</button>
     </div>
 
-    <div class="card">
+    <div id="kpiCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+    <div class="bg-white rounded-2xl shadow-lg">
       <div class="card-header">
-        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-trophy"></i> Ranking dos vendedores</h2>
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2"><span>🏆</span> Ranking dos vendedores</h2>
       </div>
       <div class="card-body">
         <table id="rankingTable" class="data-table w-full text-sm"></table>
       </div>
     </div>
 
-    <div class="card">
+    <div class="bg-white rounded-2xl shadow-lg">
       <div class="card-header">
-        <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> Evolução das vendas</h2>
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2"><span>📊</span> Evolução das vendas</h2>
       </div>
-      <div class="card-body space-y-4">
-        <div>
-          <h3 class="font-medium">Diária</h3>
+      <div class="card-body">
+        <div id="evolucaoTabs" class="border-b border-gray-200 mb-4 flex gap-4 text-sm text-gray-500 uppercase tracking-wide">
+          <button data-tab="diaria" class="tab-btn px-3 py-1 rounded-full bg-gray-200 text-gray-700">Diária</button>
+          <button data-tab="semanal" class="tab-btn px-3 py-1 rounded-full">Semanal</button>
+          <button data-tab="mensal" class="tab-btn px-3 py-1 rounded-full">Mensal</button>
+        </div>
+        <div id="tab-diaria" class="tab-content space-y-4">
+          <canvas id="diarioChart" class="w-full h-64"></canvas>
           <table id="diarioTable" class="data-table w-full text-sm"></table>
         </div>
-        <div>
-          <h3 class="font-medium">Semanal</h3>
+        <div id="tab-semanal" class="tab-content space-y-4 hidden">
+          <canvas id="semanalChart" class="w-full h-64"></canvas>
           <table id="semanalTable" class="data-table w-full text-sm"></table>
         </div>
-        <div>
-          <h3 class="font-medium">Mensal</h3>
+        <div id="tab-mensal" class="tab-content space-y-4 hidden">
+          <canvas id="mensalChart" class="w-full h-64"></canvas>
           <table id="mensalTable" class="data-table w-full text-sm"></table>
         </div>
       </div>
     </div>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="desempenho.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-financeiro.html';</script>
