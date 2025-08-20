@@ -382,13 +382,13 @@ function subscribeKPIs() {
     let vendasBruto = 0;
     const diarios = [];
     for (const d of snap.docs) {
-      if (mes && !d.id.includes(mes)) continue;
       const { liquido: totalDia, bruto: brutoDia } = await calcularFaturamentoDiaDetalhado(uid, d.id);
-      totalMes += totalDia;
       if (d.id === diaAnterior) {
         vendasLiquido = totalDia;
         vendasBruto = brutoDia;
       }
+      if (mes && !d.id.startsWith(mes)) continue;
+      totalMes += totalDia;
       diarios.push({ data: d.id, valor: totalDia });
     }
     brutoEl.textContent = `R$ ${vendasBruto.toLocaleString('pt-BR')}`;
