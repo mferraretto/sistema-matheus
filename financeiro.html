@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
@@ -43,16 +44,24 @@
     <div id="kpiDashboard" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="card text-center p-4">
         <h4 class="text-sm text-gray-500">Vendas do Dia</h4>
-        <div id="kpiVendasDia" class="text-2xl font-bold">-</div>
+        <div id="kpiVendasDia" class="text-3xl font-bold">-</div>
       </div>
-      <div class="card text-center p-4">
+      <div class="card text-center p-4" id="kpiMetaCard">
         <h4 class="text-sm text-gray-500">Meta Atingida</h4>
-        <div id="kpiMetaAtingida" class="text-2xl font-bold">-</div>
+        <div id="kpiMetaAtingida" class="text-3xl font-bold">-</div>
+        <div id="kpiMetaProgressWrapper" class="progress mt-2 text-blue-600">
+          <div id="kpiMetaProgress" class="progress-bar" style="width:0%"></div>
+        </div>
       </div>
       <div class="card text-center p-4">
         <h4 class="text-sm text-gray-500">Devoluções</h4>
-        <div id="kpiDevolucoes" class="text-2xl font-bold">-</div>
+        <div id="kpiDevolucoes" class="text-3xl font-bold">-</div>
       </div>
+    </div>
+
+    <div class="card p-4">
+      <h4 class="text-sm text-gray-500 mb-2">Evolução das Vendas</h4>
+      <canvas id="vendasChart" height="120"></canvas>
     </div>
 
     <div id="cardsContainer" class="space-y-6"></div>
