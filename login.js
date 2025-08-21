@@ -173,7 +173,8 @@ async function showUserArea(user) {
     if (input) input.value = nameEl.textContent;
     openModal('displayNameModal');
   };
-  document.getElementById('logoutBtn').classList.remove('hidden');
+  // Exibe o botão de logout apenas se estiver presente na navbar
+  document.getElementById('logoutBtn')?.classList.remove('hidden');
 
   window.sistema = window.sistema || {};
   window.sistema.uid = user.uid;
@@ -223,7 +224,8 @@ function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
   nameEl.textContent = 'Usuário';
   nameEl.onclick = null;
-  document.getElementById('logoutBtn').classList.add('hidden');
+  // Oculta o botão de logout apenas se ele existir
+  document.getElementById('logoutBtn')?.classList.add('hidden');
   if (window.sistema) delete window.sistema.uid;
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
@@ -368,7 +370,8 @@ function checkLogin() {
 
 document.addEventListener('navbarLoaded', () => {
   document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
-  document.getElementById('logoutBtn').addEventListener('click', logout);
+  // Garante que o evento de logout só seja registrado se o botão existir
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
   if (window.location.search.includes('login=1')) {
   // Espera o estado do Firebase para decidir se deve abrir
