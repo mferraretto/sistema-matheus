@@ -1,288 +1,178 @@
-import { onRequest } from "firebase-functions/v2/https";
-import { defineSecret } from "firebase-functions/params";
-import axios from "axios";
-import corsModule from "cors";
+// index.js (Firebase Functions) - Versão de Produção
+
+import * as https from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth } from "firebase-admin/auth"; // Importar o serviço de autenticação
+import cors from "cors";
+
+// Seus módulos de utilidades
 import { storeUserTinyToken, getUserTinyToken, destroyUserTinyToken } from "./secret-utils.js";
 import { tinyTestToken, pesquisarPedidos, obterPedido, pesquisarProdutos } from "./tiny-client.js";
 
-const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
-const SHOPEE_CLIENT_ID = defineSecret("SHOPEE_CLIENT_ID");
-const SHOPEE_CLIENT_SECRET = defineSecret("SHOPEE_CLIENT_SECRET");
-const cors = corsModule({ origin: ["https://mferraretto.github.io"] });
-
+// Inicializar os serviços do Firebase Admin
 initializeApp();
 const db = getFirestore();
+const auth = getAuth(); // Instanciar o serviço de autenticação
+const corsHandler = cors({ origin: true });
 
-async function requireAuth(req) {
-  // espera cabeçalho Authorization: Bearer <ID_TOKEN_DO_FIREBASE>
-  const authHeader = req.headers.authorization || "";
-  const match = authHeader.match(/^Bearer (.+)$/i);
-  if (!match) throw new Error("Sem Authorization Bearer.");
-  const idToken = match[1];
-  const decoded = await getAuth().verifyIdToken(idToken);
-  return decoded.uid;
+/**
+ * Função auxiliar para verificar o token de autenticação e retornar o UID.
+ * Lança um erro se a autenticação falhar.
+ * @param {string | undefined} authorizationHeader O cabeçalho 'Authorization' da requisição.
+ * @returns {Promise<string>} O UID do usuário autenticado.
+ */
+async function getAuthenticatedUid(authorizationHeader) {
+  if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+    throw new https.HttpsError('unauthenticated', 'Não autorizado: Nenhum token fornecido.');
+  }
+  const idToken = authorizationHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await auth.verifyIdToken(idToken);
+    return decodedToken.uid;
+  } catch (error) {
+    console.error("Falha na verificação do token:", error);
+    throw new https.HttpsError('unauthenticated', 'Não autorizado: Token inválido ou expirado.');
+  }
 }
 
-export const proxyDeepSeek = onRequest(
-  {
-    region: "us-central1",
-    secrets: [DEEPSEEK_API_KEY],
-  },
-  (req, res) => {
-    cors(req, res, async () => {
-      try {
-        const { model, messages, pergunta } = req.body;
+// --- Funções de Autenticação e Configuração ---
 
-        console.log("📥 Requisição recebida:");
-        console.log("🔹 model:", model);
-        console.log("🔹 pergunta (separada):", pergunta);
-        console.log("🔹 messages:", JSON.stringify(messages, null, 2));
-
-        const promptMessages = messages || [
-          {
-            role: "system",
-            content: "Você é um especialista em performance de vendas para Shopee.",
-          },
-          {
-            role: "user",
-            content: pergunta || "Me diga um insight",
-          },
-        ];
-        const bodyParaDeepSeek = {
-          model: model || "deepseek-chat",
-          messages: promptMessages,
-        };
-
-        console.log("📤 Corpo enviado para DeepSeek:", JSON.stringify(bodyParaDeepSeek, null, 2));
-
-        const resposta = await axios.post(
-          "https://api.deepseek.com/chat/completions",
-          {
-            model: model || "deepseek-chat",
-            messages: promptMessages,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${await DEEPSEEK_API_KEY.value()}`,
-            },
-          }
-        );
-
-        res.status(200).json(resposta.data);
-        console.log("📬 Resposta recebida da DeepSeek:", JSON.stringify(resposta.data, null, 2));
-      } catch (error) {
-        const erroResposta = error.response?.data || {};
-        console.error("Erro ao consultar DeepSeek:", erroResposta, error.message);
-        res.status(500).json({
-          erro: "Erro ao consultar DeepSeek",
-          detalhes: erroResposta || error.message,
-        });
-      }
-    });
-  }
-);
-
-export const shopeeAuthCallback = onRequest(
-  {
-    region: "us-central1",
-    secrets: [SHOPEE_CLIENT_ID, SHOPEE_CLIENT_SECRET],
-  },
-  (req, res) => {
-    cors(req, res, async () => {
-      try {
-        const { code, state } = req.query;
-        if (!code || !state) {
-          res.status(400).json({ erro: "Faltando code ou state" });
-          return;
-        }
-
-        const tokenResponse = await axios.post(
-          "https://partner.shopeemobile.com/api/v2/auth/token/get",
-          {
-            code,
-            client_id: await SHOPEE_CLIENT_ID.value(),
-            client_secret: await SHOPEE_CLIENT_SECRET.value(),
-          }
-        );
-
-        await db.collection("shopee_tokens").doc(state).set(tokenResponse.data);
-
-        res.redirect(302, "/gestao-contas.html");
-      } catch (error) {
-        console.error(
-          "Erro ao obter tokens da Shopee:",
-          error.response?.data || error.message
-        );
-        res.status(500).json({
-          erro: "Erro ao obter tokens da Shopee",
-          detalhes: error.response?.data || error.message,
-        });
-      }
-    });
-  }
-);
-
-// 1) Conectar (salvar token do Tiny do usuário no Secret Manager)
-export const connectTiny = onRequest({ region: "southamerica-east1", timeoutSeconds: 30 }, (req, res) => {
-  cors(req, res, async () => {
+export const connectTiny = https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== 'POST') {
+      return res.status(405).send('Method Not Allowed');
+    }
     try {
-      if (req.method === "OPTIONS") {
-        res.set("Access-Control-Allow-Origin", "https://mferraretto.github.io");
-        res.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-        res.set("Access-Control-Allow-Methods", "POST");
-        return res.status(204).send("");
+      const uid = await getAuthenticatedUid(req.headers.authorization);
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ ok: false, error: "Token não fornecido." });
       }
-      if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
-      const uid = await requireAuth(req);
 
-      const { token, integradorId = 12228, validar = true } = req.body || {};
-      if (!token) return res.status(400).json({ error: "token obrigatório" });
-
-      if (validar) {
-        const ok = await tinyTestToken(token);
-        if (!ok) return res.status(400).json({ error: "Token Tiny inválido (falha no teste de conexão)." });
+      const isTokenValid = await tinyTestToken(token);
+      if (!isTokenValid) {
+        return res.status(401).json({ ok: false, error: "Token Tiny inválido." });
       }
 
       await storeUserTinyToken(uid, token);
-      await db.doc(`usuarios/${uid}/integracoes/tiny`).set({
-        conectado: true,
-        integradorId,
-        atualizadoEm: Date.now()
-      }, { merge: true });
+      res.status(200).json({ ok: true, message: "Token conectado com sucesso." });
 
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(401).json({ error: String(e?.message || e) });
+    } catch (error) {
+      console.error("Erro em connectTiny:", error);
+      const status = error.code === 'unauthenticated' ? 401 : 500;
+      res.status(status).json({ ok: false, error: error.message });
     }
   });
 });
 
-// 2) Desconectar (revogar)
-export const disconnectTiny = onRequest({ region: "southamerica-east1", timeoutSeconds: 30 }, (req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
-      const uid = await requireAuth(req);
-      await destroyUserTinyToken(uid);
-      await db.doc(`usuarios/${uid}/integracoes/tiny`).set({
-        conectado: false,
-        atualizadoEm: Date.now()
-      }, { merge: true });
-      res.json({ ok: true });
-    } catch (e) {
-      res.status(401).json({ error: String(e?.message || e) });
-    }
-  });
-});
-
-// 3) Sync de Pedidos (apenas Shopee)
-export const syncTinyOrders = onRequest({ region: "southamerica-east1", timeoutSeconds: 540 }, (req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
-      const uid = await requireAuth(req);
-      const token = await getUserTinyToken(uid);
-
-      const { dataInicial, dataFinal, dataAtualizacao } = req.body || {};
-      let pagina = 1, total = 0;
-
-      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-      while (true) {
-        const ret = await pesquisarPedidos({ dataInicial, dataFinal, dataAtualizacao, pagina }, token);
-        const lista = ret.pedidos || [];
-        for (const { pedido } of lista) {
-          const det = await obterPedido(pedido.id, token);
-          const canal = (det?.ecommerce?.nomeEcommerce || det?.canalVenda || '').toLowerCase();
-          if (!canal.includes('shopee')) continue;
-
-          const doc = {
-            idTiny: det.id,
-            numero: det.numero,
-            numeroEcommerce: det.ecommerce?.numeroPedido || det.numero_pedido_ecommerce || null,
-            canal: det?.ecommerce?.nomeEcommerce || det?.canalVenda || 'Shopee',
-            data: det.data_pedido || det.dataCriacao || null,
-            cliente: det.cliente?.nome || null,
-            total: det.valor_total || det.totalProdutos || 0,
-            status: det.situacao || det.status?.descricao || null,
-            itens: (det.itens || []).map(i => ({
-              sku: i.item?.codigo || i.codigo,
-              produto: i.item?.descricao || i.descricao,
-              variacao: i.item?.descricaoDetalhada || i.variacao || null,
-              quantidade: i.item?.quantidade || i.quantidade || 1,
-              preco: i.item?.valor_unitario || i.valor_unitario || 0
-            })),
-            updatedAt: Date.now()
-          };
-
-          await db.doc(`usuarios/${uid}/pedidosShopeeTiny/${doc.numero}`).set(doc, { merge: true });
-          total++;
-          await sleep(120);
+export const disconnectTiny = https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+        if (req.method !== 'POST') {
+            return res.status(405).send('Method Not Allowed');
         }
-        if (ret.pagina >= ret.numero_paginas) break;
-        pagina++;
-        await sleep(200);
-      }
+        try {
+            const uid = await getAuthenticatedUid(req.headers.authorization);
+            await destroyUserTinyToken(uid);
+            res.status(200).json({ ok: true, message: "Token desconectado." });
 
-      res.json({ ok: true, total });
-    } catch (e) {
-      res.status(401).json({ error: String(e?.message || e) });
-    }
-  });
+        } catch (error) {
+            console.error("Erro em disconnectTiny:", error);
+            const status = error.code === 'unauthenticated' ? 401 : 500;
+            res.status(status).json({ ok: false, error: error.message });
+        }
+    });
 });
 
-// 4) Sync de Produtos
-export const syncTinyProducts = onRequest({ region: "southamerica-east1", timeoutSeconds: 540 }, (req, res) => {
-  cors(req, res, async () => {
-    try {
-      if (req.method !== "POST") return res.status(405).json({ error: "Use POST" });
-      const uid = await requireAuth(req);
-      const token = await getUserTinyToken(uid);
+// --- Funções de Sincronização ---
 
-      const { modo = 'scan' } = req.body || {};
-      const prefixes = modo === 'scan' ? [...'abcdefghijklmnopqrstuvwxyz0123456789'] : ['a'];
-      const vistos = new Set();
-      let total = 0;
+export const syncTinyProducts = https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            const uid = await getAuthenticatedUid(req.headers.authorization);
+            const token = await getUserTinyToken(uid);
+            const userProductsStore = db.collection(`usuarios/${uid}/produtosTiny`);
+            let pagina = 1;
+            let totalProdutosSincronizados = 0;
 
-      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+            while (true) {
+                const retorno = await pesquisarProdutos({ pagina }, token);
+                const produtos = retorno.produtos;
+                if (!produtos || produtos.length === 0) break;
 
-      for (const p of prefixes) {
-        let pagina = 1;
-        while (true) {
-          const ret = await pesquisarProdutos({ pesquisa: p, pagina }, token);
-          const lista = ret.produtos || [];
-          for (const { produto } of lista) {
-            if (vistos.has(produto.id)) continue;
-            vistos.add(produto.id);
+                const batch = db.batch();
+                produtos.forEach(item => {
+                    const p = item.produto;
+                    const docRef = userProductsStore.doc(String(p.id));
+                    batch.set(docRef, { ...p, updatedAt: new Date().toISOString() }, { merge: true });
+                });
+                await batch.commit();
 
-            const doc = {
-              idTiny: produto.id,
-              sku: produto.codigo,
-              nome: produto.nome,
-              tipoVariacao: produto.tipoVariacao || null,
-              preco: produto.preco ?? null,
-              precoPromocional: produto.preco_promocional ?? null,
-              gtin: produto.gtin ?? null,
-              situacao: produto.situacao ?? null,
-              updatedAt: Date.now()
-            };
+                totalProdutosSincronizados += produtos.length;
+                pagina++;
+            }
 
-            await db.doc(`usuarios/${uid}/produtosTiny/${doc.idTiny}`).set(doc, { merge: true });
-            total++;
-          }
-          if (ret.pagina >= ret.numero_paginas) break;
-          pagina++;
-          await sleep(150);
+            res.status(200).json({ ok: true, message: `${totalProdutosSincronizados} produtos sincronizados.` });
+
+        } catch (error) {
+            console.error("Erro em syncTinyProducts:", error);
+            const status = error.code === 'unauthenticated' ? 401 : 500;
+            res.status(status).json({ ok: false, error: error.message });
         }
-      }
+    });
+});
 
-      res.json({ ok: true, total });
-    } catch (e) {
-      res.status(401).json({ error: String(e?.message || e) });
-    }
-  });
+export const syncTinyOrders = https.onRequest(async (req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            const uid = await getAuthenticatedUid(req.headers.authorization);
+            const token = await getUserTinyToken(uid);
+            const { dataInicial, dataFinal, dataAtualizacao } = req.body;
+            const userOrdersStore = db.collection(`usuarios/${uid}/pedidosShopeeTiny`);
+            let pagina = 1;
+            let totalPedidosSincronizados = 0;
+
+            while (true) {
+                const params = { pagina, dataInicial, dataFinal, dataAtualizacao };
+                const retorno = await pesquisarPedidos(params, token);
+                const pedidos = retorno.pedidos;
+                if (!pedidos || pedidos.length === 0) break;
+
+                const batch = db.batch();
+                for (const item of pedidos) {
+                    const p = item.pedido;
+                    const docRef = userOrdersStore.doc(String(p.id));
+                    const dadosPedido = {
+                        id: p.id,
+                        numero: p.numero,
+                        numeroEcommerce: p.numero_ecommerce,
+                        data: p.data_pedido,
+                        cliente: p.cliente.nome,
+                        total: parseFloat(p.valor_total),
+                        status: p.situacao,
+                        canal: p.nome_ecommerce,
+                        itens: (p.itens || []).map(it => ({
+                            sku: it.item.codigo,
+                            nome: it.item.descricao,
+                            quantidade: parseFloat(it.item.quantidade),
+                            preco: parseFloat(it.item.valor_unitario)
+                        })),
+                        updatedAt: new Date().toISOString()
+                    };
+                    batch.set(docRef, dadosPedido, { merge: true });
+                }
+                await batch.commit();
+
+                totalPedidosSincronizados += pedidos.length;
+                pagina++;
+            }
+            
+            res.status(200).json({ ok: true, message: `${totalPedidosSincronizados} pedidos sincronizados.` });
+
+        } catch (error) {
+            console.error("Erro em syncTinyOrders:", error);
+            const status = error.code === 'unauthenticated' ? 401 : 500;
+            res.status(status).json({ ok: false, error: error.message });
+        }
+    });
 });

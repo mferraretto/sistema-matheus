@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "source": "functions",
+    "predeploy": [
+      // Comente ou remova a linha do "npm run lint" se ela existir,
+      // ou simplesmente deixe o array vazio para pular essa etapa.
+    ]
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
