@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tiny ERP</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <!-- Este container vai carregar os modais de login, etc. -->
+  <div id="auth-modals-container"></div>
+
+  <div class="main-content p-4">
+    <section id="aba-tiny" class="p-4">
+      <div class="mb-4 flex items-center gap-2">
+        <button class="tabTiny px-3 py-2 rounded-xl border" data-tab="produtos">Produtos</button>
+        <button class="tabTiny px-3 py-2 rounded-xl border" data-tab="pedidos">Pedidos</button>
+        <button class="tabTiny px-3 py-2 rounded-xl border" data-tab="config">Config</button>
+        <div class="ml-auto flex gap-2">
+          <button id="btnSyncProdutos" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Sincronizar Produtos</button>
+          <button id="btnSyncPedidos" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Sincronizar Pedidos</button>
+        </div>
+      </div>
+
+      <!-- Produtos -->
+      <div id="tab-produtos" class="space-y-3">
+        <div class="flex gap-2">
+          <input id="buscaProduto" class="border rounded-xl px-3 py-2 w-full" placeholder="Buscar por nome ou SKU...">
+          <button id="btnFiltrarProdutos" class="px-3 py-2 rounded-xl border">Filtrar</button>
+        </div>
+        <div id="listaProdutos" class="grid md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div class="flex justify-between items-center">
+          <button id="prevProdutos" class="px-3 py-2 border rounded-xl">Anterior</button>
+          <span id="pagProdutos" class="text-sm text-gray-500"></span>
+          <button id="nextProdutos" class="px-3 py-2 border rounded-xl">Próxima</button>
+        </div>
+      </div>
+
+      <!-- Pedidos -->
+      <div id="tab-pedidos" class="space-y-3 hidden">
+        <div class="grid md:grid-cols-3 gap-2">
+          <input id="dataInicial" type="date" class="border rounded-xl px-3 py-2">
+          <input id="dataFinal" type="date" class="border rounded-xl px-3 py-2">
+          <button id="btnSyncPedidosPeriodo" class="px-3 py-2 rounded-xl border">Sincronizar por período</button>
+        </div>
+        <div id="listaPedidos" class="grid md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        <div class="flex justify-between items-center">
+          <button id="prevPedidos" class="px-3 py-2 border rounded-xl">Anterior</button>
+          <span id="pagPedidos" class="text-sm text-gray-500"></span>
+          <button id="nextPedidos" class="px-3 py-2 border rounded-xl">Próxima</button>
+        </div>
+      </div>
+
+      <!-- Config -->
+      <div id="tab-config" class="hidden">
+        <p class="text-sm text-gray-600">Esta aba usa o Token Tiny salvo como segredo no backend. Nenhum dado sensível é salvo no navegador.</p>
+        <div class="rounded-2xl border p-4 space-y-3">
+          <h3 class="font-semibold">Conectar Tiny</h3>
+          <label class="block text-sm">Token do Tiny</label>
+          <input id="tinyToken" class="border rounded-xl px-3 py-2 w-full" placeholder="Cole seu token aqui">
+          <button id="btnConectarTiny" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Conectar</button>
+          <button id="btnDesconectarTiny" class="px-3 py-2 rounded-xl border">Desconectar</button>
+          <div id="tinyStatus" class="text-sm text-gray-600"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scripts da Aplicação -->
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="tiny.js"></script>
+  <script src="shared.js"></script>
+  <script type="module" src="login.js"></script>
+</body>
+</html>
