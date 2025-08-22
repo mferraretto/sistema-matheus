@@ -146,20 +146,67 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   }
   const labels = Object.keys(dias).sort((a,b)=>a.localeCompare(b));
   const valores = labels.map(d=>dias[d]);
-  const lucro = totalLiquido - totalBruto;
+
+  let totalSaques = 0;
+  let totalComissao = 0;
+  const snapSaques = isAdmin
+    ? await getDocs(collectionGroup(db, 'saques'))
+    : await getDocs(collection(db, `uid/${uid}/saques`));
+  for (const docSnap of snapSaques.docs) {
+    const [anoS, mesS] = docSnap.id.split('-');
+    if (`${anoS}-${mesS}` !== mesAtual) continue;
+    const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
+    const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
+    const pass = passFn ? await passFn() : null;
+    const dados = await loadSecureDoc(db, `uid/${ownerUid}/saques`, docSnap.id, pass || ownerUid);
+    if (dados) totalSaques += dados.valorTotal || 0;
+    const subRef = collection(db, `uid/${ownerUid}/saques/${docSnap.id}/lojas`);
+    const subSnap = await getDocs(subRef);
+    for (const s of subSnap.docs) {
+      const enc = s.data().encrypted;
+      if (!enc) continue;
+      let txt;
+      try {
+        txt = await decryptString(enc, pass || ownerUid);
+      } catch (e) {
+        if (pass) {
+          try {
+            txt = await decryptString(enc, ownerUid);
+          } catch (_) {
+            // ignore
+          }
+        }
+      }
+      if (!txt) continue;
+      try {
+        const obj = JSON.parse(txt);
+        totalComissao += obj.comissao || 0;
+      } catch (_) {
+        // ignore JSON errors
+      }
+    }
+  }
+
   if (kpiEl) {
+    const cardSaques = `
+      <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
+        <div class="text-sm text-gray-500">Saques</div>
+        <div class="text-2xl font-bold">R$ ${totalSaques.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        <div class="text-sm text-gray-500 mt-2">Comissão</div>
+        <div class="text-2xl font-bold">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+      </div>
+    `;
     const kpis = [
-      { titulo: 'Lucro', valor: lucro, moeda: true },
       { titulo: 'Receita Bruta', valor: totalBruto, moeda: true },
       { titulo: 'Receita Líquida', valor: totalLiquido, moeda: true },
       { titulo: 'Pedidos', valor: pedidos, moeda: false }
     ];
-    kpiEl.innerHTML = kpis.map(k => `
+    kpiEl.innerHTML = [cardSaques, ...kpis.map(k => `
       <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
         <div class="text-sm text-gray-500">${k.titulo}</div>
         <div class="text-2xl font-bold">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
       </div>
-    `).join('');
+    `)].join('');
   }
   el.innerHTML = `
       <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
