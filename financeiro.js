@@ -36,6 +36,7 @@ onAuthStateChanged(auth, async user => {
   await carregar();
   initFaturamentoFeed(usuarios);
   initKpiRealtime();
+  initKpiVendasDetalhes();
 });
 
 function setupFiltros(usuarios) {
@@ -311,6 +312,30 @@ async function calcularFaturamentoDiaDetalhado(uid, dia) {
   return { liquido, bruto };
 }
 
+async function getFaturamentoRegistrosDia(uid, dia) {
+  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+  const registros = [];
+  for (const lojaDoc of lojasSnap.docs) {
+    let dados = lojaDoc.data();
+    if (dados.encrypted) {
+      const pass = getPassphrase() || `chave-${uid}`;
+      let txt;
+      try {
+        txt = await decryptString(dados.encrypted, pass);
+      } catch (e) {
+        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+      }
+      if (txt) dados = JSON.parse(txt);
+    }
+    registros.push({
+      loja: lojaDoc.id,
+      valorBruto: Number(dados.valorBruto) || 0,
+      valorLiquido: Number(dados.valorLiquido) || 0
+    });
+  }
+  return registros;
+}
+
 async function calcularFaturamentoDia(uid, dia) {
   const { liquido } = await calcularFaturamentoDiaDetalhado(uid, dia);
   return liquido;
@@ -347,6 +372,31 @@ function initKpiRealtime() {
   if (userSel) userSel.addEventListener('change', subscribeKPIs);
   if (mesSel) mesSel.addEventListener('change', subscribeKPIs);
   subscribeKPIs();
+}
+
+function initKpiVendasDetalhes() {
+  const btn = document.getElementById('kpiVendasDetalhes');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const uid = document.getElementById('usuarioFiltro')?.value;
+    if (!uid || uid === 'todos') {
+      alert('Selecione um usuário');
+      return;
+    }
+    const dia = new Date();
+    dia.setDate(dia.getDate() - 1);
+    const diaStr = dia.toISOString().slice(0,10);
+    const registros = await getFaturamentoRegistrosDia(uid, diaStr);
+    if (!registros.length) {
+      alert('Sem registros de faturamento no dia anterior');
+      return;
+    }
+    const linhas = registros
+      .map(r => `<tr><td>${r.loja}</td><td>R$ ${r.valorBruto.toLocaleString('pt-BR')}</td><td>R$ ${r.valorLiquido.toLocaleString('pt-BR')}</td></tr>`)
+      .join('');
+    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Loja</th><th>Bruto</th><th>Líquido</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    showModal(`Faturamento Diário - ${formatarData(diaStr)}`, tabela);
+  });
 }
 
 async function subscribeKPIs() {
