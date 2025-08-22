@@ -91,11 +91,13 @@ export async function carregarSaques() {
     }
     const total = dados.valorTotal || 0;
     const pago = !!dados.pago;
+    const statusClass = pago ? 'border bg-green-100 border-green-300' : 'border bg-yellow-100 border-yellow-300';
+    const statusText = pago ? 'Pago' : 'Em aberto';
 
     let elem;
     if (modo === 'cards') {
       elem = document.createElement('div');
-      elem.className = 'bg-white rounded-2xl shadow-lg p-4 border border-gray-200 hover:shadow-xl transition';
+      elem.className = `${statusClass} rounded-2xl shadow-lg p-4 hover:shadow-xl transition`;
       elem.innerHTML = `
         <div class="flex justify-between items-center mb-2">
           <div class="text-sm text-gray-500 flex items-center gap-2">
@@ -104,7 +106,7 @@ export async function carregarSaques() {
           </div>
           <label class="inline-flex items-center text-sm">
             <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
-            <span class="ml-1">Pago</span>
+            <span class="ml-1">${statusText}</span>
           </label>
         </div>
         <div class="text-xl font-bold text-green-600 mb-2">R$ ${total.toLocaleString('pt-BR')}</div>
@@ -116,9 +118,9 @@ export async function carregarSaques() {
         <div id="detalhes-${docSnap.id}" class="mt-3 text-sm text-gray-700" style="display:none;"></div>
       `;
    } else {
-  elem = document.createElement('div');
-  elem.className = 'bg-white rounded-lg p-3 border';
-  elem.innerHTML = `
+      elem = document.createElement('div');
+      elem.className = `${statusClass} rounded-lg p-3`;
+      elem.innerHTML = `
     <div class="flex justify-between items-center">
       <div class="flex items-center gap-2">
         <input type="checkbox" class="selecionar-saque" data-saquedata="${docSnap.id}">
@@ -128,7 +130,7 @@ export async function carregarSaques() {
       </div>
       <label class="inline-flex items-center text-sm">
         <input type="checkbox" onchange="alternarPago('${docSnap.id}')" ${pago ? 'checked' : ''}>
-        <span class="ml-1">Pago</span>
+        <span class="ml-1">${statusText}</span>
       </label>
     </div>
     <div class="flex justify-between items-center mt-1">
@@ -137,7 +139,7 @@ export async function carregarSaques() {
     </div>
     <div id="detalhes-${docSnap.id}" class="mt-2 text-sm text-gray-700" style="display:none;"></div>
   `;
-}
+    }
     container.appendChild(elem);
   }
   if (!container.children.length) {
