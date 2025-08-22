@@ -42,49 +42,17 @@
       <button id="salvarMeta" class="btn btn-primary text-sm">Salvar Meta</button>
     </div>
 
-      <div id="kpiDashboard" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-4">
-          <div class="flex justify-between items-center mb-2">
-            <h4 class="text-sm text-gray-500">Vendas do Dia Anterior</h4>
-            <button id="kpiVendasDetalhes" class="btn btn-secondary text-xs">Registros</button>
-          </div>
-          <div id="kpiVendasDia" class="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div id="kpiVendasBruto" class="text-2xl font-bold">-</div>
-              <div class="text-xs text-gray-500">Bruto</div>
-            </div>
-            <div>
-              <div id="kpiVendasLiquido" class="text-2xl font-bold">-</div>
-              <div class="text-xs text-gray-500">Líquido</div>
-            </div>
-            <div>
-              <div id="kpiVendasSkus" class="text-2xl font-bold">-</div>
-              <div class="text-xs text-gray-500">SKUs</div>
-            </div>
-          </div>
-        </div>
-        <div class="card text-center p-4" id="kpiMetaCard">
-          <h4 class="text-sm text-gray-500">Meta Atingida</h4>
-          <div id="kpiMetaAtingida" class="text-3xl font-bold">-</div>
-          <div id="kpiMetaProjection" class="text-xs text-gray-500">Proj: -</div>
-          <div id="kpiMetaProgressWrapper" class="progress mt-2 text-blue-600">
-            <div id="kpiMetaProgress" class="progress-bar" style="width:0%"></div>
-          </div>
-          <div id="kpiMetaMulti" class="hidden space-y-2 mt-2"></div>
-        </div>
-      </div>
-        <div class="card text-center p-4">
-          <h4 class="text-sm text-gray-500">Devoluções</h4>
-          <div id="kpiDevolucoes" class="text-3xl font-bold">-</div>
-        </div>
-      </div>
+    <div id="overviewCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"></div>
+
+    <h4 class="text-sm text-gray-500">Vendas do Dia Anterior</h4>
+    <div id="vendasDiaAnterior" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
     <div class="card p-4">
       <h4 class="text-sm text-gray-500 mb-2">Evolução das Vendas</h4>
       <canvas id="vendasChart" height="120"></canvas>
     </div>
 
-    <div id="cardsContainer" class="space-y-6"></div>
+    <div id="cardsContainer"></div>
   </main>
   <div id="faturamentoUpdatesCard" class="card card-orange fixed top-20 right-4 w-72 max-h-96 overflow-y-auto hidden">
     <div class="card-header">
