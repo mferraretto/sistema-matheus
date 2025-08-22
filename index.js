@@ -148,7 +148,8 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   const valores = labels.map(d=>dias[d]);
 
   let totalSaques = 0;
-  let totalComissao = 0;
+  let totalComissaoPago = 0;
+  let totalComissaoAberto = 0;
   const snapSaques = isAdmin
     ? await getDocs(collectionGroup(db, 'saques'))
     : await getDocs(collection(db, `uid/${uid}/saques`));
@@ -159,6 +160,7 @@ async function carregarResumoFaturamento(uid, isAdmin) {
     const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
     const pass = passFn ? await passFn() : null;
     const dados = await loadSecureDoc(db, `uid/${ownerUid}/saques`, docSnap.id, pass || ownerUid);
+    const pago = dados?.pago || false;
     if (dados) totalSaques += dados.valorTotal || 0;
     const subRef = collection(db, `uid/${ownerUid}/saques/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
@@ -180,7 +182,12 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       if (!txt) continue;
       try {
         const obj = JSON.parse(txt);
-        totalComissao += obj.comissao || 0;
+        const valorComissao = obj.comissao ? (obj.valor * obj.comissao / 100) : 0;
+        if (pago) {
+          totalComissaoPago += valorComissao;
+        } else {
+          totalComissaoAberto += valorComissao;
+        }
       } catch (_) {
         // ignore JSON errors
       }
@@ -192,8 +199,14 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
         <div class="text-sm text-gray-500">Saques</div>
         <div class="text-2xl font-bold">R$ ${totalSaques.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        <div class="text-sm text-gray-500 mt-2">Comissão</div>
-        <div class="text-2xl font-bold">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        <div class="mt-2">
+          <div class="text-sm text-gray-500">Comissão Paga</div>
+          <div class="text-xl font-bold text-green-600">R$ ${totalComissaoPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div class="mt-2">
+          <div class="text-sm text-gray-500">Comissão em Aberto</div>
+          <div class="text-xl font-bold text-yellow-600">R$ ${totalComissaoAberto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        </div>
       </div>
     `;
     const kpis = [
