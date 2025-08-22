@@ -123,7 +123,9 @@ async function carregar() {
   await carregarSkus(listaUsuarios, mes);
   await carregarSaques(listaUsuarios, mes);
   await carregarFaturamentoMeta(listaUsuarios, mes);
+  await carregarDevolucoes(listaUsuarios, mes);
   renderResumoUsuarios(Object.values(resumoUsuarios));
+  await renderVendasDiaAnterior(listaUsuarios);
 }
 
 function atualizarContexto() {
@@ -187,6 +189,7 @@ async function carregarSkus(usuarios, mes) {
     });
     resumoUsuarios[usuario.uid].skus = {
       topSku,
+      topSkuQtd: topQtd,
       totalSkus: Object.keys(resumo).length,
       totalUnidades
     };
@@ -236,12 +239,14 @@ async function carregarFaturamentoMeta(usuarios, mes) {
   dadosFaturamentoExport = [];
   for (const usuario of usuarios) {
     let total = 0;
+    let totalBruto = 0;
     const diario = {};
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
     for (const docSnap of snap.docs) {
       if (mes && !docSnap.id.includes(mes)) continue;
       const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
       let totalDia = 0;
+      let totalDiaBruto = 0;
       for (const lojaDoc of lojasSnap.docs) {
         let dados = lojaDoc.data();
         if (dados.encrypted) {
@@ -255,8 +260,10 @@ async function carregarFaturamentoMeta(usuarios, mes) {
           if (txt) dados = JSON.parse(txt);
         }
         totalDia += Number(dados.valorLiquido) || 0;
+        totalDiaBruto += Number(dados.valorBruto) || 0;
       }
       total += totalDia;
+      totalBruto += totalDiaBruto;
       diario[docSnap.id] = totalDia;
     }
     let meta = 0;
@@ -282,11 +289,25 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta, esperado, diferenca });
     resumoUsuarios[usuario.uid].faturamento = {
       faturado: total,
+      bruto: totalBruto,
       meta,
       esperado,
       diferenca
     };
     resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
+  }
+}
+
+async function carregarDevolucoes(usuarios, mes) {
+  for (const usuario of usuarios) {
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/devolucoes`));
+    let total = 0;
+    snap.forEach(docSnap => {
+      if (mes && !docSnap.id.startsWith(mes)) return;
+      const dados = docSnap.data();
+      total += Number(dados.quantidade || dados.total || 1);
+    });
+    resumoUsuarios[usuario.uid].devolucoes = total;
   }
 }
 
@@ -583,129 +604,70 @@ function updateSalesChart(labels, data) {
 
 function renderResumoUsuarios(lista) {
   const container = document.getElementById('cardsContainer');
-  if (!container) return;
+  const overview = document.getElementById('overviewCards');
+  if (!container || !overview) return;
   container.innerHTML = '';
-  lista.forEach(u => {
-    const row = document.createElement('div');
-    row.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-    row.appendChild(createSkusCard(u));
-    row.appendChild(createSaquesCard(u));
-    row.appendChild(createFaturamentoCard(u));
-    container.appendChild(row);
-  });
+  overview.innerHTML = '';
+
+  const totalBruto = lista.reduce((s, u) => s + (u.faturamento?.bruto || 0), 0);
+  const totalLiquido = lista.reduce((s, u) => s + (u.faturamento?.faturado || 0), 0);
+  const metaTotal = lista.reduce((s, u) => s + (u.faturamento?.meta || 0), 0);
+  const devolTotal = lista.reduce((s, u) => s + (u.devolucoes || 0), 0);
+  const perc = metaTotal ? (totalLiquido / metaTotal) * 100 : 0;
+  const percColor = perc >= 100 ? 'text-green-600' : perc >= 50 ? 'text-yellow-500' : 'text-red-600';
+
+  overview.innerHTML = `
+    <div class="card p-4 flex items-center gap-2 text-green-600"><i class="fa fa-money-bill text-2xl"></i><div><div class="text-sm text-gray-500">Total Faturado</div><div class="text-xl font-bold">R$ ${totalBruto.toLocaleString('pt-BR')}</div></div></div>
+    <div class="card p-4 flex items-center gap-2 text-green-600"><i class="fa fa-wallet text-2xl"></i><div><div class="text-sm text-gray-500">Total Líquido</div><div class="text-xl font-bold">R$ ${totalLiquido.toLocaleString('pt-BR')}</div></div></div>
+    <div class="card p-4 flex items-center gap-2"><i class="fa fa-bullseye text-blue-600 text-2xl"></i><div><div class="text-sm text-gray-500">Meta Mensal</div><div class="text-xl font-bold">R$ ${metaTotal.toLocaleString('pt-BR')}</div></div></div>
+    <div class="card p-4 flex items-center gap-2 ${percColor}"><i class="fa fa-chart-line text-2xl"></i><div><div class="text-sm text-gray-500">% da Meta</div><div class="text-xl font-bold">${perc.toFixed(1)}%</div></div></div>
+    <div class="card p-4 flex items-center gap-2 text-orange-500"><i class="fa fa-undo text-2xl"></i><div><div class="text-sm text-gray-500">Devoluções</div><div class="text-xl font-bold">${devolTotal}</div></div></div>`;
+
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+  lista.forEach(u => grid.appendChild(createResumoCard(u)));
+  container.appendChild(grid);
 }
 
-function createSkusCard(u) {
-  const card = document.createElement('div');
-  card.className = 'card card-blue';
-  card.innerHTML = `
-    <div class="card-header justify-between">
-      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-bar"></i> ${u.nome} - SKUs Vendidos</h2>
-      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
-    </div>
-    <div class="card-body">
-      <div class="grid grid-cols-3 text-center gap-2">
-        <div>
-          <div class="text-2xl font-extrabold">${u.skus?.topSku || '-'}</div>
-          <div class="text-sm text-gray-500">Top SKU</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold">${u.skus?.totalSkus || 0}</div>
-          <div class="text-sm text-gray-500">SKUs</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold">${u.skus?.totalUnidades || 0}</div>
-          <div class="text-sm text-gray-500">Unidades</div>
-        </div>
-      </div>
-    </div>`;
-  card.querySelector('.ver-mais')?.addEventListener('click', () => {
-    const detalhes = u.skusDetalhes || {};
-    const linhas = Object.entries(detalhes)
-      .map(([sku, info]) => `<tr><td>${sku}</td><td>${info.qtd}</td><td>R$ ${info.sobraEsperada.toLocaleString('pt-BR')}</td><td>R$ ${info.sobraReal.toLocaleString('pt-BR')}</td></tr>`)
-      .join('');
-    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>SKU</th><th>Unidades</th><th>Sobra Esperada</th><th>Sobra Real</th></tr></thead><tbody>${linhas}</tbody></table>`;
-    showModal(`${u.nome} - SKUs Vendidos`, tabela);
-  });
-  return card;
-}
-
-function createSaquesCard(u) {
-  const card = document.createElement('div');
-  card.className = 'card card-green';
-  card.innerHTML = `
-    <div class="card-header justify-between">
-      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-money-bill-wave"></i> ${u.nome} - Saques e Comissões</h2>
-      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
-    </div>
-    <div class="card-body">
-      <div class="grid grid-cols-3 text-center gap-2">
-        <div>
-          <div class="text-2xl font-extrabold text-green-600">R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
-          <div class="text-sm text-gray-500">Total</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold text-green-600">R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
-          <div class="text-sm text-gray-500">Comissões</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold">${u.saques?.qtdSaques || 0}</div>
-          <div class="text-sm text-gray-500">Total de Saques</div>
-        </div>
-      </div>
-    </div>`;
-  card.querySelector('.ver-mais')?.addEventListener('click', () => {
-    const detalhes = u.saquesDetalhes || [];
-    const linhas = detalhes
-      .map(d => `<tr><td>${formatarData(d.data)}</td><td>R$ ${d.valor.toLocaleString('pt-BR')}</td><td>R$ ${d.comissao.toLocaleString('pt-BR')}</td></tr>`)
-      .join('');
-    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Data</th><th>Valor</th><th>Comissão</th></tr></thead><tbody>${linhas}</tbody></table>`;
-    showModal(`${u.nome} - Saques`, tabela);
-  });
-  return card;
-}
-
-function createFaturamentoCard(u) {
-  const card = document.createElement('div');
-  card.className = 'card card-orange';
+function createResumoCard(u) {
   const progresso = u.faturamento?.meta ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100) : 0;
   const statusColor = progresso >= 100 ? 'text-green-600' : progresso >= 50 ? 'text-yellow-500' : 'text-red-600';
+  const card = document.createElement('div');
+  card.className = 'card p-4 flex flex-col gap-2';
   card.innerHTML = `
-    <div class="card-header justify-between">
-      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa fa-chart-line"></i> ${u.nome} - Faturamento x Meta</h2>
-      <button class="btn btn-secondary text-sm ver-mais">Ver mais</button>
-    </div>
-    <div class="card-body space-y-2">
-      <div class="grid grid-cols-3 text-center gap-2">
-        <div>
-          <div class="text-2xl font-extrabold ${statusColor}">R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
-          <div class="text-sm text-gray-500">Faturado</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold">R$ ${(u.faturamento?.meta || 0).toLocaleString('pt-BR')}</div>
-          <div class="text-sm text-gray-500">Meta</div>
-        </div>
-        <div>
-          <div class="text-2xl font-extrabold">R$ ${(u.faturamento?.esperado || 0).toLocaleString('pt-BR')}</div>
-          <div class="text-sm text-gray-500">Esperado até hoje</div>
-        </div>
-      </div>
-      <div class="progress ${statusColor}"><div class="progress-bar" style="width: ${progresso.toFixed(0)}%"></div></div>
-    </div>`;
-  card.querySelector('.ver-mais')?.addEventListener('click', () => {
-    const diario = u.faturamentoDetalhes?.diario || {};
-    const metaDiaria = u.faturamentoDetalhes?.metaDiaria || 0;
-    const linhas = Object.entries(diario)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([data, valor]) => {
-        const diff = valor - metaDiaria;
-        return `<tr><td>${formatarData(data)}</td><td>R$ ${valor.toLocaleString('pt-BR')}</td><td>R$ ${metaDiaria.toLocaleString('pt-BR')}</td><td>R$ ${diff.toLocaleString('pt-BR')}</td></tr>`;
-      })
-      .join('');
-    const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Data</th><th>Faturado</th><th>Meta Diária</th><th>Diferença</th></tr></thead><tbody>${linhas}</tbody></table>`;
-    showModal(`${u.nome} - Faturamento Diário`, tabela);
-  });
+    <h3 class="font-bold">${u.nome} – ${progresso.toFixed(0)}% da meta</h3>
+    <div class="text-sm">Faturado: R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
+    <div class="text-sm">Top SKU: ${u.skus?.topSku || '-'} – ${u.skus?.topSkuQtd || 0}u</div>
+    <div class="text-sm">Saques: R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
+    <div class="text-sm">Comissão: R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
+    <div class="progress ${statusColor}"><div class="progress-bar" style="width:${progresso.toFixed(0)}%"></div></div>`;
   return card;
+}
+
+async function renderVendasDiaAnterior(lista) {
+  const container = document.getElementById('vendasDiaAnterior');
+  if (!container) return;
+  container.innerHTML = '';
+  const dia = new Date();
+  dia.setDate(dia.getDate() - 1);
+  const diaStr = dia.toISOString().slice(0,10);
+  for (const u of lista) {
+    const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, diaStr);
+    const skusSnap = await getDocs(collection(db, `uid/${u.uid}/skusVendidos/${diaStr}/lista`));
+    let totalSkus = 0;
+    skusSnap.forEach(item => {
+      const dados = item.data();
+      totalSkus += Number(dados.total || dados.quantidade) || 0;
+    });
+    const card = document.createElement('div');
+    card.className = 'card p-4';
+    card.innerHTML = `
+      <h4 class="font-bold mb-2">${u.nome}</h4>
+      <div>Bruto dia: R$ ${bruto.toLocaleString('pt-BR')}</div>
+      <div>Líquido dia: R$ ${liquido.toLocaleString('pt-BR')}</div>
+      <div>SKU vendidos dia: ${totalSkus}</div>`;
+    container.appendChild(card);
+  }
 }
 
 function formatarData(str) {
