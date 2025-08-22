@@ -127,16 +127,21 @@ async function carregar() {
 
 function atualizarContexto() {
   const contextoEl = document.getElementById('contexto');
+  const dataEl = document.getElementById('dataAtual');
   const mes = document.getElementById('mesFiltro')?.value;
   const uid = document.getElementById('usuarioFiltro')?.value;
-  if (!contextoEl) return;
-  const mesTxt = mes ? new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
-  let usuarioTxt = 'Todos os usuários';
-  if (uid && uid !== 'todos') {
-    const u = usuariosCache.find(x => x.uid === uid);
-    usuarioTxt = u ? u.nome : uid;
+  if (contextoEl) {
+    const mesTxt = mes ? new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
+    let usuarioTxt = 'Todos os usuários';
+    if (uid && uid !== 'todos') {
+      const u = usuariosCache.find(x => x.uid === uid);
+      usuarioTxt = u ? u.nome : uid;
+    }
+    contextoEl.textContent = `${mesTxt} – ${usuarioTxt}`;
   }
-  contextoEl.textContent = `${mesTxt} – ${usuarioTxt}`;
+  if (dataEl) {
+    dataEl.textContent = `Hoje: ${new Date().toLocaleDateString('pt-BR')}`;
+  }
 }
 
 async function carregarSkus(usuarios, mes) {
