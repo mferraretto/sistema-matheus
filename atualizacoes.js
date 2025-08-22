@@ -41,15 +41,31 @@ onAuthStateChanged(auth, async user => {
 
 async function carregarUsuarios() {
   const select = document.getElementById('destinatarios');
-  if (!select) return;
-  select.innerHTML = '';
+  const card = document.getElementById('usuariosResponsaveisCard');
+  const lista = document.getElementById('usuariosResponsaveisLista');
+  if (select) select.innerHTML = '';
+  if (lista) lista.innerHTML = '';
   try {
     const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email)));
+    if (snap.empty) {
+      card?.classList.add('hidden');
+      return;
+    }
+    card?.classList.remove('hidden');
     snap.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.id;
-      opt.textContent = d.data().nome || d.id;
-      select.appendChild(opt);
+      const dados = d.data();
+      const nome = dados.nome || dados.email || d.id;
+      if (select) {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = nome;
+        select.appendChild(opt);
+      }
+      if (lista) {
+        const li = document.createElement('li');
+        li.textContent = `${nome} - ${dados.email || ''}`;
+        lista.appendChild(li);
+      }
     });
   } catch (err) {
     console.error('Erro ao carregar usuários:', err);
