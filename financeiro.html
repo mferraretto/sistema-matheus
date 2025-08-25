@@ -20,14 +20,18 @@
   <main class="main-content p-4 space-y-4">
     <div class="card p-4 flex flex-wrap items-center gap-4">
       <div class="flex items-center gap-2">
-        <i class="fa fa-user text-blue-500"></i>
+        <button type="button" id="usuarioIcon" class="text-blue-500 focus:outline-none">
+          <i class="fa fa-user"></i>
+        </button>
         <div class="flex flex-col">
           <label for="usuarioFiltro" class="text-xs font-medium">Usuário</label>
           <select id="usuarioFiltro" class="border rounded p-2 text-sm"></select>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <i class="fa fa-calendar text-blue-500"></i>
+        <button type="button" id="mesIcon" class="text-blue-500 focus:outline-none">
+          <i class="fa fa-calendar"></i>
+        </button>
         <div class="flex flex-col">
           <label for="mesFiltro" class="text-xs font-medium">Mês</label>
           <input type="month" id="mesFiltro" class="border rounded p-2 text-sm" />

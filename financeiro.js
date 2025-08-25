@@ -71,6 +71,28 @@ function setupFiltros(usuarios) {
   userSel.value = 'todos';
   mesSel.value = new Date().toISOString().slice(0,7);
 
+  // Evita que cliques nesses filtros acionem links subjacentes
+  userSel.addEventListener('click', e => e.stopPropagation());
+  mesSel.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('usuarioIcon')?.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof userSel.showPicker === 'function') {
+      userSel.showPicker();
+    } else {
+      userSel.focus();
+    }
+  });
+  document.getElementById('mesIcon')?.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof mesSel.showPicker === 'function') {
+      mesSel.showPicker();
+    } else {
+      mesSel.focus();
+    }
+  });
+
   async function atualizarMeta() {
     if (!metaSection) return;
     if (userSel.value === 'todos') {
@@ -494,6 +516,19 @@ async function subscribeKPIs() {
         metaMulti.appendChild(item);
       }
     }
+    // Monta gráfico agregando faturamento de todos os usuários
+    const agregados = {};
+    for (const u of usuariosCache) {
+      const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+      for (const d of fatSnap.docs) {
+        if (mes && !d.id.startsWith(mes)) continue;
+        const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
+        agregados[d.id] = (agregados[d.id] || 0) + totalDia;
+      }
+    }
+    const labels = Object.keys(agregados).sort();
+    const data = labels.map(l => agregados[l]);
+    updateSalesChart(labels.map(formatarData), data);
     return;
   }
   if (metaEl && metaProjEl && metaWrap && metaMulti) {
