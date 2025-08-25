@@ -2267,6 +2267,9 @@ input:checked + .toggle-slider:before {
   }
   .main-content {
     margin-left: 0
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 70px
   }
   .sidebar {
     transform: translateX(-100%);
