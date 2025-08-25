@@ -11,7 +11,8 @@ function createPerfilCard(uid, email, data = {}) {
   const card = document.createElement('div');
   card.className = 'border p-4 rounded space-y-2';
   card.innerHTML = `
-    <h3 class="font-bold">${email}</h3>
+    <h3 class="font-bold">${data.nome || email}</h3>
+    <p class="text-sm text-gray-600">${email}</p>
     <input class="form-control" placeholder="Nome" value="${data.nome || ''}" data-field="nome">
     <input class="form-control" placeholder="Loja" value="${data.loja || ''}" data-field="loja">
     <input class="form-control" placeholder="Segmento" value="${data.segmento || ''}" data-field="segmento">
@@ -50,19 +51,26 @@ function createPerfilCard(uid, email, data = {}) {
   return card;
 }
 
-async function carregarPerfis() {
+async function carregarPerfis(user) {
   const list = document.getElementById('perfilMentoradoList');
   list.innerHTML = '';
-  const q = query(collection(db, 'usuarios'), where('perfil', '==', 'Gestor'));
+  const q = query(
+    collection(db, 'usuarios'),
+    where('responsavelFinanceiroEmail', '==', user.email)
+  );
   const snap = await getDocs(q);
+  if (snap.empty) {
+    list.innerHTML = '<p class="text-sm text-gray-500">Nenhum mentorado encontrado.</p>';
+    return;
+  }
   for (const docSnap of snap.docs) {
     const uid = docSnap.id;
     const email = docSnap.data().email || uid;
-    let perfilData = {};
+    let perfilData = { ...docSnap.data() };
     try {
       const perfilSnap = await getDoc(doc(db, 'perfilMentorado', uid));
       if (perfilSnap.exists()) {
-        perfilData = perfilSnap.data();
+        perfilData = { ...perfilData, ...perfilSnap.data() };
       }
     } catch (e) {
       console.error('Erro ao carregar perfil do mentorado:', e);
@@ -74,7 +82,7 @@ async function carregarPerfis() {
 function initPerfilMentorado() {
   onAuthStateChanged(auth, user => {
     if (user) {
-      carregarPerfis();
+      carregarPerfis(user);
     }
   });
 }
