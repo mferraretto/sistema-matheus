@@ -297,9 +297,9 @@ function toggleSidebar(){
 async function loadPartial(selector, path){
   // cria o container se não existir (algumas telas substituem o body)
   let el = document.querySelector(selector);
+  const id = selector.replace('#', '');
   if (!el) {
     el = document.createElement(selector.startsWith('#') ? 'div' : 'aside');
-    const id = selector.replace('#', '');
     el.id = id;
     if (id === 'sidebar-container') {
       el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40 transition-transform duration-200 ease-out -translate-x-full lg:translate-x-0 shadow-lg';
@@ -309,6 +309,13 @@ async function loadPartial(selector, path){
     } else {
       // navbar acima do main
       document.body.insertBefore(el, document.querySelector('main') || null);
+      el.classList.add('lg:pl-64');
+    }
+  } else {
+    if (id === 'sidebar-container') {
+      el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','bg-purple-700','text-white','overflow-auto','z-40','transition-transform','duration-200','ease-out','-translate-x-full','lg:translate-x-0','shadow-lg');
+      document.querySelector('.main-content')?.classList.add('lg:ml-64');
+    } else {
       el.classList.add('lg:pl-64');
     }
   }
