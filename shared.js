@@ -185,11 +185,15 @@
   };
 
 function initShared() {
-  loadTailwind().then(function () {
+  function start() {
     window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH).then(function () {
       window.initDarkMode();
     });
     window.loadNavbar();
+  }
+
+  loadTailwind().then(start).catch(function () {
+    start();
   });
 
   // ✅ Só carrega os modais de login se estiver na index.html
