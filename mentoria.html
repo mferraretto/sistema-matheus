@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mentoria</title>
-   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
@@ -15,26 +15,39 @@
   <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <main class="main-content p-4 space-y-6">
-    <div class="card">
-      <div class="card-header"><h2 class="text-xl font-bold">Visão Geral do Mentor</h2></div>
-      <div class="card-body overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="text-left">
-              <th class="p-2">Email</th>
-              <th class="p-2">Início</th>
-              <th class="p-2">Status</th>
-              <th class="p-2">Meta</th>
-              <th class="p-2">Nome</th>
-            </tr>
-          </thead>
-          <tbody id="mentoradosList"></tbody>
-        </table>
+
+  <main class="main-content p-4 space-y-4">
+    <div class="card p-4 flex flex-wrap items-center gap-4">
+      <div class="card w-full">
+        <div class="card-header">
+          <h2 class="text-xl font-bold">Visão Geral do Mentor</h2>
+        </div>
+        <div class="card-body overflow-x-auto">
+          <div class="flex items-center gap-2">
+            <i class="fa fa-user text-blue-500"></i>
+            <div class="flex flex-col w-full">
+              <table class="min-w-full text-sm">
+                <thead>
+                  <tr class="text-left">
+                    <th class="p-2">Email</th>
+                    <th class="p-2">Início</th>
+                    <th class="p-2">Status</th>
+                    <th class="p-2">Meta</th>
+                    <th class="p-2">Nome</th>
+                  </tr>
+                </thead>
+                <tbody id="mentoradosList"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
-  <script>window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-gestor.html';</script>
+
+  <script>
+    window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-gestor.html';
+  </script>
   <script src="shared.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="mentoria.js"></script>
