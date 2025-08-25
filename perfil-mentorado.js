@@ -7,6 +7,9 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+const urlParams = new URLSearchParams(window.location.search);
+const singleUid = urlParams.get('uid');
+
 function createPerfilCard(uid, email, data = {}) {
   const card = document.createElement('div');
   card.className = 'border p-4 rounded space-y-2';
@@ -53,6 +56,32 @@ function createPerfilCard(uid, email, data = {}) {
 async function carregarPerfis() {
   const list = document.getElementById('perfilMentoradoList');
   list.innerHTML = '';
+
+  if (singleUid) {
+    try {
+      const userDoc = await getDoc(doc(db, 'usuarios', singleUid));
+      if (!userDoc.exists()) {
+        list.innerHTML = '<p class="text-sm text-gray-500">Usuário não encontrado.</p>';
+        return;
+      }
+      const email = userDoc.data().email || singleUid;
+      let perfilData = {};
+      try {
+        const perfilSnap = await getDoc(doc(db, 'perfilMentorado', singleUid));
+        if (perfilSnap.exists()) {
+          perfilData = perfilSnap.data();
+        }
+      } catch (e) {
+        console.error('Erro ao carregar perfil do mentorado:', e);
+      }
+      list.appendChild(createPerfilCard(singleUid, email, perfilData));
+    } catch (e) {
+      console.error('Erro ao carregar usuário:', e);
+      list.innerHTML = '<p class="text-sm text-red-500">Erro ao carregar usuário.</p>';
+    }
+    return;
+  }
+
   const q = query(collection(db, 'usuarios'), where('perfil', '==', 'Gestor'));
   const snap = await getDocs(q);
   for (const docSnap of snap.docs) {

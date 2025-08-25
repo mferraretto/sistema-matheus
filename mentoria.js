@@ -14,7 +14,7 @@ function carregarUsuariosFinanceiros(user) {
   onSnapshot(q, async snap => {
     tbody.innerHTML = '';
     if (snap.empty) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-sm text-gray-500">Nenhum usuário encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-gray-500">Nenhum usuário encontrado.</td></tr>';
       return;
     }
     for (const docSnap of snap.docs) {
@@ -39,6 +39,7 @@ function carregarUsuariosFinanceiros(user) {
         <td class="p-2 border-b capitalize">${status}</td>
         <td class="p-2 border-b">${meta}</td>
         <td class="p-2 border-b">${nome}</td>
+        <td class="p-2 border-b"><a href="perfil-mentorado.html?uid=${docSnap.id}" class="text-blue-500 hover:underline">Editar</a></td>
       `;
       tbody.appendChild(tr);
     }
