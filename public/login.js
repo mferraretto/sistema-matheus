@@ -158,7 +158,8 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
-      if (selectedRole === 'gestor') {
+      const path = window.location.pathname.toLowerCase();
+      if (selectedRole === 'gestor' || path.includes('login-gestor.html')) {
         window.location.href = 'financeiro.html';
       }
     })
@@ -413,8 +414,7 @@ function checkLogin() {
     });
 
     loginGestorBtn?.addEventListener('click', () => {
-      openModal('loginModal');
-      selectRole('gestor');
+      window.location.href = 'login-gestor.html';
     });
 
     document.addEventListener('click', (e) => {
