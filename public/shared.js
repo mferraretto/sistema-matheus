@@ -80,16 +80,21 @@
 // Load sidebar HTML into placeholder
   window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
-    sidebarPath = sidebarPath || 'partials/sidebar.html';
+    sidebarPath = sidebarPath || '/VendedorPro/partials/sidebar.html';
 
-    var paths = [
-      ROOT_PATH + sidebarPath,
-      BASE_PATH + sidebarPath,
-      '/' + sidebarPath,
-      ROOT_PATH + 'partials/sidebar.html',
-      BASE_PATH + 'partials/sidebar.html',
-      '/partials/sidebar.html'
-    ];
+    var paths = [];
+    if (/^https?:\/\//.test(sidebarPath) || sidebarPath.startsWith('/')) {
+      paths = [sidebarPath];
+    } else {
+      paths = [
+        ROOT_PATH + sidebarPath,
+        BASE_PATH + sidebarPath,
+        '/VendedorPro/' + sidebarPath,
+        ROOT_PATH + 'partials/sidebar.html',
+        BASE_PATH + 'partials/sidebar.html',
+        '/VendedorPro/partials/sidebar.html'
+      ];
+    }
 
     return fetchWithFallback(paths)
       .then(function(html) {
@@ -105,13 +110,24 @@
       });
   };
 // Load navbar HTML into placeholder
-  window.loadNavbar = function(containerId) {
+  window.loadNavbar = function(containerId, navbarPath) {
     containerId = containerId || 'navbar-container';
-    var paths = [
-      ROOT_PATH + 'partials/navbar.html',
-      BASE_PATH + 'partials/navbar.html',
-      '/partials/navbar.html'
-    ];
+    navbarPath = navbarPath || '/VendedorPro/partials/navbar.html';
+
+    var paths = [];
+    if (/^https?:\/\//.test(navbarPath) || navbarPath.startsWith('/')) {
+      paths = [navbarPath];
+    } else {
+      paths = [
+        ROOT_PATH + navbarPath,
+        BASE_PATH + navbarPath,
+        '/VendedorPro/' + navbarPath,
+        ROOT_PATH + 'partials/navbar.html',
+        BASE_PATH + 'partials/navbar.html',
+        '/VendedorPro/partials/navbar.html'
+      ];
+    }
+
     return fetchWithFallback(paths)
       .then(function(html) {
         var container = document.getElementById(containerId);
@@ -129,7 +145,7 @@
     var paths = [
       ROOT_PATH + 'partials/auth-modals.html',
       BASE_PATH + 'partials/auth-modals.html',
-      '/partials/auth-modals.html'
+      '/VendedorPro/partials/auth-modals.html'
     ];
     return fetchWithFallback(paths)
       .then(function(html) {
@@ -266,8 +282,8 @@ document.addEventListener('sidebarLoaded', function () {
 })();
 
 /** === LAYOUT PERSISTENTE DO SIDEBAR/NAV === **/
-window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
-window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
+window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || '/VendedorPro/partials/sidebar.html';
+window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || '/VendedorPro/partials/navbar.html';
 const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar(){
