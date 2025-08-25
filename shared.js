@@ -142,9 +142,9 @@
       });
   };
   // Initialize dark mode handling
-  window.initDarkMode = function(toggleId, darkClass) {
-    toggleId = toggleId || 'darkModeToggle';
-    darkClass = darkClass || 'dark';
+    window.initDarkMode = function(toggleId, darkClass) {
+      toggleId = toggleId || 'darkModeToggle';
+      darkClass = darkClass || 'dark-mode';
 
     var toggle = document.getElementById(toggleId);
     var savedTheme = localStorage.getItem('theme');
