@@ -11,15 +11,26 @@
   <div class="w-full max-w-sm p-6 bg-white rounded shadow">
     <h1 class="mb-4 text-2xl font-bold text-center">Login</h1>
     <div id="offlineNotice" class="hidden mb-4 text-center text-red-600">Sem conexão com o servidor.</div>
-    <form onsubmit="login(); return false;">
-      <input id="loginEmail" type="email" placeholder="E-mail" class="w-full p-2 mb-3 border rounded">
-      <input id="loginPassword" type="password" placeholder="Senha" class="w-full p-2 mb-3 border rounded">
-      <input id="loginPassphrase" type="password" placeholder="Passphrase (opcional)" class="w-full p-2 mb-3 border rounded">
+      <form onsubmit="login(); return false;">
+        <input id="loginEmail" type="email" placeholder="E-mail" class="w-full p-2 mb-3 border rounded">
+        <input id="loginPassword" type="password" placeholder="Senha" class="w-full p-2 mb-3 border rounded">
+        <input id="loginPassphrase" type="password" placeholder="Passphrase (opcional)" class="w-full p-2 mb-3 border rounded">
 
-      <button id="loginButton" type="submit" class="w-full py-2 font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded" style="background-color:#FF7043">Entrar</button>
-    </form>
-    <div id="toastContainer" class="mt-4"></div>
-  </div>
+        <div class="flex items-center justify-between mb-3">
+          <label class="flex items-center">
+            <input type="radio" name="userRole" value="usuario" class="mr-1" checked>
+            <span>Usuário</span>
+          </label>
+          <label class="flex items-center">
+            <input type="radio" name="userRole" value="gestor" class="mr-1">
+            <span>Gestor</span>
+          </label>
+        </div>
+
+        <button id="loginButton" type="submit" class="w-full py-2 font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded" style="background-color:#FF7043">Entrar</button>
+      </form>
+      <div id="toastContainer" class="mt-4"></div>
+    </div>
   <script type="module" src="login.js"></script>
   <script type="module">
     import { checkBackend } from './login.js';
