@@ -31,6 +31,17 @@ let notifUnsub = null;
 let expNotifUnsub = null;
 let selectedRole = null;
 
+// Verifica conectividade com backend/API.
+export async function checkBackend() {
+  if (!navigator.onLine) return false;
+  try {
+    const res = await fetch('https://www.gstatic.com/generate_204', { cache: 'no-store' });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
@@ -415,33 +426,21 @@ function initNotificationListener(uid) {
 }
 
 function checkLogin() {
- if (authListenerRegistered) return;
+  if (authListenerRegistered) return;
   authListenerRegistered = true;
   onAuthStateChanged(auth, user => {
+    const path = window.location.pathname.toLowerCase();
+    const onLoginPage = path.endsWith('login.html');
     if (user) {
       showUserArea(user);
       initNotificationListener(user.uid);
       wasLoggedIn = true;
-      if (window.ensureLayout) window.ensureLayout();
+      if (onLoginPage) window.location.href = 'index.html';
     } else {
-      if (wasLoggedIn && explicitLogout) {
-        clearPassphrase();
-                explicitLogout = false;
-
-      }
       wasLoggedIn = false;
       hideUserArea();
       if (notifUnsub) { notifUnsub(); notifUnsub = null; }
-      if (window.ensureLayout) window.ensureLayout();
-
-
-      // Sempre exibe o modal se estiver no index.html
-      const path = window.location.pathname.toLowerCase();
-      const file = path.substring(path.lastIndexOf('/') + 1);
-      if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
-        sessionStorage.setItem('loginModalMostrado', 'true');
-                openModal('loginModal');
-      }
+      if (!onLoginPage) window.location.href = 'login.html';
     }
   });
 }
@@ -470,3 +469,5 @@ function checkLogin() {
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
 });
+
+checkLogin();
