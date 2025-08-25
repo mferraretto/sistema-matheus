@@ -37,13 +37,16 @@
   }
   
   // Toggle submenu visibility using max-height for smooth transitions
-  window.toggleMenu = function(menuId) {
+  window.toggleMenu = function(menuId, btn) {
     var el = document.getElementById(menuId);
     if (!el) return;
     var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
     el.style.maxHeight = isOpen ? '0px' : el.scrollHeight + 'px';
+    if (btn) {
+      btn.classList.toggle('open', !isOpen);
+    }
   };
-  
+
   // Toggle visibility of the Importar Produtos card on the precificação page
   window.toggleImportCard = function() {
     var card = document.getElementById('importarProdutosCard');
@@ -137,9 +140,9 @@
       });
   };
   // Initialize dark mode handling
-  window.initDarkMode = function(toggleId, darkClass) {
-    toggleId = toggleId || 'darkModeToggle';
-    darkClass = darkClass || 'dark';
+    window.initDarkMode = function(toggleId, darkClass) {
+      toggleId = toggleId || 'darkModeToggle';
+      darkClass = darkClass || 'dark-mode';
 
     var toggle = document.getElementById(toggleId);
     var savedTheme = localStorage.getItem('theme');
@@ -201,12 +204,19 @@
       .start();
   };
 
-document.addEventListener('DOMContentLoaded', function () {
-  loadTailwind().then(function () {
-    window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH).then(function () {
+function initShared() {
+  function start() {
+    if (window.ensureLayout) {
+      window.ensureLayout().then(function () {
+        window.initDarkMode();
+      });
+    } else {
       window.initDarkMode();
-    });
-    window.loadNavbar();
+    }
+  }
+
+  loadTailwind().then(start).catch(function () {
+    start();
   });
 
   // ✅ Só carrega os modais de login se estiver na index.html
@@ -217,7 +227,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.checkColorContrast();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initShared);
+} else {
+  initShared();
+}
 
 // Handle mobile sidebar toggle after navbar loads
 document.addEventListener('navbarLoaded', function () {
@@ -234,6 +250,7 @@ document.addEventListener('navbarLoaded', function () {
 });
 
 document.addEventListener('sidebarLoaded', function () {
+  document.body.classList.add('has-sidebar');
   document.querySelectorAll('#sidebar .submenu').forEach(function(el){
     el.style.maxHeight = '0px';
   });
@@ -245,6 +262,112 @@ document.addEventListener('sidebarLoaded', function () {
     window.startSidebarTour(false);
   });
 });
+
+})();
+
+/** === LAYOUT PERSISTENTE DO SIDEBAR/NAV === **/
+window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
+window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
+const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
+
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar-container');
+  if (!sb) return;
+  sb.classList.toggle('-translate-x-full');
+}
+
+async function loadPartial(selector, path){
+  // cria o container se não existir (algumas telas substituem o body)
+  let el = document.querySelector(selector);
+  if (!el) {
+    el = document.createElement(selector.startsWith('#') ? 'div' : 'aside');
+    const id = selector.replace('#', '');
+    el.id = id;
+    if (id === 'sidebar-container') {
+      el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40 transition-transform duration-200 ease-out -translate-x-full lg:translate-x-0 shadow-lg';
+      document.body.prepend(el);
+      // garante margem do conteúdo no desktop
+      document.querySelector('.main-content')?.classList.add('lg:ml-64');
+    } else {
+      // navbar acima do main
+      document.body.insertBefore(el, document.querySelector('main') || null);
+      el.classList.add('lg:pl-64');
+    }
+  }
+
+  // sempre força rede p/ evitar cache velho do SW
+  const base = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
+  let url = new URL(path, base).toString();
+  url += (url.includes('?') ? '&' : '?') + 'v=' + PARTIALS_VERSION;
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
+    const html = await res.text();
+    el.innerHTML = html;
+
+    // reexecuta <script> internos do parcial
+    el.querySelectorAll('script').forEach(old=>{
+      const s = document.createElement('script');
+      s.type = old.type || 'text/javascript';
+      if (old.src) {
+        const srcUrl = new URL(old.getAttribute('src'), url).toString();
+        s.src = srcUrl + (srcUrl.includes('?') ? '&' : '?') + 'v=' + PARTIALS_VERSION;
+      } else {
+        s.text = old.textContent || '';
+      }
+      old.replaceWith(s);
+    });
+
+    // dispara eventos para compatibilidade
+    const evtName = selector === '#sidebar-container' ? 'sidebarLoaded' : selector === '#navbar-container' ? 'navbarLoaded' : null;
+    if (evtName) {
+      document.dispatchEvent(new CustomEvent(evtName, { detail: { selector } }));
+    }
+
+    // no desktop, sempre aberto
+    if (selector === '#sidebar-container' && matchMedia('(min-width:1024px)').matches) {
+      el.classList.remove('-translate-x-full','hidden');
+      // limpa qualquer estado salvo que esconda
+      try { localStorage.removeItem('sidebarClosed'); } catch(e){}
+      document.cookie = 'sidebarClosed=; Max-Age=0; path=/';
+    }
+  } catch (err) {
+    console.error('[partials] falha', path, err);
+    el.innerHTML = `<div class="p-3 bg-red-50 text-red-700 text-sm rounded">Erro ao carregar <code>${path}</code>.</div>`;
+  }
+}
+
+async function ensureLayout(){
+  await Promise.all([
+    loadPartial('#sidebar-container', window.CUSTOM_SIDEBAR_PATH),
+    loadPartial('#navbar-container',  window.CUSTOM_NAVBAR_PATH),
+  ]);
+}
+
+// roda em várias fases para cobrir login/redirect/back-forward-cache
+['DOMContentLoaded','load','pageshow','focus'].forEach(evt=>{
+  window.addEventListener(evt, ensureLayout, { once: false });
+});
+
+// se algum script remover os containers, recolocamos
+const mo = new MutationObserver(() => {
+  if (!document.getElementById('sidebar-container')) ensureLayout();
+  if (!document.getElementById('navbar-container'))  ensureLayout();
+});
+mo.observe(document.documentElement, { childList: true, subtree: true });
+
+// ao redimensionar para desktop, garante aberto
+window.addEventListener('resize', ()=>{
+  const sb = document.getElementById('sidebar-container');
+  if (sb && matchMedia('(min-width:1024px)').matches) {
+    sb.classList.remove('-translate-x-full','hidden');
+  }
+});
+
+// expõe global
+window.toggleSidebar = window.toggleSidebar || toggleSidebar;
+window.ensureLayout  = ensureLayout;
 
 // Controle de visibilidade do sidebar baseado no perfil do usuário
 let sidebarPermsApplied = false;
@@ -321,5 +444,3 @@ document.addEventListener('sidebarLoaded', async () => {
     else showOnly([]);
   });
 });
-
-})();
