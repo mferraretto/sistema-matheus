@@ -209,25 +209,37 @@ async function showUserArea(user) {
     }
   }
 
+  let perfilFallback = '';
   try {
     const uidSnap = await getDoc(doc(db, 'uid', user.uid));
     const uidData = uidSnap.data();
     if (uidData?.nome) {
       nameEl.textContent = uidData.nome;
-    } else if (uidData?.encrypted) {
+    }
+    if (uidData?.encrypted) {
       const pass = getPassphrase() || `chave-${user.uid}`;
-      const data = JSON.parse(await decryptString(uidData.encrypted, pass));
-      if (data.nome) {
-        nameEl.textContent = data.nome;
-      }
+      try {
+        const data = JSON.parse(await decryptString(uidData.encrypted, pass));
+        if (!uidData?.nome && data.nome) {
+          nameEl.textContent = data.nome;
+        }
+        if (data.perfil) {
+          perfilFallback = String(data.perfil).toLowerCase().trim();
+        }
+      } catch {}
     }
   } catch (e) {
-    console.error('Erro ao carregar nome do usuário:', e);
+    console.error('Erro ao carregar nome/perfil do usuário:', e);
   }
 
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
-    const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
+    let perfil = '';
+    if (snap.exists() && snap.data().perfil) {
+      perfil = String(snap.data().perfil).toLowerCase().trim();
+    } else {
+      perfil = perfilFallback || 'usuario';
+    }
     window.userPerfil = perfil;
 
     if (perfil === 'gestor') {
