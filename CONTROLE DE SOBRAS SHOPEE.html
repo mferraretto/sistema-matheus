@@ -1478,10 +1478,11 @@ const dataInput = document.getElementById("dataFaturamento");
             operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
           }
 
-          let bruto = 0, taxas = 0, qtdVendas = 0;
-          const skusVendidos = {};
+            let bruto = 0, taxas = 0, qtdVendas = 0;
+            const skusVendidos = {};
+            const pedidosErrados = [];
 
-          rows.forEach((row) => {
+            rows.forEach((row) => {
             const status = (row["Status do pedido"] || "").toLowerCase();
             if (status.includes("cancelado") || status.includes("não pago")) return;
 
@@ -1497,17 +1498,37 @@ const dataInput = document.getElementById("dataFaturamento");
             taxas += cupom + comissao + servico;
             qtdVendas++;
 
-            const headers = Object.keys(row);
-            const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
-            const sku = headerSKU ? row[headerSKU] : null;
-            if (!sku) return;
+              const headers = Object.keys(row);
+              const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
+              const sku = headerSKU ? row[headerSKU] : null;
+              if (!sku) return;
 
-            if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
-            skusVendidos[sku].total++;
-            skusVendidos[sku].valorLiquido += liquidoLinha;
-          });
+              if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
+              skusVendidos[sku].total++;
+              skusVendidos[sku].valorLiquido += liquidoLinha;
 
-          const liquido = bruto - taxas;
+              const metaEsperada = metas[sku]?.valor || 0;
+              if (metaEsperada && Math.abs(liquidoLinha - metaEsperada) > 0.01) {
+                pedidosErrados.push({
+                  dia: dataReferencia,
+                  sku: sku,
+                  loja: loja,
+                  totalLiquido: liquidoLinha,
+                  sobraEsperada: metaEsperada,
+                  uid: usuarioLogado.uid
+                });
+              }
+            });
+
+            if (pedidosErrados.length) {
+              const errRef = db
+                .collection('uid')
+                .doc(usuarioLogado.uid)
+                .collection('pedidosErrados');
+              await Promise.all(pedidosErrados.map(p => errRef.add(p)));
+            }
+
+            const liquido = bruto - taxas;
 
           if (operacao === "somar" && doc.exists) {
             const anterior = doc.data();
