@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body class="bg-gray-100 text-gray-800">
+  <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <main class="main-content p-4 space-y-6">
@@ -57,11 +58,79 @@
     </div>
   </main>
 
+  <script>window.CUSTOM_SIDEBAR_PATH='partials/sidebar-gestor.html';
+        window.CUSTOM_NAVBAR_PATH='partials/navbar.html';</script>
+  <script>
+  // Fallback visual mínimo: garante que o container exista e tenha largura inicial
+  (function ensureSidebarBaseStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      #sidebar-container{position:fixed;left:0;top:0;bottom:0;width:260px;max-width:80vw;overflow:auto;background:#6b46c1; /* roxo base */
+        transform:translateX(0); transition:transform .2s ease;}
+      #sidebar-container.hidden{transform:translateX(-105%);}
+      .main-content{margin-left:260px;} /* empurra o conteúdo */
+      @media (max-width:1024px){
+        .main-content{margin-left:0;}
+        #sidebar-container.hidden{transform:translateX(-105%);}
+      }
+      .mobile-menu-btn{position:fixed;left:12px;top:12px;z-index:50;background:#fff;border-radius:8px;padding:6px 10px}
+    `;
+    document.head.appendChild(style);
+    window.toggleSidebar = window.toggleSidebar || function(){
+      document.getElementById('sidebar-container')?.classList.toggle('hidden');
+    };
+  })();
+
+  (function () {
+    const SIDEBAR = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
+    const NAVBAR  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
+
+    async function loadPartial(selector, path){
+      const host = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
+      const url  = new URL(path, host).toString();
+      const el   = document.querySelector(selector);
+      if(!el) return;
+
+      try{
+        const res = await fetch(url, {cache:'no-cache'});
+        if(!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
+        const html = await res.text();
+
+        // injeta o HTML
+        el.innerHTML = html;
+
+        // reexecuta <script> contidos no parcial
+        el.querySelectorAll('script').forEach(old=>{
+          const s = document.createElement('script');
+          if (old.src) { s.src = new URL(old.getAttribute('src'), url).toString(); }
+          s.type = old.type || 'text/javascript';
+          s.defer = old.defer || false;
+          s.text = old.src ? '' : (old.textContent || '');
+          old.replaceWith(s);
+        });
+
+        // Se quiser escondido no mobile por padrão:
+        if (selector === '#sidebar-container' && matchMedia('(max-width:1024px)').matches) {
+          el.classList.add('hidden');
+        }
+
+      }catch(err){
+        console.error('[partials] falha', path, err);
+        el.innerHTML = `<div class="p-3 bg-red-50 text-red-700 text-sm rounded">
+          Erro ao carregar <code>${path}</code>. Veja o console para detalhes.</div>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadPartial('#sidebar-container', SIDEBAR);
+      loadPartial('#navbar-container', NAVBAR);
+    });
+  })();
+  </script>
+  <script src="shared.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="gestor.js"></script>
   <script type="module" src="login.js"></script>
-  <script>window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-gestor.html';</script>
-  <script src="shared.js"></script>
   <script>
     if (window.initAbaGestor) {
       window.initAbaGestor();
