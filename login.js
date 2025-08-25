@@ -261,7 +261,8 @@ function restoreSidebar() {
   });
 }
 function applyPerfilRestrictions(perfil) {
-  const currentPerfil = (perfil || '').toLowerCase();
+  const currentPerfil = (perfil || '').toLowerCase().trim();
+  if (!currentPerfil) return;
   document.querySelectorAll('[data-perfil]').forEach(el => {
     const allowed = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
