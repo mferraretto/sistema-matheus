@@ -147,19 +147,33 @@
     let produtos = {};
         let dadosAcompanhamento = [];
     let sobraPorSku = {};
-    let resumoSku = {};
-    let totalSaquesAcompanhamento = 0;
-    let totalComissaoAcompanhamento = 0;
-    let usuarioLogado = { uid: null, perfil: '' };
-    let pedidosProcessados = [];
-    let graficoBarras, graficoPizza;
- const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento','acompanhamentoGestor'];
-    const tabsLoaded = Promise.all(
-      tabIds.map(t => fetch(`sobras-tabs/${t}.html`).then(res => res.text()).then(html => {
-        const el = document.getElementById(t);
-        if (el) el.innerHTML = html;
-      }))
-    );
+      let resumoSku = {};
+      let totalSaquesAcompanhamento = 0;
+      let totalComissaoAcompanhamento = 0;
+      let usuarioLogado = { uid: null, perfil: '' };
+      let pedidosProcessados = [];
+      let graficoBarras, graficoPizza;
+      const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
+   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento','acompanhamentoGestor'];
+      const tabsLoaded = Promise.all(
+        tabIds.map(t =>
+          fetch(`sobras-tabs/${t}.html`)
+            .then(res => res.text())
+            .then(html => {
+              const el = document.getElementById(t);
+              if (el) el.innerHTML = html;
+            })
+            .catch(err => {
+              console.error('Erro ao carregar aba', t, err);
+              updateConnectionStatus(false);
+              return '';
+            })
+        )
+      );
+
+      window.addEventListener('online', () => updateConnectionStatus(true));
+      window.addEventListener('offline', () => updateConnectionStatus(false));
+      updateConnectionStatus(navigator.onLine);
 
     // =============================================
     // INICIALIZAÇÃO DO FIREBASE E CONFIGURAÇÕES
@@ -252,7 +266,7 @@
     // =============================================
     async function consultarDeepSeek(mensagemUser) {
       try {
-        const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+        const resposta = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -268,6 +282,7 @@
         return dados.choices?.[0]?.message?.content || "❌ Sem resposta da IA.";
       } catch (error) {
         console.error("Erro ao consultar DeepSeek:", error);
+        updateConnectionStatus(false);
         return "❌ Erro ao se comunicar com o servidor.";
       }
     }
@@ -292,8 +307,9 @@
       
       errorMessage.innerHTML = `<strong>${error.message}</strong><br>(Código: ${error.code})`;
       errorBox.style.display = 'block';
-      
+
       console.error("Erro Firebase:", error);
+      updateConnectionStatus(false);
     }
 
     function updateConnectionStatus(online) {
@@ -1900,7 +1916,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       document.getElementById("resultadoIA").innerHTML = "⌛ Analisando com IA...";
       
       try {
-        const resposta = await fetch("https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek", {
+        const resposta = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pergunta: prompt })
@@ -1913,6 +1929,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       } catch (error) {
         document.getElementById("resultadoIA").innerHTML = "❌ Erro ao consultar IA: " + error.message;
         console.error("Erro IA:", error);
+        updateConnectionStatus(false);
       }
     }
     async function carregarControleVendas() {

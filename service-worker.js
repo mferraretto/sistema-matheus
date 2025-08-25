@@ -16,11 +16,20 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Skip cross-origin requests so API calls bypass the service worker
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   if (url.pathname.includes('/partials/') && url.pathname.endsWith('.html')) {
     event.respondWith(fetch(event.request));
     return;
   }
+
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) =>
+      response || fetch(event.request).catch(() => response)
+    )
   );
 });
