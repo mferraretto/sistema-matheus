@@ -299,6 +299,9 @@
       const doc = await diaDocRef.get();
       const dados = doc.data();
       const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
+      if (sobrasQtd || sobrasMotivo) {
+        await notificarUsuariosSobras(sobrasQtd, sobrasMotivo);
+      }
       await gerarRelatorioDia(inicio, fim, dados);
       await gerarRelatorioDiaPorUsuario(inicio, fim, dados);
       closeBtn.classList.add('hidden');
@@ -307,6 +310,27 @@
       sobrasMotivoInput.value = '';
       showToast('Dia encerrado');
       verificarDia();
+    }
+
+    async function notificarUsuariosSobras(qtd, motivo) {
+      try {
+        const usuarios = [];
+        const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
+        snap1.forEach(d => usuarios.push(d.id));
+        const snap2 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).get();
+        snap2.forEach(d => { if (!usuarios.includes(d.id)) usuarios.push(d.id); });
+        if (!usuarios.length) return;
+        await db.collection('expedicaoMensagens').add({
+          gestorUid: currentUser.uid,
+          gestorEmail: currentUser.email,
+          quantidade: qtd,
+          motivo,
+          destinatarios: usuarios,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        console.error('Erro ao notificar usuários de sobras:', e);
+      }
     }
 
     function extractStoreFromText(text) {

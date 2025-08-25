@@ -28,6 +28,7 @@ let authListenerRegistered = false;
 let explicitLogout = false;
 let isExpedicao = false;
 let notifUnsub = null;
+let expNotifUnsub = null;
 let selectedRole = null;
 
 
@@ -333,23 +334,19 @@ function initNotificationListener(uid) {
   const list = document.getElementById('notificationList');
   if (!btn || !badge || !list) return;
   if (notifUnsub) notifUnsub();
-  const q = query(
-    collection(db, 'financeiroAtualizacoes'),
-    where('destinatarios', 'array-contains', uid),
-    where('tipo', '==', 'faturamento'),
-    orderBy('createdAt', 'desc')
-  );
-  notifUnsub = onSnapshot(q, snap => {
+  if (expNotifUnsub) expNotifUnsub();
+
+  let finNotifs = [];
+  let expNotifs = [];
+
+  const render = () => {
     list.innerHTML = '';
+    const all = [...finNotifs, ...expNotifs].sort((a, b) => b.ts - a.ts);
     let count = 0;
-    snap.forEach(docSnap => {
-      const data = docSnap.data();
-      if (data.autorUid === uid) return;
-      const email = data.autorEmail || data.autorNome || '';
-      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
+    all.forEach(n => {
       const item = document.createElement('div');
       item.className = 'px-4 py-2 hover:bg-gray-100';
-      item.textContent = `${email} - ${dataFat}`;
+      item.textContent = n.text;
       list.appendChild(item);
       count++;
     });
@@ -359,9 +356,45 @@ function initNotificationListener(uid) {
     } else {
       badge.classList.add('hidden');
     }
+  };
+
+  const qFin = query(
+    collection(db, 'financeiroAtualizacoes'),
+    where('destinatarios', 'array-contains', uid),
+    where('tipo', '==', 'faturamento'),
+    orderBy('createdAt', 'desc')
+  );
+  notifUnsub = onSnapshot(qFin, snap => {
+    finNotifs = [];
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.autorUid === uid) return;
+      const email = data.autorEmail || data.autorNome || '';
+      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
+      finNotifs.push({ text: `${email} - ${dataFat}`, ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0 });
+    });
+    render();
   }, err => {
     console.error('Erro no listener de notificações:', err);
   });
+
+  const qExp = query(
+    collection(db, 'expedicaoMensagens'),
+    where('destinatarios', 'array-contains', uid),
+    orderBy('createdAt', 'desc')
+  );
+  expNotifUnsub = onSnapshot(qExp, snap => {
+    expNotifs = [];
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
+      expNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
+    });
+    render();
+  }, err => {
+    console.error('Erro no listener de notificações expedição:', err);
+  });
+
   btn.addEventListener('click', () => {
     list.classList.toggle('hidden');
   });
@@ -384,6 +417,7 @@ function checkLogin() {
       wasLoggedIn = false;
       hideUserArea();
       if (notifUnsub) { notifUnsub(); notifUnsub = null; }
+      if (expNotifUnsub) { expNotifUnsub(); expNotifUnsub = null; }
 
       // Sempre exibe o modal se estiver no index.html
       const path = window.location.pathname.toLowerCase();
