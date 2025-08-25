@@ -1,59 +1,64 @@
 (async () => {
-  const pedidos = [];
- // Removido fetch de geolocalização via ipapi.co para evitar erros de
-  // rede desnecessários durante a execução da extensão.
-  document.querySelectorAll(".order-card").forEach(card => {
-    const idEl = card.querySelector(".order-sn");
-    const valorEl = card.querySelector(".total-price");
-    const statusEl = card.querySelector(".order-status");
+  try {
+    const pedidos = [];
+    // Geolocation request via ipapi.co removed to avoid network errors such as
+    // net::ERR_NAME_NOT_RESOLVED when the service is unavailable.
 
-    const id = idEl ? idEl.textContent.trim().replace("ID do Pedido", "").trim() : "";
-    const valor = valorEl ? valorEl.textContent.trim() : "";
-    const status = statusEl ? statusEl.textContent.trim() : "";
+    document.querySelectorAll(".order-card").forEach(card => {
+      const idEl = card.querySelector(".order-sn");
+      const valorEl = card.querySelector(".total-price");
+      const statusEl = card.querySelector(".order-status");
 
-    if (id) {
-      pedidos.push({
-        id,
-        valor,
-        status,
-        data: new Date().toISOString()
-      });
-    }
-  });
+      const id = idEl ? idEl.textContent.trim().replace("ID do Pedido", "").trim() : "";
+      const valor = valorEl ? valorEl.textContent.trim() : "";
+      const status = statusEl ? statusEl.textContent.trim() : "";
 
-  if (pedidos.length === 0) {
-    alert("Nenhum pedido visível foi coletado. Role a página ou troque de aba.");
-    return;
-  }
-
-  console.log("Pedidos capturados:", pedidos);
-  alert(`Foram coletados ${pedidos.length} pedidos. Veja no console (F12).`);
-
-  // Pede UID + senha do sistema
-  window.postMessage("getShopeeUser", "*");
-
-  // Aguarda apenas uma vez a resposta
-  const handleMessage = (event) => {
-    if (event.data?.type === "shopeeUserInfo") {
-      window.removeEventListener("message", handleMessage); // Evita múltiplas execuções
-
-      const { uid, passphrase } = event.data;
-
-      if (!uid || !passphrase) {
-        alert("Usuário não está logado no sistema ou senha não disponível.");
-        return;
+      if (id) {
+        pedidos.push({
+          id,
+          valor,
+          status,
+          data: new Date().toISOString()
+        });
       }
+    });
 
-      chrome.runtime?.sendMessage({
-        tipo: "salvarPedidos",
-        uid,
-        passphrase,
-        pedidos
-      });
+    if (pedidos.length === 0) {
+      alert("Nenhum pedido visível foi coletado. Role a página ou troque de aba.");
+      return;
     }
-  };
 
-  window.addEventListener("message", handleMessage);
+    console.log("Pedidos capturados:", pedidos);
+    alert(`Foram coletados ${pedidos.length} pedidos. Veja no console (F12).`);
+
+    // Pede UID + senha do sistema
+    window.postMessage("getShopeeUser", "*");
+
+    // Aguarda apenas uma vez a resposta
+    const handleMessage = (event) => {
+      if (event.data?.type === "shopeeUserInfo") {
+        window.removeEventListener("message", handleMessage); // Evita múltiplas execuções
+
+        const { uid, passphrase } = event.data;
+
+        if (!uid || !passphrase) {
+          alert("Usuário não está logado no sistema ou senha não disponível.");
+          return;
+        }
+
+        chrome.runtime?.sendMessage({
+          tipo: "salvarPedidos",
+          uid,
+          passphrase,
+          pedidos
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+  } catch (err) {
+    console.error("Erro na coleta de pedidos:", err);
+  }
 })();
 
 
