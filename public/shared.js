@@ -258,10 +258,11 @@ document.addEventListener('navbarLoaded', function () {
   if (!btn) return;
   btn.setAttribute('aria-expanded', 'false');
   btn.addEventListener('click', function () {
-    var sidebar = document.querySelector('.sidebar');
+    toggleSidebar();
+    var sidebar = document.getElementById('sidebar-container');
     if (sidebar) {
-      var isActive = sidebar.classList.toggle('active');
-      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+      var isOpen = !sidebar.classList.contains('-translate-x-full');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
   });
 });
