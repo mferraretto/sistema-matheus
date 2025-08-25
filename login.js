@@ -245,7 +245,7 @@ function applyExpedicaoSidebar() {
     sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
       const href = link.getAttribute('href') || '';
       if (!href.includes('expedicao.html')) {
-        link.parentElement.classList.add('hidden');
+        link.classList.add('hidden');
       }
     });
   };
@@ -257,7 +257,7 @@ function restoreSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
   sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-    link.parentElement.classList.remove('hidden');
+    link.classList.remove('hidden');
   });
 }
 function applyPerfilRestrictions(perfil) {
