@@ -372,21 +372,45 @@ function checkLogin() {
   });
 }
 
-document.addEventListener('navbarLoaded', () => {
-  document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
-  // Garante que o evento de logout só seja registrado se o botão existir
-  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+  document.addEventListener('navbarLoaded', () => {
+    const loginMenu = document.getElementById('loginMenu');
+    const loginDropdown = document.getElementById('loginDropdown');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginUsuarioBtn = document.getElementById('loginUsuarioBtn');
+    const loginGestorBtn = document.getElementById('loginGestorBtn');
 
-  if (window.location.search.includes('login=1')) {
-  // Espera o estado do Firebase para decidir se deve abrir
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
+    loginBtn?.addEventListener('click', () => {
+      loginDropdown?.classList.toggle('hidden');
+    });
+
+    loginUsuarioBtn?.addEventListener('click', () => {
+      loginDropdown?.classList.add('hidden');
       openModal('loginModal');
+    });
+
+    loginGestorBtn?.addEventListener('click', () => {
+      window.location.href = 'login-gestor.html';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!loginMenu?.contains(e.target)) {
+        loginDropdown?.classList.add('hidden');
+      }
+    });
+
+    // Garante que o evento de logout só seja registrado se o botão existir
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+    if (window.location.search.includes('login=1')) {
+      // Espera o estado do Firebase para decidir se deve abrir
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          openModal('loginModal');
+        }
+      });
     }
+    checkLogin();
   });
-}
-  checkLogin();
-});
 
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
