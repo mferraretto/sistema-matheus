@@ -1,0 +1,25 @@
+<div class="card shadow-xl rounded-2xl border border-gray-200 bg-white max-w-4xl mx-auto mt-8">
+  <div class="card-header flex items-center gap-3 border-b border-gray-100 rounded-t-2xl">
+    <i class="fas fa-users"></i>
+    <h3 class="text-2xl font-bold text-gray-800 tracking-tight">Acompanhamento de Sobras</h3>
+  </div>
+  <div class="card-body space-y-6 p-6">
+    <div class="text-lg">Total Sobra Esperada: <strong id="totalSobraGestor">R$ 0,00</strong></div>
+    <div class="table-container overflow-x-auto rounded-lg shadow">
+      <table id="tabelaSobraSkuGestor" class="data-table min-w-full text-sm text-left">
+        <thead>
+          <tr class="bg-indigo-50 text-indigo-700">
+            <th class="py-3 px-4 font-bold">SKU</th>
+            <th class="py-3 px-4 font-bold">Sobra Esperada</th>
+            <th class="py-3 px-4 font-bold">Sobra Real</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+    <div>
+      <h4 class="text-lg font-semibold mb-2">Pedidos com sobra divergente</h4>
+      <ul id="listaPedidosErradosGestor" class="list-disc pl-6 text-sm space-y-1"></ul>
+    </div>
+  </div>
+</div>
