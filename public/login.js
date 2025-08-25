@@ -229,6 +229,14 @@ async function showUserArea(user) {
     const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
     window.userPerfil = perfil;
 
+    if (perfil === 'gestor') {
+      const path = window.location.pathname.toLowerCase();
+      if (!path.endsWith('/financeiro.html')) {
+        window.location.href = 'financeiro.html';
+        return;
+      }
+    }
+
     // 1) aplica restrições de UI
     applyPerfilRestrictions(perfil);
 
