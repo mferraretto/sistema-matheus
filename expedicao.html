@@ -20,6 +20,10 @@
   <body class="bg-gray-100" style="font-family: 'Poppins', sans-serif;">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
+  <div id="gestorUsersCard" class="hidden fixed top-24 right-4 w-72 bg-white rounded shadow-lg p-4">
+    <h2 class="text-lg font-semibold mb-2">Equipe de Expedição</h2>
+    <ul id="gestorUsersList" class="space-y-1 text-sm"></ul>
+  </div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
     <div class="mb-4">
@@ -119,6 +123,7 @@
         carregarEtiquetas();
         if (isResponsavel) {
           verificarDia();
+          carregarEquipeGestor();
         } else {
           startBtn.classList.add('hidden');
           closeBtn.classList.add('hidden');
@@ -186,6 +191,37 @@
         console.error('Erro ao carregar dados do usuário:', e);
         gestoresEmails = [];
         currentUserName = currentUser.email;
+      }
+    }
+
+    async function carregarEquipeGestor() {
+      const card = document.getElementById('gestorUsersCard');
+      const listEl = document.getElementById('gestorUsersList');
+      if (!currentUser || !card || !listEl) return;
+      try {
+        const usuarios = new Map();
+        const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
+        snap1.forEach(docu => {
+          if (docu.id !== currentUser.uid) usuarios.set(docu.id, docu.data());
+        });
+        const snap2 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).get();
+        snap2.forEach(docu => {
+          if (docu.id !== currentUser.uid) usuarios.set(docu.id, docu.data());
+        });
+        listEl.innerHTML = '';
+        for (const [uid, data] of usuarios) {
+          const nome = await getOwnerName(uid, data.email);
+          const li = document.createElement('li');
+          li.textContent = `${nome} (${data.email || ''})`;
+          listEl.appendChild(li);
+        }
+        if (usuarios.size) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      } catch (e) {
+        console.error('Erro ao carregar equipe de expedição:', e);
       }
     }
 
