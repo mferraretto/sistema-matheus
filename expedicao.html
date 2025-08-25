@@ -30,9 +30,12 @@
       <button id="startDayBtn" class="btn btn-primary mr-2">Iniciar Dia</button>
       <button id="closeDayBtn" class="btn btn-secondary hidden">Fechar Dia</button>
     </div>
-    <div id="sobrasFields" class="mb-4 hidden">
-      <input type="number" id="sobrasQuantidade" class="form-control mr-2 w-40" placeholder="Qtd não expedida" />
+    <div id="sobrasFields" class="mb-4 hidden flex flex-wrap items-center gap-2">
+      <input type="number" id="sobrasQuantidade" class="form-control w-40" placeholder="Qtd não expedida" />
       <input type="text" id="sobrasMotivo" class="form-control w-64" placeholder="Motivo" />
+      <select id="sobrasResponsavel" class="form-control w-48">
+        <option value="">Selecione responsável</option>
+      </select>
     </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
@@ -85,6 +88,7 @@
     const sobrasDiv = document.getElementById('sobrasFields');
     const sobrasQtdInput = document.getElementById('sobrasQuantidade');
     const sobrasMotivoInput = document.getElementById('sobrasMotivo');
+    const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
     uploadManualBtn.addEventListener('click', uploadManualLabel);
@@ -197,6 +201,7 @@
     async function carregarEquipeGestor() {
       const card = document.getElementById('gestorUsersCard');
       const listEl = document.getElementById('gestorUsersList');
+      const selectEl = sobrasResponsavelSelect;
       if (!currentUser || !card || !listEl) return;
       try {
         const usuarios = new Map();
@@ -209,11 +214,18 @@
           if (docu.id !== currentUser.uid) usuarios.set(docu.id, docu.data());
         });
         listEl.innerHTML = '';
+        if (selectEl) selectEl.innerHTML = '<option value="">Selecione responsável</option>';
         for (const [uid, data] of usuarios) {
           const nome = await getOwnerName(uid, data.email);
           const li = document.createElement('li');
           li.textContent = `${nome} (${data.email || ''})`;
           listEl.appendChild(li);
+          if (selectEl) {
+            const opt = document.createElement('option');
+            opt.value = uid;
+            opt.textContent = nome;
+            selectEl.appendChild(opt);
+          }
         }
         if (usuarios.size) {
           card.classList.remove('hidden');
@@ -300,7 +312,7 @@
       const dados = doc.data();
       const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
       if (sobrasQtd || sobrasMotivo) {
-        await notificarUsuariosSobras(sobrasQtd, sobrasMotivo);
+        await notificarUsuariosSobras(sobrasQtd, sobrasMotivo, sobrasResponsavelSelect.value);
       }
       await gerarRelatorioDia(inicio, fim, dados);
       await gerarRelatorioDiaPorUsuario(inicio, fim, dados);
@@ -308,24 +320,31 @@
       sobrasDiv.classList.add('hidden');
       sobrasQtdInput.value = '';
       sobrasMotivoInput.value = '';
+      if (sobrasResponsavelSelect) sobrasResponsavelSelect.value = '';
       showToast('Dia encerrado');
       verificarDia();
     }
 
-    async function notificarUsuariosSobras(qtd, motivo) {
+    async function notificarUsuariosSobras(qtd, motivo, responsavelUid) {
       try {
-        const usuarios = [];
-        const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
-        snap1.forEach(d => usuarios.push(d.id));
-        const snap2 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).get();
-        snap2.forEach(d => { if (!usuarios.includes(d.id)) usuarios.push(d.id); });
-        if (!usuarios.length) return;
+        let destinatarios = [];
+        if (responsavelUid) {
+          destinatarios = [responsavelUid];
+        } else {
+          const usuarios = [];
+          const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
+          snap1.forEach(d => usuarios.push(d.id));
+          const snap2 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).get();
+          snap2.forEach(d => { if (!usuarios.includes(d.id)) usuarios.push(d.id); });
+          destinatarios = usuarios;
+        }
+        if (!destinatarios.length) return;
         await db.collection('expedicaoMensagens').add({
           gestorUid: currentUser.uid,
           gestorEmail: currentUser.email,
           quantidade: qtd,
           motivo,
-          destinatarios: usuarios,
+          destinatarios,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (e) {
