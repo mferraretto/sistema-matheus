@@ -239,7 +239,7 @@ async function showUserArea(user) {
     }
 
     // 1) aplica restrições de UI
-    applyPerfilRestrictions(perfil);
+    aplicarPerfil(perfil);
 
     // 2) se for expedição, executa fluxo especial
     if (perfil === 'expedicao') {
@@ -286,14 +286,12 @@ function restoreSidebar() {
     link.parentElement.classList.remove('hidden');
   });
 }
-function applyPerfilRestrictions(perfil) {
-  const currentPerfil = (perfil || '').toLowerCase();
-  document.querySelectorAll('[data-perfil]').forEach(el => {
-    const allowed = (el.getAttribute('data-perfil') || '')
-      .toLowerCase()
+function aplicarPerfil(perfil) {
+  document.querySelectorAll('#sidebar [data-perfil]').forEach(el => {
+    const perfis = (el.getAttribute('data-perfil') || '')
       .split(',')
-      .map(p => p.trim());
-    if (!allowed.includes(currentPerfil)) {
+      .map(s => s.trim());
+    if (!perfis.includes(perfil)) {
       el.classList.add('hidden');
     } else {
       el.classList.remove('hidden');
@@ -453,5 +451,5 @@ function checkLogin() {
   });
 
 document.addEventListener('sidebarLoaded', () => {
-  if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
+  if (window.userPerfil) aplicarPerfil(window.userPerfil);
 });
