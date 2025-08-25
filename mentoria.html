@@ -1,21 +1,46 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mentoria</title>
+
+  <!-- Libs -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Seus estilos -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Layout padrão para TODAS as páginas -->
+  <style>
+    :root { --sbw: 256px; } /* largura do sidebar */
+    body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    @media (min-width:1024px){ .main-content { margin-left: var(--sbw); } } /* empurra o conteúdo no desktop */
+    .mobile-menu-btn{ position:fixed; left:12px; top:12px; z-index:50; }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-  <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
 
+  <!-- Botão mobile -->
+  <button class="mobile-menu-btn lg:hidden bg-white rounded-md px-3 py-2 shadow"
+          onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
+
+  <!-- SIDEBAR fixo no desktop / offcanvas no mobile -->
+  <aside id="sidebar-container"
+         class="fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40
+                transition-transform duration-200 ease-out
+                -translate-x-full lg:translate-x-0 shadow-lg">
+    <!-- parcial é injetado aqui -->
+  </aside>
+
+  <!-- NAVBAR -->
+  <div id="navbar-container" class="lg:pl-64"></div>
+
+  <!-- CONTEÚDO -->
   <main class="main-content p-4 space-y-4">
     <div class="card p-4 flex flex-wrap items-center gap-4">
       <div class="card w-full">
@@ -45,85 +70,62 @@
     </div>
   </main>
 
-  <script>window.CUSTOM_SIDEBAR_PATH='partials/sidebar-gestor.html';
-        window.CUSTOM_NAVBAR_PATH='partials/navbar.html';</script>
+  <!-- Caminhos dos parciais (use os mesmos em todas as páginas) -->
   <script>
-  // Fallback visual mínimo: garante que o container exista e tenha largura inicial
-  (function ensureSidebarBaseStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-      #sidebar-container{position:fixed;left:0;top:0;bottom:0;width:260px;max-width:80vw;overflow:auto;background:#6b46c1; /* roxo base */
-        transform:translateX(0); transition:transform .2s ease;}
-      #sidebar-container.hidden{transform:translateX(-105%);}
-      .main-content{margin-left:260px;} /* empurra o conteúdo */
-      @media (max-width:1024px){
-        .main-content{margin-left:0;}
-        #sidebar-container.hidden{transform:translateX(-105%);}
-      }
-      .mobile-menu-btn{position:fixed;left:12px;top:12px;z-index:50;background:#fff;border-radius:8px;padding:6px 10px}
-    `;
-    document.head.appendChild(style);
-    window.toggleSidebar = window.toggleSidebar || function(){
-      document.getElementById('sidebar-container')?.classList.toggle('hidden');
-    };
-  })();
+    window.CUSTOM_SIDEBAR_PATH = 'partials/sidebar-gestor.html';
+    window.CUSTOM_NAVBAR_PATH  = 'partials/navbar.html';
+  </script>
 
-  (function () {
-    const SIDEBAR = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
-    const NAVBAR  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
+  <!-- Loader único dos parciais (execução de <script> internos e offcanvas no mobile) -->
+  <script>
+    function toggleSidebar(){
+      const sb = document.getElementById('sidebar-container');
+      const isOpen = !sb.classList.contains('-translate-x-full');
+      if(isOpen) sb.classList.add('-translate-x-full'); else sb.classList.remove('-translate-x-full');
+    }
 
     async function loadPartial(selector, path){
-      const host = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
-      const url  = new URL(path, host).toString();
+      const base = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
+      const url  = new URL(path, base).toString();
       const el   = document.querySelector(selector);
       if(!el) return;
 
+      // evita dupla injeção se outro script já preencheu (ex.: shared.js)
+      if (el.childElementCount > 0 || (el.textContent||'').trim().length > 0) return;
+
       try{
-        const res = await fetch(url, {cache:'no-cache'});
+        const res = await fetch(url, { cache:'no-cache' });
         if(!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
         const html = await res.text();
-
-        // injeta o HTML
         el.innerHTML = html;
 
-        // reexecuta <script> contidos no parcial
+        // reexecuta <script> do parcial
         el.querySelectorAll('script').forEach(old=>{
-          const s = document.createElement('script');
-          if (old.src) { s.src = new URL(old.getAttribute('src'), url).toString(); }
-          s.type = old.type || 'text/javascript';
-          s.defer = old.defer || false;
-          s.text = old.src ? '' : (old.textContent || '');
+          const s=document.createElement('script');
+          if(old.src){ s.src=new URL(old.getAttribute('src'), url).toString(); }
+          s.type=old.type||'text/javascript';
+          s.defer=old.defer||false;
+          s.text=old.src?'':(old.textContent||'');
           old.replaceWith(s);
         });
-
-        // Se quiser escondido no mobile por padrão:
-        if (selector === '#sidebar-container' && matchMedia('(max-width:1024px)').matches) {
-          el.classList.add('hidden');
-        }
-
       }catch(err){
         console.error('[partials] falha', path, err);
-        el.innerHTML = `<div class="p-3 bg-red-50 text-red-700 text-sm rounded">
-          Erro ao carregar <code>${path}</code>. Veja o console para detalhes.</div>`;
+        el.innerHTML = `<div class="p-3 bg-red-50 text-red-700 text-sm rounded">Erro ao carregar <code>${path}</code>.</div>`;
       }
     }
 
     document.addEventListener('DOMContentLoaded', ()=>{
-      loadPartial('#sidebar-container', SIDEBAR);
-      loadPartial('#navbar-container', NAVBAR);
+      loadPartial('#sidebar-container', window.CUSTOM_SIDEBAR_PATH);
+      loadPartial('#navbar-container',  window.CUSTOM_NAVBAR_PATH);
+      if (window.initMentoria) window.initMentoria();
     });
-  })();
   </script>
+
+  <!-- Seus scripts globais -->
   <script src="shared.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="mentoria.js"></script>
   <script type="module" src="login.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.initMentoria) {
-        window.initMentoria();
-      }
-    });
-  </script>
 </body>
 </html>
+
