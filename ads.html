@@ -50,15 +50,9 @@
   </main>
 
   <!-- Scripts comuns -->
-  <script src="shared.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      fetch("sidebar.html").then(r => r.text()).then(html => {
-        document.getElementById("sidebar-container").innerHTML = html;
-      });
-      fetch("navbar.html").then(r => r.text()).then(html => {
-        document.getElementById("navbar-container").innerHTML = html;
-      });
-    });
+    window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';
+    window.CUSTOM_NAVBAR_PATH  = '/VendedorPro/partials/navbar.html';
   </script>
+  <script src="shared.js"></script>
 </body>
