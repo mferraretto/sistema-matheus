@@ -158,8 +158,7 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
-      const path = window.location.pathname.toLowerCase();
-      if (selectedRole === 'gestor' || path.includes('login-gestor.html')) {
+      if (selectedRole === 'gestor') {
         window.location.href = 'financeiro.html';
       }
     })
@@ -399,29 +398,10 @@ function checkLogin() {
 }
 
   document.addEventListener('navbarLoaded', () => {
-    const loginMenu = document.getElementById('loginMenu');
-    const loginDropdown = document.getElementById('loginDropdown');
     const loginBtn = document.getElementById('loginBtn');
-    const loginUsuarioBtn = document.getElementById('loginUsuarioBtn');
-    const loginGestorBtn = document.getElementById('loginGestorBtn');
 
     loginBtn?.addEventListener('click', () => {
-      loginDropdown?.classList.toggle('hidden');
-    });
-
-    loginUsuarioBtn?.addEventListener('click', () => {
-      loginDropdown?.classList.add('hidden');
       openModal('loginModal');
-    });
-
-    loginGestorBtn?.addEventListener('click', () => {
-      window.location.href = 'login-gestor.html';
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!loginMenu?.contains(e.target)) {
-        loginDropdown?.classList.add('hidden');
-      }
     });
 
     // Garante que o evento de logout só seja registrado se o botão existir
