@@ -73,7 +73,10 @@
          </button>
         <button class="tab-btn" onclick="trocarAba('acompanhamento'); carregarAcompanhamento()">
           <i class="fas fa-chart-line"></i> Acompanhamento
-        </button> 
+        </button>
+        <button id="btnAcompanhamentoGestor" class="tab-btn hidden" onclick="trocarAba('acompanhamentoGestor'); carregarAcompanhamentoGestor()">
+          <i class="fas fa-users"></i> Acompanhamento Sobras
+        </button>
       </div>
 
       <!-- Aba de Importação/Conferência -->
@@ -116,6 +119,10 @@
       <div id="acompanhamento" class="tab-content">
 
       </div>
+      <!-- Aba de Acompanhamento Sobras (Gestor) -->
+      <div id="acompanhamentoGestor" class="tab-content">
+
+      </div>
     </div>
   </div>
 
@@ -146,7 +153,7 @@
     let usuarioLogado = { uid: null, perfil: '' };
     let pedidosProcessados = [];
     let graficoBarras, graficoPizza;
- const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento'];
+ const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento','acompanhamentoGestor'];
     const tabsLoaded = Promise.all(
       tabIds.map(t => fetch(`sobras-tabs/${t}.html`).then(res => res.text()).then(html => {
         const el = document.getElementById(t);
@@ -171,6 +178,7 @@
             return;
           }
           usuarioLogado.uid = user.uid;
+          usuarioLogado.email = user.email;
           try {
             const perfilDoc = await db.collection('usuarios').doc(user.uid).get();
             usuarioLogado.perfil = perfilDoc.exists ? (perfilDoc.data().perfil || '') : '';
@@ -183,6 +191,7 @@
           await carregarProdutos();
           await carregarMetas();
           carregarHistorico();
+          await verificarGestorFinanceiro();
           const dataField = document.getElementById('dataFaturamento');
           if (dataField) {
             dataField.value = new Date().toISOString().slice(0,10);
@@ -2560,9 +2569,110 @@ function filtrarPorSKU() {
   linha.style.display = corresponde && statusCorresponde ? '' : 'none';
   });
 }
+
+async function verificarGestorFinanceiro() {
+  try {
+    const snap = await db.collection('usuarios')
+      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
+      .limit(1)
+      .get();
+    if (!snap.empty) {
+      const btn = document.getElementById('btnAcompanhamentoGestor');
+      if (btn) btn.classList.remove('hidden');
+    }
+  } catch (e) {
+    console.error('Erro ao verificar gestor financeiro', e);
+  }
+}
+
+async function carregarAcompanhamentoGestor() {
+  const totalEl = document.getElementById('totalSobraGestor');
+  const tbody = document.querySelector('#tabelaSobraSkuGestor tbody');
+  const lista = document.getElementById('listaPedidosErradosGestor');
+  if (totalEl) totalEl.textContent = 'Carregando...';
+  if (tbody) tbody.innerHTML = '';
+  if (lista) lista.innerHTML = '';
+
+  try {
+    const usuariosSnap = await db.collection('usuarios')
+      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
+      .get();
+    const usuarios = [];
+    usuariosSnap.forEach(doc => usuarios.push({ uid: doc.id, ...doc.data() }));
+
+    let totalEsperada = 0;
+    const mapaSku = {};
+    const pedidosErrados = [];
+
+    for (const u of usuarios) {
+      const produtosSnap = await db.collection('uid').doc(u.uid).collection('produtos').get();
+      const custos = {};
+      produtosSnap.forEach(p => {
+        const d = p.data();
+        const s = d.sku || p.id;
+        custos[s] = Number(d.custo || 0);
+      });
+
+      const diasSnap = await db.collection('uid').doc(u.uid).collection('skusVendidos').get();
+      for (const diaDoc of diasSnap.docs) {
+        const listaSnap = await diaDoc.ref.collection('lista').get();
+        listaSnap.forEach(item => {
+          const d = item.data();
+          const sku = d.sku || 'sem-sku';
+          const qtd = Number(d.total || d.quantidade) || 0;
+          const liquido = Number(d.valorLiquido || d.sobraReal || 0);
+          const custo = custos[sku] || 0;
+          const esperada = qtd * custo;
+          totalEsperada += esperada;
+          if (!mapaSku[sku]) mapaSku[sku] = { esperada: 0, real: 0 };
+          mapaSku[sku].esperada += esperada;
+          mapaSku[sku].real += liquido;
+          if (Math.abs(liquido - esperada) > 0.01) {
+            pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: diaDoc.id });
+          }
+        });
+      }
+
+      const errSnap = await db.collection('uid').doc(u.uid).collection('pedidosErrados').get();
+      errSnap.forEach(e => {
+        const d = e.data();
+        pedidosErrados.push({ usuario: u.nome || u.email || u.uid, ...d });
+      });
+    }
+
+    if (totalEl) totalEl.textContent = `R$ ${totalEsperada.toFixed(2)}`;
+
+    if (tbody) {
+      Object.entries(mapaSku).forEach(([sku, info]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${sku}</td><td>R$ ${info.esperada.toFixed(2)}</td><td>R$ ${info.real.toFixed(2)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    if (lista) {
+      if (!pedidosErrados.length) {
+        lista.innerHTML = '<li class="text-gray-500">Sem divergências</li>';
+      } else {
+        pedidosErrados.forEach(p => {
+          const li = document.createElement('li');
+          const esp = p.sobraEsperada || p.metaEsperada || 0;
+          const real = p.sobraReal || p.totalLiquido || 0;
+          li.textContent = `${p.usuario} - ${p.dia || ''} - ${p.sku}: Esperado R$ ${esp.toFixed(2)} | Real R$ ${real.toFixed(2)}`;
+          lista.appendChild(li);
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao carregar acompanhamento do gestor', e);
+    if (lista) lista.innerHTML = '<li class="text-red-500">Erro ao carregar dados</li>';
+  }
+}
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
 window.carregarControleVendas = carregarControleVendas;
 window.carregarAcompanhamento = carregarAcompanhamento;
+window.carregarAcompanhamentoGestor = carregarAcompanhamentoGestor;
+window.verificarGestorFinanceiro = verificarGestorFinanceiro;
 window.exportarAcompanhamentoExcel = exportarAcompanhamentoExcel;
 window.exportarAcompanhamentoPDF = exportarAcompanhamentoPDF;
 window.printAcompanhamento = printAcompanhamento;
