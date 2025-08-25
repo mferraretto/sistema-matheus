@@ -33,6 +33,17 @@
       el.classList.remove('max-h-screen');
     }
   };
+
+  // Toggle sidebar visibility on mobile
+  window.toggleSidebar = function() {
+    var sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
+    if (!sidebar) return;
+    var isActive = sidebar.classList.toggle('active');
+    var btn = document.querySelector('.mobile-menu-btn');
+    if (btn) {
+      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+    }
+  };
   
   // Toggle visibility of the Importar Produtos card on the precificação page
   window.toggleImportCard = function() {
