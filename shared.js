@@ -9,6 +9,21 @@
     BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
   }
 
+  // Support repositories that serve pages from a subdirectory (e.g. GitHub Pages "public" folder)
+  // ROOT_PATH points to the repo root while BASE_PATH remains the current script folder
+  var ROOT_PATH = BASE_PATH.replace(/public\/$/, '');
+
+  function fetchWithFallback(urls, idx) {
+    idx = idx || 0;
+    if (idx >= urls.length) return Promise.reject(new Error('Not found'));
+    return fetch(urls[idx]).then(function(res) {
+      if (!res.ok) throw new Error('Not found');
+      return res.text();
+    }).catch(function() {
+      return fetchWithFallback(urls, idx + 1);
+    });
+  }
+
   function loadTailwind() {
     return new Promise(function(resolve, reject) {
       if (document.querySelector('link[href*="tailwind"]')) { resolve(); return; }
@@ -81,23 +96,15 @@
     sidebarPath = sidebarPath || 'partials/sidebar.html';
 
     var paths = [
+      ROOT_PATH + sidebarPath,
       BASE_PATH + sidebarPath,
       '/' + sidebarPath,
+      ROOT_PATH + 'partials/sidebar.html',
       BASE_PATH + 'partials/sidebar.html',
       '/partials/sidebar.html'
     ];
 
-    function fetchSidebar(idx) {
-      if (idx >= paths.length) return Promise.reject(new Error('Sidebar not found'));
-      return fetch(paths[idx]).then(function(res) {
-        if (!res.ok) throw new Error('Sidebar not found');
-        return res.text();
-      }).catch(function() {
-        return fetchSidebar(idx + 1);
-      });
-    }
-
-    return fetchSidebar(0)
+    return fetchWithFallback(paths)
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
@@ -113,13 +120,17 @@
 // Load navbar HTML into placeholder
   window.loadNavbar = function(containerId) {
     containerId = containerId || 'navbar-container';
-    return fetch(BASE_PATH + 'partials/navbar.html')
-      .then(function(res) { return res.text(); })
+    var paths = [
+      ROOT_PATH + 'partials/navbar.html',
+      BASE_PATH + 'partials/navbar.html',
+      '/partials/navbar.html'
+    ];
+    return fetchWithFallback(paths)
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
           container.innerHTML = html;
-            var event = new CustomEvent('navbarLoaded', { detail: { containerId: containerId } });
+          var event = new CustomEvent('navbarLoaded', { detail: { containerId: containerId } });
           document.dispatchEvent(event);
         }
       });
@@ -128,8 +139,12 @@
   // Load authentication modals into placeholder
   window.loadAuthModals = function(containerId) {
     containerId = containerId || 'auth-modals-container';
-    return fetch(BASE_PATH + 'partials/auth-modals.html')
-      .then(function(res) { return res.text(); })
+    var paths = [
+      ROOT_PATH + 'partials/auth-modals.html',
+      BASE_PATH + 'partials/auth-modals.html',
+      '/partials/auth-modals.html'
+    ];
+    return fetchWithFallback(paths)
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
