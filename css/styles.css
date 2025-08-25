@@ -366,7 +366,7 @@ input:checked + .dark-mode-slider:before {
   .sidebar {
     transform: translateX(-100%)
   }
-  .sidebar.open {
+  .sidebar.active {
     transform: translateX(0)
   }
   .top-navbar {

@@ -193,10 +193,12 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('navbarLoaded', function () {
   var btn = document.querySelector('.mobile-menu-btn');
   if (!btn) return;
+  btn.setAttribute('aria-expanded', 'false');
   btn.addEventListener('click', function () {
     var sidebar = document.querySelector('.sidebar');
     if (sidebar) {
-      sidebar.classList.toggle('active');
+      var isActive = sidebar.classList.toggle('active');
+      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
     }
   });
 });
