@@ -35,8 +35,8 @@ let selectedRole = null;
 export async function checkBackend() {
   if (!navigator.onLine) return false;
   try {
-    const res = await fetch('https://www.gstatic.com/generate_204', { cache: 'no-store' });
-    return res.ok;
+    await fetch('https://www.gstatic.com/generate_204', { cache: 'no-store', mode: 'no-cors' });
+    return true;
   } catch (e) {
     return false;
   }
