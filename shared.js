@@ -199,7 +199,7 @@
   window.startSidebarTour = function(force) {
     if (typeof introJs === 'undefined') return;
     if (!force && localStorage.getItem('sidebarTourSeen') === 'true') return;
-    var intro = introJs();
+    var intro = introJs.tour();
     intro.setOptions({
       steps: [
         { element: '#menu-inicio', intro: 'Voltar para a página inicial.' },
