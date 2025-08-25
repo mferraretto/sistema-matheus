@@ -260,6 +260,7 @@ document.addEventListener('navbarLoaded', function () {
 });
 
 document.addEventListener('sidebarLoaded', function () {
+  document.body.classList.add('has-sidebar');
   loadIntroJs().then(function () {
     var btn = document.getElementById('startSidebarTourBtn');
     if (btn) {
