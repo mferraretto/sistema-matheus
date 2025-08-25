@@ -1,11 +1,11 @@
 const CACHE_NAME = 'financeiro-cache-v1';
 const URLS_TO_CACHE = [
-  '/financeiro.html',
-  '/financeiro.js',
-  '/css/styles.css',
-  '/css/components.css',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  'financeiro.html',
+  'financeiro.js',
+  'css/styles.css',
+  'css/components.css',
+  'icons/icon-192.png',
+  'icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
