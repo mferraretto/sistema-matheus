@@ -1930,7 +1930,24 @@ body.dark .sidebar-link.active {
   background-color: #3b0c70;
 }
 
+/* Base layout spacing */
+.main-content {
+  margin-top: var(--navbar-height);
+  margin-left: 0;
+}
+
+/* Desktop sidebar beside content */
 @media (min-width:1024px){
-  .main-content { margin-left: 16rem; }
+  .main-content { margin-left: var(--sidebar-width); }
+}
+
+/* Mobile off-canvas sidebar */
+@media (max-width:768px){
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
 }
 
