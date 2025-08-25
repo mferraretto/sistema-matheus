@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hotline Autofill</title>
+  <style>
+    body { font: 14px system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 12px; width: 360px }
+    label { display:block; margin-top:8px; font-weight:600 }
+    input, textarea, select { width:100%; padding:8px; box-sizing:border-box }
+    textarea { min-height: 90px }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:8px }
+    button { margin-top:10px; width:100%; padding:10px; font-weight:700; cursor:pointer }
+    small { color:#666 }
+    .muted { color:#666; font-weight:400 }
+  </style>
+</head>
+<body>
+  <h3>Hotline Autofill</h3>
+
+  <!-- Login simples -->
+  <div id="loginBox">
+    <label>Email (Firebase) <input id="authEmail" type="email" /></label>
+    <label>Senha <input id="authPass" type="password" /></label>
+    <button id="doLogin">Entrar</button>
+  </div>
+
+  <div id="app" style="display:none">
+    <label>Loja
+      <select id="loja"></select>
+    </label>
+
+    <label>Link da loja <input id="linkLoja" /></label>
+    <div class="row">
+      <label>Outras lojas no mesmo endereço?
+        <select id="outrasLojas"><option>Sim</option><option selected>Não</option></select>
+      </label>
+      <label>Contato por telefone?
+        <select id="contatoTel"><option selected>Sim</option><option>Não</option></select>
+      </label>
+    </div>
+
+    <div class="row">
+      <label>DDI <input id="ddi" placeholder="+55" /></label>
+      <label>Telefone <input id="telefone" placeholder="11999998888" /></label>
+    </div>
+
+    <label>Responsável <input id="responsavel" /></label>
+    <label>Modelo logístico
+      <input id="modeloLogistico" placeholder="Shopee Xpress / Correios / ..." />
+    </label>
+    <label>Descrição <textarea id="descricao"></textarea></label>
+
+    <label class="muted"><input type="checkbox" id="autoSend" /> Enviar automaticamente após preencher</label>
+
+    <div class="row">
+      <button id="preencher">Preencher</button>
+      <button id="preencherEnviar">Preencher + Enviar</button>
+    </div>
+    <small>Abra o formulário antes de clicar.</small>
+  </div>
+
+  <!-- Firebase (CDN compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Shopee Hotline Autofill",
+  "version": "1.0.0",
+  "description": "Preenche o webform de Hotline Logística da Shopee com dados do Firebase.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://help.shopee.com.br/portal/webform/*"],
+  "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    {
+      "matches": ["https://help.shopee.com.br/portal/webform/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
