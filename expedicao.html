@@ -32,7 +32,10 @@
     </div>
     <div id="sobrasFields" class="mb-4 hidden">
       <input type="number" id="sobrasQuantidade" class="form-control mr-2 w-40" placeholder="Qtd não expedida" />
-      <input type="text" id="sobrasMotivo" class="form-control w-64" placeholder="Motivo" />
+      <input type="text" id="sobrasMotivo" class="form-control mr-2 w-64" placeholder="Motivo" />
+      <select id="sobrasResponsavel" class="form-control w-64">
+        <option value="">Responsável</option>
+      </select>
     </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
@@ -85,6 +88,7 @@
     const sobrasDiv = document.getElementById('sobrasFields');
     const sobrasQtdInput = document.getElementById('sobrasQuantidade');
     const sobrasMotivoInput = document.getElementById('sobrasMotivo');
+    const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
     uploadManualBtn.addEventListener('click', uploadManualLabel);
@@ -197,7 +201,8 @@
     async function carregarEquipeGestor() {
       const card = document.getElementById('gestorUsersCard');
       const listEl = document.getElementById('gestorUsersList');
-      if (!currentUser || !card || !listEl) return;
+      const selectEl = sobrasResponsavelSelect;
+      if (!currentUser || !card || !listEl || !selectEl) return;
       try {
         const usuarios = new Map();
         const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
@@ -209,11 +214,16 @@
           if (docu.id !== currentUser.uid) usuarios.set(docu.id, docu.data());
         });
         listEl.innerHTML = '';
+        selectEl.innerHTML = '<option value="">Responsável</option>';
         for (const [uid, data] of usuarios) {
           const nome = await getOwnerName(uid, data.email);
           const li = document.createElement('li');
           li.textContent = `${nome} (${data.email || ''})`;
           listEl.appendChild(li);
+          const option = document.createElement('option');
+          option.value = uid;
+          option.textContent = nome;
+          selectEl.appendChild(option);
         }
         if (usuarios.size) {
           card.classList.remove('hidden');
@@ -290,17 +300,19 @@
       const fim = new Date();
       const sobrasQtd = parseInt(sobrasQtdInput.value) || 0;
       const sobrasMotivo = sobrasMotivoInput.value.trim();
+      const sobrasRespUid = sobrasResponsavelSelect.value;
       const updateData = { fim: firebase.firestore.FieldValue.serverTimestamp() };
       if (sobrasQtd || sobrasMotivo) {
         updateData.sobrasQuantidade = sobrasQtd;
         updateData.sobrasMotivo = sobrasMotivo;
+        if (sobrasRespUid) updateData.sobrasResponsavelUid = sobrasRespUid;
       }
       await diaDocRef.update(updateData);
       const doc = await diaDocRef.get();
       const dados = doc.data();
       const inicio = dados.inicio && dados.inicio.toDate ? dados.inicio.toDate() : new Date();
-      if (sobrasQtd || sobrasMotivo) {
-        await notificarUsuariosSobras(sobrasQtd, sobrasMotivo);
+      if ((sobrasQtd || sobrasMotivo) && sobrasRespUid) {
+        await notificarUsuariosSobras(sobrasQtd, sobrasMotivo, sobrasRespUid);
       }
       await gerarRelatorioDia(inicio, fim, dados);
       await gerarRelatorioDiaPorUsuario(inicio, fim, dados);
@@ -308,24 +320,20 @@
       sobrasDiv.classList.add('hidden');
       sobrasQtdInput.value = '';
       sobrasMotivoInput.value = '';
+      sobrasResponsavelSelect.value = '';
       showToast('Dia encerrado');
       verificarDia();
     }
 
-    async function notificarUsuariosSobras(qtd, motivo) {
+    async function notificarUsuariosSobras(qtd, motivo, responsavelUid) {
       try {
-        const usuarios = [];
-        const snap1 = await db.collection('uid').where('gestoresExpedicaoEmails', 'array-contains', currentUser.email).get();
-        snap1.forEach(d => usuarios.push(d.id));
-        const snap2 = await db.collection('uid').where('responsavelExpedicaoEmail', '==', currentUser.email).get();
-        snap2.forEach(d => { if (!usuarios.includes(d.id)) usuarios.push(d.id); });
-        if (!usuarios.length) return;
+        if (!responsavelUid) return;
         await db.collection('expedicaoMensagens').add({
           gestorUid: currentUser.uid,
           gestorEmail: currentUser.email,
           quantidade: qtd,
           motivo,
-          destinatarios: usuarios,
+          destinatarios: [responsavelUid],
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       } catch (e) {
