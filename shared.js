@@ -79,18 +79,25 @@
   window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
     sidebarPath = sidebarPath || 'partials/sidebar.html';
-    return fetch(BASE_PATH + sidebarPath)
-      .then(function(res) {
+
+    var paths = [
+      BASE_PATH + sidebarPath,
+      '/' + sidebarPath,
+      BASE_PATH + 'partials/sidebar.html',
+      '/partials/sidebar.html'
+    ];
+
+    function fetchSidebar(idx) {
+      if (idx >= paths.length) return Promise.reject(new Error('Sidebar not found'));
+      return fetch(paths[idx]).then(function(res) {
         if (!res.ok) throw new Error('Sidebar not found');
         return res.text();
-      })
-      .catch(function(err) {
-        console.warn('Falha ao carregar sidebar personalizada:', err);
-        return fetch(BASE_PATH + 'partials/sidebar.html').then(function(res) {
-          if (!res.ok) throw new Error('Sidebar padrão não encontrada');
-          return res.text();
-        });
-      })
+      }).catch(function() {
+        return fetchSidebar(idx + 1);
+      });
+    }
+
+    return fetchSidebar(0)
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
