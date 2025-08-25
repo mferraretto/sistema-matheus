@@ -184,7 +184,7 @@
       .start();
   };
 
-document.addEventListener('DOMContentLoaded', function () {
+function initShared() {
   loadTailwind().then(function () {
     window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH).then(function () {
       window.initDarkMode();
@@ -200,7 +200,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.checkColorContrast();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initShared);
+} else {
+  initShared();
+}
 
 // Handle mobile sidebar toggle after navbar loads
 document.addEventListener('navbarLoaded', function () {
