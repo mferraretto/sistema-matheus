@@ -122,7 +122,8 @@ window.saveDisplayName = async () => {
     try {
       await updateProfile(user, { displayName: nome });
     } catch {}
-    document.getElementById('currentUser').textContent = nome;
+    const nameEl = document.getElementById('currentUser');
+    if (nameEl) nameEl.textContent = nome;
     input.value = '';
     closeModal('displayNameModal');
     showToast('Nome atualizado!', 'success');
@@ -171,6 +172,8 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
+  const roleSelect = document.getElementById('roleSelect');
+  if (roleSelect) selectedRole = roleSelect.value;
 
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
@@ -178,12 +181,17 @@ window.login = () => {
       if (passphrase) {
         setPassphrase(passphrase);
       }
-      showUserArea(cred.user);
-      closeModal('loginModal');
-      document.getElementById('loginPassphrase').value = '';
       sessionStorage.setItem('selectedRole', selectedRole || 'usuario');
-      if (selectedRole === 'gestor') {
-        window.location.href = 'financeiro.html';
+      const onLoginPage = window.location.pathname.toLowerCase().endsWith('login.html');
+      if (!onLoginPage) {
+        showUserArea(cred.user);
+        closeModal('loginModal');
+        document.getElementById('loginPassphrase')?.value = '';
+        if (selectedRole === 'gestor') {
+          window.location.href = 'financeiro.html';
+        }
+      } else {
+        window.location.href = 'index.html';
       }
     })
     .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
@@ -211,12 +219,14 @@ window.sendRecovery = () => {
 
 async function showUserArea(user) {
   const nameEl = document.getElementById('currentUser');
-  nameEl.textContent = user.email;
-  nameEl.onclick = () => {
-    const input = document.getElementById('displayNameInput');
-    if (input) input.value = nameEl.textContent;
-    openModal('displayNameModal');
-  };
+  if (nameEl) {
+    nameEl.textContent = user.email;
+    nameEl.onclick = () => {
+      const input = document.getElementById('displayNameInput');
+      if (input) input.value = nameEl.textContent;
+      openModal('displayNameModal');
+    };
+  }
   // Exibe o botão de logout apenas se estiver presente na navbar
   document.getElementById('logoutBtn')?.classList.remove('hidden');
 
@@ -235,14 +245,14 @@ async function showUserArea(user) {
   try {
     const uidSnap = await getDoc(doc(db, 'uid', user.uid));
     const uidData = uidSnap.data();
-    if (uidData?.nome) {
+    if (uidData?.nome && nameEl) {
       nameEl.textContent = uidData.nome;
     }
     if (uidData?.encrypted) {
       const pass = getPassphrase() || `chave-${user.uid}`;
       try {
         const data = JSON.parse(await decryptString(uidData.encrypted, pass));
-        if (!uidData?.nome && data.nome) {
+        if (!uidData?.nome && data.nome && nameEl) {
           nameEl.textContent = data.nome;
         }
         if (data.perfil) {
@@ -262,6 +272,8 @@ async function showUserArea(user) {
     } else {
       perfil = perfilFallback || 'usuario';
     }
+    const storedRole = sessionStorage.getItem('selectedRole');
+    if (storedRole) perfil = storedRole;
     window.userPerfil = perfil;
 
     if (perfil === 'gestor') {
@@ -286,8 +298,10 @@ async function showUserArea(user) {
 
 function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
-  nameEl.textContent = 'Usuário';
-  nameEl.onclick = null;
+  if (nameEl) {
+    nameEl.textContent = 'Usuário';
+    nameEl.onclick = null;
+  }
   // Oculta o botão de logout apenas se ele existir
   document.getElementById('logoutBtn')?.classList.add('hidden');
   if (window.sistema) delete window.sistema.uid;
@@ -296,6 +310,7 @@ function hideUserArea() {
   localStorage.removeItem('passphraseModalShown');
   isExpedicao = false;
   restoreSidebar();
+  sessionStorage.removeItem('selectedRole');
 }
 
 function applyExpedicaoSidebar() {
