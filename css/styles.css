@@ -342,7 +342,7 @@ input:checked + .dark-mode-slider:before {
     transform: translateY(0)
   }
 }
-@media (max-width:1024px) {
+  @media (max-width:768px) {
   .sidebar {
     width: 70px
   }
@@ -352,7 +352,7 @@ input:checked + .dark-mode-slider:before {
   .sidebar-link {
     justify-content: center
   }
-  .sidebar-link i {
+  .sidebar-link .mr-3 {
     margin-right: 0
   }
   .top-navbar {
