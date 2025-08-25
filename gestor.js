@@ -56,7 +56,18 @@ function carregarGestoresDropdown() {
 
 async function enviarRelatorio(e) {
   e.preventDefault();
-  if (!currentUser) return;
+  const statusEl = document.getElementById('relStatus');
+  if (statusEl) {
+    statusEl.textContent = '';
+    statusEl.className = 'text-sm mt-2';
+  }
+  if (!currentUser) {
+    if (statusEl) {
+      statusEl.textContent = 'Usuário não autenticado.';
+      statusEl.classList.add('text-red-500');
+    }
+    return;
+  }
   const titulo = document.getElementById('relTitulo').value.trim();
   const tipo = document.getElementById('relTipo').value.trim();
   const inicio = document.getElementById('relInicio').value;
@@ -68,39 +79,59 @@ async function enviarRelatorio(e) {
   const mensagem = document.getElementById('relMensagem').value.trim();
   const arquivos = document.getElementById('relArquivos').files;
 
-  const docRef = await addDoc(collection(db, 'relatorios'), {
-    titulo,
-    tipo,
-    inicio,
-    fim,
-    gestores,
-    mensagem,
-    status: 'enviado',
-    autorUid: currentUser.uid,
-    autorNome: currentUser.displayName || currentUser.email,
-    createdAt: serverTimestamp(),
-    anexos: []
-  });
-
-  const anexos = [];
-  for (const file of arquivos) {
-    const path = `reports/${currentUser.uid}/${docRef.id}/${file.name}`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    anexos.push({ nome: file.name, url });
-  }
-  if (anexos.length) {
-    await updateDoc(docRef, { anexos });
+  if (!titulo || !tipo || !inicio || !fim || !mensagem) {
+    if (statusEl) {
+      statusEl.textContent = 'Preencha todos os campos obrigatórios.';
+      statusEl.classList.add('text-red-500');
+    }
+    return;
   }
 
-  document.getElementById('relTitulo').value = '';
-  document.getElementById('relTipo').value = '';
-  document.getElementById('relInicio').value = '';
-  document.getElementById('relFim').value = '';
-  document.getElementById('relMensagem').value = '';
-  document.getElementById('relArquivos').value = '';
-  Array.from(document.getElementById('relGestores').options).forEach(o => o.selected = false);
+  try {
+    const docRef = await addDoc(collection(db, 'relatorios'), {
+      titulo,
+      tipo,
+      inicio,
+      fim,
+      gestores,
+      mensagem,
+      status: 'enviado',
+      autorUid: currentUser.uid,
+      autorNome: currentUser.displayName || currentUser.email,
+      createdAt: serverTimestamp(),
+      anexos: []
+    });
+
+    const anexos = [];
+    for (const file of arquivos) {
+      const path = `reports/${currentUser.uid}/${docRef.id}/${file.name}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      anexos.push({ nome: file.name, url });
+    }
+    if (anexos.length) {
+      await updateDoc(docRef, { anexos });
+    }
+
+    document.getElementById('relTitulo').value = '';
+    document.getElementById('relTipo').value = '';
+    document.getElementById('relInicio').value = '';
+    document.getElementById('relFim').value = '';
+    document.getElementById('relMensagem').value = '';
+    document.getElementById('relArquivos').value = '';
+    Array.from(document.getElementById('relGestores').options).forEach(o => o.selected = false);
+    if (statusEl) {
+      statusEl.textContent = 'Relatório enviado com sucesso!';
+      statusEl.classList.add('text-green-500');
+    }
+  } catch (err) {
+    console.error('Erro ao enviar relatório:', err);
+    if (statusEl) {
+      statusEl.textContent = 'Erro ao enviar relatório.';
+      statusEl.classList.add('text-red-500');
+    }
+  }
 }
 
 function renderRelatorioCard(id, data, isGestor) {
