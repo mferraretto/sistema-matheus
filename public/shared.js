@@ -68,8 +68,25 @@
   window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
     sidebarPath = sidebarPath || 'partials/sidebar.html';
-    return fetch(BASE_PATH + sidebarPath)
-      .then(function(res) { return res.text(); })
+
+    var paths = [
+      BASE_PATH + sidebarPath,
+      '/' + sidebarPath,
+      BASE_PATH + 'partials/sidebar.html',
+      '/partials/sidebar.html'
+    ];
+
+    function fetchSidebar(idx) {
+      if (idx >= paths.length) return Promise.reject(new Error('Sidebar not found'));
+      return fetch(paths[idx]).then(function(res) {
+        if (!res.ok) throw new Error('Sidebar not found');
+        return res.text();
+      }).catch(function() {
+        return fetchSidebar(idx + 1);
+      });
+    }
+
+    return fetchSidebar(0)
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
@@ -77,6 +94,9 @@
           var event = new CustomEvent('sidebarLoaded', { detail: { containerId: containerId } });
           document.dispatchEvent(event);
         }
+      })
+      .catch(function(err) {
+        console.error('Erro ao carregar sidebar:', err);
       });
   };
 // Load navbar HTML into placeholder
