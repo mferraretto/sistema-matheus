@@ -131,6 +131,11 @@ window.closeModal = (id) => {
   const el = document.getElementById(id);
   if (el) {
     el.style.display = 'none';
+    if (id === 'loginModal') {
+      document.getElementById('roleSelection')?.classList.remove('hidden');
+      document.getElementById('loginForm')?.classList.add('hidden');
+      selectedRole = null;
+    }
   }
 };
 
