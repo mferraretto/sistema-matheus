@@ -4,6 +4,7 @@ import { decryptString } from './crypto.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
+import { checkBackend } from './login.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -388,6 +389,12 @@ async function carregarTarefas(uid, isAdmin) {
 async function iniciarPainel(user) {
   const uid = user?.uid;
   let isAdmin = false;
+
+  const connected = await checkBackend();
+  if (!connected) {
+    document.getElementById('offlineNotice')?.classList.remove('hidden');
+    return;
+  }
 
   if (uid) {
     try {
