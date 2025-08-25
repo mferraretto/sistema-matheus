@@ -376,6 +376,7 @@ function checkLogin() {
       showUserArea(user);
       initNotificationListener(user.uid);
       wasLoggedIn = true;
+      if (window.ensureLayout) window.ensureLayout();
     } else {
       if (wasLoggedIn && explicitLogout) {
         clearPassphrase();
@@ -385,6 +386,7 @@ function checkLogin() {
       wasLoggedIn = false;
       hideUserArea();
       if (notifUnsub) { notifUnsub(); notifUnsub = null; }
+      if (window.ensureLayout) window.ensureLayout();
 
       // Sempre exibe o modal se estiver no index.html
       const path = window.location.pathname.toLowerCase();
