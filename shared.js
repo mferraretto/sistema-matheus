@@ -69,7 +69,17 @@
     containerId = containerId || 'sidebar-container';
     sidebarPath = sidebarPath || 'partials/sidebar.html';
     return fetch(BASE_PATH + sidebarPath)
-      .then(function(res) { return res.text(); })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Sidebar not found');
+        return res.text();
+      })
+      .catch(function(err) {
+        console.warn('Falha ao carregar sidebar personalizada:', err);
+        return fetch(BASE_PATH + 'partials/sidebar.html').then(function(res) {
+          if (!res.ok) throw new Error('Sidebar padrão não encontrada');
+          return res.text();
+        });
+      })
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
@@ -77,6 +87,9 @@
           var event = new CustomEvent('sidebarLoaded', { detail: { containerId: containerId } });
           document.dispatchEvent(event);
         }
+      })
+      .catch(function(err) {
+        console.error('Erro ao carregar sidebar:', err);
       });
   };
 // Load navbar HTML into placeholder
