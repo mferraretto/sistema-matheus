@@ -30,10 +30,18 @@
           <i class="fa-solid fa-user-plus"></i>
           Cadastre-se
         </a>
-        
-        <button id="loginBtn" onclick="openModal('loginModal')" class="bg-orange-500 text-white p-2 rounded hover:bg-orange-600 transition">
-          <i class="fa-solid fa-user"></i>
-        </button>
+
+        <!-- Login dropdown -->
+        <div class="relative" id="loginMenu">
+          <button id="loginBtn" class="bg-orange-500 text-white p-2 rounded hover:bg-orange-600 transition flex items-center">
+            <i class="fa-solid fa-user"></i>
+            <i class="fa-solid fa-chevron-down ml-1 text-sm"></i>
+          </button>
+          <div id="loginDropdown" class="hidden absolute right-0 mt-2 w-40 bg-white text-gray-700 rounded shadow-lg z-20">
+            <button id="loginUsuarioBtn" class="w-full text-left px-4 py-2 hover:bg-gray-100">Vendedor</button>
+            <button id="loginGestorBtn" class="w-full text-left px-4 py-2 hover:bg-gray-100">Gestor</button>
+          </div>
+        </div>
 
         <!-- Notificações -->
         <div id="notificationWrapper" class="relative tooltip" data-tooltip="Notificações">
