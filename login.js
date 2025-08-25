@@ -171,6 +171,8 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
+  const roleInput = document.querySelector('input[name="userRole"]:checked');
+  const role = roleInput ? roleInput.value : (selectedRole || 'usuario');
 
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
@@ -181,8 +183,8 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
-      sessionStorage.setItem('selectedRole', selectedRole || 'usuario');
-      if (selectedRole === 'gestor') {
+      sessionStorage.setItem('selectedRole', role);
+      if (role === 'gestor') {
         window.location.href = 'financeiro.html';
       }
     })
