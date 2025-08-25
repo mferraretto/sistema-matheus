@@ -352,6 +352,7 @@ input:checked + .dark-mode-slider:before {
   .sidebar-link {
     justify-content: center
   }
+  .sidebar-link svg,
   .sidebar-link i {
     margin-right: 0
   }
