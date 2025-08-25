@@ -76,51 +76,6 @@
     window.CUSTOM_NAVBAR_PATH  = 'partials/navbar.html';
   </script>
 
-  <!-- Loader único dos parciais (execução de <script> internos e offcanvas no mobile) -->
-  <script>
-    function toggleSidebar(){
-      const sb = document.getElementById('sidebar-container');
-      const isOpen = !sb.classList.contains('-translate-x-full');
-      if(isOpen) sb.classList.add('-translate-x-full'); else sb.classList.remove('-translate-x-full');
-    }
-
-    async function loadPartial(selector, path){
-      const base = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
-      const url  = new URL(path, base).toString();
-      const el   = document.querySelector(selector);
-      if(!el) return;
-
-      // evita dupla injeção se outro script já preencheu (ex.: shared.js)
-      if (el.childElementCount > 0 || (el.textContent||'').trim().length > 0) return;
-
-      try{
-        const res = await fetch(url, { cache:'no-cache' });
-        if(!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
-        const html = await res.text();
-        el.innerHTML = html;
-
-        // reexecuta <script> do parcial
-        el.querySelectorAll('script').forEach(old=>{
-          const s=document.createElement('script');
-          if(old.src){ s.src=new URL(old.getAttribute('src'), url).toString(); }
-          s.type=old.type||'text/javascript';
-          s.defer=old.defer||false;
-          s.text=old.src?'':(old.textContent||'');
-          old.replaceWith(s);
-        });
-      }catch(err){
-        console.error('[partials] falha', path, err);
-        el.innerHTML = `<div class="p-3 bg-red-50 text-red-700 text-sm rounded">Erro ao carregar <code>${path}</code>.</div>`;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', ()=>{
-      loadPartial('#sidebar-container', window.CUSTOM_SIDEBAR_PATH);
-      loadPartial('#navbar-container',  window.CUSTOM_NAVBAR_PATH);
-      if (window.initMentoria) window.initMentoria();
-    });
-  </script>
-
   <!-- Seus scripts globais -->
   <script src="shared.js"></script>
   <script type="module" src="firebase-config.js"></script>
