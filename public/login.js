@@ -112,7 +112,24 @@ window.openModal = (id) => {
   const el = document.getElementById(id);
   if (el) {
     el.style.display = 'block';
+    if (id === 'loginModal') {
+      document.getElementById('loginRoleSelection')?.classList.remove('hidden');
+      document.getElementById('loginForm')?.classList.add('hidden');
+      const subtitle = document.getElementById('loginModalSubtitle');
+      if (subtitle) subtitle.textContent = 'Selecione o tipo de acesso';
+    }
   }
+};
+
+window.selectUsuarioLogin = () => {
+  document.getElementById('loginRoleSelection')?.classList.add('hidden');
+  document.getElementById('loginForm')?.classList.remove('hidden');
+  const subtitle = document.getElementById('loginModalSubtitle');
+  if (subtitle) subtitle.textContent = 'Insira suas credenciais para acessar as ferramentas';
+};
+
+window.selectGestorLogin = () => {
+  window.location.href = 'login-gestor.html';
 };
 
 window.closeModal = (id) => {
