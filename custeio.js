@@ -4,7 +4,11 @@ function toggleSidebar() {
      const sidebar = document.getElementById('sidebar') ||
                   document.querySelector('.sidebar');
   if (sidebar) {
-    sidebar.classList.toggle('active');
+    const isActive = sidebar.classList.toggle('active');
+    const btn = document.querySelector('.mobile-menu-btn');
+    if (btn) {
+      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+    }
   }
 }
     
