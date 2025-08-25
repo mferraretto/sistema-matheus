@@ -12,6 +12,7 @@
   // Support repositories that serve pages from a subdirectory (e.g. GitHub Pages "public" folder)
   // ROOT_PATH points to the repo root while BASE_PATH remains the current script folder
   var ROOT_PATH = BASE_PATH.replace(/public\/$/, '');
+  window.ROOT_PATH = ROOT_PATH;
 
   function fetchWithFallback(urls, idx) {
     idx = idx || 0;
@@ -296,7 +297,7 @@ async function loadPartial(selector, path){
   }
 
   // sempre força rede p/ evitar cache velho do SW
-  const base = `${location.origin}${location.pathname.replace(/[^/]+$/, '')}`;
+  const base = window.ROOT_PATH || `${location.origin}/`;
   let url = new URL(path, base).toString();
   url += (url.includes('?') ? '&' : '?') + 'v=' + PARTIALS_VERSION;
 
