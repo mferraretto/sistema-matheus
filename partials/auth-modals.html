@@ -4,7 +4,9 @@
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-lock text-white text-3xl"></i>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75A4.5 4.5 0 0 0 12 2.25a4.5 4.5 0 0 0-4.5 4.5v3.75M6.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75A2.25 2.25 0 0 0 17.25 10.5h-10.5A2.25 2.25 0 0 0 4.5 12.75v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+        </svg>
       </div>
       <h3 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h3>
       <p class="text-gray-600 mt-2">Insira suas credenciais para acessar as ferramentas</p>
@@ -23,7 +25,9 @@
         <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-envelope text-gray-400"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243c0 .781-.405 1.506-1.071 1.915l-7.5 4.615a2.25 2.25 0 0 1-2.358 0l-7.5-4.615A2.25 2.25 0 0 1 2.25 6.993V6.75"/>
+            </svg>
           </div>
           <input type="email" id="loginEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="seu@email.com">
         </div>
@@ -33,7 +37,9 @@
         <label class="block text-sm font-medium mb-2 text-gray-700">Senha</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-lock text-gray-400"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75A4.5 4.5 0 0 0 12 2.25a4.5 4.5 0 0 0-4.5 4.5v3.75M6.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75A2.25 2.25 0 0 0 17.25 10.5h-10.5A2.25 2.25 0 0 0 4.5 12.75v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+            </svg>
           </div>
           <input type="password" id="loginPassword" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
         </div>
@@ -42,13 +48,18 @@
         <label class="block text-sm font-medium mb-2 text-gray-700">Senha de visualização</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-eye text-gray-400"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.125 1.125 0 0 1 0-.644C3.424 7.51 7.361 4.5 12 4.5s8.576 3.01 9.964 7.178a1.125 1.125 0 0 1 0 .644C20.576 16.49 16.639 19.5 12 19.5S3.424 16.49 2.036 12.322Z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+            </svg>
           </div>
           <input type="password" id="loginPassphrase" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
         </div>
       </div>
       <button onclick="login()" class="btn-primary w-full py-3.5">
-        <i class="fas fa-sign-in-alt mr-2"></i> Entrar
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6A2.25 2.25 0 0 0 5.25 5.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/>
+        </svg> Entrar
       </button>
 
       <div class="text-center pt-4">
@@ -69,7 +80,9 @@
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-key text-white text-3xl"></i>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25A3 3 0 1 1 21 8.25a3 3 0 0 1-5.25-2.625m0 0a7.5 7.5 0 0 0-6.492 12.66L9 21h3v-3h2.25L18 14.25"/>
+        </svg>
       </div>
       <h3 class="text-2xl font-bold text-gray-800">Recuperar Senha</h3>
       <p class="text-gray-600 mt-2">Insira seu e-mail para receber as instruções de recuperação</p>
@@ -80,14 +93,18 @@
         <label class="block text-sm font-medium mb-2 text-gray-700">E-mail cadastrado</label>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-envelope text-gray-400"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-400">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243c0 .781-.405 1.506-1.071 1.915l-7.5 4.615a2.25 2.25 0 0 1-2.358 0l-7.5-4.615A2.25 2.25 0 0 1 2.25 6.993V6.75"/>
+            </svg>
           </div>
           <input type="email" id="recoverEmail" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="seu@email.com">
         </div>
       </div>
 
       <button onclick="sendRecovery()" class="btn-primary w-full py-3.5">
-        <i class="fas fa-paper-plane mr-2"></i> Enviar Link de Recuperação
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125C9.884 5.046 16.028 8.076 21.486 12c-5.458 3.924-11.602 6.954-18.217 8.876L6 12Zm0 0h7.5"/>
+      </svg> Enviar Link de Recuperação
       </button>
     </div>
   </div>
@@ -98,7 +115,9 @@
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-key text-white text-3xl"></i>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25A3 3 0 1 1 21 8.25a3 3 0 0 1-5.25-2.625m0 0a7.5 7.5 0 0 0-6.492 12.66L9 21h3v-3h2.25L18 14.25"/>
+        </svg>
       </div>
       <h3 class="text-2xl font-bold text-gray-800">Senha de Visualização</h3>
       <p class="text-gray-600 mt-2">Digite a senha para acessar dados criptografados</p>
@@ -107,7 +126,9 @@
     <div class="space-y-6">
       <input type="password" id="passphraseInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
       <button onclick="savePassphrase()" class="btn-primary w-full py-3.5">
-        <i class="fas fa-check mr-2"></i> Confirmar
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 10.5 18.75 19.5 5.25"/>
+      </svg> Confirmar
       </button>
     </div>
   </div>
@@ -119,7 +140,9 @@
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
-        <i class="fas fa-user text-white text-3xl"></i>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.118a8.999 8.999 0 0 1 15 0"/>
+        </svg>
       </div>
       <h3 class="text-2xl font-bold text-gray-800">Nome de Identificação</h3>
       <p class="text-gray-600 mt-2">Escolha como seu nome será exibido</p>
@@ -128,7 +151,9 @@
     <div class="space-y-6">
       <input type="text" id="displayNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="Seu nome">
       <button onclick="saveDisplayName()" class="btn-primary w-full py-3.5">
-        <i class="fas fa-check mr-2"></i> Salvar
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 10.5 18.75 19.5 5.25"/>
+      </svg> Salvar
       </button>
     </div>
   </div>

@@ -2388,3 +2388,19 @@ input:checked + .toggle-slider:before {
     padding: 10px;
   }
 }
+
+/* Improved sidebar contrast and hover feedback */
+.sidebar-link:hover {
+  background-color: rgba(234, 88, 12, 0.2);
+}
+
+body.dark .sidebar-link,
+body.dark .submenu a {
+  color: #f3f4f6;
+}
+
+body.dark .sidebar-link:hover,
+body.dark .submenu a:hover {
+  background-color: rgba(234, 88, 12, 0.2);
+  color: #f3f4f6;
+}
