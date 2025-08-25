@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
@@ -20,7 +20,18 @@ onAuthStateChanged(auth, async user => {
   try {
     const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
     if (!snap.empty) {
-      usuarios = snap.docs.map(d => ({ uid: d.id, nome: d.data().nome || d.id }));
+      usuarios = await Promise.all(
+        snap.docs.map(async d => {
+          let nome = d.data().nome;
+          if (!nome) {
+            try {
+              const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
+              if (perfil.exists()) nome = perfil.data().nome;
+            } catch (_) {}
+          }
+          return { uid: d.id, nome: nome || d.data().email || d.id };
+        })
+      );
     }
   } catch (err) {
     console.error('Erro ao verificar acesso financeiro:', err);
