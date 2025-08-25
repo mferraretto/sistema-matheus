@@ -36,17 +36,12 @@
     });
   }
   
-  // Toggle submenu visibility with smooth slide animation
+  // Toggle submenu visibility using max-height for smooth transitions
   window.toggleMenu = function(menuId) {
     var el = document.getElementById(menuId);
     if (!el) return;
-    if (el.classList.contains('max-h-0')) {
-      el.classList.remove('max-h-0');
-      el.classList.add('max-h-screen');
-    } else {
-      el.classList.add('max-h-0');
-      el.classList.remove('max-h-screen');
-    }
+    var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
+    el.style.maxHeight = isOpen ? '0px' : el.scrollHeight + 'px';
   };
 
   // Toggle visibility of the Importar Produtos card on the precificação page
@@ -253,6 +248,9 @@ document.addEventListener('navbarLoaded', function () {
 
 document.addEventListener('sidebarLoaded', function () {
   document.body.classList.add('has-sidebar');
+  document.querySelectorAll('#sidebar .submenu').forEach(function(el){
+    el.style.maxHeight = '0px';
+  });
   loadIntroJs().then(function () {
     var btn = document.getElementById('startSidebarTourBtn');
     if (btn) {
