@@ -1,8 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, query, where, onSnapshot, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, getDoc, query, where, onSnapshot, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, getPassphrase } from './firebase-config.js';
+import { decryptString } from './crypto.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -11,6 +12,7 @@ const storage = getStorage(app);
 
 let currentUser = null;
 let initialLoad = true;
+let usuariosResponsaveis = [];
 
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
@@ -45,6 +47,7 @@ async function carregarUsuarios() {
   const lista = document.getElementById('usuariosResponsaveisLista');
   if (select) select.innerHTML = '';
   if (lista) lista.innerHTML = '';
+  usuariosResponsaveis = [];
   try {
     const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email)));
     if (snap.empty) {
@@ -55,6 +58,7 @@ async function carregarUsuarios() {
     snap.forEach(d => {
       const dados = d.data();
       const nome = dados.nome || dados.email || d.id;
+      usuariosResponsaveis.push({ uid: d.id, nome });
       if (select) {
         const opt = document.createElement('option');
         opt.value = d.id;
@@ -67,8 +71,90 @@ async function carregarUsuarios() {
         lista.appendChild(li);
       }
     });
+    carregarHistoricoFaturamento();
   } catch (err) {
     console.error('Erro ao carregar usuários:', err);
+  }
+}
+
+async function calcularFaturamentoDiaDetalhado(uid, dia) {
+  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+  let liquido = 0;
+  let bruto = 0;
+  for (const lojaDoc of lojasSnap.docs) {
+    let dados = lojaDoc.data();
+    if (dados.encrypted) {
+      const pass = getPassphrase() || `chave-${uid}`;
+      let txt;
+      try {
+        txt = await decryptString(dados.encrypted, pass);
+      } catch (e) {
+        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+      }
+      if (txt) dados = JSON.parse(txt);
+    }
+    liquido += Number(dados.valorLiquido) || 0;
+    bruto += Number(dados.valorBruto) || 0;
+  }
+  return { liquido, bruto };
+}
+
+async function calcularVendasDia(uid, dia) {
+  const skusSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos/${dia}/lista`));
+  let total = 0;
+  skusSnap.forEach(doc => {
+    const dados = doc.data();
+    total += Number(dados.total || dados.quantidade) || 0;
+  });
+  return total;
+}
+
+function formatarData(str) {
+  const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(str);
+  if (!m) return str;
+  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return `${m[3]}/${meses[Number(m[2]) - 1]}`;
+}
+
+async function carregarHistoricoFaturamento() {
+  const card = document.getElementById('historicoFaturamentoCard');
+  const container = document.getElementById('historicoFaturamento');
+  if (!card || !container) return;
+  container.innerHTML = '';
+  if (!usuariosResponsaveis.length) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+  const mesAtual = new Date().toISOString().slice(0,7);
+  const ano = new Date().getFullYear();
+  const mesNum = new Date().getMonth() + 1;
+  const totalDiasMes = new Date(ano, mesNum, 0).getDate();
+  for (const u of usuariosResponsaveis) {
+    let metaDiaria = 0;
+    try {
+      const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mesAtual));
+      if (metaDoc.exists()) {
+        const metaMensal = Number(metaDoc.data().valor) || 0;
+        metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
+      }
+    } catch (_) {}
+    const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+    const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
+    let ultimoLiquido = 0;
+    const col = document.createElement('div');
+    col.innerHTML = `<h3 class="font-bold">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LIQUIDA R$ ${metaDiaria.toLocaleString('pt-BR')}</div>`;
+    for (const dia of dias) {
+      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
+      ultimoLiquido = liquido;
+      const vendas = await calcularVendasDia(u.uid, dia);
+      col.innerHTML += `\n        <div class="mt-2">${formatarData(dia)}</div>\n        <div>Bruto R$ ${bruto.toLocaleString('pt-BR')}</div>\n        <div>Líquido R$ ${liquido.toLocaleString('pt-BR')}</div>\n        <div>Vendas ${vendas}</div>`;
+    }
+    const diff = metaDiaria - ultimoLiquido;
+    const atingido = diff <= 0;
+    const msg = atingido ? `ATINGIDO R$ ${Math.abs(diff).toLocaleString('pt-BR')} POSITIVO` : `NÃO ATINGIDO R$ ${diff.toLocaleString('pt-BR')} NEGATIVO`;
+    col.innerHTML += `<div class="mt-2 font-bold ${atingido ? 'text-green-600' : 'text-red-600'}">${msg}</div>`;
+    container.appendChild(col);
   }
 }
 
