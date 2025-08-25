@@ -750,7 +750,10 @@ function exportarCSV(dados, campos, nome) {
 
 // PWA install handling
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js').catch(err => console.error('SW registration failed', err));
+  // Use a relative path so GitHub Pages serves the correct file when hosted in a subdirectory
+  navigator.serviceWorker
+    .register('service-worker.js')
+    .catch(err => console.error('SW registration failed', err));
 }
 
 let deferredPrompt;
