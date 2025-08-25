@@ -15,6 +15,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('/partials/') && url.pathname.endsWith('.html')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((response) => response || fetch(event.request))
   );
