@@ -17,9 +17,81 @@
   <main class="main-content p-4 space-y-6">
     <div class="card">
       <div class="card-header"><h2 class="text-xl font-bold">Configuração do Perfil</h2></div>
-      <form id="profileForm" class="card-body space-y-4">
-        <div id="lojasContainer" class="space-y-2"></div>
-        <button type="button" id="addStoreBtn" class="btn btn-secondary">Adicionar Loja</button>
+      <form id="profileForm" class="card-body space-y-6">
+        <section class="space-y-2">
+          <h3 class="text-lg font-semibold">🧑‍💼 Dados pessoais</h3>
+          <div class="flex items-center space-x-4">
+            <img id="fotoPreview" class="w-24 h-24 rounded-full object-cover" alt="Foto de perfil">
+            <input type="file" id="fotoPerfil" accept="image/*">
+          </div>
+          <input id="nomeCompleto" class="form-control" placeholder="Nome completo">
+          <input id="nomeExibicao" class="form-control" placeholder="Nome de exibição">
+          <input id="dataNascimento" type="date" class="form-control">
+          <select id="genero" class="form-control">
+            <option value="">Gênero</option>
+            <option value="masculino">Masculino</option>
+            <option value="feminino">Feminino</option>
+            <option value="outro">Outro</option>
+          </select>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="text-lg font-semibold">📞 Contato</h3>
+          <input id="email" type="email" class="form-control" placeholder="E-mail">
+          <input id="telefone" class="form-control" placeholder="Telefone / WhatsApp">
+          <input id="endRua" class="form-control" placeholder="Rua">
+          <input id="endNumero" class="form-control" placeholder="Número">
+          <input id="endBairro" class="form-control" placeholder="Bairro">
+          <input id="endCidade" class="form-control" placeholder="Cidade">
+          <input id="endEstado" class="form-control" placeholder="Estado">
+          <input id="endCEP" class="form-control" placeholder="CEP">
+          <input id="endPais" class="form-control" placeholder="País">
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="text-lg font-semibold">🔑 Credenciais de acesso</h3>
+          <input id="login" class="form-control" placeholder="Usuário / Login">
+          <div class="flex items-center space-x-2">
+            <input type="password" id="senha" class="form-control" placeholder="Senha" disabled>
+            <button type="button" id="resetPasswordBtn" class="btn btn-secondary">Redefinir Senha</button>
+          </div>
+          <select id="perfilFuncao" class="form-control">
+            <option value="">Perfil / Função</option>
+            <option value="ADM">ADM</option>
+            <option value="Gestor">Gestor</option>
+            <option value="Editor">Editor</option>
+            <option value="Cliente">Cliente</option>
+          </select>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="text-lg font-semibold">🏢 Profissional / Negócio (se aplicável)</h3>
+          <input id="empresa" class="form-control" placeholder="Nome da empresa / loja">
+          <input id="documento" class="form-control" placeholder="CNPJ ou CPF">
+          <input id="cargo" class="form-control" placeholder="Cargo / função">
+          <input id="areaAtuacao" class="form-control" placeholder="Área de atuação">
+          <div id="lojasContainer" class="space-y-2"></div>
+          <button type="button" id="addStoreBtn" class="btn btn-secondary">Adicionar Loja</button>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="text-lg font-semibold">⚙️ Preferências</h3>
+          <select id="idioma" class="form-control">
+            <option value="pt">Português</option>
+            <option value="en">Inglês</option>
+          </select>
+          <div class="flex space-x-4">
+            <label class="flex items-center"><input id="notifEmail" type="checkbox" class="mr-2">E-mail</label>
+            <label class="flex items-center"><input id="notifWhats" type="checkbox" class="mr-2">WhatsApp</label>
+            <label class="flex items-center"><input id="notifPush" type="checkbox" class="mr-2">Push</label>
+          </div>
+          <select id="tema" class="form-control">
+            <option value="claro">Tema claro</option>
+            <option value="escuro">Tema escuro</option>
+          </select>
+          <input id="permissoes" class="form-control" placeholder="Permissões">
+        </section>
+
         <input id="plataformas" class="form-control" placeholder="Plataformas em que vende (ex: Shopee, Mercado Livre)">
         <textarea id="infoPessoal" class="form-control" placeholder="Informações pessoais"></textarea>
         <button type="submit" class="btn btn-primary">Salvar</button>
