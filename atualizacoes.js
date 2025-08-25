@@ -143,6 +143,7 @@ async function carregarHistoricoFaturamento() {
     const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
     let ultimoLiquido = 0;
     const col = document.createElement('div');
+    col.className = 'min-w-[200px]';
     col.innerHTML = `<h3 class="font-bold">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LIQUIDA R$ ${metaDiaria.toLocaleString('pt-BR')}</div>`;
     for (const dia of dias) {
       const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
