@@ -28,6 +28,7 @@ let authListenerRegistered = false;
 let explicitLogout = false;
 let isExpedicao = false;
 let notifUnsub = null;
+let selectedRole = null;
 
 
 function showToast(message, type = 'success') {
@@ -111,8 +112,19 @@ window.saveDisplayName = async () => {
 window.openModal = (id) => {
   const el = document.getElementById(id);
   if (el) {
+    if (id === 'loginModal') {
+      document.getElementById('roleSelection')?.classList.remove('hidden');
+      document.getElementById('loginForm')?.classList.add('hidden');
+      selectedRole = null;
+    }
     el.style.display = 'block';
   }
+};
+
+window.selectRole = (role) => {
+  selectedRole = role;
+  document.getElementById('roleSelection')?.classList.add('hidden');
+  document.getElementById('loginForm')?.classList.remove('hidden');
 };
 
 window.closeModal = (id) => {
@@ -142,7 +154,7 @@ window.login = () => {
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
       const path = window.location.pathname.toLowerCase();
-      if (path.includes('login-gestor.html')) {
+      if (selectedRole === 'gestor' || path.includes('login-gestor.html')) {
         window.location.href = 'financeiro.html';
       }
     })
