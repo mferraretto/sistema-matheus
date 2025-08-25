@@ -159,6 +159,7 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
+      sessionStorage.setItem('selectedRole', selectedRole || 'usuario');
       if (selectedRole === 'gestor') {
         window.location.href = 'financeiro.html';
       }
