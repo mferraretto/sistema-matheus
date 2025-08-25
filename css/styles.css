@@ -1771,6 +1771,26 @@ button {
 .sidebar {
   background-color: var(--nav-bg);
   color: #f1f5f9;
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  transition: transform .3s ease;
+}
+
+@media (max-width:768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 101;
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+  .content-wrapper {
+    margin-left: 0;
+  }
 }
 
 .sidebar-link {
