@@ -433,10 +433,10 @@ document.addEventListener('sidebarLoaded', setupMobileSidebar);
 document.addEventListener('DOMContentLoaded', setupMobileSidebar);
 
 // Controle de visibilidade do sidebar baseado no perfil do usuário
-let sidebarPermsApplied = false;
 document.addEventListener('sidebarLoaded', async () => {
-  if (sidebarPermsApplied) return;
-  sidebarPermsApplied = true;
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar || sidebar.dataset.permsApplied) return;
+  sidebar.dataset.permsApplied = 'true';
 
   const [
     { initializeApp, getApps },
