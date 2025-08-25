@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div id="loginForm" class="space-y-6 hidden">
+    <form id="loginForm" class="space-y-6 hidden" onsubmit="login(); return false;">
       <div>
         <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
         <div class="relative">
@@ -47,7 +47,7 @@
           <input type="password" id="loginPassphrase" class="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
         </div>
       </div>
-      <button onclick="login()" class="btn-primary w-full py-3.5">
+      <button type="submit" class="btn-primary w-full py-3.5">
         <i class="fas fa-sign-in-alt mr-2"></i> Entrar
       </button>
 
@@ -59,7 +59,7 @@
           <a href="/VendedorPro/cadastro-interesse.html" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Não é cliente? Cadastre-se</a>
         </div>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -104,12 +104,12 @@
       <p class="text-gray-600 mt-2">Digite a senha para acessar dados criptografados</p>
     </div>
 
-    <div class="space-y-6">
+    <form class="space-y-6" onsubmit="savePassphrase(); return false;">
       <input type="password" id="passphraseInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••">
-      <button onclick="savePassphrase()" class="btn-primary w-full py-3.5">
+      <button type="submit" class="btn-primary w-full py-3.5">
         <i class="fas fa-check mr-2"></i> Confirmar
       </button>
-    </div>
+    </form>
   </div>
 </div>
 
