@@ -20,7 +20,14 @@ function carregarUsuariosFinanceiros(user) {
     for (const docSnap of snap.docs) {
       const dados = docSnap.data();
       const email = dados.email || '';
-      const nome = dados.nome || docSnap.id;
+      let nome = dados.nome;
+      if (!nome) {
+        try {
+          const perfil = await getDoc(doc(db, 'perfilMentorado', docSnap.id));
+          if (perfil.exists()) nome = perfil.data().nome;
+        } catch (_) {}
+      }
+      nome = nome || docSnap.id;
       const status = dados.status || '-';
       const inicio = dados.dataInicio?.toDate ? dados.dataInicio.toDate().toLocaleDateString('pt-BR') :
         dados.createdAt?.toDate ? dados.createdAt.toDate().toLocaleDateString('pt-BR') : '-';

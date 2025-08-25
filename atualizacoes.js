@@ -55,9 +55,16 @@ async function carregarUsuarios() {
       return;
     }
     card?.classList.remove('hidden');
-    snap.forEach(d => {
+    for (const d of snap.docs) {
       const dados = d.data();
-      const nome = dados.nome || dados.email || d.id;
+      let nome = dados.nome;
+      if (!nome) {
+        try {
+          const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
+          if (perfil.exists()) nome = perfil.data().nome;
+        } catch (_) {}
+      }
+      nome = nome || dados.email || d.id;
       usuariosResponsaveis.push({ uid: d.id, nome });
       if (select) {
         const opt = document.createElement('option');
@@ -70,7 +77,7 @@ async function carregarUsuarios() {
         li.textContent = `${nome} - ${dados.email || ''}`;
         lista.appendChild(li);
       }
-    });
+    }
     carregarHistoricoFaturamento();
   } catch (err) {
     console.error('Erro ao carregar usuários:', err);
