@@ -31,15 +31,26 @@ let notifUnsub = null;
 let expNotifUnsub = null;
 let selectedRole = null;
 
+// Ping a local file to test online status without CORS issues.
+async function pingOnline(timeout = 3000) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeout);
+    const res = await fetch('/ping.txt?cb=' + Date.now(), {
+      cache: 'no-store',
+      signal: ctrl.signal
+    });
+    clearTimeout(t);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // Verifica conectividade com backend/API.
 export async function checkBackend() {
   if (!navigator.onLine) return false;
-  try {
-    await fetch('https://www.gstatic.com/generate_204', { cache: 'no-store', mode: 'no-cors' });
-    return true;
-  } catch (e) {
-    return false;
-  }
+  return await pingOnline();
 }
 
 
