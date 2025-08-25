@@ -352,9 +352,6 @@ input:checked + .dark-mode-slider:before {
   body.has-sidebar .content-wrapper {
     margin-left: 0;
   }
-  .mobile-menu-btn {
-    display: flex;
-  }
 }
 .badge {
   margin-left: 5px
@@ -619,6 +616,11 @@ tr:hover {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0,0,0,.2)
+}
+@media (max-width:768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
 }
 .app-container {
   display: flex;
