@@ -38,10 +38,12 @@
   
   // Toggle submenu visibility using max-height for smooth transitions
   window.toggleMenu = function(menuId) {
-    var el = document.getElementById(menuId);
-    if (!el) return;
-    var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
-    el.style.maxHeight = isOpen ? '0px' : el.scrollHeight + 'px';
+    var submenu = document.getElementById(menuId);
+    if (!submenu) return;
+    var isOpen = submenu.style.maxHeight && submenu.style.maxHeight !== '0px';
+    submenu.style.maxHeight = isOpen ? '0px' : submenu.scrollHeight + 'px';
+    var toggleIcon = submenu.previousElementSibling.querySelector('.chevron');
+    if (toggleIcon) toggleIcon.classList.toggle('rotated', !isOpen);
   };
 
   // Toggle visibility of the Importar Produtos card on the precificação page
