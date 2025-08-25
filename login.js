@@ -36,7 +36,7 @@ async function pingOnline(timeout = 3000) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeout);
-    const res = await fetch('/ping.txt?cb=' + Date.now(), {
+    const res = await fetch('ping.txt?cb=' + Date.now(), {
       cache: 'no-store',
       signal: ctrl.signal
     });
