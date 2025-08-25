@@ -1,83 +1,54 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, onSnapshot, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-let currentUser = null;
 
-function renderMentorado(id, data) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  const progresso = data.progresso || 0;
-  card.innerHTML = `
-    <div class="card-header flex justify-between items-center">
-      <h3 class="font-bold">${data.nome || 'Sem nome'}</h3>
-      <select class="form-control w-40 status-select">
-        <option value="iniciante">Iniciante</option>
-        <option value="em progresso">Em progresso</option>
-        <option value="avancado">Avançado</option>
-      </select>
-    </div>
-    <div class="card-body space-y-2">
-      <p class="text-sm">Último contato: ${data.ultimoContato || '-'}</p>
-      <div class="w-full bg-gray-200 rounded h-2">
-        <div class="bg-blue-500 h-2 rounded" style="width: ${progresso}%"></div>
-      </div>
-      <p class="text-xs text-gray-500">Progresso: ${progresso}%</p>
-      <button class="btn btn-primary enviar-msg">Enviar mensagem</button>
-    </div>
-  `;
-
-  const select = card.querySelector('.status-select');
-  select.value = data.status || 'iniciante';
-  select.addEventListener('change', e => atualizarStatus(id, e.target.value));
-
-  const msgBtn = card.querySelector('.enviar-msg');
-  msgBtn.addEventListener('click', () => enviarMensagem(id, data.nome || '')); 
-
-  return card;
-}
-
-async function atualizarStatus(id, status) {
-  await updateDoc(doc(db, 'mentorados', id), { status });
-}
-
-async function enviarMensagem(mentoradoId, nome) {
-  if (!currentUser) return;
-  const texto = prompt(`Mensagem para ${nome}:`);
-  if (!texto) return;
-  await addDoc(collection(db, 'mensagens'), {
-    mentorUid: currentUser.uid,
-    mentoradoId,
-    mensagem: texto,
-    createdAt: serverTimestamp()
-  });
-  alert('Mensagem enviada!');
-}
-
-function carregarMentorados(user) {
-  const list = document.getElementById('mentoradosList');
-  const q = query(collection(db, 'mentorados'), where('mentorUid', '==', user.uid));
-  onSnapshot(q, snap => {
-    list.innerHTML = '';
+function carregarUsuariosFinanceiros(user) {
+  const tbody = document.getElementById('mentoradosList');
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
+  onSnapshot(q, async snap => {
+    tbody.innerHTML = '';
     if (snap.empty) {
-      list.innerHTML = '<p class="text-sm text-gray-500">Nenhum mentorado encontrado.</p>';
+      tbody.innerHTML = '<tr><td colspan="5" class="text-sm text-gray-500">Nenhum usuário encontrado.</td></tr>';
       return;
     }
-    snap.forEach(docSnap => {
-      list.appendChild(renderMentorado(docSnap.id, docSnap.data()));
-    });
+    for (const docSnap of snap.docs) {
+      const dados = docSnap.data();
+      const email = dados.email || '';
+      const nome = dados.nome || docSnap.id;
+      const status = dados.status || '-';
+      const inicio = dados.dataInicio?.toDate ? dados.dataInicio.toDate().toLocaleDateString('pt-BR') :
+        dados.createdAt?.toDate ? dados.createdAt.toDate().toLocaleDateString('pt-BR') : '-';
+      let meta = '-';
+      try {
+        const metaDoc = await getDoc(doc(db, `uid/${docSnap.id}/metasFaturamento`, mesAtual));
+        if (metaDoc.exists()) {
+          const valor = Number(metaDoc.data().valor) || 0;
+          meta = `R$ ${valor.toLocaleString('pt-BR')}`;
+        }
+      } catch (_) {}
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="p-2 border-b">${email}</td>
+        <td class="p-2 border-b">${inicio}</td>
+        <td class="p-2 border-b capitalize">${status}</td>
+        <td class="p-2 border-b">${meta}</td>
+        <td class="p-2 border-b">${nome}</td>
+      `;
+      tbody.appendChild(tr);
+    }
   });
 }
 
 function initMentoria() {
   onAuthStateChanged(auth, user => {
     if (user) {
-      currentUser = user;
-      carregarMentorados(user);
+      carregarUsuariosFinanceiros(user);
     }
   });
 }

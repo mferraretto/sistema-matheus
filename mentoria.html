@@ -16,7 +16,20 @@
   <main class="main-content p-4 space-y-6">
     <div class="card">
       <div class="card-header"><h2 class="text-xl font-bold">Visão Geral do Mentor</h2></div>
-      <div id="mentoradosList" class="card-body space-y-4"></div>
+      <div class="card-body overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left">
+              <th class="p-2">Email</th>
+              <th class="p-2">Início</th>
+              <th class="p-2">Status</th>
+              <th class="p-2">Meta</th>
+              <th class="p-2">Nome</th>
+            </tr>
+          </thead>
+          <tbody id="mentoradosList"></tbody>
+        </table>
+      </div>
     </div>
   </main>
   <script type="module" src="firebase-config.js"></script>
