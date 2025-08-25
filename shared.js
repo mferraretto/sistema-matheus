@@ -438,10 +438,20 @@ document.addEventListener('sidebarLoaded', async () => {
   if (sidebarPermsApplied) return;
   sidebarPermsApplied = true;
 
-  const [{ getAuth, onAuthStateChanged }, { getFirestore, doc, getDoc }] = await Promise.all([
+  const [
+    { initializeApp, getApps },
+    { getAuth, onAuthStateChanged },
+    { getFirestore, doc, getDoc },
+    { firebaseConfig }
+  ] = await Promise.all([
+    import('https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js')
+    import('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js'),
+    import('./firebase-config.js')
   ]);
+
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
   const ADMIN_GESTOR_MENU_IDS = [
     'menu-gestao',
@@ -476,7 +486,6 @@ document.addEventListener('sidebarLoaded', async () => {
   }
 
   async function applySidebarPermissions(uid) {
-    const db = getFirestore();
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
       const perfil = (snap.exists() && String(snap.data().perfil || '') || '').trim().toLowerCase();
@@ -501,7 +510,7 @@ document.addEventListener('sidebarLoaded', async () => {
     }
   }
 
-  const auth = getAuth();
+  const auth = getAuth(app);
   onAuthStateChanged(auth, user => {
     if (user) applySidebarPermissions(user.uid);
     else showOnly([]);
