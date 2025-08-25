@@ -141,6 +141,10 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('login-gestor.html')) {
+        window.location.href = 'financeiro.html';
+      }
     })
     .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
 };
