@@ -1891,6 +1891,10 @@ body.dark .sidebar {
   background-color: #4c1d95;
 }
 
+body.dark .sidebar-link {
+  color: #fff;
+}
+
 body.dark .sidebar-link:hover,
 body.dark .sidebar-link.active {
   background-color: #3b0c70;
