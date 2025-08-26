@@ -2145,19 +2145,63 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
     function renderizarTopSkus() {
       const container = document.getElementById('topSkusPrevisao');
       if (!container) return;
-      const lista = Object.entries(previsaoDados.skus || {})
-        .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
-        .slice(0, 5);
-      if (!lista.length) {
+      const dadosSkus = Object.entries(previsaoDados.skus || {});
+      if (!dadosSkus.length) {
         container.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
         return;
       }
-      container.innerHTML = `
-        <h4 class="font-bold mb-2">Top 5 SKUs projetados</h4>
-        <ul class="list-disc pl-5">
-          ${lista.map(([sku, info]) => `<li>${sku}: ${info.total.toFixed(0)}</li>`).join('')}
-        </ul>
-      `;
+
+      const cenarios = [
+        { titulo: 'Pessimista', fator: 0.85 },
+        { titulo: 'Base', fator: 1 },
+        { titulo: 'Otimista', fator: 1.15 }
+      ];
+
+      const tabelas = cenarios.map(c => {
+        const lista = dadosSkus
+          .map(([sku, info]) => {
+            const quantidade = (info.total || 0) * c.fator;
+            const preco = produtos[sku] || 0;
+            const sobraUnit = metas[sku]?.valor || 0;
+            const bruto = quantidade * preco;
+            const sobra = quantidade * sobraUnit;
+            return { sku, quantidade, bruto, sobra };
+          })
+          .sort((a, b) => b.quantidade - a.quantidade)
+          .slice(0, 5);
+
+        if (!lista.length) {
+          return '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+        }
+
+        const linhas = lista.map(item => `
+            <tr>
+              <td class="px-2 py-1 border">${item.sku}</td>
+              <td class="px-2 py-1 border">${item.quantidade.toFixed(0)}</td>
+              <td class="px-2 py-1 border">R$ ${item.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              <td class="px-2 py-1 border">R$ ${item.sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+            </tr>`).join('');
+
+        return `
+          <div class="overflow-x-auto">
+            <h4 class="font-bold mb-2 text-center">Top 5 SKUs projeção ${c.titulo}</h4>
+            <table class="min-w-full text-sm text-left">
+              <thead>
+                <tr>
+                  <th class="px-2 py-1 border">SKU</th>
+                  <th class="px-2 py-1 border">Quantidade</th>
+                  <th class="px-2 py-1 border">Bruto Esperado<br>(Valor de venda)</th>
+                  <th class="px-2 py-1 border">Sobra Esperada<br>(Sobra esperada x quantidade)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linhas}
+              </tbody>
+            </table>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
     }
 
     function gerarDatas(qtd, endDate = new Date()) {
