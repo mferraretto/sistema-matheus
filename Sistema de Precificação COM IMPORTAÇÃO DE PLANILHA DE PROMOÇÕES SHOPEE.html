@@ -171,13 +171,8 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
     const sidebarToggle = document.getElementById('sidebarToggle');
     if (sidebarToggle) {
       sidebarToggle.addEventListener('click', () => {
-        const container = document.getElementById('sidebar-container');
-        if (container) {
-          const isOpen = container.classList.toggle('open');
-          const overlay = document.getElementById('sidebar-overlay');
-          if (overlay) overlay.classList.toggle('hidden', !isOpen);
-          document.body.style.overflow = isOpen ? 'hidden' : '';
-        }
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) sidebar.classList.toggle('active');
       });
     }
     const filtroPlataforma = document.getElementById('filtroPlataforma');

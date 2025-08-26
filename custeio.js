@@ -1,16 +1,14 @@
 import { encryptString, decryptString } from './crypto.js';
 
 function toggleSidebar() {
-  const container = document.getElementById('sidebar-container');
-  if (container) {
-    const isOpen = container.classList.toggle('open');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (overlay) overlay.classList.toggle('hidden', !isOpen);
+     const sidebar = document.getElementById('sidebar') ||
+                  document.querySelector('.sidebar');
+  if (sidebar) {
+    const isActive = sidebar.classList.toggle('active');
     const btn = document.querySelector('.mobile-menu-btn');
     if (btn) {
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
     }
-    document.body.style.overflow = isOpen ? 'hidden' : '';
   }
 }
     
