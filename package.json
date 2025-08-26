@@ -1,0 +1,7 @@
+{
+  "name": "vendedorpro",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/comissoes.test.js"
+  }
+}
