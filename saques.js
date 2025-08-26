@@ -70,6 +70,8 @@ async function carregarSaques() {
 
   tbody.innerHTML = '';
   if (tfoot) tfoot.innerHTML = '';
+  selecionados.clear();
+  atualizarResumoSelecionados();
 
   const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
@@ -92,12 +94,19 @@ async function carregarSaques() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td class="px-4 py-2 text-center">
+        <input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)" />
+      </td>
       <td class="px-4 py-2">${dia}</td>
       <td class="px-4 py-2">${s.origem || '-'}</td>
       <td class="px-4 py-2 text-right">R$ ${(Number(s.valor)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-right">${((Number(s.percentualPago)||0) * 100).toFixed(0)}%</td>
       <td class="px-4 py-2 text-right">R$ ${(Number(s.comissaoPaga)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-right">${status}</td>
+      <td class="px-4 py-2 text-right space-x-2">
+        <button onclick="editarSaque('${s.id}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
+        <button onclick="excluirSaque('${s.id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -107,17 +116,19 @@ async function carregarSaques() {
     if (dados.length === 0) {
       tfoot.innerHTML = `
         <tr>
-          <td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">Sem saques registrados.</td>
+          <td colspan="8" class="px-4 py-3 text-center text-sm text-gray-500">Sem saques registrados.</td>
         </tr>`;
     } else {
       const perc = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
       tfoot.innerHTML = `
         <tr class="bg-gray-50 font-semibold">
+          <td></td>
           <td colspan="2" class="px-4 py-2 text-right">TOTAL</td>
           <td class="px-4 py-2 text-right">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           <td class="px-4 py-2 text-right">${perc.toFixed(0)}%</td>
           <td class="px-4 py-2 text-right">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           <td class="px-4 py-2 text-right">${todosPagos ? 'JÁ PAGO' : 'A PAGAR'}</td>
+          <td></td>
         </tr>`;
     }
   }
@@ -322,7 +333,7 @@ function editarSaque(id) {
   const s = saquesCache[id];
   document.getElementById('dataSaque').value = s.data.substring(0, 10);
   document.getElementById('valorSaque').value = s.valor;
-  document.getElementById('percentualSaque').value = Number(s.percentualPago || 0).toFixed(2);
+  document.getElementById('percentualSaque').value = String(s.percentualPago || 0);
   document.getElementById('lojaSaque').value = s.origem || '';
   editandoId = id;
   document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-save mr-1"></i> Atualizar';
