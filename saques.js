@@ -214,6 +214,7 @@ function exportarSelecionadosPDF() {
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
   let totalSaque = 0;
   let totalComissaoPdf = 0;
+
   const body = [];
 
 selecionados.forEach(id => {
@@ -238,6 +239,7 @@ selecionados.forEach(id => {
 
   totalSaque += valor;
   totalComissaoPdf += comissao;
+
 });
 
 doc.autoTable({
@@ -252,6 +254,7 @@ const percComissaoMedio = totalSaque > 0 ? (totalComissaoPdf / totalSaque) * 100
 doc.setFontSize(12);
 doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
 doc.text(`Total de Comissão: R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY + 20);
+
 doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY + 30);
 
 // Evite acentos no nome de arquivo para compatibilidade
