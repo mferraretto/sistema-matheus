@@ -252,21 +252,6 @@ if (document.readyState === 'loading') {
   initShared();
 }
 
-// Handle mobile sidebar toggle after navbar loads
-document.addEventListener('navbarLoaded', function () {
-  var btn = document.querySelector('.mobile-menu-btn');
-  if (!btn) return;
-  btn.setAttribute('aria-expanded', 'false');
-  btn.addEventListener('click', function () {
-    toggleSidebar();
-    var sidebar = document.getElementById('sidebar-container');
-    if (sidebar) {
-      var isOpen = !sidebar.classList.contains('-translate-x-full');
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    }
-  });
-});
-
 document.addEventListener('sidebarLoaded', function () {
   document.body.classList.add('has-sidebar');
   document.querySelectorAll('#sidebar .submenu').forEach(function(el){
@@ -395,28 +380,31 @@ window.toggleSidebar = window.toggleSidebar || toggleSidebar;
 window.ensureLayout  = ensureLayout;
 
 function setupMobileSidebar() {
+  const container = document.getElementById('sidebar-container');
   const sidebar = document.getElementById('sidebar');
   const btn = document.querySelector('.mobile-menu-btn');
-  if (!sidebar || !btn || btn.dataset.sidebarReady) return;
+  if (!container || !sidebar || !btn || btn.dataset.sidebarReady) return;
 
   const open = () => {
+    container.classList.remove('-translate-x-full');
     sidebar.classList.add('active');
     document.body.style.overflow = 'hidden';
     btn.setAttribute('aria-expanded', 'true');
   };
   const close = () => {
+    container.classList.add('-translate-x-full');
     sidebar.classList.remove('active');
     document.body.style.overflow = '';
     btn.setAttribute('aria-expanded', 'false');
   };
 
   btn.addEventListener('click', () => {
-    sidebar.classList.contains('active') ? close() : open();
+    container.classList.contains('-translate-x-full') ? open() : close();
   });
 
   document.addEventListener('click', (e) => {
     if (window.innerWidth > 768) return;
-    if (!sidebar.contains(e.target) && !btn.contains(e.target)) close();
+    if (!container.contains(e.target) && !btn.contains(e.target)) close();
   });
 
   sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
