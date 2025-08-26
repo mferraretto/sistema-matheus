@@ -1911,13 +1911,10 @@ body.dark .sidebar-link.active {
   .main-content { margin-left: var(--sidebar-width); }
 }
 
-/* Mobile off-canvas sidebar */
+/* Mobile off-canvas handled by container; sidebar stays static */
 @media (max-width:768px){
   .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebar.active {
-    transform: translateX(0);
+    transform: none;
   }
 }
 
