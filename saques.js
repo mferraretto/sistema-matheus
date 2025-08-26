@@ -212,13 +212,9 @@ function exportarSelecionadosPDF() {
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
-  const body = [];
+  let totalSaque = 0;
   let totalComissao = 0;
-// antes do loop garanta as variáveis
-let totalSaque = 0;
-let totalComissao = 0;
-
-const body = [];
+  const body = [];
 
 selecionados.forEach(id => {
   const s = saquesCache[id];
