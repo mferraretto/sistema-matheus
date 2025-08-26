@@ -8,14 +8,15 @@
             </div>
           </div>
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
-            <div class="flex items-center gap-2">
-              <label for="filtroMesVendas" class="font-medium">Filtrar por mês:</label>
-              <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-2"
-                onchange="carregarControleVendas()" />
-            </div>
-            <button onclick="exportarVendasMes()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">
-              <i class="fas fa-file-excel"></i> Exportar Mês
-            </button>
+          <div class="flex items-center gap-2">
+            <label for="filtroMesVendas" class="font-medium">Filtrar por mês:</label>
+            <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-2"
+              onchange="carregarControleVendas()" />
           </div>
-          <div id="listaControleVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+          <button onclick="exportarVendasMes()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">
+            <i class="fas fa-file-excel"></i> Exportar Mês
+          </button>
         </div>
+        <div id="resumoMensalVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+        <div id="listaControleVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
+      </div>

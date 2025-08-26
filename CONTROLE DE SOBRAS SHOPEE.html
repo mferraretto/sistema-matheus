@@ -1935,10 +1935,12 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
     }
     async function carregarControleVendas() {
       const container = document.getElementById("listaControleVendas");
+      const resumoContainer = document.getElementById("resumoMensalVendas");
       const filtroMes = document.getElementById("filtroMesVendas")?.value;
       container.innerHTML = "🔄 Carregando...";
+      if (resumoContainer) resumoContainer.innerHTML = "";
 
- let ref;
+      let ref;
       if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('skusVendidos');
       } else {
@@ -1947,6 +1949,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       const snap = await ref.get();
 
       container.innerHTML = "";
+      const totaisSku = {};
 
       for (const doc of snap.docs) {
         const dataDoc = doc.id; // Ex: 2025-07-21
@@ -1968,11 +1971,13 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
         listaSnap.forEach(docSKU => {
           const { sku, total, loja } = docSKU.data();
+          const skuKey = sku || docSKU.id;
           totalDia += total || 0;
           htmlSKUs += `
       <div class="text-sm text-gray-700">
-        <strong>${sku || docSKU.id}</strong> (${loja || "-"}) — ${total || 0} unid.
+        <strong>${skuKey}</strong> (${loja || "-"}) — ${total || 0} unid.
       </div>`;
+          totaisSku[skuKey] = (totaisSku[skuKey] || 0) + (total || 0);
         });
 
         const card = document.createElement("div");
@@ -1990,6 +1995,18 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
       if (container.innerHTML === "") {
         container.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
+      }
+      if (resumoContainer) {
+        if (Object.keys(totaisSku).length) {
+          const cards = Object.entries(totaisSku)
+            .sort((a, b) => b[1] - a[1])
+            .map(([sku, total]) =>
+              `<div class="bg-white rounded-lg shadow p-4 border border-gray-200 flex justify-between"><span>${sku}</span><span class="font-bold">${total}</span></div>`
+            ).join("");
+          resumoContainer.innerHTML = cards;
+        } else {
+          resumoContainer.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
+        }
       }
     }
     window.verDetalhesDia = async function (dataDoc) {
