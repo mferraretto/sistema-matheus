@@ -375,11 +375,16 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
         const dadosUsuario = usuarioDoc.data() || {};
         const autorNome = dadosUsuario.nome || firebase.auth().currentUser?.email || '';
         const autorEmail = firebase.auth().currentUser?.email || '';
-        const respEmail = dadosUsuario.responsavelFinanceiroEmail;
-        if (!respEmail) return;
-        const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
-        if (respSnap.empty) return;
-        const responsavelUid = respSnap.docs[0].id;
+        const respEmails = Array.isArray(dadosUsuario.responsavelFinanceiroEmail)
+          ? dadosUsuario.responsavelFinanceiroEmail
+          : dadosUsuario.responsavelFinanceiroEmail ? [dadosUsuario.responsavelFinanceiroEmail] : [];
+        if (!respEmails.length) return;
+        const responsaveis = [];
+        for (const email of respEmails) {
+          const snap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
+          if (!snap.empty) responsaveis.push(snap.docs[0].id);
+        }
+        if (!responsaveis.length) return;
         const descricao = `Faturamento de ${dataRef} da loja ${loja} atualizado. Bruto: R$ ${bruto.toFixed(2)}, Líquido: R$ ${liquido.toFixed(2)}, Vendas: ${qtdVendas}`;
         await db.collection('financeiroAtualizacoes').add({
           descricao,
@@ -387,7 +392,7 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
           autorNome,
           autorEmail,
           dataFaturamento: dataRef,
-          destinatarios: [responsavelUid, usuarioLogado.uid],
+          destinatarios: [...responsaveis, usuarioLogado.uid],
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           anexos: [],
           tipo: 'faturamento'
@@ -2999,7 +3004,7 @@ function filtrarPorSKU() {
 async function verificarGestorFinanceiro() {
   try {
     const snap = await db.collection('usuarios')
-      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
+      .where('responsavelFinanceiroEmail', 'array-contains', usuarioLogado.email)
       .limit(1)
       .get();
     if (!snap.empty) {
@@ -3021,7 +3026,7 @@ async function carregarAcompanhamentoGestor() {
 
   try {
     const usuariosSnap = await db.collection('usuarios')
-      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
+      .where('responsavelFinanceiroEmail', 'array-contains', usuarioLogado.email)
       .get();
     const usuarios = [];
     usuariosSnap.forEach(doc => usuarios.push({ uid: doc.id, ...doc.data() }));
