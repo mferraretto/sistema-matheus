@@ -2082,7 +2082,8 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       } else {
         previsaoDados = { skus: {} };
         selectSku.innerHTML = '<option value="todos">Todos</option>';
-        cards.innerHTML = '<p class="text-gray-500">Nenhuma previsão gerada. Clique em "Gerar previsão".</p>';
+        cards.innerHTML = '🔄 Gerando previsão inicial...';
+        await gerarPrevisao({ topN: 5, silencioso: true });
       }
     }
 
@@ -2166,7 +2167,8 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       return Math.min(max, Math.max(min, v));
     }
 
-    async function gerarPrevisao() {
+    async function gerarPrevisao(opcoes = {}) {
+      const { topN, silencioso } = opcoes;
       const btn = document.getElementById('btnGerarPrevisao');
       if (btn) { btn.disabled = true; btn.innerText = 'Gerando...'; }
       const hoje = new Date();
@@ -2194,8 +2196,18 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
         }
       }
 
+      let skuKeys = Object.keys(serieSkus);
+      if (topN) {
+        const totais = skuKeys.map(sku => ({
+          sku,
+          total: datas30.reduce((s, d) => s + (serieSkus[sku][d] || 0), 0)
+        }));
+        skuKeys = totais.sort((a, b) => b.total - a.total).slice(0, topN).map(t => t.sku);
+      }
+
       const previsao = { skus: {}, totalGeral: 0 };
-      for (const [sku, serie] of Object.entries(serieSkus)) {
+      for (const sku of skuKeys) {
+        const serie = serieSkus[sku];
         const arr30 = datas30.map(d => serie[d] || 0);
         const arr7 = datas30.slice(-7).map(d => serie[d] || 0);
         const avg7 = arr7.reduce((a,b)=>a+b,0) / 7;
@@ -2225,7 +2237,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
       await db.collection('uid').doc(usuarioLogado.uid).collection('previsoes').doc(anoMes).set(previsao);
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Gerar previsão'; }
-      Swal.fire('Sucesso','Previsão gerada!','success');
+      if (!silencioso) Swal.fire('Sucesso','Previsão gerada!','success');
       carregarPrevisao();
       carregarControleVendas();
     }
