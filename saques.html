@@ -22,12 +22,13 @@
       <div class="card-body flex flex-col md:flex-row gap-4 items-end">
         <input type="date" id="dataSaque" class="form-control" />
         <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control" />
+        <input type="text" id="lojaSaque" placeholder="Loja" class="form-control" />
         <select id="percentualSaque" class="form-control">
           <option value="0.03">3%</option>
           <option value="0.04">4%</option>
           <option value="0.05">5%</option>
         </select>
-        <button onclick="registrarSaque()" class="btn btn-primary">
+        <button id="btnRegistrar" onclick="registrarSaque()" class="btn btn-primary">
           <i class="fas fa-plus mr-1"></i> Registrar
         </button>
       </div>
@@ -56,6 +57,7 @@
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-2 text-left">Data</th>
+              <th class="px-4 py-2 text-left">Loja</th>
               <th class="px-4 py-2 text-right">Valor</th>
               <th class="px-4 py-2 text-right">% Pago</th>
               <th class="px-4 py-2 text-right">Comissão Paga</th>
