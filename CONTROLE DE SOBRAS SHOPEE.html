@@ -2605,10 +2605,10 @@ async function verificarGestorFinanceiro() {
 async function carregarAcompanhamentoGestor() {
   const totalEl = document.getElementById('totalSobraGestor');
   const tbody = document.querySelector('#tabelaSobraSkuGestor tbody');
-  const lista = document.getElementById('listaPedidosErradosGestor');
+  const pedidosBody = document.querySelector('#tabelaPedidosCriticosGestor tbody');
   if (totalEl) totalEl.textContent = 'Carregando...';
   if (tbody) tbody.innerHTML = '';
-  if (lista) lista.innerHTML = '';
+  if (pedidosBody) pedidosBody.innerHTML = '';
 
   try {
     const usuariosSnap = await db.collection('usuarios')
@@ -2666,23 +2666,32 @@ async function carregarAcompanhamentoGestor() {
         tbody.appendChild(tr);
       });
     }
-
-    if (lista) {
-      if (!pedidosErrados.length) {
-        lista.innerHTML = '<li class="text-gray-500">Sem divergências</li>';
+    if (pedidosBody) {
+      const pedidosCriticos = pedidosErrados.filter(p => {
+        const esp = Number(p.sobraEsperada || p.metaEsperada || 0);
+        const real = Number(p.sobraReal || p.totalLiquido || 0);
+        if (!esp) return false;
+        const perc = ((real - esp) / esp) * 100;
+        return perc <= -10;
+      });
+      if (!pedidosCriticos.length) {
+        pedidosBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Sem pedidos críticos</td></tr>';
       } else {
-        pedidosErrados.forEach(p => {
-          const li = document.createElement('li');
-          const esp = p.sobraEsperada || p.metaEsperada || 0;
-          const real = p.sobraReal || p.totalLiquido || 0;
-          li.textContent = `${p.usuario} - ${p.dia || ''} - ${p.sku}: Esperado R$ ${esp.toFixed(2)} | Real R$ ${real.toFixed(2)}`;
-          lista.appendChild(li);
+        pedidosCriticos.forEach(p => {
+          const pedido = p.pedido || p.numeroPedido || p.id || '';
+          const sku = p.sku || '';
+          const qtd = p.quantidade || p.qtd || 0;
+          const esp = Number(p.sobraEsperada || p.metaEsperada || 0);
+          const real = Number(p.sobraReal || p.totalLiquido || 0);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${pedido}</td><td>${sku}</td><td>${qtd}</td><td>R$ ${esp.toFixed(2)}</td><td>R$ ${real.toFixed(2)}</td>`;
+          pedidosBody.appendChild(tr);
         });
       }
     }
   } catch (e) {
     console.error('Erro ao carregar acompanhamento do gestor', e);
-    if (lista) lista.innerHTML = '<li class="text-red-500">Erro ao carregar dados</li>';
+    if (pedidosBody) pedidosBody.innerHTML = '<tr><td colspan="5" class="text-red-500">Erro ao carregar dados</td></tr>';
   }
 }
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
