@@ -2186,6 +2186,24 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       return Math.min(max, Math.max(min, v));
     }
 
+    function winsorize(arr, low = 0.05, high = 0.95) {
+      const sorted = [...arr].sort((a, b) => a - b);
+      const n = sorted.length;
+      const lowVal = sorted[Math.floor(n * low)];
+      const highVal = sorted[Math.ceil(n * high) - 1];
+      return arr.map(v => clamp(v, lowVal, highVal));
+    }
+
+    function percentile(arr, p) {
+      if (!arr.length) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const idx = (sorted.length - 1) * p;
+      const lower = Math.floor(idx);
+      const upper = Math.ceil(idx);
+      const weight = idx - lower;
+      return sorted[lower] * (1 - weight) + (sorted[upper] || sorted[lower]) * weight;
+    }
+
     async function gerarPrevisao(opcoes = {}) {
       const { topN, silencioso } = opcoes;
       const btn = document.getElementById('btnGerarPrevisao');
@@ -2195,23 +2213,20 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       const anoMes = proxMes.toISOString().slice(0,7);
       const diasProxMes = new Date(proxMes.getFullYear(), proxMes.getMonth()+1, 0).getDate();
       const datas30 = gerarDatas(30, hoje);
-      const datas56 = gerarDatas(56, hoje);
+      const datas90 = gerarDatas(90, hoje);
       const ref = db.collection(`uid/${usuarioLogado.uid}/skusVendidos`);
       const snap = await ref.get();
       const serieSkus = {};
 
       for (const doc of snap.docs) {
         const dataDoc = doc.id;
-        if (!datas56.includes(dataDoc)) continue;
+        if (!datas90.includes(dataDoc)) continue;
         const listaSnap = await doc.ref.collection('lista').get();
         for (const skuDoc of listaSnap.docs) {
           const { sku, total } = skuDoc.data();
           const skuKey = sku || skuDoc.id;
-          if (!serieSkus[skuKey]) {
-            serieSkus[skuKey] = {};
-            datas56.forEach(d => serieSkus[skuKey][d] = 0);
-          }
-          serieSkus[skuKey][dataDoc] += total || 0;
+          if (!serieSkus[skuKey]) serieSkus[skuKey] = {};
+          serieSkus[skuKey][dataDoc] = (serieSkus[skuKey][dataDoc] || 0) + (total || 0);
         }
       }
 
@@ -2226,31 +2241,64 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
       const previsao = { skus: {}, totalGeral: 0 };
       for (const sku of skuKeys) {
-        const serie = serieSkus[sku];
-        const arr30 = datas30.map(d => serie[d] || 0);
-        const arr7 = datas30.slice(-7).map(d => serie[d] || 0);
-        const avg7 = arr7.reduce((a,b)=>a+b,0) / 7;
-        const beta = calcularBeta(arr30);
-        const globalMean = datas56.reduce((s,d)=>s+(serie[d]||0),0) / datas56.length;
+        const serie = serieSkus[sku] || {};
+        const arr90 = datas90.map(d => serie[d] || 0);
+        const arr90w = winsorize(arr90, 0.05, 0.95);
+        const arr30 = arr90w.slice(-30);
+        const arr7 = arr30.slice(-7);
+        const avg30 = arr30.reduce((a,b)=>a+b,0) / arr30.length;
+        const avg7 = arr7.reduce((a,b)=>a+b,0) / arr7.length;
+
+        let w30 = 0.6;
+        let w7 = 0.4;
+        const nDados = Object.keys(serie).length;
+        if (nDados < 30) {
+          const f30 = Math.min(nDados / 30, 1);
+          const f7 = Math.min(nDados / 7, 1);
+          w30 *= f30;
+          w7 *= f7;
+          const wsum = w30 + w7;
+          if (wsum > 0) { w30 /= wsum; w7 /= wsum; }
+        }
+        const base = w30 * avg30 + w7 * avg7;
+
+        let beta = 0;
+        if (nDados >= 14) beta = calcularBeta(arr30);
+        const lowBase = avg30 < 1 && avg7 < 1;
+        if (lowBase) beta = 0;
+
+        const globalMean = arr90w.reduce((s,v)=>s+v,0) / arr90w.length;
+        const weeks = Math.min(12, Math.floor(nDados / 7));
+        let lambda = Math.min(1, weeks / 12);
+        if (nDados < 7 || lowBase) lambda = 0;
         const fatores = {};
         for (let w=0; w<7; w++) {
-          const vals = datas56.filter(d => new Date(d).getDay()===w).map(d => serie[d]||0);
+          const vals = datas90
+            .map((d,i)=>({d, v: arr90w[i]}))
+            .filter(({d})=>new Date(d).getDay()===w)
+            .map(({v})=>v);
           const m = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-          fatores[w] = clamp(globalMean ? m/globalMean : 1, 0.7, 1.3);
+          const fatorWd = globalMean ? m/globalMean : 1;
+          const saz = 1 + lambda * (fatorWd - 1);
+          fatores[w] = clamp(saz, 0.85, 1.20);
         }
+
+        const p95 = percentile(arr90w, 0.95);
         const diario = {};
         let total = 0;
-        for (let i=0;i<diasProxMes;i++) {
-          const d = new Date(proxMes.getFullYear(), proxMes.getMonth(), i+1);
+        for (let i=1; i<=diasProxMes; i++) {
+          const d = new Date(proxMes.getFullYear(), proxMes.getMonth(), i);
           const wd = d.getDay();
-          let val = avg7 + beta*(i+1);
-          val *= fatores[wd] || 1;
-          if (val < 0) val = 0;
+          const trendRaw = beta * i;
+          const trend = clamp(trendRaw * 0.5, -0.2*base/30, 0.2*base/30);
+          const saz = fatores[wd] || 1;
+          let val = (base + trend) * saz;
+          val = clamp(Math.round(Math.max(0, val)), 0, Math.round(p95 * 1.2));
           const ds = d.toISOString().slice(0,10);
           diario[ds] = val;
           total += val;
         }
-        previsao.skus[sku] = { diario, total };
+        previsao.skus[sku] = { diario, total, p95 };
         previsao.totalGeral += total;
       }
 
