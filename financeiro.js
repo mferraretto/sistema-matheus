@@ -1,9 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { loadSecureDoc } from './secure-firestore.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
+import { atualizarSaque as atualizarSaqueSvc } from './comissoes-service.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -158,6 +158,7 @@ async function carregar() {
   await carregarFaturamentoMeta(listaUsuarios, mes);
   await carregarDevolucoes(listaUsuarios, mes);
   renderResumoUsuarios(Object.values(resumoUsuarios));
+  renderTabelaSaques();
   await renderVendasDiaAnterior(listaUsuarios);
 }
 
@@ -233,37 +234,34 @@ async function carregarSkus(usuarios, mes) {
 async function carregarSaques(usuarios, mes) {
   dadosSaquesExport = [];
   for (const usuario of usuarios) {
-    const pass = getPassphrase() || `chave-${usuario.uid}`;
-    const snap = await getDocs(collection(db, `uid/${usuario.uid}/saques`));
     let total = 0;
     let totalComissao = 0;
-    let qtdSaques = 0;
     const detalhes = [];
-    for (const docSnap of snap.docs) {
-      if (mes && !docSnap.id.includes(mes)) continue;
-      const dados = await loadSecureDoc(db, `uid/${usuario.uid}/saques`, docSnap.id, pass);
-      if (!dados) continue;
-      const docTotal = dados.valorTotal || 0;
-      let docComissao = 0;
-      qtdSaques++;
-      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`));
-      for (const lojaDoc of lojasSnap.docs) {
-        const lojaDados = await loadSecureDoc(db, `uid/${usuario.uid}/saques/${docSnap.id}/lojas`, lojaDoc.id, pass);
-        if (!lojaDados) continue;
-        const valor = lojaDados.valor || 0;
-        const comissao = lojaDados.comissao || 0;
-        docComissao += valor * (comissao / 100);
-      }
-      total += docTotal;
-      totalComissao += docComissao;
-      detalhes.push({ data: docSnap.id, valor: docTotal, comissao: docComissao });
+    try {
+      const col = collection(db, 'usuarios', usuario.uid, 'comissoes', mes, 'saques');
+      const snap = await getDocs(col);
+      snap.forEach(docSnap => {
+        const dados = docSnap.data();
+        const valor = Number(dados.valor) || 0;
+        const percentual = Number(dados.percentualPago) || 0;
+        const comissao = Number(dados.comissaoPaga) || valor * percentual;
+        total += valor;
+        totalComissao += comissao;
+        detalhes.push({
+          id: docSnap.id,
+          data: (dados.data || '').substring(0,10),
+          dataISO: dados.data || '',
+          loja: dados.origem || '-',
+          valor,
+          percentual,
+          comissao
+        });
+      });
+    } catch (e) {
+      console.error('Erro ao carregar saques:', e);
     }
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
-    resumoUsuarios[usuario.uid].saques = {
-      total,
-      comissao: totalComissao,
-      qtdSaques
-    };
+    resumoUsuarios[usuario.uid].saques = { total, comissao: totalComissao };
     resumoUsuarios[usuario.uid].saquesDetalhes = detalhes;
   }
 }
@@ -716,6 +714,66 @@ async function renderVendasDiaAnterior(lista) {
   }
 }
 
+function renderTabelaSaques() {
+  const uid = document.getElementById('usuarioFiltro')?.value;
+  const section = document.getElementById('saquesGestor');
+  const tbody = document.getElementById('tbodySaquesFinanceiro');
+  const resumo = document.getElementById('resumoSaquesFinanceiro');
+  const chkAll = document.getElementById('chkSaquesFinanceiro');
+  if (!section || !tbody || !resumo || !chkAll) return;
+  if (!uid || uid === 'todos') {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+  const dados = (resumoUsuarios[uid]?.saquesDetalhes) || [];
+  dados.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
+  tbody.innerHTML = '';
+  chkAll.checked = false;
+  let total = 0;
+  let totalComissao = 0;
+  dados.forEach(s => {
+    const pago = (s.percentual || 0) > 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="px-4 py-2"><input type="checkbox" class="chk-saque-fin" data-id="${s.id}"></td>
+      <td class="px-4 py-2">${s.data || ''}</td>
+      <td class="px-4 py-2">${s.loja || ''}</td>
+      <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-2 text-right">${(s.percentual * 100).toFixed(0)}%</td>
+      <td class="px-4 py-2 text-right">R$ ${s.comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-2 text-center ${pago ? 'text-green-600' : 'text-red-600'}">${pago ? 'PAGO' : 'A PAGAR'}</td>`;
+    tbody.appendChild(tr);
+    total += s.valor;
+    totalComissao += s.comissao;
+  });
+  resumo.textContent = `Total: R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Comissão Total: R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+async function marcarSaquesSelecionados() {
+  const uid = document.getElementById('usuarioFiltro')?.value;
+  const mes = document.getElementById('mesFiltro')?.value;
+  const perc = parseFloat(document.getElementById('percentualMarcar')?.value || '0');
+  if (!uid || uid === 'todos' || !mes) return;
+  const checks = Array.from(document.querySelectorAll('.chk-saque-fin:checked'));
+  for (const chk of checks) {
+    const id = chk.dataset.id;
+    const dados = (resumoUsuarios[uid]?.saquesDetalhes || []).find(s => s.id === id);
+    if (!dados) continue;
+    await atualizarSaqueSvc({
+      db,
+      uid,
+      anoMes: mes,
+      saqueId: id,
+      dataISO: dados.dataISO,
+      valor: dados.valor,
+      percentualPago: perc,
+      origem: dados.loja
+    });
+  }
+  await carregar();
+}
+
 function formatarData(str) {
   // Evita problemas de fuso horário ao converter datas (ex.: "2024-05-01" 
   // sendo interpretado como 30/04 em localidades UTC-3). Quando a string
@@ -793,6 +851,11 @@ function exportarCSV(dados, campos, nome) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+document.getElementById('btnMarcarPago')?.addEventListener('click', marcarSaquesSelecionados);
+document.getElementById('chkSaquesFinanceiro')?.addEventListener('change', e => {
+  document.querySelectorAll('.chk-saque-fin').forEach(ch => (ch.checked = e.target.checked));
+});
 
 // PWA install handling
 if ('serviceWorker' in navigator) {
