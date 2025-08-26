@@ -211,9 +211,10 @@ function exportarSelecionadosPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(16);
-  doc.text('Boleto de Cobran\u00e7a de Comiss\u00e3o', 105, 15, { align: 'center' });
+  doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
   const body = [];
   let totalComissao = 0;
+  let totalSaque = 0;
   selecionados.forEach(id => {
     const s = saquesCache[id];
     if (s) {
@@ -221,16 +222,20 @@ function exportarSelecionadosPDF() {
         s.data.substring(0, 10),
         s.origem || '',
         s.valor.toFixed(2),
+        (s.percentualPago * 100).toFixed(0) + '%',
         s.comissaoPaga.toFixed(2)
       ]);
+      totalSaque += s.valor || 0;
       totalComissao += s.comissaoPaga || 0;
     }
   });
-  doc.autoTable({ head: [['Data', 'Loja', 'Valor Saque', 'Comiss\u00e3o']], body, startY: 25 });
+  doc.autoTable({ head: [['Data', 'Loja', 'Valor Saque', '% Comissão', 'Comissão']], body, startY: 25 });
   const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
+  const percComissao = totalSaque > 0 ? (totalComissao / totalSaque) * 100 : 0;
   doc.setFontSize(12);
-  doc.text(`Total de Comiss\u00e3o: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 10);
-  doc.save('boletos-comissao.pdf');
+  doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
+  doc.text(`Total de Comissão: R$ ${totalComissao.toFixed(2)} (${percComissao.toFixed(2)}%)`, 14, finalY + 20);
+  doc.save('FECHAMENTO COMISSÃO.pdf');
 }
 
 function editarSaque(id) {
