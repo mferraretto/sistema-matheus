@@ -64,6 +64,26 @@ body.has-sidebar .content-wrapper {
   margin-left: var(--sidebar-width);
 }
 
+#sidebar-container {
+  transform: translateX(-100%);
+  transition: var(--transition);
+}
+#sidebar-container.open {
+  transform: translateX(0);
+}
+@media (min-width:1024px){
+  #sidebar-container {
+    transform: none;
+  }
+}
+
+#sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 30;
+}
+
 
 .card-header-icon {
   width: 50px;
@@ -1245,19 +1265,14 @@ body.dark-mode th {
 }
 
 /* Utilitário para esconder o submenu */
+#sidebar-overlay.hidden {
+  display: none;
+}
 .hidden {
- display: none
+  display: none
 }
 .product-price {
   color: var(--success)
-}
-
-
-@media (max-width:768px) {
-  /* Sidebar visibility handled by container; remove legacy transforms */
-  .content-wrapper {
-    margin-left: 0;
-  }
 }
 
 #sidebar::-webkit-scrollbar {
@@ -1881,15 +1896,5 @@ body.dark .sidebar-link.active {
 /* Desktop sidebar beside content */
 @media (min-width:1024px){
   .main-content { margin-left: var(--sidebar-width); }
-}
-
-/* Mobile off-canvas sidebar */
-@media (max-width:768px){
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebar.active {
-    transform: translateX(0);
-  }
 }
 
