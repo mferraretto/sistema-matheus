@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { firebaseConfig } from './firebase-config.js';
 import {
   registrarSaque as registrarSaqueSvc,
   deletarSaque as deletarSaqueSvc,
