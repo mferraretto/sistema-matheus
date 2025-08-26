@@ -1,5 +1,6 @@
 const CACHE_VERSION = '20240826';
-const CACHE_NAME = `financeiro-cache-v${CACHE_VERSION}`;
+const CACHE_PREFIX  = 'financeiro-cache-v';
+const CACHE_NAME    = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const URLS_TO_CACHE = [
   'financeiro.html',
   'financeiro.js',
@@ -12,6 +13,16 @@ const URLS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      )
+    )
   );
 });
 
