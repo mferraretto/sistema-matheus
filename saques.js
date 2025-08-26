@@ -151,15 +151,15 @@ function atualizarResumoSelecionados() {
     return;
   }
   let totalValor = 0;
-  let totalComissao = 0;
+  let totalComissaoSel = 0;
   selecionados.forEach(id => {
     const s = saquesCache[id];
     if (s) {
       totalValor += s.valor || 0;
-      totalComissao += s.comissaoPaga || 0;
+      totalComissaoSel += s.comissaoPaga || 0;
     }
   });
-  texto.textContent = `${selecionados.size} selecionado(s) - Valor: R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, Comissão: R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  texto.textContent = `${selecionados.size} selecionado(s) - Valor: R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, Comissão: R$ ${totalComissaoSel.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   div.style.display = 'flex';
 }
 
@@ -213,7 +213,7 @@ function exportarSelecionadosPDF() {
   doc.setFontSize(16);
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
   let totalSaque = 0;
-  let totalComissao = 0;
+  let totalComissaoPdf = 0;
   const body = [];
 
 selecionados.forEach(id => {
@@ -237,7 +237,7 @@ selecionados.forEach(id => {
   ]);
 
   totalSaque += valor;
-  totalComissao += comissao;
+  totalComissaoPdf += comissao;
 });
 
 doc.autoTable({
@@ -247,11 +247,11 @@ doc.autoTable({
 });
 
 const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
-const percComissaoMedio = totalSaque > 0 ? (totalComissao / totalSaque) * 100 : 0;
+const percComissaoMedio = totalSaque > 0 ? (totalComissaoPdf / totalSaque) * 100 : 0;
 
 doc.setFontSize(12);
 doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
-doc.text(`Total de Comissão: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 20);
+doc.text(`Total de Comissão: R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY + 20);
 doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY + 30);
 
 // Evite acentos no nome de arquivo para compatibilidade
