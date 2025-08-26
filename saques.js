@@ -5,6 +5,7 @@ import { firebaseConfig } from './firebase-config.js';
 import {
   registrarSaque as registrarSaqueSvc,
   deletarSaque as deletarSaqueSvc,
+  atualizarSaque as atualizarSaqueSvc,
   fecharMes as fecharMesSvc,
   watchResumoMes as watchResumoMesSvc
 } from './comissoes-service.js';
@@ -16,6 +17,8 @@ const auth = getAuth(app);
 
 let uidAtual = null;
 let unsubscribeResumo = null;
+let editandoId = null;
+let saquesCache = {};
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -37,12 +40,21 @@ export async function registrarSaque() {
   const dataISO = document.getElementById('dataSaque').value;
   const valor = parseFloat(document.getElementById('valorSaque').value);
   const percentual = parseFloat(document.getElementById('percentualSaque').value);
+  const origem = document.getElementById('lojaSaque').value.trim();
   if (!dataISO || isNaN(valor) || valor <= 0) {
     alert('Preencha data e valor corretamente.');
     return;
   }
-  await registrarSaqueSvc({ db, uid: uidAtual, dataISO, valor, percentualPago: percentual });
+  if (editandoId) {
+    const anoMes = document.getElementById('filtroMes').value || anoMesBR();
+    await atualizarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: editandoId, dataISO, valor, percentualPago: percentual, origem });
+  } else {
+    await registrarSaqueSvc({ db, uid: uidAtual, dataISO, valor, percentualPago: percentual, origem });
+  }
   document.getElementById('valorSaque').value = '';
+  document.getElementById('lojaSaque').value = '';
+  editandoId = null;
+  document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-plus mr-1"></i> Registrar';
   carregarSaques();
 }
 
@@ -52,24 +64,65 @@ async function carregarSaques() {
   tbody.innerHTML = '';
   const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
-  snap.forEach(d => {
-    const s = d.data();
+  saquesCache = {};
+  const dados = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.data.localeCompare(b.data));
+  const totais = {};
+  dados.forEach(s => {
+    const dia = s.data.substring(0, 10);
+    saquesCache[s.id] = s;
+    if (!totais[dia]) totais[dia] = { valor: 0, comissao: 0 };
+    totais[dia].valor += s.valor;
+    totais[dia].comissao += s.comissaoPaga;
+  });
+
+  for (let i = 0; i < dados.length; i++) {
+    const s = dados[i];
+    const dia = s.data.substring(0, 10);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="px-4 py-2">${s.data.substring(0, 10)}</td>
+      <td class="px-4 py-2">${dia}</td>
+      <td class="px-4 py-2">${s.origem || '-'}</td>
       <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-right">${(s.percentualPago * 100).toFixed(0)}%</td>
       <td class="px-4 py-2 text-right">R$ ${s.comissaoPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-2 text-right"><button class="text-red-600" onclick="excluirSaque('${d.id}')"><i class="fas fa-trash"></i></button></td>
+      <td class="px-4 py-2 text-right flex gap-2 justify-end">
+        <button class="text-blue-600" onclick="editarSaque('${s.id}')"><i class="fas fa-edit"></i></button>
+        <button class="text-red-600" onclick="excluirSaque('${s.id}')"><i class="fas fa-trash"></i></button>
+      </td>
     `;
     tbody.appendChild(tr);
-  });
+
+    const proxDia = dados[i + 1]?.data.substring(0, 10);
+    if (proxDia !== dia) {
+      const tot = totais[dia];
+      const trTot = document.createElement('tr');
+      trTot.className = 'bg-gray-100 font-semibold';
+      trTot.innerHTML = `
+        <td class="px-4 py-2" colspan="2">Total do dia</td>
+        <td class="px-4 py-2 text-right">R$ ${tot.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="px-4 py-2 text-right">-</td>
+        <td class="px-4 py-2 text-right">R$ ${tot.comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td></td>
+      `;
+      tbody.appendChild(trTot);
+    }
+  }
 }
 
 async function excluirSaque(id) {
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   await deletarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: id });
   carregarSaques();
+}
+
+function editarSaque(id) {
+  const s = saquesCache[id];
+  document.getElementById('dataSaque').value = s.data.substring(0, 10);
+  document.getElementById('valorSaque').value = s.valor;
+  document.getElementById('percentualSaque').value = s.percentualPago.toFixed(2);
+  document.getElementById('lojaSaque').value = s.origem || '';
+  editandoId = id;
+  document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-save mr-1"></i> Atualizar';
 }
 
 async function fecharMes() {
@@ -115,6 +168,7 @@ function assistirResumo() {
 if (typeof window !== 'undefined') {
   window.registrarSaque = registrarSaque;
   window.excluirSaque = excluirSaque;
+  window.editarSaque = editarSaque;
   window.fecharMes = fecharMes;
 }
 

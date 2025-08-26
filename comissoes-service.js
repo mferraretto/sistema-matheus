@@ -29,6 +29,26 @@ export async function registrarSaque({ db, uid, dataISO, valor, percentualPago, 
   await recalcularResumoMes({ db, uid, anoMes });
 }
 
+export async function atualizarSaque({ db, uid, anoMes, saqueId, dataISO, valor, percentualPago, origem }) {
+  if (!uid) throw new Error('uid obrigatório');
+  if (!anoMes) throw new Error('anoMes obrigatório');
+  if (!saqueId) throw new Error('saqueId obrigatório');
+  const ref = doc(db, 'usuarios', uid, 'comissoes', anoMes, 'saques', saqueId);
+  const comissaoPaga = valor * percentualPago;
+  await setDoc(
+    ref,
+    {
+      data: dataISO,
+      valor,
+      percentualPago,
+      comissaoPaga,
+      ...(origem ? { origem } : {})
+    },
+    { merge: true }
+  );
+  await recalcularResumoMes({ db, uid, anoMes });
+}
+
 export async function recalcularResumoMes({ db, uid, anoMes }) {
   const col = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
