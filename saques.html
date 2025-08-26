@@ -24,6 +24,7 @@
         <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control" />
         <input type="text" id="lojaSaque" placeholder="Loja" class="form-control" />
         <select id="percentualSaque" class="form-control">
+          <option value="0">0%</option>
           <option value="0.03">3%</option>
           <option value="0.04">4%</option>
           <option value="0.05">5%</option>
@@ -57,18 +58,29 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <th class="px-4 py-2 text-center"><input type="checkbox" onchange="toggleSelecaoTodos(this.checked)" /></th>
               <th class="px-4 py-2 text-left">Data</th>
               <th class="px-4 py-2 text-left">Loja</th>
               <th class="px-4 py-2 text-right">Saque</th>
               <th class="px-4 py-2 text-right">%</th>
               <th class="px-4 py-2 text-right">Comissão</th>
               <th class="px-4 py-2 text-right">Status</th>
+              <th class="px-4 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
           <!-- Linha de resumo final na mesma tabela -->
           <tfoot id="tfootResumo" class="bg-gray-50 font-semibold"></tfoot>
         </table>
+        <div id="acoesSelecionados" style="display:none" class="flex flex-col md:flex-row items-center gap-2 mt-4">
+          <span id="resumoSelecionados" class="text-sm"></span>
+          <select id="percentualSelecionado" class="form-control">
+            <option value="0.03">3%</option>
+            <option value="0.04">4%</option>
+            <option value="0.05">5%</option>
+          </select>
+          <button onclick="marcarComoPagoSelecionados()" class="btn btn-primary">Marcar como Pago</button>
+        </div>
       </div>
     </section>
   </main>
