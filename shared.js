@@ -513,8 +513,6 @@ document.addEventListener('sidebarLoaded', async () => {
           const li = a.closest('li') || a.parentElement;
           if (li && !ADMIN_GESTOR_MENU_IDS.includes(a.id)) li.style.display = '';
         });
-      } else {
-        showOnly([]);
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
@@ -524,6 +522,5 @@ document.addEventListener('sidebarLoaded', async () => {
   const auth = getAuth(app);
   onAuthStateChanged(auth, user => {
     if (user) applySidebarPermissions(user.uid);
-    else showOnly([]);
   });
 });
