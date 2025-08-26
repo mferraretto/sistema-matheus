@@ -1,4 +1,4 @@
-const CACHE_NAME = 'financeiro-cache-v1';
+const CACHE_NAME = 'financeiro-cache-v2';
 const URLS_TO_CACHE = [
   'financeiro.html',
   'financeiro.js',
