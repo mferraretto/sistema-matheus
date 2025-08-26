@@ -391,6 +391,7 @@ function setupMobileSidebar() {
     overlay.id = 'sidebar-overlay';
     document.body.appendChild(overlay);
   }
+  overlay.classList.remove('show');
 
   btn.addEventListener('click', toggleSidebar);
   overlay.addEventListener('click', toggleSidebar);
