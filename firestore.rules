@@ -1,112 +1,64 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function signedIn() { return request.auth != null; }
-
     function isGestorOrADM(uid) {
       return exists(/databases/$(database)/documents/usuarios/$(uid)) &&
-             get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor','ADM'];
+        get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor', 'ADM'];
     }
 
-    match /usuarios/{uid} {
-      // get (perfil/abas): dono, Gestor/ADM ou responsável financeiro por e-mail
-      allow get: if signedIn() && (
-        request.auth.uid == uid ||
-        isGestorOrADM(request.auth.uid) ||
-        (request.auth.token.email != null &&
-         resource.data.responsavelFinanceiroEmail is list &&
-         request.auth.token.email in resource.data.responsavelFinanceiroEmail)
-      );
-
-      // EVITE listar todos. Opção A (bloquear):
-      // allow list: if false;
-
-      // Opção B (permitir só para Gestor/ADM):
-      allow list: if signedIn() && isGestorOrADM(request.auth.uid);
-
-      // Escrita: apenas o dono (ajuste se precisar)
-      allow create, update, delete: if signedIn() && request.auth.uid == uid;
-
-      match /comissoes/{anoMes} {
-        allow read, write: if signedIn() && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-        match /saques/{saqueId} {
-          allow read, write: if signedIn() && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-        }
-        match /ajustes/{ajusteId} {
-          allow read, write: if signedIn() && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-        }
+    match /usuarios/{uid}/comissoes/{anoMes} {
+      allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
+      match /saques/{saqueId} {
+        allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
+      }
+      match /ajustes/{ajusteId} {
+        allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
       }
     }
 
     match /pdfDocs/{fileId} {
-      allow read: if signedIn() && (
+      allow read: if request.auth != null && (
         resource.data.ownerUid == request.auth.uid ||
-        (request.auth.token.email != null &&
-         resource.data.gestoresExpedicaoEmails is list &&
-         request.auth.token.email in resource.data.gestoresExpedicaoEmails)
+        (request.auth.token.email != null && request.auth.token.email in resource.data.gestoresExpedicaoEmails)
       );
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-      allow update, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
 
     match /relatorios/{relatorioId} {
-      allow create: if signedIn() && request.resource.data.autorUid == request.auth.uid;
-      allow read: if signedIn() && (
+      allow create: if request.auth != null && request.resource.data.autorUid == request.auth.uid;
+      allow read: if request.auth != null && (
         resource.data.autorUid == request.auth.uid ||
         (resource.data.gestores != null && request.auth.uid in resource.data.gestores) ||
         isGestorOrADM(request.auth.uid)
       );
-      allow update: if signedIn() && (
-        (resource.data.autorUid == request.auth.uid &&
-         resource.data.status != 'aprovado' &&
-         request.resource.data.status == resource.data.status) ||
+      allow update: if request.auth != null && (
+        (resource.data.autorUid == request.auth.uid && resource.data.status != 'aprovado' && request.resource.data.status == resource.data.status) ||
         (resource.data.gestores != null && request.auth.uid in resource.data.gestores) ||
         isGestorOrADM(request.auth.uid)
       );
+
       match /comentarios/{comentId} {
-        allow read, create: if signedIn() && (
+        allow read, create: if request.auth != null && (
           get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.autorUid == request.auth.uid ||
-          (get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores != null &&
-           request.auth.uid in get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores) ||
+          (get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores != null && request.auth.uid in get(/databases/$(database)/documents/relatorios/$(relatorioId)).data.gestores) ||
           isGestorOrADM(request.auth.uid)
         );
       }
     }
 
     match /financeiroAtualizacoes/{docId} {
-      allow create: if signedIn() && request.resource.data.autorUid == request.auth.uid;
-      allow read: if signedIn() && (
+      allow create: if request.auth != null && request.resource.data.autorUid == request.auth.uid;
+      allow read: if request.auth != null && (
         resource.data.autorUid == request.auth.uid ||
         (resource.data.destinatarios != null && request.auth.uid in resource.data.destinatarios) ||
         isGestorOrADM(request.auth.uid)
       );
-      allow update, delete: if signedIn() && resource.data.autorUid == request.auth.uid;
-    }
-
-    // Faturamento diário + lojas
-    match /uid/{uid}/faturamento/{dia} {
-      allow read: if signedIn() && (
-        request.auth.uid == uid ||
-        isGestorOrADM(request.auth.uid) ||
-        (request.auth.token.email != null &&
-         get(/databases/$(database)/documents/usuarios/$(uid)).data.responsavelFinanceiroEmail is list &&
-         request.auth.token.email in get(/databases/$(database)/documents/usuarios/$(uid)).data.responsavelFinanceiroEmail)
-      );
-
-      match /lojas/{lojaId} {
-        allow read: if signedIn() && (
-          request.auth.uid == uid ||
-          isGestorOrADM(request.auth.uid) ||
-          (request.auth.token.email != null &&
-           get(/databases/$(database)/documents/usuarios/$(uid)).data.responsavelFinanceiroEmail is list &&
-           request.auth.token.email in get(/databases/$(database)/documents/usuarios/$(uid)).data.responsavelFinanceiroEmail)
-        );
-      }
+      allow update, delete: if request.auth != null && resource.data.autorUid == request.auth.uid;
     }
 
     match /contasfechamento/{docId} {
-      allow read, write: if signedIn();
+      allow read, write: if request.auth != null;
     }
   }
 }
