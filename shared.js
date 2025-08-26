@@ -275,8 +275,13 @@ const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar(){
   const sb = document.getElementById('sidebar-container');
+  const overlay = document.getElementById('sidebar-overlay');
   if (!sb) return;
-  sb.classList.toggle('-translate-x-full');
+  sb.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('hidden', !sb.classList.contains('open'));
+  document.body.style.overflow = sb.classList.contains('open') ? 'hidden' : '';
+  try { localStorage.removeItem('sidebarClosed'); } catch(e){}
+  document.cookie = 'sidebarClosed=; Max-Age=0; path=/';
 }
 
 async function loadPartial(selector, path){
@@ -287,10 +292,22 @@ async function loadPartial(selector, path){
     el = document.createElement(selector.startsWith('#') ? 'div' : 'aside');
     el.id = id;
     if (id === 'sidebar-container') {
-      el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40 transition-transform duration-200 ease-out -translate-x-full lg:translate-x-0 shadow-lg';
+      el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40 transition-transform duration-200 ease-out lg:translate-x-0 shadow-lg';
       document.body.prepend(el);
       // garante margem do conteúdo no desktop
       document.querySelector('.main-content')?.classList.add('lg:ml-64');
+      let overlay = document.getElementById('sidebar-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 hidden';
+        overlay.addEventListener('click', () => {
+          el.classList.remove('open');
+          overlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        });
+        document.body.insertBefore(overlay, el.nextSibling);
+      }
     } else {
       // navbar acima do main
       document.body.insertBefore(el, document.querySelector('main') || null);
@@ -298,8 +315,20 @@ async function loadPartial(selector, path){
     }
   } else {
     if (id === 'sidebar-container') {
-      el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','bg-purple-700','text-white','overflow-auto','z-40','transition-transform','duration-200','ease-out','-translate-x-full','lg:translate-x-0','shadow-lg');
+      el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','bg-purple-700','text-white','overflow-auto','z-40','transition-transform','duration-200','ease-out','lg:translate-x-0','shadow-lg');
       document.querySelector('.main-content')?.classList.add('lg:ml-64');
+      let overlay = document.getElementById('sidebar-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'sidebar-overlay';
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-30 hidden';
+        overlay.addEventListener('click', () => {
+          el.classList.remove('open');
+          overlay.classList.add('hidden');
+          document.body.style.overflow = '';
+        });
+        document.body.insertBefore(overlay, el.nextSibling);
+      }
     } else {
       el.classList.add('lg:pl-64');
     }
@@ -337,7 +366,9 @@ async function loadPartial(selector, path){
 
     // no desktop, sempre aberto
     if (selector === '#sidebar-container' && matchMedia('(min-width:1024px)').matches) {
-      el.classList.remove('-translate-x-full','hidden');
+      el.classList.add('open');
+      const overlay = document.getElementById('sidebar-overlay');
+      if (overlay) overlay.classList.add('hidden');
       // limpa qualquer estado salvo que esconda
       try { localStorage.removeItem('sidebarClosed'); } catch(e){}
       document.cookie = 'sidebarClosed=; Max-Age=0; path=/';
@@ -370,8 +401,11 @@ mo.observe(document.documentElement, { childList: true, subtree: true });
 // ao redimensionar para desktop, garante aberto
 window.addEventListener('resize', ()=>{
   const sb = document.getElementById('sidebar-container');
+  const overlay = document.getElementById('sidebar-overlay');
   if (sb && matchMedia('(min-width:1024px)').matches) {
-    sb.classList.remove('-translate-x-full','hidden');
+    sb.classList.add('open');
+    overlay?.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 });
 
@@ -381,38 +415,36 @@ window.ensureLayout  = ensureLayout;
 
 function setupMobileSidebar() {
   const container = document.getElementById('sidebar-container');
-  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
   const btn = document.querySelector('.mobile-menu-btn');
-  if (!container || !sidebar || !btn || btn.dataset.sidebarReady) return;
+  if (!container || !btn || btn.dataset.sidebarReady) return;
 
   const open = () => {
-    container.classList.remove('-translate-x-full');
-    sidebar.classList.add('active');
+    container.classList.add('open');
+    overlay?.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     btn.setAttribute('aria-expanded', 'true');
+    try { localStorage.removeItem('sidebarClosed'); } catch(e){}
+    document.cookie = 'sidebarClosed=; Max-Age=0; path=/';
   };
   const close = () => {
-    container.classList.add('-translate-x-full');
-    sidebar.classList.remove('active');
+    container.classList.remove('open');
+    overlay?.classList.add('hidden');
     document.body.style.overflow = '';
     btn.setAttribute('aria-expanded', 'false');
   };
 
   btn.addEventListener('click', () => {
-    container.classList.contains('-translate-x-full') ? open() : close();
+    container.classList.contains('open') ? close() : open();
   });
 
-  document.addEventListener('click', (e) => {
-    if (window.innerWidth > 768) return;
-    if (!container.contains(e.target) && !btn.contains(e.target)) close();
-  });
-
-  sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+  overlay?.addEventListener('click', close);
+  container.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
 
   window.addEventListener('resize', () => {
     if (window.innerWidth > 768) {
-      container.classList.remove('-translate-x-full');
-      sidebar.classList.remove('active');
+      container.classList.add('open');
+      overlay?.classList.add('hidden');
       document.body.style.overflow = '';
       btn.setAttribute('aria-expanded', 'false');
     } else {
@@ -420,7 +452,9 @@ function setupMobileSidebar() {
     }
   });
 
-  if (window.innerWidth <= 768) {
+  if (window.innerWidth > 768) {
+    container.classList.add('open');
+  } else {
     close();
   }
 

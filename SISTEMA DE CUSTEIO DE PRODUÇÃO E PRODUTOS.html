@@ -54,7 +54,13 @@
             userSpan.textContent = user.email || 'Usuário';
           }
           document.getElementById('sidebarToggle').addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
+        const container = document.getElementById('sidebar-container');
+        if (container) {
+          const isOpen = container.classList.toggle('open');
+          const overlay = document.getElementById('sidebar-overlay');
+          if (overlay) overlay.classList.toggle('hidden', !isOpen);
+          document.body.style.overflow = isOpen ? 'hidden' : '';
+        }
       });
         });
       }
