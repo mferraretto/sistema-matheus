@@ -36,6 +36,7 @@
       <select id="sobrasResponsavel" class="form-control w-48">
         <option value="">Selecione responsável</option>
       </select>
+      <button id="enviarSobrasBtn" class="btn btn-primary">Enviar</button>
     </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
@@ -92,6 +93,8 @@
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
     uploadManualBtn.addEventListener('click', uploadManualLabel);
+    const enviarSobrasBtn = document.getElementById('enviarSobrasBtn');
+    if (enviarSobrasBtn) enviarSobrasBtn.addEventListener('click', enviarSobras);
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -323,6 +326,21 @@
       if (sobrasResponsavelSelect) sobrasResponsavelSelect.value = '';
       showToast('Dia encerrado');
       verificarDia();
+    }
+
+    async function enviarSobras() {
+      if (!currentUser) return;
+      const sobrasQtd = parseInt(sobrasQtdInput.value) || 0;
+      const sobrasMotivo = sobrasMotivoInput.value.trim();
+      if (!sobrasQtd && !sobrasMotivo) {
+        showToast('Informe quantidade e motivo');
+        return;
+      }
+      await notificarUsuariosSobras(sobrasQtd, sobrasMotivo, sobrasResponsavelSelect.value);
+      sobrasQtdInput.value = '';
+      sobrasMotivoInput.value = '';
+      if (sobrasResponsavelSelect) sobrasResponsavelSelect.value = '';
+      showToast('Atualização enviada');
     }
 
     async function notificarUsuariosSobras(qtd, motivo, responsavelUid) {
