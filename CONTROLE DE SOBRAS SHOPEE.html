@@ -2683,11 +2683,42 @@ async function carregarAcompanhamentoGestor() {
     const usuarios = [];
     usuariosSnap.forEach(doc => usuarios.push({ uid: doc.id, ...doc.data() }));
 
+    const selectUsuario = document.getElementById('filtroUsuarioGestor');
+    if (selectUsuario && selectUsuario.options.length <= 1) {
+      usuarios.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.uid;
+        opt.textContent = u.nome || u.email || u.uid;
+        selectUsuario.appendChild(opt);
+      });
+    }
+
+    const filtroUsuario = selectUsuario ? selectUsuario.value : '';
+    const tipoData = document.getElementById('filtroDataTipo')?.value || 'mes';
+    let inicio = null, fim = null;
+    if (tipoData === 'dia') {
+      const dia = document.getElementById('filtroDiaGestor')?.value;
+      if (dia) { inicio = dia; fim = dia; }
+    } else if (tipoData === 'periodo') {
+      inicio = document.getElementById('filtroInicioGestor')?.value;
+      fim = document.getElementById('filtroFimGestor')?.value;
+    } else {
+      const mes = document.getElementById('filtroMesGestor')?.value;
+      if (mes) {
+        inicio = mes + '-01';
+        const [ano, m] = mes.split('-');
+        const ultimoDia = new Date(ano, m, 0).getDate();
+        fim = `${mes}-${String(ultimoDia).padStart(2,'0')}`;
+      }
+    }
+
     let totalEsperada = 0;
     const mapaSku = {};
     const pedidosErrados = [];
 
     for (const u of usuarios) {
+      if (filtroUsuario && u.uid !== filtroUsuario) continue;
+
       const produtosSnap = await db.collection('uid').doc(u.uid).collection('produtos').get();
       const custos = {};
       produtosSnap.forEach(p => {
@@ -2698,6 +2729,8 @@ async function carregarAcompanhamentoGestor() {
 
       const diasSnap = await db.collection('uid').doc(u.uid).collection('skusVendidos').get();
       for (const diaDoc of diasSnap.docs) {
+        const dataDia = diaDoc.id;
+        if (inicio && fim && (dataDia < inicio || dataDia > fim)) continue;
         const listaSnap = await diaDoc.ref.collection('lista').get();
         listaSnap.forEach(item => {
           const d = item.data();
@@ -2711,7 +2744,7 @@ async function carregarAcompanhamentoGestor() {
           mapaSku[sku].esperada += esperada;
           mapaSku[sku].real += liquido;
           if (Math.abs(liquido - esperada) > 0.01) {
-            pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: diaDoc.id });
+            pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: dataDia });
           }
         });
       }
@@ -2719,6 +2752,8 @@ async function carregarAcompanhamentoGestor() {
       const errSnap = await db.collection('uid').doc(u.uid).collection('pedidosErrados').get();
       errSnap.forEach(e => {
         const d = e.data();
+        const dataPedido = d.dia || d.data || d.dataPedido;
+        if (inicio && fim && dataPedido && (dataPedido < inicio || dataPedido > fim)) return;
         pedidosErrados.push({ usuario: u.nome || u.email || u.uid, ...d });
       });
     }
@@ -2764,6 +2799,34 @@ async function carregarAcompanhamentoGestor() {
     if (pedidosBody) pedidosBody.innerHTML = '<tr><td colspan="6" class="text-red-500">Erro ao carregar dados</td></tr>';
   }
 }
+
+function atualizarTipoFiltroGestor() {
+  const tipo = document.getElementById('filtroDataTipo')?.value;
+  const mesEl = document.getElementById('filtroMesGestor');
+  const diaEl = document.getElementById('filtroDiaGestor');
+  const periodoEl = document.getElementById('filtroPeriodoGestor');
+  mesEl?.classList.add('hidden');
+  diaEl?.classList.add('hidden');
+  periodoEl?.classList.add('hidden');
+  if (tipo === 'dia') diaEl?.classList.remove('hidden');
+  else if (tipo === 'periodo') periodoEl?.classList.remove('hidden');
+  else mesEl?.classList.remove('hidden');
+}
+
+function exportarSobrasGestorCSV() {
+  const tabela = document.getElementById('tabelaSobraSkuGestor');
+  if (!tabela) return;
+  let csv = [];
+  tabela.querySelectorAll('tr').forEach(row => {
+    const cols = Array.from(row.querySelectorAll('th,td')).map(c => c.innerText.replace(/;/g, ','));
+    csv.push(cols.join(';'));
+  });
+  const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'acompanhamento_sobras.csv';
+  link.click();
+}
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
 window.carregarControleVendas = carregarControleVendas;
 window.carregarAcompanhamento = carregarAcompanhamento;
@@ -2783,6 +2846,8 @@ window.exportarJSON = exportarJSON;
 window.verificarConexao = verificarConexao;
 window.editarMeta = editarMeta;
 window.excluirMeta = excluirMeta;
+window.atualizarTipoFiltroGestor = atualizarTipoFiltroGestor;
+window.exportarSobrasGestorCSV = exportarSobrasGestorCSV;
 window.analisarTendenciasIA = analisarTendenciasIA;
   window.atualizarStatusLogistica = atualizarStatusLogistica;
 window.atualizarRastreio = atualizarRastreio;

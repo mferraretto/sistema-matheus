@@ -4,6 +4,24 @@
     <h3 class="text-2xl font-bold text-gray-800 tracking-tight">Acompanhamento de Sobras</h3>
   </div>
   <div class="card-body space-y-6 p-6">
+    <div class="flex flex-wrap gap-2 items-end">
+      <select id="filtroUsuarioGestor" class="border rounded p-2">
+        <option value="">Todos usuários</option>
+      </select>
+      <select id="filtroDataTipo" class="border rounded p-2" onchange="atualizarTipoFiltroGestor()">
+        <option value="mes">Mês</option>
+        <option value="dia">Dia</option>
+        <option value="periodo">Período</option>
+      </select>
+      <input type="month" id="filtroMesGestor" class="border rounded p-2">
+      <input type="date" id="filtroDiaGestor" class="border rounded p-2 hidden">
+      <div id="filtroPeriodoGestor" class="flex gap-2 hidden">
+        <input type="date" id="filtroInicioGestor" class="border rounded p-2">
+        <input type="date" id="filtroFimGestor" class="border rounded p-2">
+      </div>
+      <button class="px-4 py-2 rounded text-white bg-indigo-600" onclick="carregarAcompanhamentoGestor()">Filtrar</button>
+      <button class="px-4 py-2 rounded text-white bg-green-600" onclick="exportarSobrasGestorCSV()">Exportar</button>
+    </div>
     <div class="text-lg">Total Sobra Esperada: <strong id="totalSobraGestor">R$ 0,00</strong></div>
     <div class="table-container overflow-x-auto rounded-lg shadow">
       <table id="tabelaSobraSkuGestor" class="data-table min-w-full text-sm text-left">
