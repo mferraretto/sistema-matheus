@@ -2079,6 +2079,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
         selectSku.innerHTML = '<option value="todos">Todos</option>' + skus.map(s => `<option value="${s}">${s}</option>`).join('');
         cards.innerHTML = '';
         renderizarPrevisao();
+        renderizarTopSkus();
       } else {
         previsaoDados = { skus: {} };
         selectSku.innerHTML = '<option value="todos">Todos</option>';
@@ -2139,6 +2140,24 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
             ${labels.map(d => `<tr><td class="px-2 py-1 border">${d}</td><td class="px-2 py-1 border">${diario[d].toFixed(0)}</td></tr>`).join('')}
           </tbody>
         </table>`;
+    }
+
+    function renderizarTopSkus() {
+      const container = document.getElementById('topSkusPrevisao');
+      if (!container) return;
+      const lista = Object.entries(previsaoDados.skus || {})
+        .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+        .slice(0, 5);
+      if (!lista.length) {
+        container.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+        return;
+      }
+      container.innerHTML = `
+        <h4 class="font-bold mb-2">Top 5 SKUs projetados</h4>
+        <ul class="list-disc pl-5">
+          ${lista.map(([sku, info]) => `<li>${sku}: ${info.total.toFixed(0)}</li>`).join('')}
+        </ul>
+      `;
     }
 
     function gerarDatas(qtd, endDate = new Date()) {
