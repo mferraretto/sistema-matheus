@@ -6,13 +6,24 @@ service cloud.firestore {
         get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor', 'ADM'];
     }
 
-    match /usuarios/{uid}/comissoes/{anoMes} {
-      allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-      match /saques/{saqueId} {
+    match /usuarios/{uid} {
+      allow get: if request.auth != null && (
+        request.auth.uid == uid ||
+        isGestorOrADM(request.auth.uid) ||
+        (request.auth.token.email != null &&
+         request.auth.token.email in resource.data.responsavelFinanceiroEmail)
+      );
+      allow list: if request.auth != null;
+      allow create, update, delete: if request.auth != null && request.auth.uid == uid;
+
+      match /comissoes/{anoMes} {
         allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-      }
-      match /ajustes/{ajusteId} {
-        allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
+        match /saques/{saqueId} {
+          allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
+        }
+        match /ajustes/{ajusteId} {
+          allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
+        }
       }
     }
 
