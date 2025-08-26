@@ -153,6 +153,17 @@
       }
     });
 
+    async function adicionarResponsaveis(documentos, responsaveis) {
+      if (!documentos.length) return;
+      const batch = db.batch();
+      documentos.forEach(docSnap => {
+        responsaveis.forEach(uid => {
+          batch.update(docSnap.ref, { destinatarios: firebase.firestore.FieldValue.arrayUnion(uid) });
+        });
+      });
+      await batch.commit();
+    }
+
     document.getElementById('updateFinanceHistory').addEventListener('click', async () => {
       statusEl.classList.add('hidden');
       const financeEmails = financeInput.value.split(',').map(e => e.trim()).filter(e => e);
@@ -171,13 +182,24 @@
         }
         if (!responsaveis.length) throw new Error('Responsável não encontrado');
         const snap = await db.collection('financeiroAtualizacoes').where('destinatarios', 'array-contains', currentUser.uid).get();
-        const batch = db.batch();
-        snap.forEach(docSnap => {
-          responsaveis.forEach(uid => {
-            batch.update(docSnap.ref, { destinatarios: firebase.firestore.FieldValue.arrayUnion(uid) });
-          });
-        });
-        await batch.commit();
+        await adicionarResponsaveis(snap.docs, responsaveis);
+        const fatDocs = await db.collection(`uid/${currentUser.uid}/faturamento`).get();
+        for (const doc of fatDocs.docs) {
+          await adicionarResponsaveis([doc], responsaveis);
+          const lojas = await doc.ref.collection('lojas').get();
+          await adicionarResponsaveis(lojas.docs, responsaveis);
+        }
+        const sobraDocs = await db.collection(`uid/${currentUser.uid}/skusVendidos`).get();
+        for (const doc of sobraDocs.docs) {
+          await adicionarResponsaveis([doc], responsaveis);
+          const lista = await doc.ref.collection('lista').get();
+          await adicionarResponsaveis(lista.docs, responsaveis);
+        }
+        const comissoes = await db.collection(`usuarios/${currentUser.uid}/comissoes`).get();
+        for (const c of comissoes.docs) {
+          const saques = await c.ref.collection('saques').get();
+          await adicionarResponsaveis(saques.docs, responsaveis);
+        }
         statusEl.textContent = 'Situação atualizada com sucesso!';
         statusEl.classList.remove('hidden');
         statusEl.classList.remove('text-red-600');
