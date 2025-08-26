@@ -9,7 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="css/components.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -63,6 +63,38 @@
     </div>
 
     <div id="cardsContainer"></div>
+
+    <section id="saquesGestor" class="card hidden">
+      <div class="card-header flex justify-between items-center">
+        <h2 class="text-xl font-bold">Saques e Comissões</h2>
+        <div class="flex items-center gap-2">
+          <select id="percentualMarcar" class="form-control">
+            <option value="0">0%</option>
+            <option value="0.03">3%</option>
+            <option value="0.04">4%</option>
+            <option value="0.05">5%</option>
+          </select>
+          <button id="btnMarcarPago" class="btn btn-primary text-sm">Marcar como Pago</button>
+        </div>
+      </div>
+      <div class="card-body overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2"><input type="checkbox" id="chkSaquesFinanceiro" /></th>
+              <th class="px-4 py-2 text-left">Data</th>
+              <th class="px-4 py-2 text-left">Loja</th>
+              <th class="px-4 py-2 text-right">Saque</th>
+              <th class="px-4 py-2 text-right">%</th>
+              <th class="px-4 py-2 text-right">Comissão</th>
+              <th class="px-4 py-2 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbodySaquesFinanceiro" class="divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+      <div class="card-footer text-right text-sm" id="resumoSaquesFinanceiro"></div>
+    </section>
   </main>
   <div id="faturamentoUpdatesCard" class="card card-orange fixed top-20 right-4 w-72 max-h-96 overflow-y-auto hidden">
     <div class="card-header">
