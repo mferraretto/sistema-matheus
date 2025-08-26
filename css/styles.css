@@ -56,17 +56,15 @@ body {
   padding: 30px;
 }
 
-/* RESOLVIDO: offset só no desktop e só no wrapper */
-@media (min-width: 1024px) {
-  body.has-sidebar .navbar { left: var(--sidebar-width); }
-  .content-wrapper { padding-left: var(--sidebar-width); }
+body.has-sidebar .navbar {
+  left: var(--sidebar-width);
 }
 
-/* Mobile/Tablet: nada de offset lateral */
-@media (max-width: 1023.98px) {
-  body.has-sidebar .navbar { left: 0; }
-  .content-wrapper { padding-left: 0; margin-left: 0; }
+body.has-sidebar .content-wrapper {
+  margin-left: var(--sidebar-width);
 }
+
+
 .card-header-icon {
   width: 50px;
   height: 50px;
@@ -325,27 +323,16 @@ input:checked + .dark-mode-slider:before {
     margin-right: 0.75rem;
   }
 }
-/* Desktop: sidebar empurra o conteúdo e a navbar */
-@media (min-width: 1024px) {
-  body.has-sidebar .navbar {
-    left: var(--sidebar-width);
-  }
-  .content-wrapper {
-    padding-left: var(--sidebar-width);
-  }
-}
-
-/* Mobile/Tablet: nada de offset lateral */
-@media (max-width: 1023.98px) {
+@media (max-width:768px) {
+  /* Sidebar visibility is handled via #sidebar-container classes.
+     Removing legacy transforms prevents double translations on mobile. */
   body.has-sidebar .navbar {
     left: 0;
   }
-  .content-wrapper {
-    padding-left: 0;
-    margin-left: 0; /* mantenha 0 se existir legado usando margin */
+  body.has-sidebar .content-wrapper {
+    margin-left: 0;
   }
 }
-
 .badge {
   margin-left: 5px
 }
@@ -1003,22 +990,11 @@ tr:hover td {
 }
 @media (max-width:992px) {
   .navbar {
+    left: 0;
     justify-content: space-between;
   }
   .main-content {
     margin-left: 0;
-  }
-  body.has-sidebar .top-navbar {
-    left: 0;
-  }
-  body.has-sidebar .content-wrapper {
-    margin-left: 0;
-  }
-  .sidebar {
-    transform: translateX(-100%);
-  }
-  .sidebar.active {
-    transform: translateX(0);
   }
   .menu-toggle {
     display: block;
@@ -1080,7 +1056,7 @@ tr:hover td {
     grid-template-columns: repeat(2,minmax(0,1fr))
   }
 }
-@media (min-width:992px) {
+@media (min-width:1024px) {
   .lg\:grid-cols-3 {
     grid-template-columns: repeat(3,minmax(0,1fr))
   }
@@ -1323,7 +1299,7 @@ body.dark-mode th {
   box-shadow: 0 2px 10px rgba(0,0,0,.05);
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--sidebar-width);
   right: 0;
   z-index: 99;
   display: flex;
@@ -1747,7 +1723,11 @@ input:checked + .toggle-slider:before {
     width: 95%;
     margin: 10px auto
   }
+  .navbar {
+    left: 0;
+  }
   .main-content {
+    margin-left: 0;
     padding-left: 1rem;
     padding-right: 1rem;
     padding-top: 70px;
@@ -1847,7 +1827,7 @@ input:checked + .toggle-slider:before {
   left: 0;
   top: 0;
   padding-top: 1rem;
-  z-index: 100;
+  z-index: 50;
   transition: transform 0.3s ease;
 }
 
@@ -1899,10 +1879,17 @@ body.dark .sidebar-link.active {
 }
 
 /* Desktop sidebar beside content */
-@media (min-width:992px){
+@media (min-width:1024px){
   .main-content { margin-left: var(--sidebar-width); }
-  body.has-sidebar .top-navbar { left: var(--sidebar-width); }
-  body.has-sidebar .content-wrapper { margin-left: var(--sidebar-width); }
-  .navbar { left: var(--sidebar-width); }
+}
+
+/* Mobile off-canvas sidebar */
+@media (max-width:768px){
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
 }
 
