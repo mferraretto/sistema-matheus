@@ -182,20 +182,49 @@ function mostrarResumoSelecionados() {
 
 function exportarSelecionadosExcel() {
   if (selecionados.size === 0) return;
-  const campos = ['Data', 'Loja', 'Valor', '% Pago', 'Comissao'];
-  const linhas = [campos.join(';')];
+
+  // Cabeçalho principal
+  const linhas = [['Data', 'Loja', 'Saque', '%', 'Comissão', 'Status'].join(';')];
+  const resumo = {};
+
+  // Linhas detalhadas e consolidação por loja
   selecionados.forEach(id => {
     const s = saquesCache[id];
-    if (s) {
-      linhas.push([
-        s.data.substring(0, 10),
-        s.origem || '',
-        s.valor.toFixed(2),
-        (s.percentualPago * 100).toFixed(0) + '%',
-        s.comissaoPaga.toFixed(2)
-      ].join(';'));
+    if (!s) return;
+    const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
+    linhas.push([
+      s.data.substring(0, 10),
+      s.origem || '',
+      s.valor.toFixed(2),
+      (s.percentualPago * 100).toFixed(0) + '%',
+      s.comissaoPaga.toFixed(2),
+      status
+    ].join(';'));
+
+    if (!resumo[s.origem || '-']) {
+      resumo[s.origem || '-'] = { total: 0, comissao: 0, pagos: true };
     }
+    resumo[s.origem || '-'].total += s.valor;
+    resumo[s.origem || '-'].comissao += s.comissaoPaga;
+    resumo[s.origem || '-'].pagos = resumo[s.origem || '-'].pagos && s.percentualPago > 0;
   });
+
+  // Tabela de resumo
+  linhas.push('');
+  linhas.push('Resumo Final');
+  linhas.push(['Loja', 'Total', '%', 'Comissão Total', 'Status'].join(';'));
+  Object.keys(resumo).forEach(loja => {
+    const r = resumo[loja];
+    const perc = r.total > 0 ? (r.comissao / r.total) * 100 : 0;
+    linhas.push([
+      loja,
+      r.total.toFixed(2),
+      perc.toFixed(0) + '%',
+      r.comissao.toFixed(2),
+      r.pagos ? 'PAGO' : 'A PAGAR'
+    ].join(';'));
+  });
+
   const csv = linhas.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -212,53 +241,79 @@ function exportarSelecionadosPDF() {
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
+
   let totalSaque = 0;
   let totalComissaoPdf = 0;
-
   const body = [];
+  const resumo = {};
 
-selecionados.forEach(id => {
-  const s = saquesCache[id];
-  if (!s) return;
+  selecionados.forEach(id => {
+    const s = saquesCache[id];
+    if (!s) return;
+    const valor = Number(s.valor || 0);
+    const comissao = Number(s.comissaoPaga || 0);
+    const perc = (typeof s.percentualPago === 'number' && isFinite(s.percentualPago))
+      ? s.percentualPago * 100
+      : (valor > 0 ? (comissao / valor) * 100 : 0);
+    const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
 
-  const valor = Number(s.valor || 0);
-  const comissao = Number(s.comissaoPaga || 0);
+    body.push([
+      (s.data || '').substring(0, 10),
+      s.origem || '',
+      valor.toFixed(2),
+      `${perc.toFixed(0)}%`,
+      comissao.toFixed(2),
+      status
+    ]);
 
-  // Usa percentualPago (ex.: 0.03 => 3%) se existir; senão calcula pela razão
-  const perc = (typeof s.percentualPago === 'number' && isFinite(s.percentualPago))
-    ? s.percentualPago * 100
-    : (valor > 0 ? (comissao / valor) * 100 : 0);
+    totalSaque += valor;
+    totalComissaoPdf += comissao;
 
-  body.push([
-    (s.data || '').substring(0, 10),
-    s.origem || '',
-    valor.toFixed(2),
-    `${perc.toFixed(0)}%`,
-    comissao.toFixed(2)
-  ]);
+    if (!resumo[s.origem || '-']) {
+      resumo[s.origem || '-'] = { total: 0, comissao: 0, pagos: true };
+    }
+    resumo[s.origem || '-'].total += valor;
+    resumo[s.origem || '-'].comissao += comissao;
+    resumo[s.origem || '-'].pagos = resumo[s.origem || '-'].pagos && s.percentualPago > 0;
+  });
 
-  totalSaque += valor;
-  totalComissaoPdf += comissao;
+  doc.autoTable({
+    head: [['Data', 'Loja', 'Saque', '%', 'Comissão', 'Status']],
+    body,
+    startY: 25
+  });
 
-});
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 25;
 
-doc.autoTable({
-  head: [['Data', 'Loja', 'Valor Saque', '% Comissão', 'Comissão']],
-  body,
-  startY: 25
-});
+  // Resumo por loja
+  const resumoBody = Object.keys(resumo).map(loja => {
+    const r = resumo[loja];
+    const perc = r.total > 0 ? (r.comissao / r.total) * 100 : 0;
+    return [
+      loja,
+      r.total.toFixed(2),
+      perc.toFixed(0) + '%',
+      r.comissao.toFixed(2),
+      r.pagos ? 'PAGO' : 'A PAGAR'
+    ];
+  });
 
-const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
-const percComissaoMedio = totalSaque > 0 ? (totalComissaoPdf / totalSaque) * 100 : 0;
+  doc.autoTable({
+    head: [['Loja', 'Total', '%', 'Comissão Total', 'Status']],
+    body: resumoBody,
+    startY: finalY
+  });
 
-doc.setFontSize(12);
-doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
-doc.text(`Total de Comissão: R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY + 20);
+  const finalY2 = doc.lastAutoTable ? doc.lastAutoTable.finalY : finalY;
+  const percComissaoMedio = totalSaque > 0 ? (totalComissaoPdf / totalSaque) * 100 : 0;
 
-doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY + 30);
+  doc.setFontSize(12);
+  doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY2 + 10);
+  doc.text(`Total de Comissão: R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY2 + 20);
+  doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY2 + 30);
 
-// Evite acentos no nome de arquivo para compatibilidade
-doc.save('fechamento-comissao.pdf');
+  // Evite acentos no nome de arquivo para compatibilidade
+  doc.save('fechamento-comissao.pdf');
 
 }
 
