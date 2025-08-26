@@ -37,6 +37,7 @@
     <ul id="teamMembersList" class="mt-4 space-y-2 max-w-lg"></ul>
     <h2 id="financialUsersTitle" class="text-xl font-bold mt-8 mb-4 hidden">Usuários sob sua responsabilidade financeira</h2>
     <ul id="financialUsersList" class="mt-4 space-y-2 max-w-lg"></ul>
+    <button id="updateFinanceHistory" class="bg-indigo-600 text-white px-4 py-2 rounded mt-4">Atualizar situação</button>
   </div>
   <script type="module">
     import { firebaseConfig } from './firebase-config.js';
@@ -149,6 +150,44 @@
         teamForm.reset();
       } catch (err) {
         console.error('Erro ao adicionar membro:', err);
+      }
+    });
+
+    document.getElementById('updateFinanceHistory').addEventListener('click', async () => {
+      statusEl.classList.add('hidden');
+      const financeEmails = financeInput.value.split(',').map(e => e.trim()).filter(e => e);
+      if (!financeEmails.length) {
+        statusEl.textContent = 'Informe os e-mails do responsável financeiro';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
+        return;
+      }
+      try {
+        const responsaveis = [];
+        for (const email of financeEmails) {
+          const snap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
+          if (!snap.empty) responsaveis.push(snap.docs[0].id);
+        }
+        if (!responsaveis.length) throw new Error('Responsável não encontrado');
+        const snap = await db.collection('financeiroAtualizacoes').where('destinatarios', 'array-contains', currentUser.uid).get();
+        const batch = db.batch();
+        snap.forEach(docSnap => {
+          responsaveis.forEach(uid => {
+            batch.update(docSnap.ref, { destinatarios: firebase.firestore.FieldValue.arrayUnion(uid) });
+          });
+        });
+        await batch.commit();
+        statusEl.textContent = 'Situação atualizada com sucesso!';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-red-600');
+        statusEl.classList.add('text-green-600');
+      } catch (err) {
+        console.error('Erro ao atualizar situação:', err);
+        statusEl.textContent = 'Erro ao atualizar situação';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
       }
     });
 
