@@ -83,9 +83,14 @@ async function carregarSaques() {
   for (let i = 0; i < dados.length; i++) {
     const s = dados[i];
     const dia = s.data.substring(0, 10);
+    const pago = s.percentualPago > 0;
     const tr = document.createElement('tr');
+    if (pago) tr.className = 'bg-green-100';
     tr.innerHTML = `
-      <td class="px-4 py-2"><input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)"></td>
+      <td class="px-4 py-2">
+        <input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)">
+        ${pago ? `<span class=\"ml-2 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded\">PAGO ${(s.percentualPago * 100).toFixed(0)}%</span>` : ''}
+      </td>
       <td class="px-4 py-2">${dia}</td>
       <td class="px-4 py-2">${s.origem || '-'}</td>
       <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -158,7 +163,7 @@ function atualizarResumoSelecionados() {
   div.style.display = 'flex';
 }
 
-async function aplicarPercentualSelecionados() {
+async function marcarComoPagoSelecionados() {
   const perc = parseFloat(document.getElementById('percentualSelecionado').value);
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   for (const id of selecionados) {
@@ -168,6 +173,11 @@ async function aplicarPercentualSelecionados() {
   }
   selecionados.clear();
   carregarSaques();
+}
+
+function mostrarResumoSelecionados() {
+  const texto = document.getElementById('resumoSelecionados');
+  if (texto) alert(texto.textContent);
 }
 
 function editarSaque(id) {
@@ -227,6 +237,7 @@ if (typeof window !== 'undefined') {
   window.fecharMes = fecharMes;
   window.toggleSelecao = toggleSelecao;
   window.toggleSelecaoTodos = toggleSelecaoTodos;
-  window.aplicarPercentualSelecionados = aplicarPercentualSelecionados;
+  window.marcarComoPagoSelecionados = marcarComoPagoSelecionados;
+  window.mostrarResumoSelecionados = mostrarResumoSelecionados;
 }
 
