@@ -180,6 +180,59 @@ function mostrarResumoSelecionados() {
   if (texto) alert(texto.textContent);
 }
 
+function exportarSelecionadosExcel() {
+  if (selecionados.size === 0) return;
+  const campos = ['Data', 'Loja', 'Valor', '% Pago', 'Comissao'];
+  const linhas = [campos.join(';')];
+  selecionados.forEach(id => {
+    const s = saquesCache[id];
+    if (s) {
+      linhas.push([
+        s.data.substring(0, 10),
+        s.origem || '',
+        s.valor.toFixed(2),
+        (s.percentualPago * 100).toFixed(0) + '%',
+        s.comissaoPaga.toFixed(2)
+      ].join(';'));
+    }
+  });
+  const csv = linhas.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'saques.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportarSelecionadosPDF() {
+  if (selecionados.size === 0 || !window.jspdf) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('Boleto de Cobran\u00e7a de Comiss\u00e3o', 105, 15, { align: 'center' });
+  const body = [];
+  let totalComissao = 0;
+  selecionados.forEach(id => {
+    const s = saquesCache[id];
+    if (s) {
+      body.push([
+        s.data.substring(0, 10),
+        s.origem || '',
+        s.valor.toFixed(2),
+        s.comissaoPaga.toFixed(2)
+      ]);
+      totalComissao += s.comissaoPaga || 0;
+    }
+  });
+  doc.autoTable({ head: [['Data', 'Loja', 'Valor Saque', 'Comiss\u00e3o']], body, startY: 25 });
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
+  doc.setFontSize(12);
+  doc.text(`Total de Comiss\u00e3o: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 10);
+  doc.save('boletos-comissao.pdf');
+}
+
 function editarSaque(id) {
   const s = saquesCache[id];
   document.getElementById('dataSaque').value = s.data.substring(0, 10);
@@ -239,5 +292,7 @@ if (typeof window !== 'undefined') {
   window.toggleSelecaoTodos = toggleSelecaoTodos;
   window.marcarComoPagoSelecionados = marcarComoPagoSelecionados;
   window.mostrarResumoSelecionados = mostrarResumoSelecionados;
+  window.exportarSelecionadosExcel = exportarSelecionadosExcel;
+  window.exportarSelecionadosPDF = exportarSelecionadosPDF;
 }
 
