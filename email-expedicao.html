@@ -179,9 +179,11 @@
             .limit(1)
             .get();
           if (!exist.empty) {
-            await exist.docs[0].ref.update({
-              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-            });
+            if (responsaveis.length) {
+              await exist.docs[0].ref.update({
+                destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+              });
+            }
           } else {
             await db.collection('financeiroAtualizacoes').add({
               descricao: `Faturamento ${dia}: Bruto R$ ${bruto.toFixed(2)}, Líquido R$ ${liquido.toFixed(2)}`,
@@ -218,9 +220,11 @@
             .limit(1)
             .get();
           if (!exist.empty) {
-            await exist.docs[0].ref.update({
-              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-            });
+            if (responsaveis.length) {
+              await exist.docs[0].ref.update({
+                destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+              });
+            }
           } else {
             await db.collection('financeiroAtualizacoes').add({
               descricao: `Sobras ${dia}: ${qtd} ${motivo ? '- ' + motivo : ''}`,
@@ -263,9 +267,11 @@
               .limit(1)
               .get();
             if (!exist.empty) {
-              await exist.docs[0].ref.update({
-                destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-              });
+              if (responsaveis.length) {
+                await exist.docs[0].ref.update({
+                  destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+                });
+              }
             } else {
               const descricao = `Saque ${dados.data || ''}: R$ ${(Number(dados.valor) || 0).toFixed(2)} - ${(Number(dados.percentualPago) || 0) * 100}% pago${dados.origem ? ' - ' + dados.origem : ''}`;
               await db.collection('financeiroAtualizacoes').add({
@@ -309,29 +315,26 @@
             notFound.push(email);
           }
         }
-        if (!responsaveis.length) {
-          statusEl.textContent = `Responsável não encontrado: ${notFound.join(', ')}`;
-          statusEl.classList.remove('hidden');
-          statusEl.classList.remove('text-green-600');
-          statusEl.classList.add('text-red-600');
-          return;
-        }
         const snap = await db
           .collection('financeiroAtualizacoes')
           .where('destinatarios', 'array-contains', currentUser.uid)
           .get();
-        const batch = db.batch();
-        snap.forEach(docSnap => {
-          batch.update(docSnap.ref, {
-            destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+        if (responsaveis.length) {
+          const batch = db.batch();
+          snap.forEach(docSnap => {
+            batch.update(docSnap.ref, {
+              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+            });
           });
-        });
-        await batch.commit();
+          await batch.commit();
+        }
         await syncFaturamento(responsaveis);
         await syncSobras(responsaveis);
         await syncSaques(responsaveis);
         if (notFound.length) {
-          statusEl.textContent = `Situação atualizada, mas não encontrados: ${notFound.join(', ')}`;
+          statusEl.textContent = responsaveis.length
+            ? `Situação atualizada, mas não encontrados: ${notFound.join(', ')}`
+            : `Responsável não encontrado: ${notFound.join(', ')}`;
           statusEl.classList.remove('hidden');
           statusEl.classList.remove('text-green-600');
           statusEl.classList.add('text-red-600');
@@ -341,18 +344,18 @@
           statusEl.classList.remove('text-red-600');
           statusEl.classList.add('text-green-600');
         }
-        } catch (err) {
-          // Exibe a mensagem de erro ao usuário sem interromper o fluxo
-          const message = err?.message || 'Erro ao atualizar situação';
-          if (message !== 'Responsável não encontrado') {
-            console.error('Erro ao atualizar situação:', err);
-          }
-          statusEl.textContent = message;
-          statusEl.classList.remove('hidden');
-          statusEl.classList.remove('text-green-600');
-          statusEl.classList.add('text-red-600');
+      } catch (err) {
+        // Exibe a mensagem de erro ao usuário sem interromper o fluxo
+        const message = err?.message || 'Erro ao atualizar situação';
+        if (message !== 'Responsável não encontrado') {
+          console.error('Erro ao atualizar situação:', err);
         }
-      });
+        statusEl.textContent = message;
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
+      }
+    });
 
   </script>
   <script src="shared.js"></script>
