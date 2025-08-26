@@ -483,7 +483,8 @@ document.addEventListener('sidebarLoaded', async () => {
     const db = getFirestore();
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
-      const perfil = (snap.exists() && String(snap.data().perfil || '') || '').trim().toLowerCase();
+      if (!snap.exists()) return; // Perfil ainda não disponível, não aplica filtros
+      const perfil = (String(snap.data().perfil || '')).trim().toLowerCase();
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
       const isGestor = ['gestor', 'mentor'].includes(perfil);
@@ -497,8 +498,6 @@ document.addEventListener('sidebarLoaded', async () => {
           const li = a.closest('li') || a.parentElement;
           if (li && !ADMIN_GESTOR_MENU_IDS.includes(a.id)) li.style.display = '';
         });
-      } else {
-        showOnly([]);
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
@@ -507,7 +506,8 @@ document.addEventListener('sidebarLoaded', async () => {
 
   const auth = getAuth();
   onAuthStateChanged(auth, user => {
-    if (user) applySidebarPermissions(user.uid);
-    else showOnly([]);
+    if (user) {
+      applySidebarPermissions(user.uid);
+    }
   });
 });
