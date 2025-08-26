@@ -341,14 +341,18 @@
           statusEl.classList.remove('text-red-600');
           statusEl.classList.add('text-green-600');
         }
-      } catch (err) {
-        console.error('Erro ao atualizar situação:', err);
-        statusEl.textContent = 'Erro ao atualizar situação';
-        statusEl.classList.remove('hidden');
-        statusEl.classList.remove('text-green-600');
-        statusEl.classList.add('text-red-600');
-      }
-    });
+        } catch (err) {
+          // Exibe a mensagem de erro ao usuário sem interromper o fluxo
+          const message = err?.message || 'Erro ao atualizar situação';
+          if (message !== 'Responsável não encontrado') {
+            console.error('Erro ao atualizar situação:', err);
+          }
+          statusEl.textContent = message;
+          statusEl.classList.remove('hidden');
+          statusEl.classList.remove('text-green-600');
+          statusEl.classList.add('text-red-600');
+        }
+      });
 
   </script>
   <script src="shared.js"></script>
