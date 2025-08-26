@@ -35,6 +35,28 @@ body {
   font-family: 'Poppins', sans-serif;
 }
 
+#sidebar-container {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  z-index: 40;
+}
+
+#sidebar-container.open {
+  transform: translateX(0);
+}
+
+#sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 30;
+  display: none;
+}
+
+#sidebar-overlay.show {
+  display: block;
+}
+
 .section {
   background-color: var(--card-bg);
   border-radius: 1rem;
@@ -62,6 +84,15 @@ body.has-sidebar .navbar {
 
 body.has-sidebar .content-wrapper {
   margin-left: var(--sidebar-width);
+}
+
+@media (max-width:768px) {
+  body.has-sidebar .navbar {
+    left: 0;
+  }
+  body.has-sidebar .content-wrapper {
+    margin-left: 0;
+  }
 }
 
 
@@ -321,16 +352,6 @@ input:checked + .dark-mode-slider:before {
   }
   .sidebar-link .mr-3 {
     margin-right: 0.75rem;
-  }
-}
-@media (max-width:768px) {
-  /* Sidebar visibility is handled via #sidebar-container classes.
-     Removing legacy transforms prevents double translations on mobile. */
-  body.has-sidebar .navbar {
-    left: 0;
-  }
-  body.has-sidebar .content-wrapper {
-    margin-left: 0;
   }
 }
 .badge {
