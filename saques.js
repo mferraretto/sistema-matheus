@@ -212,8 +212,8 @@ function exportarSelecionadosPDF() {
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
-  let totalSaque = 0;
-  let totalComissao = 0;
+  let totalSaquePDF = 0;
+  let totalComissaoPDF = 0;
   const body = [];
 
 selecionados.forEach(id => {
@@ -236,8 +236,8 @@ selecionados.forEach(id => {
     comissao.toFixed(2)
   ]);
 
-  totalSaque += valor;
-  totalComissao += comissao;
+  totalSaquePDF += valor;
+  totalComissaoPDF += comissao;
 });
 
 doc.autoTable({
@@ -247,11 +247,11 @@ doc.autoTable({
 });
 
 const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
-const percComissaoMedio = totalSaque > 0 ? (totalComissao / totalSaque) * 100 : 0;
+const percComissaoMedio = totalSaquePDF > 0 ? (totalComissaoPDF / totalSaquePDF) * 100 : 0;
 
 doc.setFontSize(12);
-doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
-doc.text(`Total de Comissão: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 20);
+doc.text(`Total de Saques: R$ ${totalSaquePDF.toFixed(2)}`, 14, finalY + 10);
+doc.text(`Total de Comissão: R$ ${totalComissaoPDF.toFixed(2)}`, 14, finalY + 20);
 doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY + 30);
 
 // Evite acentos no nome de arquivo para compatibilidade
