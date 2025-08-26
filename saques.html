@@ -53,27 +53,40 @@
         <h2 class="text-xl font-bold">📑 Saques Registrados</h2>
       </div>
       <div class="card-body overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-2 text-left">Data</th>
-              <th class="px-4 py-2 text-left">Loja</th>
-              <th class="px-4 py-2 text-right">Valor</th>
-              <th class="px-4 py-2 text-right">% Pago</th>
-              <th class="px-4 py-2 text-right">Comissão Paga</th>
-              <th class="px-4 py-2"></th>
-            </tr>
-          </thead>
-          <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2"><input type="checkbox" id="chkAll" onclick="toggleSelecaoTodos(this.checked)" /></th>
+                <th class="px-4 py-2 text-left">Data</th>
+                <th class="px-4 py-2 text-left">Loja</th>
+                <th class="px-4 py-2 text-right">Valor</th>
+                <th class="px-4 py-2 text-right">% Pago</th>
+                <th class="px-4 py-2 text-right">Comissão Paga</th>
+                <th class="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
+          </table>
+          <div id="acoesSelecionados" class="mt-4 flex-col md:flex-row gap-2 items-center" style="display:none;">
+            <span id="resumoSelecionados" class="text-sm"></span>
+            <div class="flex items-center gap-2">
+              <select id="percentualSelecionado" class="form-control">
+                <option value="0">0%</option>
+                <option value="0.03">3%</option>
+                <option value="0.04">4%</option>
+                <option value="0.05">5%</option>
+              </select>
+              <button onclick="aplicarPercentualSelecionados()" class="btn btn-primary">Aplicar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
 
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="saques.js"></script>
-  <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>
-  <script src="shared.js"></script>
-</body>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="saques.js"></script>
+    <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>
+    <script src="shared.js"></script>
+  </body>
 </html>
 

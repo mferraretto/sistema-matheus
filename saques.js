@@ -19,6 +19,7 @@ let uidAtual = null;
 let unsubscribeResumo = null;
 let editandoId = null;
 let saquesCache = {};
+let selecionados = new Set();
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -62,6 +63,10 @@ async function carregarSaques() {
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   const tbody = document.getElementById('tbodySaques');
   tbody.innerHTML = '';
+  selecionados.clear();
+  atualizarResumoSelecionados();
+  const chkAll = document.getElementById('chkAll');
+  if (chkAll) chkAll.checked = false;
   const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
   saquesCache = {};
@@ -80,6 +85,7 @@ async function carregarSaques() {
     const dia = s.data.substring(0, 10);
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td class="px-4 py-2"><input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)"></td>
       <td class="px-4 py-2">${dia}</td>
       <td class="px-4 py-2">${s.origem || '-'}</td>
       <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -98,6 +104,7 @@ async function carregarSaques() {
       const trTot = document.createElement('tr');
       trTot.className = 'bg-gray-100 font-semibold';
       trTot.innerHTML = `
+        <td></td>
         <td class="px-4 py-2" colspan="2">Total do dia</td>
         <td class="px-4 py-2 text-right">R$ ${tot.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         <td class="px-4 py-2 text-right">-</td>
@@ -112,6 +119,54 @@ async function carregarSaques() {
 async function excluirSaque(id) {
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   await deletarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: id });
+  carregarSaques();
+}
+
+function toggleSelecao(id, marcado) {
+  if (marcado) selecionados.add(id); else selecionados.delete(id);
+  atualizarResumoSelecionados();
+}
+
+function toggleSelecaoTodos(marcado) {
+  selecionados.clear();
+  document.querySelectorAll('.saque-select').forEach(cb => {
+    cb.checked = marcado;
+    if (marcado) selecionados.add(cb.dataset.id);
+  });
+  atualizarResumoSelecionados();
+}
+
+function atualizarResumoSelecionados() {
+  const div = document.getElementById('acoesSelecionados');
+  const texto = document.getElementById('resumoSelecionados');
+  if (!div || !texto) return;
+  if (selecionados.size === 0) {
+    div.style.display = 'none';
+    texto.textContent = '';
+    return;
+  }
+  let totalValor = 0;
+  let totalComissao = 0;
+  selecionados.forEach(id => {
+    const s = saquesCache[id];
+    if (s) {
+      totalValor += s.valor || 0;
+      totalComissao += s.comissaoPaga || 0;
+    }
+  });
+  texto.textContent = `${selecionados.size} selecionado(s) - Valor: R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, Comissão: R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  div.style.display = 'flex';
+}
+
+async function aplicarPercentualSelecionados() {
+  const perc = parseFloat(document.getElementById('percentualSelecionado').value);
+  const anoMes = document.getElementById('filtroMes').value || anoMesBR();
+  for (const id of selecionados) {
+    const s = saquesCache[id];
+    if (!s) continue;
+    await atualizarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: id, dataISO: s.data, valor: s.valor, percentualPago: perc, origem: s.origem });
+  }
+  selecionados.clear();
   carregarSaques();
 }
 
@@ -170,5 +225,8 @@ if (typeof window !== 'undefined') {
   window.excluirSaque = excluirSaque;
   window.editarSaque = editarSaque;
   window.fecharMes = fecharMes;
+  window.toggleSelecao = toggleSelecao;
+  window.toggleSelecaoTodos = toggleSelecaoTodos;
+  window.aplicarPercentualSelecionados = aplicarPercentualSelecionados;
 }
 

@@ -14,7 +14,7 @@ export async function registrarSaque({ db, uid, dataISO, valor, percentualPago, 
   if (!uid) throw new Error('uid obrigatório');
   if (!dataISO) throw new Error('dataISO obrigatório');
   if (typeof valor !== 'number') throw new Error('valor inválido');
-  if (![0.03, 0.04, 0.05].includes(percentualPago)) throw new Error('percentualPago inválido');
+  if (![0, 0.03, 0.04, 0.05].includes(percentualPago)) throw new Error('percentualPago inválido');
 
   const anoMes = anoMesBR(new Date(dataISO));
   const col = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'saques');
