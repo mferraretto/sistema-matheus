@@ -18,7 +18,7 @@ onAuthStateChanged(auth, async user => {
   }
   usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
+    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', 'array-contains', user.email)));
     if (!snap.empty) {
       usuarios = await Promise.all(
         snap.docs.map(async d => {

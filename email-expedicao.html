@@ -18,7 +18,7 @@
     <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
       <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
-      <input type="email" id="emailFinanceiro" placeholder="financeiro@empresa.com" class="w-full p-2 border rounded">
+      <input type="text" id="emailFinanceiro" placeholder="financeiro@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
@@ -65,7 +65,7 @@
         const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         input.value = Array.isArray(emails) ? emails.join(', ') : emails;
-        financeInput.value = data.responsavelFinanceiroEmail || '';
+        financeInput.value = Array.isArray(data.responsavelFinanceiroEmail) ? data.responsavelFinanceiroEmail.join(', ') : (data.responsavelFinanceiroEmail || '');
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -80,7 +80,7 @@
         });
       });
 
-      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
+      db.collection('usuarios').where('responsavelFinanceiroEmail', 'array-contains', user.email).onSnapshot(snap => {
         financialUsersList.innerHTML = '';
         if (snap.empty) {
           financialUsersTitle.classList.add('hidden');
@@ -102,17 +102,17 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
-      const emailFinanceiro = financeInput.value.trim();
+      const financeEmails = financeInput.value.split(',').map(e => e.trim()).filter(e => e).slice(0,2);
       try {
         await db.collection('uid').doc(currentUser.uid).set({
           responsavelExpedicaoEmail: emails[0] || null,
           gestoresExpedicaoEmails: emails,
-          responsavelFinanceiroEmail: emailFinanceiro || null,
+          responsavelFinanceiroEmail: financeEmails,
           uid: currentUser.uid,
           email: currentUser.email
         }, { merge: true });
         await db.collection('usuarios').doc(currentUser.uid).set({
-          responsavelFinanceiroEmail: emailFinanceiro || null,
+          responsavelFinanceiroEmail: financeEmails,
           gestoresExpedicaoEmails: emails,
           email: currentUser.email
         }, { merge: true });
