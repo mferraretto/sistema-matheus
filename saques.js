@@ -211,31 +211,56 @@ function exportarSelecionadosPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(16);
-  doc.text('Boleto de Cobran\u00e7a de Comiss\u00e3o', 105, 15, { align: 'center' });
+  doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
   const body = [];
   let totalComissao = 0;
-  let totalValor = 0;
-  selecionados.forEach(id => {
-    const s = saquesCache[id];
-    if (s) {
-      body.push([
-        s.data.substring(0, 10),
-        s.origem || '',
-        s.valor.toFixed(2),
-        s.comissaoPaga.toFixed(2)
-      ]);
-      totalValor += s.valor || 0;
-      totalComissao += s.comissaoPaga || 0;
-    }
-  });
-  doc.autoTable({ head: [['Data', 'Loja', 'Valor Saque', 'Comiss\u00e3o']], body, startY: 25 });
-  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
-  doc.setFontSize(12);
-  doc.text(`Total sacado: R$ ${totalValor.toFixed(2)}`, 14, finalY + 10);
-  doc.text(`Total de Comiss\u00e3o: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 20);
-  const percentual = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
-  doc.text(`Percentual: ${percentual.toFixed(2)}%`, 14, finalY + 30);
-  doc.save('boletos-comissao.pdf');
+// antes do loop garanta as variáveis
+let totalSaque = 0;
+let totalComissao = 0;
+
+const body = [];
+
+selecionados.forEach(id => {
+  const s = saquesCache[id];
+  if (!s) return;
+
+  const valor = Number(s.valor || 0);
+  const comissao = Number(s.comissaoPaga || 0);
+
+  // Usa percentualPago (ex.: 0.03 => 3%) se existir; senão calcula pela razão
+  const perc = (typeof s.percentualPago === 'number' && isFinite(s.percentualPago))
+    ? s.percentualPago * 100
+    : (valor > 0 ? (comissao / valor) * 100 : 0);
+
+  body.push([
+    (s.data || '').substring(0, 10),
+    s.origem || '',
+    valor.toFixed(2),
+    `${perc.toFixed(0)}%`,
+    comissao.toFixed(2)
+  ]);
+
+  totalSaque += valor;
+  totalComissao += comissao;
+});
+
+doc.autoTable({
+  head: [['Data', 'Loja', 'Valor Saque', '% Comissão', 'Comissão']],
+  body,
+  startY: 25
+});
+
+const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
+const percComissaoMedio = totalSaque > 0 ? (totalComissao / totalSaque) * 100 : 0;
+
+doc.setFontSize(12);
+doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY + 10);
+doc.text(`Total de Comissão: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 20);
+doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY + 30);
+
+// Evite acentos no nome de arquivo para compatibilidade
+doc.save('fechamento-comissao.pdf');
+
 }
 
 function editarSaque(id) {
