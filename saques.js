@@ -66,7 +66,11 @@ export async function registrarSaque() {
 async function carregarSaques() {
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   const tbody = document.getElementById('tbodySaques');
+  const tfoot = document.getElementById('tfootResumo');
+
   tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
+
   const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
   saquesCache = {};
@@ -80,51 +84,41 @@ async function carregarSaques() {
 
   dados.forEach(s => {
     saquesCache[s.id] = s;
-    const dia = s.data.substring(0, 10);
+    const dia = (s.data || '').substring(0, 10);
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
     if (status === 'A PAGAR') todosPagos = false;
-    totalValor += s.valor || 0;
-    totalComissao += s.comissaoPaga || 0;
+    totalValor += Number(s.valor) || 0;
+    totalComissao += Number(s.comissaoPaga) || 0;
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="px-4 py-2">${dia}</td>
       <td class="px-4 py-2">${s.origem || '-'}</td>
-      <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-2 text-right">${(s.percentualPago * 100).toFixed(0)}%</td>
-      <td class="px-4 py-2 text-right">R$ ${s.comissaoPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-2 text-right">R$ ${(Number(s.valor)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-2 text-right">${((Number(s.percentualPago)||0) * 100).toFixed(0)}%</td>
+      <td class="px-4 py-2 text-right">R$ ${(Number(s.comissaoPaga)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-right">${status}</td>
     `;
     tbody.appendChild(tr);
   });
 
-  const resumo = document.getElementById('resumoContainer');
-  if (resumo) {
+  // Linha de resumo final dentro do <tfoot>
+  if (tfoot) {
     if (dados.length === 0) {
-      resumo.innerHTML = '<p class="text-sm text-gray-500">Sem saques registrados.</p>';
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="6" class="px-4 py-3 text-center text-sm text-gray-500">Sem saques registrados.</td>
+        </tr>`;
     } else {
       const perc = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
-      resumo.innerHTML = `
-        <h4 class="text-lg font-bold mb-2">Resumo Final</h4>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-2 text-right">Total</th>
-              <th class="px-4 py-2 text-right">%</th>
-              <th class="px-4 py-2 text-right">Comissão Total</th>
-              <th class="px-4 py-2 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="px-4 py-2 text-right">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td class="px-4 py-2 text-right">${perc.toFixed(0)}%</td>
-              <td class="px-4 py-2 text-right">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td class="px-4 py-2 text-right">${todosPagos ? 'JÁ PAGO' : 'A PAGAR'}</td>
-            </tr>
-          </tbody>
-        </table>
-      `;
+      tfoot.innerHTML = `
+        <tr class="bg-gray-50 font-semibold">
+          <td colspan="2" class="px-4 py-2 text-right">TOTAL</td>
+          <td class="px-4 py-2 text-right">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td class="px-4 py-2 text-right">${perc.toFixed(0)}%</td>
+          <td class="px-4 py-2 text-right">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td class="px-4 py-2 text-right">${todosPagos ? 'JÁ PAGO' : 'A PAGAR'}</td>
+        </tr>`;
     }
   }
 }
@@ -172,7 +166,7 @@ function atualizarResumoSelecionados() {
 }
 
 async function marcarComoPagoSelecionados() {
-  const perc = parseFloat(document.getElementById('percentualSelecionado').value);
+  const perc = parseFloat(document.getElementById('percentualSelecionado')?.value || '0');
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   for (const id of selecionados) {
     const s = saquesCache[id];
@@ -322,14 +316,13 @@ function exportarSelecionadosPDF() {
 
   // Evite acentos no nome de arquivo para compatibilidade
   doc.save('fechamento-comissao.pdf');
-
 }
 
 function editarSaque(id) {
   const s = saquesCache[id];
   document.getElementById('dataSaque').value = s.data.substring(0, 10);
   document.getElementById('valorSaque').value = s.valor;
-  document.getElementById('percentualSaque').value = s.percentualPago.toFixed(2);
+  document.getElementById('percentualSaque').value = Number(s.percentualPago || 0).toFixed(2);
   document.getElementById('lojaSaque').value = s.origem || '';
   editandoId = id;
   document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-save mr-1"></i> Atualizar';
@@ -387,4 +380,3 @@ if (typeof window !== 'undefined') {
   window.exportarSelecionadosExcel = exportarSelecionadosExcel;
   window.exportarSelecionadosPDF = exportarSelecionadosPDF;
 }
-
