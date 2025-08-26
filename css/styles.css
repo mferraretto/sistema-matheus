@@ -1472,6 +1472,12 @@ body.dark-mode th {
   background: var(--primary);
   border-radius: 3px 3px 0 0
 }
+@media (max-width:768px) {
+  .tabs {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+}
 .tab-content {
   display: none;
   max-width: 1200px;

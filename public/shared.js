@@ -403,8 +403,19 @@ function setupMobileSidebar() {
   sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
 
   window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) close();
+    if (window.innerWidth > 768) {
+      container.classList.remove('-translate-x-full');
+      sidebar.classList.remove('active');
+      document.body.style.overflow = '';
+      btn.setAttribute('aria-expanded', 'false');
+    } else {
+      close();
+    }
   });
+
+  if (window.innerWidth <= 768) {
+    close();
+  }
 
   btn.dataset.sidebarReady = 'true';
 }
