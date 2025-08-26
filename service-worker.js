@@ -1,11 +1,13 @@
-const CACHE_NAME = 'financeiro-cache-v2';
+const CACHE_VERSION = '20240826';
+const CACHE_PREFIX  = 'financeiro-cache-v';
+const CACHE_NAME    = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const URLS_TO_CACHE = [
   'financeiro.html',
   'financeiro.js',
-  'css/styles.css',
+  `css/styles.css?v=${CACHE_VERSION}`,
   'css/components.css',
   'icons/icon-192.png',
-  'icons/icon-512.png'
+  'icons/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
