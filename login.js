@@ -253,7 +253,11 @@ async function showUserArea(user) {
       } catch {}
     }
   } catch (e) {
-    console.error('Erro ao carregar nome/perfil do usuário:', e);
+    if (e?.code === 'permission-denied') {
+      console.warn('Sem permissão para ler nome/perfil do usuário');
+    } else {
+      console.error('Erro ao carregar nome/perfil do usuário:', e);
+    }
   }
 
   try {
@@ -282,7 +286,11 @@ async function showUserArea(user) {
       await checkExpedicao(user);
     }
   } catch (e) {
-    console.error('Erro ao carregar perfil do usuário:', e);
+    if (e?.code === 'permission-denied') {
+      console.warn('Sem permissão para ler perfil do usuário');
+    } else {
+      console.error('Erro ao carregar perfil do usuário:', e);
+    }
   }
 }
 
@@ -412,9 +420,13 @@ function initNotificationListener(uid) {
       finNotifs.push({ text: `${email} - ${dataFat}` , ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0 });
     });
     render();
-  }, err => {
-    console.error('Erro no listener de notificações:', err);
-  });
+    }, err => {
+      if (err?.code === 'permission-denied') {
+        console.warn('Sem permissão para ouvir notificações');
+      } else {
+        console.error('Erro no listener de notificações:', err);
+      }
+    });
 
   const qExp = query(
     collection(db, 'expedicaoMensagens'),
@@ -429,9 +441,13 @@ function initNotificationListener(uid) {
       expNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
     });
     render();
-  }, err => {
-    console.error('Erro no listener de notificações expedição:', err);
-  });
+    }, err => {
+      if (err?.code === 'permission-denied') {
+        console.warn('Sem permissão para ouvir notificações de expedição');
+      } else {
+        console.error('Erro no listener de notificações expedição:', err);
+      }
+    });
 
   btn.addEventListener('click', () => {
     list.classList.toggle('hidden');

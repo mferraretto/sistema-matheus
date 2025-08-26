@@ -405,9 +405,13 @@ async function iniciarPainel(user) {
       } else {
         console.warn(`Documento de usuário ${uid} não encontrado em 'usuarios'`);
       }
-    } catch (e) {
-      console.error('Erro ao carregar perfil do usuário:', e);
-    }
+      } catch (e) {
+        if (e?.code === 'permission-denied') {
+          console.warn('Sem permissão para carregar perfil do usuário');
+        } else {
+          console.error('Erro ao carregar perfil do usuário:', e);
+        }
+      }
   }
 
   await Promise.all([
