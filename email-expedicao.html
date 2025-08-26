@@ -152,6 +152,141 @@
         console.error('Erro ao adicionar membro:', err);
       }
     });
+    async function syncFaturamento(responsaveis) {
+      try {
+        const fatSnap = await db.collection('uid').doc(currentUser.uid).collection('faturamento').get();
+        for (const docSnap of fatSnap.docs) {
+          const dia = docSnap.id;
+          const lojasSnap = await db
+            .collection('uid')
+            .doc(currentUser.uid)
+            .collection('faturamento')
+            .doc(dia)
+            .collection('lojas')
+            .get();
+          let bruto = 0;
+          let liquido = 0;
+          lojasSnap.forEach(lojaDoc => {
+            const dados = lojaDoc.data();
+            bruto += Number(dados.valorBruto || 0);
+            liquido += Number(dados.valorLiquido || 0);
+          });
+          const exist = await db
+            .collection('financeiroAtualizacoes')
+            .where('autorUid', '==', currentUser.uid)
+            .where('tipo', '==', 'faturamento')
+            .where('dataFaturamento', '==', dia)
+            .limit(1)
+            .get();
+          if (!exist.empty) {
+            await exist.docs[0].ref.update({
+              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+            });
+          } else {
+            await db.collection('financeiroAtualizacoes').add({
+              descricao: `Faturamento ${dia}: Bruto R$ ${bruto.toFixed(2)}, Líquido R$ ${liquido.toFixed(2)}`,
+              autorUid: currentUser.uid,
+              autorNome: currentUser.displayName || currentUser.email,
+              autorEmail: currentUser.email,
+              dataFaturamento: dia,
+              destinatarios: [...responsaveis, currentUser.uid],
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              anexos: [],
+              tipo: 'faturamento'
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao sincronizar faturamento:', e);
+      }
+    }
+
+    async function syncSobras(responsaveis) {
+      try {
+        const sobrasSnap = await db.collection('uid').doc(currentUser.uid).collection('diasExpedicao').get();
+        for (const docSnap of sobrasSnap.docs) {
+          const dia = docSnap.id;
+          const dados = docSnap.data();
+          const qtd = Number(dados.sobrasQuantidade) || 0;
+          const motivo = dados.sobrasMotivo || '';
+          if (!qtd && !motivo) continue;
+          const exist = await db
+            .collection('financeiroAtualizacoes')
+            .where('autorUid', '==', currentUser.uid)
+            .where('tipo', '==', 'sobras')
+            .where('dataSobras', '==', dia)
+            .limit(1)
+            .get();
+          if (!exist.empty) {
+            await exist.docs[0].ref.update({
+              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+            });
+          } else {
+            await db.collection('financeiroAtualizacoes').add({
+              descricao: `Sobras ${dia}: ${qtd} ${motivo ? '- ' + motivo : ''}`,
+              autorUid: currentUser.uid,
+              autorNome: currentUser.displayName || currentUser.email,
+              autorEmail: currentUser.email,
+              dataSobras: dia,
+              destinatarios: [...responsaveis, currentUser.uid],
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              anexos: [],
+              tipo: 'sobras'
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao sincronizar sobras:', e);
+      }
+    }
+
+    async function syncSaques(responsaveis) {
+      try {
+        const mesesSnap = await db.collection('usuarios').doc(currentUser.uid).collection('comissoes').get();
+        for (const mesDoc of mesesSnap.docs) {
+          const mes = mesDoc.id;
+          const saquesSnap = await db
+            .collection('usuarios')
+            .doc(currentUser.uid)
+            .collection('comissoes')
+            .doc(mes)
+            .collection('saques')
+            .get();
+          for (const saqueDoc of saquesSnap.docs) {
+            const dados = saqueDoc.data();
+            const refId = `${mes}/${saqueDoc.id}`;
+            const exist = await db
+              .collection('financeiroAtualizacoes')
+              .where('autorUid', '==', currentUser.uid)
+              .where('tipo', '==', 'saque')
+              .where('saqueRef', '==', refId)
+              .limit(1)
+              .get();
+            if (!exist.empty) {
+              await exist.docs[0].ref.update({
+                destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
+              });
+            } else {
+              const descricao = `Saque ${dados.data || ''}: R$ ${(Number(dados.valor) || 0).toFixed(2)} - ${(Number(dados.percentualPago) || 0) * 100}% pago${dados.origem ? ' - ' + dados.origem : ''}`;
+              await db.collection('financeiroAtualizacoes').add({
+                descricao,
+                autorUid: currentUser.uid,
+                autorNome: currentUser.displayName || currentUser.email,
+                autorEmail: currentUser.email,
+                saqueRef: refId,
+                dataSaque: dados.data || null,
+                destinatarios: [...responsaveis, currentUser.uid],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                anexos: [],
+                tipo: 'saque'
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao sincronizar saques:', e);
+      }
+    }
 
     document.getElementById('updateFinanceHistory').addEventListener('click', async () => {
       statusEl.classList.add('hidden');
@@ -181,14 +316,20 @@
           statusEl.classList.add('text-red-600');
           return;
         }
-        const snap = await db.collection('financeiroAtualizacoes').where('destinatarios', 'array-contains', currentUser.uid).get();
+        const snap = await db
+          .collection('financeiroAtualizacoes')
+          .where('destinatarios', 'array-contains', currentUser.uid)
+          .get();
         const batch = db.batch();
         snap.forEach(docSnap => {
-          responsaveis.forEach(uid => {
-            batch.update(docSnap.ref, { destinatarios: firebase.firestore.FieldValue.arrayUnion(uid) });
+          batch.update(docSnap.ref, {
+            destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
           });
         });
         await batch.commit();
+        await syncFaturamento(responsaveis);
+        await syncSobras(responsaveis);
+        await syncSaques(responsaveis);
         if (notFound.length) {
           statusEl.textContent = `Situação atualizada, mas não encontrados: ${notFound.join(', ')}`;
           statusEl.classList.remove('hidden');
