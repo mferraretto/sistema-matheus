@@ -329,7 +329,7 @@ async function loadPartial(selector, path){
     }
 
     // no desktop, sempre aberto
-    if (selector === '#sidebar-container' && matchMedia('(min-width:1024px)').matches) {
+    if (selector === '#sidebar-container' && matchMedia('(min-width:992px)').matches) {
       el.classList.remove('-translate-x-full','hidden');
       // limpa qualquer estado salvo que esconda
       try { localStorage.removeItem('sidebarClosed'); } catch(e){}
@@ -362,8 +362,8 @@ mo.observe(document.documentElement, { childList: true, subtree: true });
 
 // ao redimensionar para desktop, garante aberto
 window.addEventListener('resize', ()=>{
-  const sb = document.getElementById('sidebar-container');
-  if (sb && matchMedia('(min-width:1024px)').matches) {
+    const sb = document.getElementById('sidebar-container');
+    if (sb && matchMedia('(min-width:992px)').matches) {
     sb.classList.remove('-translate-x-full','hidden');
   }
 });
@@ -396,14 +396,14 @@ function setupMobileSidebar() {
   });
 
   document.addEventListener('click', (e) => {
-    if (window.innerWidth > 768) return;
+    if (window.innerWidth > 992) return;
     if (!container.contains(e.target) && !btn.contains(e.target)) close();
   });
 
   sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
 
   window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 992) {
       container.classList.remove('-translate-x-full');
       sidebar.classList.remove('active');
       document.body.style.overflow = '';
@@ -413,7 +413,7 @@ function setupMobileSidebar() {
     }
   });
 
-  if (window.innerWidth <= 768) {
+  if (window.innerWidth <= 992) {
     close();
   }
 
