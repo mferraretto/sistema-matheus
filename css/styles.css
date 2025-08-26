@@ -1438,7 +1438,11 @@ body.dark-mode th {
   gap: 10px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 10px
+  padding-bottom: 10px;
+  justify-content: center;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .tabs button {
   padding: 10px 20px;
@@ -1469,7 +1473,10 @@ body.dark-mode th {
   border-radius: 3px 3px 0 0
 }
 .tab-content {
-  display: none
+  display: none;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .tab-content.active {
   display: block
