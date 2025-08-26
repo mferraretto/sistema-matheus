@@ -57,6 +57,22 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && resource.data.autorUid == request.auth.uid;
     }
 
+    match /uid/{uid}/faturamento/{dia} {
+      allow read: if request.auth.uid == uid
+                   || isGestorOrADM(request.auth.uid)
+                   || (request.auth.token.email != null
+                       && request.auth.token.email in get(/databases/$(database)/documents/usuarios/$(uid))
+                          .data.responsavelFinanceiroEmail);
+
+      match /lojas/{lojaId} {
+        allow read: if request.auth.uid == uid
+                     || isGestorOrADM(request.auth.uid)
+                     || (request.auth.token.email != null
+                         && request.auth.token.email in get(/databases/$(database)/documents/usuarios/$(uid))
+                            .data.responsavelFinanceiroEmail);
+      }
+    }
+
     match /contasfechamento/{docId} {
       allow read, write: if request.auth != null;
     }
