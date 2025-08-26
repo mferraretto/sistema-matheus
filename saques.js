@@ -27,6 +27,10 @@ onAuthStateChanged(auth, user => {
     return;
   }
   uidAtual = user.uid;
+  const titulo = document.getElementById('tituloVendedor');
+  if (titulo) {
+    titulo.textContent = (user.displayName || 'VENDEDOR').toUpperCase();
+  }
   const mesInput = document.getElementById('filtroMes');
   mesInput.value = anoMesBR();
   mesInput.addEventListener('change', () => {
@@ -63,60 +67,64 @@ async function carregarSaques() {
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   const tbody = document.getElementById('tbodySaques');
   tbody.innerHTML = '';
-  selecionados.clear();
-  atualizarResumoSelecionados();
-  const chkAll = document.getElementById('chkAll');
-  if (chkAll) chkAll.checked = false;
   const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
   const snap = await getDocs(col);
   saquesCache = {};
-  const dados = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.data.localeCompare(b.data));
-  const totais = {};
-  dados.forEach(s => {
-    const dia = s.data.substring(0, 10);
-    saquesCache[s.id] = s;
-    if (!totais[dia]) totais[dia] = { valor: 0, comissao: 0 };
-    totais[dia].valor += s.valor;
-    totais[dia].comissao += s.comissaoPaga;
-  });
+  const dados = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => a.data.localeCompare(b.data));
 
-  for (let i = 0; i < dados.length; i++) {
-    const s = dados[i];
+  let totalValor = 0;
+  let totalComissao = 0;
+  let todosPagos = true;
+
+  dados.forEach(s => {
+    saquesCache[s.id] = s;
     const dia = s.data.substring(0, 10);
-    const pago = s.percentualPago > 0;
+    const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
+    if (status === 'A PAGAR') todosPagos = false;
+    totalValor += s.valor || 0;
+    totalComissao += s.comissaoPaga || 0;
+
     const tr = document.createElement('tr');
-    if (pago) tr.className = 'bg-green-100';
     tr.innerHTML = `
-      <td class="px-4 py-2">
-        <input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)">
-        ${pago ? `<span class=\"ml-2 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded\">PAGO ${(s.percentualPago * 100).toFixed(0)}%</span>` : ''}
-      </td>
       <td class="px-4 py-2">${dia}</td>
       <td class="px-4 py-2">${s.origem || '-'}</td>
       <td class="px-4 py-2 text-right">R$ ${s.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-right">${(s.percentualPago * 100).toFixed(0)}%</td>
       <td class="px-4 py-2 text-right">R$ ${s.comissaoPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-2 text-right flex gap-2 justify-end">
-        <button class="text-blue-600" onclick="editarSaque('${s.id}')"><i class="fas fa-edit"></i></button>
-        <button class="text-red-600" onclick="excluirSaque('${s.id}')"><i class="fas fa-trash"></i></button>
-      </td>
+      <td class="px-4 py-2 text-right">${status}</td>
     `;
     tbody.appendChild(tr);
+  });
 
-    const proxDia = dados[i + 1]?.data.substring(0, 10);
-    if (proxDia !== dia) {
-      const tot = totais[dia];
-      const trTot = document.createElement('tr');
-      trTot.className = 'bg-gray-100 font-semibold';
-      trTot.innerHTML = `
-        <td></td>
-        <td class="px-4 py-2" colspan="2">Total do dia</td>
-        <td class="px-4 py-2 text-right">R$ ${tot.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td class="px-4 py-2 text-right">-</td>
-        <td class="px-4 py-2 text-right">R$ ${tot.comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td></td>
+  const resumo = document.getElementById('resumoContainer');
+  if (resumo) {
+    if (dados.length === 0) {
+      resumo.innerHTML = '<p class="text-sm text-gray-500">Sem saques registrados.</p>';
+    } else {
+      const perc = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
+      resumo.innerHTML = `
+        <h4 class="text-lg font-bold mb-2">Resumo Final</h4>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-right">Total</th>
+              <th class="px-4 py-2 text-right">%</th>
+              <th class="px-4 py-2 text-right">Comissão Total</th>
+              <th class="px-4 py-2 text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="px-4 py-2 text-right">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td class="px-4 py-2 text-right">${perc.toFixed(0)}%</td>
+              <td class="px-4 py-2 text-right">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td class="px-4 py-2 text-right">${todosPagos ? 'JÁ PAGO' : 'A PAGAR'}</td>
+            </tr>
+          </tbody>
+        </table>
       `;
-      tbody.appendChild(trTot);
     }
   }
 }

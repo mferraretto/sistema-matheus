@@ -53,37 +53,23 @@
         <h2 class="text-xl font-bold">📑 Saques Registrados</h2>
       </div>
       <div class="card-body overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2"><input type="checkbox" id="chkAll" onclick="toggleSelecaoTodos(this.checked)" /></th>
-                <th class="px-4 py-2 text-left">Data</th>
-                <th class="px-4 py-2 text-left">Loja</th>
-                <th class="px-4 py-2 text-right">Valor</th>
-                <th class="px-4 py-2 text-right">% Pago</th>
-                <th class="px-4 py-2 text-right">Comissão Paga</th>
-                <th class="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
-          </table>
-          <div id="acoesSelecionados" class="mt-4 flex-col md:flex-row gap-2 items-center" style="display:none;">
-            <span id="resumoSelecionados" class="text-sm"></span>
-            <div class="flex items-center gap-2">
-              <select id="percentualSelecionado" class="form-control">
-                <option value="0">0%</option>
-                <option value="0.03">3%</option>
-                <option value="0.04">4%</option>
-                <option value="0.05">5%</option>
-              </select>
-              <button onclick="marcarComoPagoSelecionados()" class="btn btn-primary">Marcar como Pago</button>
-              <button onclick="mostrarResumoSelecionados()" class="btn btn-outline">Ver Resumo</button>
-              <button onclick="exportarSelecionadosExcel()" class="btn btn-outline">Exportar Excel</button>
-              <button onclick="exportarSelecionadosPDF()" class="btn btn-outline">Exportar PDF</button>
-            </div>
-          </div>
-        </div>
-      </section>
+        <h3 id="tituloVendedor" class="text-lg font-bold mb-4"></h3>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left">Data</th>
+              <th class="px-4 py-2 text-left">Loja</th>
+              <th class="px-4 py-2 text-right">Saque</th>
+              <th class="px-4 py-2 text-right">%</th>
+              <th class="px-4 py-2 text-right">Comissão</th>
+              <th class="px-4 py-2 text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
+        </table>
+        <div id="resumoContainer" class="mt-4"></div>
+      </div>
+    </section>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
