@@ -15,7 +15,7 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium mb-1">Client Secret</label>
-                    <input type="password" id="mlClientSecret" class="w-full p-2 border rounded" value="">
+                    <input type="password" id="mlClientSecret" class="w-full p-2 border rounded" value="" autocomplete="current-password">
                   </div>
                   <button onclick="testMlConnection()" class="btn-outline">
                     Testar Conexão
@@ -131,7 +131,7 @@
         <div class="space-y-4">
           <input type="text" id="newUserName" class="w-full p-2 border rounded" placeholder="Nome">
           <input type="email" id="newUserEmail" class="w-full p-2 border rounded" placeholder="E-mail">
-          <input type="password" id="newUserPassword" class="w-full p-2 border rounded" placeholder="Senha">
+          <input type="password" id="newUserPassword" class="w-full p-2 border rounded" placeholder="Senha" autocomplete="new-password">
           <select id="newUserProfile" class="w-full p-2 border rounded">
             <option value="operador">Operador</option>
             <option value="admin">Admin</option>
