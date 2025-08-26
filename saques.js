@@ -214,6 +214,7 @@ function exportarSelecionadosPDF() {
   doc.text('Boleto de Cobran\u00e7a de Comiss\u00e3o', 105, 15, { align: 'center' });
   const body = [];
   let totalComissao = 0;
+  let totalValor = 0;
   selecionados.forEach(id => {
     const s = saquesCache[id];
     if (s) {
@@ -223,13 +224,17 @@ function exportarSelecionadosPDF() {
         s.valor.toFixed(2),
         s.comissaoPaga.toFixed(2)
       ]);
+      totalValor += s.valor || 0;
       totalComissao += s.comissaoPaga || 0;
     }
   });
   doc.autoTable({ head: [['Data', 'Loja', 'Valor Saque', 'Comiss\u00e3o']], body, startY: 25 });
   const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 25;
   doc.setFontSize(12);
-  doc.text(`Total de Comiss\u00e3o: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 10);
+  doc.text(`Total sacado: R$ ${totalValor.toFixed(2)}`, 14, finalY + 10);
+  doc.text(`Total de Comiss\u00e3o: R$ ${totalComissao.toFixed(2)}`, 14, finalY + 20);
+  const percentual = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
+  doc.text(`Percentual: ${percentual.toFixed(2)}%`, 14, finalY + 30);
   doc.save('boletos-comissao.pdf');
 }
 
