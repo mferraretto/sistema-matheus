@@ -18,7 +18,7 @@
     <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
       <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
-      <input type="text" id="emailFinanceiro" placeholder="financeiro@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
+      <input type="email" id="emailFinanceiro" placeholder="financeiro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
@@ -37,7 +37,6 @@
     <ul id="teamMembersList" class="mt-4 space-y-2 max-w-lg"></ul>
     <h2 id="financialUsersTitle" class="text-xl font-bold mt-8 mb-4 hidden">Usuários sob sua responsabilidade financeira</h2>
     <ul id="financialUsersList" class="mt-4 space-y-2 max-w-lg"></ul>
-    <button id="updateFinanceHistory" class="bg-indigo-600 text-white px-4 py-2 rounded mt-4">Atualizar situação</button>
   </div>
   <script type="module">
     import { firebaseConfig } from './firebase-config.js';
@@ -66,7 +65,7 @@
         const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         input.value = Array.isArray(emails) ? emails.join(', ') : emails;
-        financeInput.value = Array.isArray(data.responsavelFinanceiroEmail) ? data.responsavelFinanceiroEmail.join(', ') : (data.responsavelFinanceiroEmail || '');
+        financeInput.value = data.responsavelFinanceiroEmail || '';
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -81,7 +80,7 @@
         });
       });
 
-      db.collection('usuarios').where('responsavelFinanceiroEmail', 'array-contains', user.email).onSnapshot(snap => {
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
         financialUsersList.innerHTML = '';
         if (snap.empty) {
           financialUsersTitle.classList.add('hidden');
@@ -103,17 +102,17 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
-      const financeEmails = financeInput.value.split(',').map(e => e.trim()).filter(e => e).slice(0,2);
+      const emailFinanceiro = financeInput.value.trim();
       try {
         await db.collection('uid').doc(currentUser.uid).set({
           responsavelExpedicaoEmail: emails[0] || null,
           gestoresExpedicaoEmails: emails,
-          responsavelFinanceiroEmail: financeEmails,
+          responsavelFinanceiroEmail: emailFinanceiro || null,
           uid: currentUser.uid,
           email: currentUser.email
         }, { merge: true });
         await db.collection('usuarios').doc(currentUser.uid).set({
-          responsavelFinanceiroEmail: financeEmails,
+          responsavelFinanceiroEmail: emailFinanceiro || null,
           gestoresExpedicaoEmails: emails,
           email: currentUser.email
         }, { merge: true });
@@ -152,191 +151,6 @@
         console.error('Erro ao adicionar membro:', err);
       }
     });
-    async function syncFaturamento(responsaveis) {
-      try {
-        const fatSnap = await db.collection('uid').doc(currentUser.uid).collection('faturamento').get();
-        for (const docSnap of fatSnap.docs) {
-          const dia = docSnap.id;
-          const lojasSnap = await db
-            .collection('uid')
-            .doc(currentUser.uid)
-            .collection('faturamento')
-            .doc(dia)
-            .collection('lojas')
-            .get();
-          let bruto = 0;
-          let liquido = 0;
-          lojasSnap.forEach(lojaDoc => {
-            const dados = lojaDoc.data();
-            bruto += Number(dados.valorBruto || 0);
-            liquido += Number(dados.valorLiquido || 0);
-          });
-          const exist = await db
-            .collection('financeiroAtualizacoes')
-            .where('autorUid', '==', currentUser.uid)
-            .where('tipo', '==', 'faturamento')
-            .where('dataFaturamento', '==', dia)
-            .limit(1)
-            .get();
-          if (!exist.empty) {
-            await exist.docs[0].ref.update({
-              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-            });
-          } else {
-            await db.collection('financeiroAtualizacoes').add({
-              descricao: `Faturamento ${dia}: Bruto R$ ${bruto.toFixed(2)}, Líquido R$ ${liquido.toFixed(2)}`,
-              autorUid: currentUser.uid,
-              autorNome: currentUser.displayName || currentUser.email,
-              autorEmail: currentUser.email,
-              dataFaturamento: dia,
-              destinatarios: [...responsaveis, currentUser.uid],
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              anexos: [],
-              tipo: 'faturamento'
-            });
-          }
-        }
-      } catch (e) {
-        console.error('Erro ao sincronizar faturamento:', e);
-      }
-    }
-
-    async function syncSobras(responsaveis) {
-      try {
-        const sobrasSnap = await db.collection('uid').doc(currentUser.uid).collection('diasExpedicao').get();
-        for (const docSnap of sobrasSnap.docs) {
-          const dia = docSnap.id;
-          const dados = docSnap.data();
-          const qtd = Number(dados.sobrasQuantidade) || 0;
-          const motivo = dados.sobrasMotivo || '';
-          if (!qtd && !motivo) continue;
-          const exist = await db
-            .collection('financeiroAtualizacoes')
-            .where('autorUid', '==', currentUser.uid)
-            .where('tipo', '==', 'sobras')
-            .where('dataSobras', '==', dia)
-            .limit(1)
-            .get();
-          if (!exist.empty) {
-            await exist.docs[0].ref.update({
-              destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-            });
-          } else {
-            await db.collection('financeiroAtualizacoes').add({
-              descricao: `Sobras ${dia}: ${qtd} ${motivo ? '- ' + motivo : ''}`,
-              autorUid: currentUser.uid,
-              autorNome: currentUser.displayName || currentUser.email,
-              autorEmail: currentUser.email,
-              dataSobras: dia,
-              destinatarios: [...responsaveis, currentUser.uid],
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              anexos: [],
-              tipo: 'sobras'
-            });
-          }
-        }
-      } catch (e) {
-        console.error('Erro ao sincronizar sobras:', e);
-      }
-    }
-
-    async function syncSaques(responsaveis) {
-      try {
-        const mesesSnap = await db.collection('usuarios').doc(currentUser.uid).collection('comissoes').get();
-        for (const mesDoc of mesesSnap.docs) {
-          const mes = mesDoc.id;
-          const saquesSnap = await db
-            .collection('usuarios')
-            .doc(currentUser.uid)
-            .collection('comissoes')
-            .doc(mes)
-            .collection('saques')
-            .get();
-          for (const saqueDoc of saquesSnap.docs) {
-            const dados = saqueDoc.data();
-            const refId = `${mes}/${saqueDoc.id}`;
-            const exist = await db
-              .collection('financeiroAtualizacoes')
-              .where('autorUid', '==', currentUser.uid)
-              .where('tipo', '==', 'saque')
-              .where('saqueRef', '==', refId)
-              .limit(1)
-              .get();
-            if (!exist.empty) {
-              await exist.docs[0].ref.update({
-                destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-              });
-            } else {
-              const descricao = `Saque ${dados.data || ''}: R$ ${(Number(dados.valor) || 0).toFixed(2)} - ${(Number(dados.percentualPago) || 0) * 100}% pago${dados.origem ? ' - ' + dados.origem : ''}`;
-              await db.collection('financeiroAtualizacoes').add({
-                descricao,
-                autorUid: currentUser.uid,
-                autorNome: currentUser.displayName || currentUser.email,
-                autorEmail: currentUser.email,
-                saqueRef: refId,
-                dataSaque: dados.data || null,
-                destinatarios: [...responsaveis, currentUser.uid],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                anexos: [],
-                tipo: 'saque'
-              });
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Erro ao sincronizar saques:', e);
-      }
-    }
-
-    document.getElementById('updateFinanceHistory').addEventListener('click', async () => {
-      statusEl.classList.add('hidden');
-      const financeEmails = financeInput.value.split(',').map(e => e.trim()).filter(e => e);
-      if (!financeEmails.length) {
-        statusEl.textContent = 'Informe os e-mails do responsável financeiro';
-        statusEl.classList.remove('hidden');
-        statusEl.classList.remove('text-green-600');
-        statusEl.classList.add('text-red-600');
-        return;
-      }
-      try {
-        const responsaveis = [];
-        for (const email of financeEmails) {
-          const snap = await db.collection('usuarios').where('email', '==', email).limit(1).get();
-          if (!snap.empty) {
-            responsaveis.push(snap.docs[0].id);
-          } else {
-            const newDoc = await db.collection('usuarios').add({ email });
-            responsaveis.push(newDoc.id);
-          }
-        }
-        const snap = await db
-          .collection('financeiroAtualizacoes')
-          .where('destinatarios', 'array-contains', currentUser.uid)
-          .get();
-        const batch = db.batch();
-        snap.forEach(docSnap => {
-          batch.update(docSnap.ref, {
-            destinatarios: firebase.firestore.FieldValue.arrayUnion(...responsaveis)
-          });
-        });
-        await batch.commit();
-        await syncFaturamento(responsaveis);
-        await syncSobras(responsaveis);
-        await syncSaques(responsaveis);
-        statusEl.textContent = 'Situação atualizada com sucesso!';
-        statusEl.classList.remove('hidden');
-        statusEl.classList.remove('text-red-600');
-        statusEl.classList.add('text-green-600');
-        } catch (err) {
-          // Exibe a mensagem de erro ao usuário sem interromper o fluxo
-          console.error('Erro ao atualizar situação:', err);
-          const message = err?.message || 'Erro ao atualizar situação';
-          statusEl.textContent = message;
-          statusEl.classList.remove('hidden');
-          statusEl.classList.remove('text-green-600');
-          statusEl.classList.add('text-red-600');
-        }
-      });
 
   </script>
   <script src="shared.js"></script>

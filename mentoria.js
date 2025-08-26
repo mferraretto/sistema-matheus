@@ -10,7 +10,7 @@ const auth = getAuth(app);
 function carregarUsuariosFinanceiros(user) {
   const tbody = document.getElementById('mentoradosList');
   const mesAtual = new Date().toISOString().slice(0, 7);
-  const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', 'array-contains', user.email));
+  const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
   onSnapshot(q, async snap => {
     tbody.innerHTML = '';
     if (snap.empty) {
