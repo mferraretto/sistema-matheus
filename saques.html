@@ -1,92 +1,69 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Saques</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=20240826" />
-  <link rel="stylesheet" href="css/components.css" />
+  <title>Saques de Marketplace</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <main class="main-content p-4 space-y-6">
-    <!-- Formulário de Saque -->
-    <section class="card">
+  <main class="main-content p-4 space-y-4">
+    <div class="card">
       <div class="card-header">
         <h2 class="text-xl font-bold">💸 Registrar Saque</h2>
       </div>
-      <div class="card-body flex flex-col md:flex-row gap-4 items-end">
-        <input type="date" id="dataSaque" class="form-control" />
-        <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control" />
-        <input type="text" id="lojaSaque" placeholder="Loja" class="form-control" />
-        <select id="percentualSaque" class="form-control">
-          <option value="0">0%</option>
-          <option value="0.03">3%</option>
-          <option value="0.04">4%</option>
-          <option value="0.05">5%</option>
-        </select>
-        <button id="btnRegistrar" onclick="registrarSaque()" class="btn btn-primary">
-          <i class="fas fa-plus mr-1"></i> Registrar
-        </button>
-      </div>
-    </section>
-
-    <!-- Resumo do mês -->
-    <section class="card">
-      <div class="card-header flex items-center justify-between">
-        <h2 class="text-xl font-bold">📊 Resumo do mês</h2>
-        <div class="flex items-center gap-2">
-          <input type="month" id="filtroMes" class="border border-gray-300 rounded px-2 py-1" />
-          <button onclick="fecharMes()" class="btn btn-outline">Fechar mês</button>
+      <div class="card-body space-y-4">
+        <div class="form-row">
+         <div class="form-group">
+  <input type="date" id="dataSaque" class="form-control">
+</div>
+<div class="form-group">
+  <input type="text" id="lojaSaque" placeholder="Loja" class="form-control">
+</div>
+<div class="form-group">
+  <input type="number" id="valorSaque" placeholder="Valor (R$)" step="0.01" class="form-control">
+</div>
+<div class="form-group">
+  <label for="comissaoSaque">Comissão do Vendedor (%)</label>
+  <input type="number" id="comissaoSaque" min="0" max="100" step="0.01" placeholder="Ex: 10" class="form-control">
+</div>
+<button onclick="registrarSaque()" class="btn btn-primary">
+  <i class="fas fa-plus mr-1"></i> Registrar
+</button>
         </div>
       </div>
-      <div id="cardsResumo" class="card-body grid grid-cols-1 md:grid-cols-3 gap-4 text-center"></div>
-      <p id="faltasTexto" class="px-4 pb-4 text-center text-sm text-gray-600"></p>
-    </section>
+    </div>
 
-    <!-- Tabela de Saques -->
-    <section class="card">
+    <div class="card">
       <div class="card-header">
         <h2 class="text-xl font-bold">📑 Saques Registrados</h2>
       </div>
-      <div class="card-body overflow-x-auto">
-        <h3 id="tituloVendedor" class="text-lg font-bold mb-4"></h3>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-2 text-center"><input type="checkbox" onchange="toggleSelecaoTodos(this.checked)" /></th>
-              <th class="px-4 py-2 text-left">Data</th>
-              <th class="px-4 py-2 text-left">Loja</th>
-              <th class="px-4 py-2 text-right">Saque</th>
-              <th class="px-4 py-2 text-right">%</th>
-              <th class="px-4 py-2 text-right">Comissão</th>
-              <th class="px-4 py-2 text-right">Status</th>
-              <th class="px-4 py-2 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tbodySaques" class="divide-y divide-gray-200"></tbody>
-          <!-- Linha de resumo final na mesma tabela -->
-          <tfoot id="tfootResumo" class="bg-gray-50 font-semibold"></tfoot>
-        </table>
-        <div id="acoesSelecionados" style="display:none" class="flex flex-col md:flex-row items-center gap-2 mt-4">
-          <span id="resumoSelecionados" class="text-sm"></span>
-          <select id="percentualSelecionado" class="form-control">
-            <option value="0.03">3%</option>
-            <option value="0.04">4%</option>
-            <option value="0.05">5%</option>
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 px-4 mb-4">
+        <div class="flex items-center gap-2">
+          <label for="filtroMesSaques" class="font-medium">Filtrar por mês:</label>
+          <input type="month" id="filtroMesSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <label for="modoVisualizacaoSaques" class="font-medium">Visualizar:</label>
+          <select id="modoVisualizacaoSaques" class="border border-gray-300 rounded px-2 py-2" onchange="carregarSaques()">
+            <option value="cards">Cards</option>
+            <option value="lista">Lista</option>
           </select>
-          <button onclick="marcarComoPagoSelecionados()" class="btn btn-primary">Marcar como Pago</button>
         </div>
       </div>
-    </section>
+      <div id="listaSaques" class="p-4"></div>
+    </div>
   </main>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="saques.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>

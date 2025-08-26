@@ -10,7 +10,7 @@
   
   <!-- Bibliotecas CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="css/styles.css?v=20240826">
+<link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/components.css">
   <!-- Bibliotecas JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -25,19 +25,18 @@
 
 
 </head>
-<body class="bg-gray-50">
-  <div class="main-container">
-    <!-- Sidebar -->
+<body>
+  <div class="app-container">
+  <!-- Sidebar -->
   <div id="sidebar-container"></div>
 
 
+  <div class="content-wrapper">  
+<div id="navbar-container"></div>
 
-<!-- Top Navbar -->
-  <div id="navbar-container"></div>
-
-
-    <!-- Conteúdo Principal -->
-    <div class="content-wrapper space-y-10">
+    
+    <!-- Conteúdo principal -->
+    <div class="main-content">
       <div class="page-title">
         <i class="fas fa-check-circle"></i>
         <h1>VendedorPro - Conferência de Sobras</h1>
@@ -72,9 +71,6 @@
         <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
           <i class="fas fa-boxes"></i> Controle de Vendas
          </button>
-        <button class="tab-btn" onclick="trocarAba('previsao'); carregarPrevisao()">
-          <i class="fas fa-chart-area"></i> 📈 Previsão
-        </button>
         <button class="tab-btn" onclick="trocarAba('acompanhamento'); carregarAcompanhamento()">
           <i class="fas fa-chart-line"></i> Acompanhamento
         </button>
@@ -116,12 +112,7 @@
 
       <!-- Aba de Controle de Vendas -->
       <div id="controleVendas" class="tab-content">
-
-      </div>
-
-      <!-- Aba de Previsão -->
-      <div id="previsao" class="tab-content">
-
+       
       </div>
 
       <!-- Aba de Acompanhamento -->
@@ -160,11 +151,10 @@
       let totalSaquesAcompanhamento = 0;
       let totalComissaoAcompanhamento = 0;
       let usuarioLogado = { uid: null, perfil: '' };
-let pedidosProcessados = [];
-let graficoBarras, graficoPizza, graficoPrevisao;
-let previsaoDados = {};
-const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
-   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','previsao','acompanhamento','acompanhamentoGestor'];
+      let pedidosProcessados = [];
+      let graficoBarras, graficoPizza;
+      const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
+   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','acompanhamento','acompanhamentoGestor'];
       const tabsLoaded = Promise.all(
         tabIds.map(t =>
           fetch(`sobras-tabs/${t}.html`)
@@ -1944,14 +1934,10 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
     }
     async function carregarControleVendas() {
       const container = document.getElementById("listaControleVendas");
-      const resumoContainer = document.getElementById("resumoMensalVendas");
-      const projecaoContainer = document.getElementById("cardsProjecao");
       const filtroMes = document.getElementById("filtroMesVendas")?.value;
       container.innerHTML = "🔄 Carregando...";
-      if (resumoContainer) resumoContainer.innerHTML = "";
-      if (projecaoContainer) projecaoContainer.innerHTML = "🔄 Carregando...";
 
-      let ref;
+ let ref;
       if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
         ref = db.collectionGroup('skusVendidos');
       } else {
@@ -1959,50 +1945,7 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       }
       const snap = await ref.get();
 
-      if (projecaoContainer) {
-        const hoje = new Date();
-        const proxMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-        const anoMesPrev = proxMes.toISOString().slice(0, 7);
-        try {
-          if (["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())) {
-            const prevSnap = await db.collectionGroup('previsoes')
-              .where(firebase.firestore.FieldPath.documentId(), '==', anoMesPrev)
-              .get();
-            const totalPrev = {};
-            prevSnap.forEach(doc => {
-              const dados = doc.data();
-              if (dados.skus) {
-                Object.entries(dados.skus).forEach(([sku, info]) => {
-                  totalPrev[sku] = (totalPrev[sku] || 0) + (info.total || 0);
-                });
-              }
-            });
-            if (Object.keys(totalPrev).length) {
-              projecaoContainer.innerHTML = Object.entries(totalPrev)
-                .map(([sku, total]) => `<div class="bg-yellow-100 text-yellow-800 p-4 rounded shadow flex justify-between"><span>${sku}</span><span class="font-bold">${total.toFixed(0)}</span></div>`)
-                .join('');
-            } else {
-              projecaoContainer.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
-            }
-          } else {
-            const prevDoc = await db.collection('uid').doc(usuarioLogado.uid).collection('previsoes').doc(anoMesPrev).get();
-            if (prevDoc.exists) {
-              const dados = prevDoc.data();
-              projecaoContainer.innerHTML = Object.entries(dados.skus || {})
-                .map(([sku, info]) => `<div class="bg-yellow-100 text-yellow-800 p-4 rounded shadow flex justify-between"><span>${sku}</span><span class="font-bold">${(info.total || 0).toFixed(0)}</span></div>`)
-                .join('');
-            } else {
-              projecaoContainer.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
-            }
-          }
-        } catch (err) {
-          console.error('Erro ao carregar previsão', err);
-          projecaoContainer.innerHTML = '<p class="text-red-500">Erro ao carregar previsão.</p>';
-        }
-      }
-
       container.innerHTML = "";
-      const totaisSku = {};
 
       for (const doc of snap.docs) {
         const dataDoc = doc.id; // Ex: 2025-07-21
@@ -2024,13 +1967,11 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
         listaSnap.forEach(docSKU => {
           const { sku, total, loja } = docSKU.data();
-          const skuKey = sku || docSKU.id;
           totalDia += total || 0;
           htmlSKUs += `
       <div class="text-sm text-gray-700">
-        <strong>${skuKey}</strong> (${loja || "-"}) — ${total || 0} unid.
+        <strong>${sku || docSKU.id}</strong> (${loja || "-"}) — ${total || 0} unid.
       </div>`;
-          totaisSku[skuKey] = (totaisSku[skuKey] || 0) + (total || 0);
         });
 
         const card = document.createElement("div");
@@ -2049,308 +1990,6 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       if (container.innerHTML === "") {
         container.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
       }
-      if (resumoContainer) {
-        if (Object.keys(totaisSku).length) {
-          const cards = Object.entries(totaisSku)
-            .sort((a, b) => b[1] - a[1])
-            .map(([sku, total]) =>
-              `<div class="bg-white rounded-lg shadow p-4 border border-gray-200 flex justify-between"><span>${sku}</span><span class="font-bold">${total}</span></div>`
-            ).join("");
-          resumoContainer.innerHTML = cards;
-        } else {
-          resumoContainer.innerHTML = `<p class="text-gray-500">Nenhum dado encontrado para o período selecionado.</p>`;
-        }
-      }
-    }
-
-    async function carregarPrevisao() {
-      await tabsLoaded;
-      const selectSku = document.getElementById('filtroSkuPrevisao');
-      const cards = document.getElementById('cardsPrevisao');
-      if (!selectSku || !cards) return;
-      cards.innerHTML = '🔄 Carregando...';
-      const hoje = new Date();
-      const proxMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-      const anoMes = proxMes.toISOString().slice(0,7);
-      const doc = await db.collection('uid').doc(usuarioLogado.uid).collection('previsoes').doc(anoMes).get();
-      if (doc.exists) {
-        previsaoDados = doc.data() || {};
-        const skus = Object.keys(previsaoDados.skus || {});
-        selectSku.innerHTML = '<option value="todos">Todos</option>' + skus.map(s => `<option value="${s}">${s}</option>`).join('');
-        cards.innerHTML = '';
-        renderizarPrevisao();
-        renderizarTopSkus();
-      } else {
-        previsaoDados = { skus: {} };
-        selectSku.innerHTML = '<option value="todos">Todos</option>';
-        cards.innerHTML = '🔄 Gerando previsão inicial...';
-        await gerarPrevisao({ topN: 5, silencioso: true });
-      }
-    }
-
-    function renderizarPrevisao() {
-      const selectSku = document.getElementById('filtroSkuPrevisao');
-      const sku = selectSku?.value || 'todos';
-      const cards = document.getElementById('cardsPrevisao');
-      const tabela = document.getElementById('tabelaPrevisao');
-      const ctx = document.getElementById('graficoPrevisao')?.getContext('2d');
-      if (!cards || !tabela || !ctx) return;
-
-      let diario = {};
-      let totalBase = 0;
-      if (sku === 'todos') {
-        for (const info of Object.values(previsaoDados.skus || {})) {
-          totalBase += info.total || 0;
-          for (const [data, val] of Object.entries(info.diario || {})) {
-            diario[data] = (diario[data] || 0) + val;
-          }
-        }
-      } else if (previsaoDados.skus && previsaoDados.skus[sku]) {
-        const info = previsaoDados.skus[sku];
-        totalBase = info.total || 0;
-        diario = info.diario || {};
-      }
-
-      const pess = totalBase * 0.85;
-      const otm = totalBase * 1.15;
-      cards.innerHTML = `
-        <div class="bg-red-100 text-red-800 p-4 rounded shadow text-center">
-          <div class="font-bold">Pessimista</div><div>${pess.toFixed(0)}</div>
-        </div>
-        <div class="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
-          <div class="font-bold">Base</div><div>${totalBase.toFixed(0)}</div>
-        </div>
-        <div class="bg-green-100 text-green-800 p-4 rounded shadow text-center">
-          <div class="font-bold">Otimista</div><div>${otm.toFixed(0)}</div>
-        </div>`;
-
-      const labels = Object.keys(diario).sort();
-      const dados = labels.map(d => diario[d]);
-      if (graficoPrevisao) graficoPrevisao.destroy();
-      graficoPrevisao = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ label: 'Previsão diária', data: dados, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.3)', tension: 0.2 }] },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-
-      tabela.innerHTML = `
-        <table class="min-w-full text-sm text-left">
-          <thead><tr><th class="px-2 py-1 border">Data</th><th class="px-2 py-1 border">Qtde</th></tr></thead>
-          <tbody>
-            ${labels.map(d => `<tr><td class="px-2 py-1 border">${d}</td><td class="px-2 py-1 border">${diario[d].toFixed(0)}</td></tr>`).join('')}
-          </tbody>
-        </table>`;
-    }
-
-    function renderizarTopSkus() {
-      const container = document.getElementById('topSkusPrevisao');
-      if (!container) return;
-      const dadosSkus = Object.entries(previsaoDados.skus || {});
-      if (!dadosSkus.length) {
-        container.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
-        return;
-      }
-
-      const cenarios = [
-        { titulo: 'Pessimista', fator: 0.85 },
-        { titulo: 'Base', fator: 1 },
-        { titulo: 'Otimista', fator: 1.15 }
-      ];
-
-      const tabelas = cenarios.map(c => {
-        const lista = dadosSkus
-          .map(([sku, info]) => {
-            const quantidade = (info.total || 0) * c.fator;
-            const preco = produtos[sku] || 0;
-            const sobraUnit = metas[sku]?.valor || 0;
-            const bruto = quantidade * preco;
-            const sobra = quantidade * sobraUnit;
-            return { sku, quantidade, bruto, sobra };
-          })
-          .sort((a, b) => b.quantidade - a.quantidade)
-          .slice(0, 5);
-
-        if (!lista.length) {
-          return '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
-        }
-
-        const linhas = lista.map(item => `
-            <tr>
-              <td class="px-2 py-1 border">${item.sku}</td>
-              <td class="px-2 py-1 border">${item.quantidade.toFixed(0)}</td>
-              <td class="px-2 py-1 border">R$ ${item.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              <td class="px-2 py-1 border">R$ ${item.sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-            </tr>`).join('');
-
-        return `
-          <div class="overflow-x-auto">
-            <h4 class="font-bold mb-2 text-center">Top 5 SKUs projeção ${c.titulo}</h4>
-            <table class="min-w-full text-sm text-left">
-              <thead>
-                <tr>
-                  <th class="px-2 py-1 border">SKU</th>
-                  <th class="px-2 py-1 border">Quantidade</th>
-                  <th class="px-2 py-1 border">Bruto Esperado<br>(Valor de venda)</th>
-                  <th class="px-2 py-1 border">Sobra Esperada<br>(Sobra esperada x quantidade)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${linhas}
-              </tbody>
-            </table>
-          </div>`;
-      }).join('');
-
-      container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
-    }
-
-    function gerarDatas(qtd, endDate = new Date()) {
-      const datas = [];
-      for (let i = qtd; i > 0; i--) {
-        const d = new Date(endDate);
-        d.setDate(d.getDate() - i);
-        datas.push(d.toISOString().slice(0,10));
-      }
-      return datas;
-    }
-
-    function calcularBeta(arr) {
-      const n = arr.length;
-      const xMean = (n + 1) / 2;
-      const yMean = arr.reduce((a, b) => a + b, 0) / n;
-      let num = 0, den = 0;
-      for (let i = 0; i < n; i++) {
-        num += (i + 1 - xMean) * (arr[i] - yMean);
-        den += Math.pow(i + 1 - xMean, 2);
-      }
-      return den ? num / den : 0;
-    }
-
-    function clamp(v, min, max) {
-      return Math.min(max, Math.max(min, v));
-    }
-
-    function winsorize(arr, low = 0.05, high = 0.95) {
-      const sorted = [...arr].sort((a, b) => a - b);
-      const n = sorted.length;
-      const lowVal = sorted[Math.floor(n * low)];
-      const highVal = sorted[Math.ceil(n * high) - 1];
-      return arr.map(v => clamp(v, lowVal, highVal));
-    }
-
-    function percentile(arr, p) {
-      if (!arr.length) return 0;
-      const sorted = [...arr].sort((a, b) => a - b);
-      const idx = (sorted.length - 1) * p;
-      const lower = Math.floor(idx);
-      const upper = Math.ceil(idx);
-      const weight = idx - lower;
-      return sorted[lower] * (1 - weight) + (sorted[upper] || sorted[lower]) * weight;
-    }
-
-    async function gerarPrevisao(opcoes = {}) {
-      const { topN, silencioso } = opcoes;
-      const btn = document.getElementById('btnGerarPrevisao');
-      if (btn) { btn.disabled = true; btn.innerText = 'Gerando...'; }
-      const hoje = new Date();
-      const proxMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-      const anoMes = proxMes.toISOString().slice(0,7);
-      const diasProxMes = new Date(proxMes.getFullYear(), proxMes.getMonth()+1, 0).getDate();
-      const datas30 = gerarDatas(30, hoje);
-      const datas90 = gerarDatas(90, hoje);
-      const ref = db.collection(`uid/${usuarioLogado.uid}/skusVendidos`);
-      const snap = await ref.get();
-      const serieSkus = {};
-
-      for (const doc of snap.docs) {
-        const dataDoc = doc.id;
-        if (!datas90.includes(dataDoc)) continue;
-        const listaSnap = await doc.ref.collection('lista').get();
-        for (const skuDoc of listaSnap.docs) {
-          const { sku, total } = skuDoc.data();
-          const skuKey = sku || skuDoc.id;
-          if (!serieSkus[skuKey]) serieSkus[skuKey] = {};
-          serieSkus[skuKey][dataDoc] = (serieSkus[skuKey][dataDoc] || 0) + (total || 0);
-        }
-      }
-
-      let skuKeys = Object.keys(serieSkus);
-      if (topN) {
-        const totais = skuKeys.map(sku => ({
-          sku,
-          total: datas30.reduce((s, d) => s + (serieSkus[sku][d] || 0), 0)
-        }));
-        skuKeys = totais.sort((a, b) => b.total - a.total).slice(0, topN).map(t => t.sku);
-      }
-
-      const previsao = { skus: {}, totalGeral: 0 };
-      for (const sku of skuKeys) {
-        const serie = serieSkus[sku] || {};
-        const arr90 = datas90.map(d => serie[d] || 0);
-        const arr90w = winsorize(arr90, 0.05, 0.95);
-        const arr30 = arr90w.slice(-30);
-        const arr7 = arr30.slice(-7);
-        const avg30 = arr30.reduce((a,b)=>a+b,0) / arr30.length;
-        const avg7 = arr7.reduce((a,b)=>a+b,0) / arr7.length;
-
-        let w30 = 0.6;
-        let w7 = 0.4;
-        const nDados = Object.keys(serie).length;
-        if (nDados < 30) {
-          const f30 = Math.min(nDados / 30, 1);
-          const f7 = Math.min(nDados / 7, 1);
-          w30 *= f30;
-          w7 *= f7;
-          const wsum = w30 + w7;
-          if (wsum > 0) { w30 /= wsum; w7 /= wsum; }
-        }
-        const base = w30 * avg30 + w7 * avg7;
-
-        let beta = 0;
-        if (nDados >= 14) beta = calcularBeta(arr30);
-        const lowBase = avg30 < 1 && avg7 < 1;
-        if (lowBase) beta = 0;
-
-        const globalMean = arr90w.reduce((s,v)=>s+v,0) / arr90w.length;
-        const weeks = Math.min(12, Math.floor(nDados / 7));
-        let lambda = Math.min(1, weeks / 12);
-        if (nDados < 7 || lowBase) lambda = 0;
-        const fatores = {};
-        for (let w=0; w<7; w++) {
-          const vals = datas90
-            .map((d,i)=>({d, v: arr90w[i]}))
-            .filter(({d})=>new Date(d).getDay()===w)
-            .map(({v})=>v);
-          const m = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-          const fatorWd = globalMean ? m/globalMean : 1;
-          const saz = 1 + lambda * (fatorWd - 1);
-          fatores[w] = clamp(saz, 0.85, 1.20);
-        }
-
-        const p95 = percentile(arr90w, 0.95);
-        const diario = {};
-        let total = 0;
-        for (let i=1; i<=diasProxMes; i++) {
-          const d = new Date(proxMes.getFullYear(), proxMes.getMonth(), i);
-          const wd = d.getDay();
-          const trendRaw = beta * i;
-          const trend = clamp(trendRaw * 0.5, -0.2*base/30, 0.2*base/30);
-          const saz = fatores[wd] || 1;
-          let val = (base + trend) * saz;
-          val = clamp(Math.round(Math.max(0, val)), 0, Math.round(p95 * 1.2));
-          const ds = d.toISOString().slice(0,10);
-          diario[ds] = val;
-          total += val;
-        }
-        previsao.skus[sku] = { diario, total, p95 };
-        previsao.totalGeral += total;
-      }
-
-      await db.collection('uid').doc(usuarioLogado.uid).collection('previsoes').doc(anoMes).set(previsao);
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Gerar previsão'; }
-      if (!silencioso) Swal.fire('Sucesso','Previsão gerada!','success');
-      carregarPrevisao();
-      carregarControleVendas();
     }
     window.verDetalhesDia = async function (dataDoc) {
 let uids = [];
@@ -2731,63 +2370,15 @@ const dias = dadosAcompanhamento.length;
       const resumoLiquidoMeta = metaLiquidoDiario ? `<small>${diffLiquido >= 0 ? 'Acima' : 'Abaixo'} da meta (${percLiquido.toFixed(2)}%, R$ ${Math.abs(diffLiquido).toLocaleString('pt-BR')})</small>` : '';
       
       resumoEl.classList.add('resumo-grid');
-resumoEl.innerHTML = `
+      resumoEl.innerHTML = `
    <div class="resumo-card"><h4>Total Bruto</h4><p>R$ ${totais.bruto.toLocaleString('pt-BR')}</p>${resumoBrutoMeta}</div>
         <div class="resumo-card"><h4>Total Líquido</h4><p>R$ ${totais.liquido.toLocaleString('pt-BR')}</p>${resumoLiquidoMeta}</div>
-        <div class="resumo-card"><h4>Total Vendido</h4><p>${totais.vendas}</p><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" onclick="mostrarDetalhesVendas()">Ver mais</button></div>
+        <div class="resumo-card"><h4>Total Vendido</h4><p>${totais.vendas}</p></div>
         <div class="resumo-card"><h4>Total Sobra Esperada</h4><p>R$ ${totais.sobra.toLocaleString('pt-BR')}</p><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" onclick="mostrarDetalhesSobra()">Ver mais</button></div>
         <div class="resumo-card"><h4>Total Saques</h4><p>R$ ${totalSaques.toLocaleString('pt-BR')}</p></div>
         <div class="resumo-card"><h4>Comissão do Mês</h4><p>R$ ${totalComissao.toLocaleString('pt-BR')}</p></div>
         <div class="resumo-card"><h4>Ticket Médio</h4><p>R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>`;
     }
-
-function mostrarDetalhesVendas(data = resumoSku) {
-  if (!data || !Object.keys(data).length) {
-    Swal.fire('Sem dados', 'Não há informações de vendas por SKU para o período selecionado.', 'info');
-    return;
-  }
-
-  const entries = Object.entries(data)
-    .map(([sku, info]) => [sku, Number(info.vendas) || 0])
-    .sort((a, b) => b[1] - a[1]);
-
-  const total = entries.reduce((acc, [, v]) => acc + v, 0);
-
-  let rows = '';
-  for (const [sku, qtd] of entries) {
-    rows += `
-      <tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;"><strong>${sku}</strong></td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;">${qtd}</td>
-      </tr>`;
-  }
-
-  const html = `
-    <div style="text-align:left; max-height:60vh; overflow:auto;">
-      <table style="width:100%; border-collapse:collapse; font-size:14px;">
-        <thead>
-          <tr>
-            <th style="text-align:left; padding:8px 10px; border-bottom:1px solid #ddd;">SKU</th>
-            <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #ddd;">Quantidade Vendida</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          <tr>
-            <td style="padding:10px; font-weight:600; border-top:2px solid #ddd;">Total</td>
-            <td style="padding:10px; text-align:right; font-weight:600; border-top:2px solid #ddd;">${total}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>`;
-
-  Swal.fire({
-    title: 'Vendas por SKU',
-    html,
-    width: '80%',
-    confirmButtonText: 'Fechar'
-  });
-}
 
 function mostrarDetalhesSobra(data = sobraPorSku) {
   if (!data || !Object.keys(data).length) {
@@ -2916,7 +2507,7 @@ function mostrarDetalhesSobra(data = sobraPorSku) {
         <html>
           <head>
             <title>Imprimir Acompanhamento</title>
-            <link rel="stylesheet" href="css/styles.css?v=20240826">
+            <link rel="stylesheet" href="css/styles.css">
             <link rel="stylesheet" href="css/components.css">
           </head>
           <body>
@@ -3014,10 +2605,10 @@ async function verificarGestorFinanceiro() {
 async function carregarAcompanhamentoGestor() {
   const totalEl = document.getElementById('totalSobraGestor');
   const tbody = document.querySelector('#tabelaSobraSkuGestor tbody');
-  const pedidosBody = document.querySelector('#tabelaPedidosCriticosGestor tbody');
+  const lista = document.getElementById('listaPedidosErradosGestor');
   if (totalEl) totalEl.textContent = 'Carregando...';
   if (tbody) tbody.innerHTML = '';
-  if (pedidosBody) pedidosBody.innerHTML = '';
+  if (lista) lista.innerHTML = '';
 
   try {
     const usuariosSnap = await db.collection('usuarios')
@@ -3026,42 +2617,11 @@ async function carregarAcompanhamentoGestor() {
     const usuarios = [];
     usuariosSnap.forEach(doc => usuarios.push({ uid: doc.id, ...doc.data() }));
 
-    const selectUsuario = document.getElementById('filtroUsuarioGestor');
-    if (selectUsuario && selectUsuario.options.length <= 1) {
-      usuarios.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.uid;
-        opt.textContent = u.nome || u.email || u.uid;
-        selectUsuario.appendChild(opt);
-      });
-    }
-
-    const filtroUsuario = selectUsuario ? selectUsuario.value : '';
-    const tipoData = document.getElementById('filtroDataTipo')?.value || 'mes';
-    let inicio = null, fim = null;
-    if (tipoData === 'dia') {
-      const dia = document.getElementById('filtroDiaGestor')?.value;
-      if (dia) { inicio = dia; fim = dia; }
-    } else if (tipoData === 'periodo') {
-      inicio = document.getElementById('filtroInicioGestor')?.value;
-      fim = document.getElementById('filtroFimGestor')?.value;
-    } else {
-      const mes = document.getElementById('filtroMesGestor')?.value;
-      if (mes) {
-        inicio = mes + '-01';
-        const [ano, m] = mes.split('-');
-        const ultimoDia = new Date(ano, m, 0).getDate();
-        fim = `${mes}-${String(ultimoDia).padStart(2,'0')}`;
-      }
-    }
-
     let totalEsperada = 0;
     const mapaSku = {};
     const pedidosErrados = [];
 
     for (const u of usuarios) {
-      if (filtroUsuario && u.uid !== filtroUsuario) continue;
-
       const produtosSnap = await db.collection('uid').doc(u.uid).collection('produtos').get();
       const custos = {};
       produtosSnap.forEach(p => {
@@ -3072,8 +2632,6 @@ async function carregarAcompanhamentoGestor() {
 
       const diasSnap = await db.collection('uid').doc(u.uid).collection('skusVendidos').get();
       for (const diaDoc of diasSnap.docs) {
-        const dataDia = diaDoc.id;
-        if (inicio && fim && (dataDia < inicio || dataDia > fim)) continue;
         const listaSnap = await diaDoc.ref.collection('lista').get();
         listaSnap.forEach(item => {
           const d = item.data();
@@ -3087,7 +2645,7 @@ async function carregarAcompanhamentoGestor() {
           mapaSku[sku].esperada += esperada;
           mapaSku[sku].real += liquido;
           if (Math.abs(liquido - esperada) > 0.01) {
-            pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: dataDia });
+            pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: diaDoc.id });
           }
         });
       }
@@ -3095,8 +2653,6 @@ async function carregarAcompanhamentoGestor() {
       const errSnap = await db.collection('uid').doc(u.uid).collection('pedidosErrados').get();
       errSnap.forEach(e => {
         const d = e.data();
-        const dataPedido = d.dia || d.data || d.dataPedido;
-        if (inicio && fim && dataPedido && (dataPedido < inicio || dataPedido > fim)) return;
         pedidosErrados.push({ usuario: u.nome || u.email || u.uid, ...d });
       });
     }
@@ -3110,71 +2666,27 @@ async function carregarAcompanhamentoGestor() {
         tbody.appendChild(tr);
       });
     }
-    if (pedidosBody) {
-      const pedidosCriticos = pedidosErrados.filter(p => {
-        const esp = Number(p.sobraEsperada || p.metaEsperada || 0);
-        const real = Number(p.sobraReal || p.totalLiquido || 0);
-        const status = String(p.status || p.nivel || '').toLowerCase();
-        const criticoFlag = p.critico || status.includes('critico');
-        if (criticoFlag) return true;
-        if (!esp) return false;
-        const perc = ((real - esp) / esp) * 100;
-        return perc <= -10;
-      });
-      if (!pedidosCriticos.length) {
-        pedidosBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Sem pedidos críticos</td></tr>';
+
+    if (lista) {
+      if (!pedidosErrados.length) {
+        lista.innerHTML = '<li class="text-gray-500">Sem divergências</li>';
       } else {
-        pedidosCriticos.forEach(p => {
-          const dataPedido = p.dia || p.dataPedido || p.data || '';
-          const pedido = p.pedido || p.numeroPedido || p.id || '';
-          const sku = p.sku || '';
-          const qtd = p.quantidade || p.qtd || 0;
-          const esp = Number(p.sobraEsperada || p.metaEsperada || 0);
-          const real = Number(p.sobraReal || p.totalLiquido || 0);
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${dataPedido}</td><td>${pedido}</td><td>${sku}</td><td>${qtd}</td><td>R$ ${esp.toFixed(2)}</td><td>R$ ${real.toFixed(2)}</td>`;
-          pedidosBody.appendChild(tr);
+        pedidosErrados.forEach(p => {
+          const li = document.createElement('li');
+          const esp = p.sobraEsperada || p.metaEsperada || 0;
+          const real = p.sobraReal || p.totalLiquido || 0;
+          li.textContent = `${p.usuario} - ${p.dia || ''} - ${p.sku}: Esperado R$ ${esp.toFixed(2)} | Real R$ ${real.toFixed(2)}`;
+          lista.appendChild(li);
         });
       }
     }
   } catch (e) {
     console.error('Erro ao carregar acompanhamento do gestor', e);
-    if (pedidosBody) pedidosBody.innerHTML = '<tr><td colspan="6" class="text-red-500">Erro ao carregar dados</td></tr>';
+    if (lista) lista.innerHTML = '<li class="text-red-500">Erro ao carregar dados</li>';
   }
-}
-
-function atualizarTipoFiltroGestor() {
-  const tipo = document.getElementById('filtroDataTipo')?.value;
-  const mesEl = document.getElementById('filtroMesGestor');
-  const diaEl = document.getElementById('filtroDiaGestor');
-  const periodoEl = document.getElementById('filtroPeriodoGestor');
-  mesEl?.classList.add('hidden');
-  diaEl?.classList.add('hidden');
-  periodoEl?.classList.add('hidden');
-  if (tipo === 'dia') diaEl?.classList.remove('hidden');
-  else if (tipo === 'periodo') periodoEl?.classList.remove('hidden');
-  else mesEl?.classList.remove('hidden');
-}
-
-function exportarSobrasGestorCSV() {
-  const tabela = document.getElementById('tabelaSobraSkuGestor');
-  if (!tabela) return;
-  let csv = [];
-  tabela.querySelectorAll('tr').forEach(row => {
-    const cols = Array.from(row.querySelectorAll('th,td')).map(c => c.innerText.replace(/;/g, ','));
-    csv.push(cols.join(';'));
-  });
-  const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'acompanhamento_sobras.csv';
-  link.click();
 }
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
 window.carregarControleVendas = carregarControleVendas;
-window.carregarPrevisao = carregarPrevisao;
-window.gerarPrevisao = gerarPrevisao;
-window.renderizarPrevisao = renderizarPrevisao;
 window.carregarAcompanhamento = carregarAcompanhamento;
 window.carregarAcompanhamentoGestor = carregarAcompanhamentoGestor;
 window.verificarGestorFinanceiro = verificarGestorFinanceiro;
@@ -3183,7 +2695,6 @@ window.exportarAcompanhamentoPDF = exportarAcompanhamentoPDF;
 window.printAcompanhamento = printAcompanhamento;
   window.salvarMetasAcompanhamento = salvarMetasAcompanhamento;
 window.exportarVendasMes = exportarVendasMes;
-window.mostrarDetalhesVendas = mostrarDetalhesVendas;
 window.mostrarDetalhesSobra = mostrarDetalhesSobra;
 window.mostrarDetalhesFaturamento = mostrarDetalhesFaturamento;
 window.excluirFaturamento = excluirFaturamento;
@@ -3193,8 +2704,6 @@ window.exportarJSON = exportarJSON;
 window.verificarConexao = verificarConexao;
 window.editarMeta = editarMeta;
 window.excluirMeta = excluirMeta;
-window.atualizarTipoFiltroGestor = atualizarTipoFiltroGestor;
-window.exportarSobrasGestorCSV = exportarSobrasGestorCSV;
 window.analisarTendenciasIA = analisarTendenciasIA;
   window.atualizarStatusLogistica = atualizarStatusLogistica;
 window.atualizarRastreio = atualizarRastreio;

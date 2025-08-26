@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, getDoc, query, where, onSnapshot, orderBy, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, getDoc, query, where, onSnapshot, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
@@ -38,7 +38,6 @@ onAuthStateChanged(auth, async user => {
   }
   currentUser = user;
   await carregarUsuarios();
-  carregarExpedicao();
   carregarAtualizacoes();
 });
 
@@ -151,8 +150,8 @@ async function carregarHistoricoFaturamento() {
     const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
     let ultimoLiquido = 0;
     const col = document.createElement('div');
-    col.className = 'card p-4 min-w-[200px] text-sm';
-    col.innerHTML = `<h3 class="font-bold mb-1">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LÍQUIDA R$ ${metaDiaria.toLocaleString('pt-BR')}</div>`;
+    col.className = 'min-w-[200px]';
+    col.innerHTML = `<h3 class="font-bold">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LIQUIDA R$ ${metaDiaria.toLocaleString('pt-BR')}</div>`;
     for (const dia of dias) {
       const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
       ultimoLiquido = liquido;
@@ -164,37 +163,6 @@ async function carregarHistoricoFaturamento() {
     const msg = atingido ? `ATINGIDO R$ ${Math.abs(diff).toLocaleString('pt-BR')} POSITIVO` : `NÃO ATINGIDO R$ ${diff.toLocaleString('pt-BR')} NEGATIVO`;
     col.innerHTML += `<div class="mt-2 font-bold ${atingido ? 'text-green-600' : 'text-red-600'}">${msg}</div>`;
     container.appendChild(col);
-  }
-}
-
-async function carregarExpedicao() {
-  const card = document.getElementById('expedicaoCard');
-  const container = document.getElementById('expedicaoAtualizacoes');
-  if (!card || !container) return;
-  container.innerHTML = '';
-  const limiteData = new Date();
-  limiteData.setDate(limiteData.getDate() - 3);
-  try {
-    const q = query(collection(db, 'expedicaoMensagens'), orderBy('createdAt', 'desc'), limit(100));
-    const snap = await getDocs(q);
-    let count = 0;
-    snap.forEach(docSnap => {
-      const dados = docSnap.data();
-      const dests = dados.destinatarios || [];
-      if (currentUser && !dests.includes(currentUser.uid) && dados.gestorUid !== currentUser.uid) return;
-      const dataHora = dados.createdAt?.toDate ? dados.createdAt.toDate() : null;
-      if (!dataHora || dataHora < limiteData) return;
-      const item = document.createElement('div');
-      item.className = 'p-2 border rounded';
-      item.innerHTML = `<div>Qtd não expedida: ${dados.quantidade}</div>` +
-        `${dados.motivo ? `<div>Motivo: ${dados.motivo}</div>` : ''}` +
-        `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
-      container.appendChild(item);
-      count++;
-    });
-    if (count) card.classList.remove('hidden'); else card.classList.add('hidden');
-  } catch (e) {
-    console.error('Erro ao carregar expedição:', e);
   }
 }
 

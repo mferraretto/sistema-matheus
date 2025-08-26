@@ -5,17 +5,6 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/usuarios/$(uid)) &&
         get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor', 'ADM'];
     }
-
-    match /usuarios/{uid}/comissoes/{anoMes} {
-      allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-      match /saques/{saqueId} {
-        allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-      }
-      match /ajustes/{ajusteId} {
-        allow read, write: if request.auth != null && (request.auth.uid == uid || isGestorOrADM(request.auth.uid));
-      }
-    }
-
     match /pdfDocs/{fileId} {
       allow read: if request.auth != null && (
         resource.data.ownerUid == request.auth.uid ||
