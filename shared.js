@@ -516,9 +516,13 @@ document.addEventListener('sidebarLoaded', async () => {
       } else {
         showOnly([]);
       }
-    } catch (e) {
-      console.error('Erro ao aplicar permissões do sidebar:', e);
-    }
+      } catch (e) {
+        if (e?.code === 'permission-denied') {
+          console.warn('Sem permissão para carregar perfil do sidebar');
+        } else {
+          console.error('Erro ao aplicar permissões do sidebar:', e);
+        }
+      }
   }
 
   const auth = getAuth(app);
