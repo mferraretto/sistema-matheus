@@ -476,6 +476,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-gestao',
     'menu-financeiro',
     'menu-atualizacoes',
+    'menu-comunicacao',
     'menu-saques',
     'menu-acompanhamento-gestor',
     'menu-mentoria',
