@@ -163,9 +163,8 @@
 
     var toggle = document.getElementById(toggleId);
     var savedTheme = localStorage.getItem('theme');
-    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    if (savedTheme === 'dark') {
       document.body.classList.add(darkClass);
       if (toggle) toggle.checked = true;
     }
@@ -275,11 +274,19 @@ const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar(){
   const sb = document.getElementById('sidebar-container');
-  const overlay = document.getElementById('sidebar-overlay');
-  const btn = document.querySelector('.mobile-menu-btn');
   if (!sb) return;
+
+  let overlay = document.getElementById('sidebar-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', toggleSidebar);
+  }
+
+  const btn = document.querySelector('.mobile-menu-btn');
   const isOpen = sb.classList.toggle('open');
-  if (overlay) overlay.classList.toggle('show', isOpen);
+  overlay.classList.toggle('show', isOpen);
   document.body.style.overflow = isOpen ? 'hidden' : '';
   if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
