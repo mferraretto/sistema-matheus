@@ -2100,26 +2100,36 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
         return;
       }
       const tbody = document.getElementById('listaSobras');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9">Carregando...</td></tr>';
       try {
+        const pedidos = [];
+        const addPedidos = (snap, usuario) => {
+          snap.forEach(doc => pedidos.push({ usuario, ...doc.data() }));
+        };
         const snap = await db.collection('uid').doc(usuarioLogado.uid).collection('pedidosErrados').get();
+        addPedidos(snap, usuarioLogado.email || usuarioLogado.uid);
+        const respSnap = await db.collection('usuarios').where('responsavelFinanceiroEmail', '==', usuarioLogado.email).get();
+        for (const docSnap of respSnap.docs) {
+          const nome = docSnap.data().nome || docSnap.data().email || docSnap.id;
+          const errSnap = await db.collection('uid').doc(docSnap.id).collection('pedidosErrados').get();
+          addPedidos(errSnap, nome);
+        }
         if (tbody) {
-          if (snap.empty) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500">Sem pedidos</td></tr>';
+          if (!pedidos.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500">Sem pedidos</td></tr>';
             return;
           }
           const format = v => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
           tbody.innerHTML = '';
-          snap.forEach(doc => {
-            const d = doc.data();
+          pedidos.forEach(d => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${d.dia || ''}</td><td>${d.loja || d.shop || ''}</td><td>${d.pedido || d.idPedido || d.numeroPedido || ''}</td><td>${d.sku || ''}</td><td>${d.quantidade || d.qtd || 0}</td><td>R$ ${format(d.subtotal)}</td><td>R$ ${format(d.sobraReal || d.totalLiquido)}</td><td>R$ ${format(d.sobraEsperada || d.metaEsperada)}</td>`;
+            tr.innerHTML = `<td>${d.usuario || ''}</td><td>${d.dia || ''}</td><td>${d.loja || d.shop || ''}</td><td>${d.pedido || d.idPedido || d.numeroPedido || ''}</td><td>${d.sku || ''}</td><td>${d.quantidade || d.qtd || 0}</td><td>R$ ${format(d.subtotal)}</td><td>R$ ${format(d.sobraReal || d.totalLiquido)}</td><td>R$ ${format(d.sobraEsperada || d.metaEsperada)}</td>`;
             tbody.appendChild(tr);
           });
         }
       } catch (e) {
         console.error('Erro ao carregar sobras', e);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-red-500">Erro ao carregar dados</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-red-500">Erro ao carregar dados</td></tr>';
       }
     }
 
