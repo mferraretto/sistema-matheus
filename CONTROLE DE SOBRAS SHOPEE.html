@@ -3156,10 +3156,6 @@ async function carregarAcompanhamentoGestor() {
           if (!mapaSku[sku]) mapaSku[sku] = { esperada: 0, real: 0 };
           mapaSku[sku].esperada += esperada;
           mapaSku[sku].real += liquido;
-         const diffPerc = esperada ? ((liquido - esperada) / esperada) * 100 : 0;
-if (esperada && diffPerc <= -10) {
-  pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: dataDia });
-}
         });
       }
 
@@ -3182,20 +3178,10 @@ if (esperada && diffPerc <= -10) {
       });
     }
     if (pedidosBody) {
-      const pedidosCriticos = pedidosErrados.filter(p => {
-        const esp = Number(p.sobraEsperada || p.metaEsperada || 0);
-        const real = Number(p.sobraReal || p.totalLiquido || 0);
-        const status = String(p.status || p.nivel || '').toLowerCase();
-        const criticoFlag = p.critico || status.includes('critico');
-        if (criticoFlag) return true;
-        if (!esp) return false;
-        const perc = ((real - esp) / esp) * 100;
-        return perc <= -10;
-      });
-      if (!pedidosCriticos.length) {
-        pedidosBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Sem pedidos críticos</td></tr>';
+      if (!pedidosErrados.length) {
+        pedidosBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">Sem pedidos registrados</td></tr>';
       } else {
-        pedidosCriticos.forEach(p => {
+        pedidosErrados.forEach(p => {
           const dataPedido = p.dia || p.dataPedido || p.data || '';
           const pedido = p.pedido || p.numeroPedido || p.id || '';
           const sku = p.sku || '';
