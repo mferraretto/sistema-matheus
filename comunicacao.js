@@ -85,11 +85,12 @@ function openChat(userInfo) {
     sendBtn.addEventListener('click', async () => {
       const texto = inputEl.value.trim();
       if (!texto) return;
+      const participantes = [auth.currentUser.uid, userInfo.id];
       await addDoc(collection(db, 'comunicacao'), {
         tipo: 'mensagem',
         texto,
         remetente: auth.currentUser.uid,
-        destinatarios: [userInfo.id],
+        destinatarios: participantes,
         conversa: cid,
         timestamp: serverTimestamp()
       });
@@ -199,11 +200,12 @@ onAuthStateChanged(auth, async user => {
     if (!texto || dest.length === 0) return;
     for (const d of dest) {
       const conversa = getConversationId(user.uid, d);
+      const participantes = [user.uid, d];
       await addDoc(collection(db, 'comunicacao'), {
         tipo: 'mensagem',
         texto,
         remetente: user.uid,
-        destinatarios: [d],
+        destinatarios: participantes,
         conversa,
         timestamp: serverTimestamp()
       });
