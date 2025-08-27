@@ -36,9 +36,10 @@ body {
 }
 
 #sidebar-container {
+  position: fixed;
   transform: translateX(-100%);
   transition: transform 0.3s ease;
-  z-index: 40;
+  z-index: 50;
 }
 
 #sidebar-container.open {
@@ -49,7 +50,7 @@ body {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 30;
+  z-index: 40;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -1282,11 +1283,12 @@ body.dark-mode {
   --primary-hover: #ff7043;
   --secondary: #b39ddb;
   --bg: #1E293B;
-  --card: #2D3748;
-  --card-bg: #2D3748;
-  --text: #F3F4F6;
+  --card: #1F2937;
+  --card-bg: #1F2937;
+  --text: #CBD5E1;
   --text-light: #94A3B8;
   --border: #475569;
+  --card-shadow: 0 4px 6px rgba(0,0,0,0.4);
   color: var(--text);
   background: var(--background);
 }
@@ -1295,21 +1297,21 @@ body.dark-mode .chart-container,
 body.dark-mode .tab-bar,
 body.dark-mode .tab-content,
 body.dark-mode .table-container {
-  background: #2d3748;
-  color: #e2e8f0
+  background: var(--card-bg);
+  color: var(--text);
 }
 body.dark-mode .navbar {
-  background: #2d3748;
-  color: #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0,0,0,.2)
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
 }
 body.dark-mode .form-control {
   background: #4a5568;
   border-color: #4a5568;
-  color: #e2e8f0
+  color: var(--text);
 }
 body.dark-mode th {
-  background: #4a5568
+  background: #4a5568;
 }
 
 .submenu .nav-item {
