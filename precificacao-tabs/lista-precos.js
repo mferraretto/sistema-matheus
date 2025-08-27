@@ -145,14 +145,17 @@ function verDetalhes(id) {
   document.getElementById('saveBtn').classList.add('hidden');
   document.getElementById('modalTitle').textContent = prod.produto;
   const body = document.getElementById('modalBody');
+  const precoMinimo = parseFloat(prod.precoMinimo) || 0;
+  const lucroPercent = preco =>
+    precoMinimo ? (((parseFloat(preco) || 0) - precoMinimo) / precoMinimo * 100).toFixed(2) : '0';
   body.innerHTML = `
     ${prod.sku ? `<div><strong>SKU:</strong> ${prod.sku}</div>` : ''}
     <div><strong>Plataforma:</strong> ${prod.plataforma}</div>
     <div><strong>Custo:</strong> R$ ${prod.custo}</div>
-    <div><strong>Preço mínimo:</strong> R$ ${prod.precoMinimo}</div>
-    <div><strong>Preço ideal:</strong> R$ ${prod.precoIdeal}</div>
-    <div><strong>Preço médio:</strong> R$ ${prod.precoMedio}</div>
-    <div><strong>Preço promo:</strong> R$ ${prod.precoPromo}</div>
+    <div><strong>Preço mínimo:</strong> R$ ${prod.precoMinimo} (Lucro: ${lucroPercent(prod.precoMinimo)}%)</div>
+    <div><strong>Preço ideal:</strong> R$ ${prod.precoIdeal} (Lucro: ${lucroPercent(prod.precoIdeal)}%)</div>
+    <div><strong>Preço médio:</strong> R$ ${prod.precoMedio} (Lucro: ${lucroPercent(prod.precoMedio)}%)</div>
+    <div><strong>Preço promo:</strong> R$ ${prod.precoPromo} (Lucro: ${lucroPercent(prod.precoPromo)}%)</div>
   `;
     // Utilize global modal helpers to ensure proper display
   document.getElementById('detalhesModal').classList.remove('hidden');
