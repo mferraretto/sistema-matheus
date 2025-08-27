@@ -30,6 +30,7 @@ let isExpedicao = false;
 let notifUnsub = null;
 let expNotifUnsub = null;
 let selectedRole = null;
+window.isFinanceiroResponsavel = false;
 
 // Ping a local file to test online status without CORS issues.
 async function pingOnline(timeout = 3000) {
@@ -281,6 +282,16 @@ async function showUserArea(user) {
     if (perfil === 'expedicao') {
       await checkExpedicao(user);
     }
+
+    // 3) verifica se usuário é responsável financeiro e garante acesso às sobras
+    try {
+      const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
+      const respSnap = await getDocs(q);
+      window.isFinanceiroResponsavel = !respSnap.empty;
+      ensureFinanceiroMenu();
+    } catch (e) {
+      console.error('Erro ao verificar responsável financeiro:', e);
+    }
   } catch (e) {
     console.error('Erro ao carregar perfil do usuário:', e);
   }
@@ -336,6 +347,13 @@ function applyPerfilRestrictions(perfil) {
       el.classList.remove('hidden');
     }
   });
+}
+
+function ensureFinanceiroMenu() {
+  if (window.isFinanceiroResponsavel) {
+    const menu = document.getElementById('menu-vendas');
+    if (menu) menu.classList.remove('hidden');
+  }
 }
 
 async function checkExpedicao(user) {
@@ -481,6 +499,7 @@ function checkLogin() {
 
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
+  ensureFinanceiroMenu();
 });
 
 checkLogin();
