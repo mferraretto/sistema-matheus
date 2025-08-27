@@ -94,15 +94,6 @@ body.has-sidebar .content-wrapper {
   margin-left: var(--sidebar-width);
 }
 
-@media (max-width:768px) {
-  body.has-sidebar .navbar {
-    left: 0;
-  }
-  body.has-sidebar .content-wrapper {
-    margin-left: 0;
-  }
-}
-
 
 .card-header-icon {
   width: 50px;
@@ -995,18 +986,6 @@ h4 {
     transform: rotate(360deg)
   }
 }
-@media (max-width:992px) {
-  .navbar {
-    left: 0;
-    justify-content: space-between;
-  }
-  .main-content {
-    margin-left: 0;
-  }
-  .menu-toggle {
-    display: block;
-  }
-}
 @media (max-width:768px) {
   .tab-bar {
     gap: .3rem
@@ -1189,6 +1168,13 @@ h4 {
   cursor: pointer
 }
 @media (max-width:992px) {
+  .navbar {
+    left: 0;
+    justify-content: space-between;
+  }
+  .main-content {
+    margin-left: 0;
+  }
   .menu-toggle {
     display: block
   }
@@ -1264,7 +1250,8 @@ body.dark-mode .data-table th {
 
 @media (max-width:768px) {
   /* Sidebar visibility handled by container; remove legacy transforms */
-  .content-wrapper {
+  .content-wrapper,
+  body.has-sidebar .content-wrapper {
     margin-left: 0;
   }
 }
