@@ -86,13 +86,7 @@ body {
   padding: 30px;
 }
 
-body.has-sidebar .navbar {
-  left: var(--sidebar-width);
-}
-
-body.has-sidebar .content-wrapper {
-  margin-left: var(--sidebar-width);
-}
+/* Legacy sidebar offset styles removed. Sidebar layout is now handled by container */
 
 
 .card-header-icon {
@@ -1249,9 +1243,8 @@ body.dark-mode .data-table th {
 
 
 @media (max-width:768px) {
-  /* Sidebar visibility handled by container; remove legacy transforms */
-  .content-wrapper,
-  body.has-sidebar .content-wrapper {
+  /* Sidebar visibility handled by container */
+  .content-wrapper {
     margin-left: 0;
   }
 }
