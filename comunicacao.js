@@ -147,6 +147,34 @@ onAuthStateChanged(auth, async user => {
   await loadTeam(user, perfil, data);
   await loadComms(user.uid);
 
+  onSnapshot(
+    query(
+      collection(db, 'comunicacao'),
+      where('tipo', '==', 'mensagem'),
+      where('destinatarios', 'array-contains', user.uid),
+      orderBy('timestamp')
+    ),
+    snap => {
+      snap.docChanges().forEach(change => {
+        if (change.type !== 'added') return;
+        const msg = change.doc.data();
+        const otherId = msg.remetente;
+        const cid = getConversationId(user.uid, otherId);
+        if (chatWindows[cid]) return;
+        if (usersMap[otherId]) {
+          openChat(usersMap[otherId]);
+        } else {
+          getDoc(doc(db, 'usuarios', otherId)).then(ds => {
+            if (!ds.exists()) return;
+            const u = { id: otherId, nome: ds.data().nome || ds.data().email || otherId, email: ds.data().email || '' };
+            usersMap[otherId] = u;
+            openChat(u);
+          });
+        }
+      });
+    }
+  );
+
   document.getElementById('sendFileBtn').addEventListener('click', async () => {
     const file = document.getElementById('fileInput').files[0];
     const dest = Array.from(document.getElementById('fileRecipients').selectedOptions).map(o => o.value);
@@ -169,17 +197,19 @@ onAuthStateChanged(auth, async user => {
     const texto = document.getElementById('messageText').value.trim();
     const dest = Array.from(document.getElementById('messageRecipients').selectedOptions).map(o => o.value);
     if (!texto || dest.length === 0) return;
-    const conversa = dest.length === 1 ? getConversationId(user.uid, dest[0]) : null;
-    await addDoc(collection(db, 'comunicacao'), {
-      tipo: 'mensagem',
-      texto,
-      remetente: user.uid,
-      destinatarios: dest,
-      ...(conversa && { conversa }),
-      timestamp: serverTimestamp()
-    });
+    for (const d of dest) {
+      const conversa = getConversationId(user.uid, d);
+      await addDoc(collection(db, 'comunicacao'), {
+        tipo: 'mensagem',
+        texto,
+        remetente: user.uid,
+        destinatarios: [d],
+        conversa,
+        timestamp: serverTimestamp()
+      });
+      if (usersMap[d]) openChat(usersMap[d]);
+    }
     document.getElementById('messageText').value = '';
-    if (conversa && usersMap[dest[0]]) openChat(usersMap[dest[0]]);
   });
 
   document.getElementById('sendAlertBtn').addEventListener('click', async () => {
