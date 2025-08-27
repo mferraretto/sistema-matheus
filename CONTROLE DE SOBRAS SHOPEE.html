@@ -3132,7 +3132,7 @@ async function carregarAcompanhamentoGestor() {
           if (!mapaSku[sku]) mapaSku[sku] = { esperada: 0, real: 0 };
           mapaSku[sku].esperada += esperada;
           mapaSku[sku].real += liquido;
-          if (Math.abs(liquido - esperada) > 0.09) {
+          if (Math.abs(liquido - esperada) > 0.9) {
             pedidosErrados.push({ usuario: u.nome || u.email || u.uid, sku, sobraEsperada: esperada, sobraReal: liquido, dia: dataDia });
           }
         });
