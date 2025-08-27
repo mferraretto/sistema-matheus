@@ -54,7 +54,8 @@
   <div id="chatDock" class="fixed bottom-0 right-0 flex space-x-2 p-2"></div>
 
 <template id="chatWindowTemplate">
-  <div class="w-80 max-h-[70vh] bg-white border rounded-lg shadow-lg flex flex-col">
+  <!-- Define explicit height so the message area remains visible -->
+  <div class="w-80 h-96 bg-white border rounded-lg shadow-lg flex flex-col" style="max-height:70vh;">
     <div class="flex items-center bg-green-600 text-white p-2 rounded-t-lg">
       <span class="chatUserName font-semibold flex-1"></span>
       <button class="closeChat ml-2 text-white">×</button>
