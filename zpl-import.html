@@ -237,13 +237,14 @@
                     throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist, ou o número de blocos é ímpar.'); 
                 } 
                 
-                const dpmm = 8; 
-                const originalWidthIn = 4.0; 
-                const originalHeightIn = 5.2; 
+                const dpmm = 8;
+                const originalWidthIn = 4.0;
+                const originalHeightIn = 5.2;
                 const { PDFDocument } = PDFLib;
                 const pdfDoc = await PDFDocument.create();
                 const totalLabels = blocks.length / 2;
                 const allExtractedItems = [];
+                let labelCounter = 1;
 
                 // Loop to process each pair of ZPL blocks
                 for (let i = 0; i < blocks.length; i += 2) {
@@ -270,7 +271,7 @@
                     allExtractedItems.push(...extractedData);
 
                     // 3. Generate ZPL for the new combined label
-                    const combinedZPL = generateCombinedZPL(labelBlock, extractedData); 
+                    const combinedZPL = generateCombinedZPL(labelBlock, extractedData, labelCounter);
                     
                     // 4. Calculate new total page height
                     const newTotalHeightInches = calculateNewTotalHeight(originalHeightIn, extractedData.length, dpmm); 
@@ -283,8 +284,9 @@
                     const pngBytes = await processedPngBlob.arrayBuffer(); 
                     const pngImage = await pdfDoc.embedPng(pngBytes); 
                     const page = pdfDoc.addPage([originalWidthIn * 72, newTotalHeightInches * 72]); 
-                    page.drawImage(pngImage, { x: 0, y: 0, width: originalWidthIn * 72, height: newTotalHeightInches * 72 }); 
-                } 
+                    page.drawImage(pngImage, { x: 0, y: 0, width: originalWidthIn * 72, height: newTotalHeightInches * 72 });
+                    labelCounter++;
+                }
 
                 // 7. Save the final PDF
                 const pdfBytes = await pdfDoc.save();
@@ -305,11 +307,19 @@
                 await savePrintedSkuQuantities(allExtractedItems);
                 
                 // 8. Display the preview of the first label
-                const firstLabelImageBlob = await generateImageFromZpl(generateCombinedZPL(blocks[0], await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))), dpmm, originalWidthIn, calculateNewTotalHeight(originalHeightIn, (await extractDataFromImage(await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn)))).length, dpmm)); 
-                const firstLabelImageUrl = URL.createObjectURL(firstLabelImageBlob); 
-                previewImage.src = firstLabelImageUrl; 
-                previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); }; 
-                resultsCard.style.display = 'block'; 
+                const firstChecklistData = await extractDataFromImage(
+                    await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn))
+                );
+                const firstLabelImageBlob = await generateImageFromZpl(
+                    generateCombinedZPL(blocks[0], firstChecklistData, 1),
+                    dpmm,
+                    originalWidthIn,
+                    calculateNewTotalHeight(originalHeightIn, firstChecklistData.length, dpmm)
+                );
+                const firstLabelImageUrl = URL.createObjectURL(firstLabelImageBlob);
+                previewImage.src = firstLabelImageUrl;
+                previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); };
+                resultsCard.style.display = 'block';
 
             } catch (error) { 
                 errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`; 
@@ -538,7 +548,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             return JSON.parse(json); 
         } 
 
-        function generateCombinedZPL(labelBlock, data) { 
+        function generateCombinedZPL(labelBlock, data, labelNumber) {
             let originalContent = labelBlock.replace(/\^XA|\^XZ/g, ''); 
             originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22'); 
             const newContentStartX = 50; 
@@ -559,11 +569,13 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             
             const dpmm = 8; 
             const originalHeightIn = 5.2; 
-            const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm); 
-            const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8); 
-            
-            return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}^XZ`; 
-        } 
+            const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm);
+            const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8);
+            const numberY = totalPageHeightDots - 40;
+            const numberZpl = `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS`;
+
+            return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}${numberZpl}^XZ`;
+        }
 
         function readFileAsync(file) {
             return new Promise((resolve, reject) => {
