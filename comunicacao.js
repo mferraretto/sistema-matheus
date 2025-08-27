@@ -24,7 +24,13 @@ let currentChatUser = null;
 const usersMap = {};
 const chatDock = document.getElementById('chatDock');
 const chatButtons = {};
-const chatLastOpened = {};
+const openChatUsers = new Set(JSON.parse(localStorage.getItem('openChatUsers') || '[]'));
+const chatLastOpened = JSON.parse(localStorage.getItem('chatLastOpened') || '{}');
+
+function saveOpenChats() {
+  localStorage.setItem('openChatUsers', JSON.stringify([...openChatUsers]));
+}
+
 
 function addUserOption(user) {
   const li = document.createElement('li');
@@ -99,6 +105,8 @@ function ensureChatButton(userInfo) {
       dot.classList.remove('hidden');
     }
   });
+  openChatUsers.add(userInfo.id);
+  saveOpenChats();
   chatButtons[cid] = { button: btn, dot };
   return chatButtons[cid];
 }
@@ -112,7 +120,9 @@ function openChat(userInfo) {
   chatMessages.innerHTML = '';
   const cid = getConversationId(auth.currentUser.uid, userInfo.id);
   chatLastOpened[cid] = Date.now();
+  saveLastOpened();
   if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
+  localStorage.setItem('activeChatUser', userInfo.id);
   const q = query(
     collection(db, 'comunicacao'),
     where('tipo', '==', 'mensagem'),
@@ -124,6 +134,7 @@ function openChat(userInfo) {
     snap.forEach(d => renderChatMessage(d.data()));
     chatMessages.scrollTop = chatMessages.scrollHeight;
     chatLastOpened[cid] = Date.now();
+    saveLastOpened();
     if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
   });
 }
@@ -155,9 +166,18 @@ async function loadComms(uid) {
   });
 }
 
+function restoreChats() {
+  openChatUsers.forEach(uid => {
+    if (usersMap[uid]) ensureChatButton(usersMap[uid]);
+  });
+  const activeId = localStorage.getItem('activeChatUser');
+  if (activeId && usersMap[activeId]) openChat(usersMap[activeId]);
+}
+
 closeChat.addEventListener('click', () => {
   chatModal.classList.add('hidden');
   if (chatUnsub) chatUnsub();
+  localStorage.removeItem('activeChatUser');
 });
 
 chatSend.addEventListener('click', async () => {
@@ -186,6 +206,7 @@ onAuthStateChanged(auth, async user => {
   const perfil = (data.perfil || '').toLowerCase();
   await loadTeam(user, perfil, data);
   await loadComms(user.uid);
+  restoreChats();
 
   document.getElementById('sendFileBtn').addEventListener('click', async () => {
     const file = document.getElementById('fileInput').files[0];
