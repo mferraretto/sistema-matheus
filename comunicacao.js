@@ -34,12 +34,11 @@ function addUserOption(user) {
 }
 
 function renderComm(c) {
+  if (c.tipo === 'mensagem') return;
   const li = document.createElement('li');
   li.className = 'border p-2 rounded';
   if (c.tipo === 'arquivo') {
     li.innerHTML = `<strong>Arquivo:</strong> <a href="${c.arquivoUrl}" target="_blank" class="text-blue-600 underline">${c.arquivoNome || 'Arquivo'}</a>`;
-  } else if (c.tipo === 'mensagem') {
-    li.innerHTML = `<strong>Mensagem:</strong> ${c.texto}`;
   } else if (c.tipo === 'alerta') {
     li.innerHTML = `<strong>Alerta:</strong> ${c.texto}`;
   }
@@ -131,7 +130,10 @@ async function loadComms(uid) {
   const snap = await getDocs(collection(db, 'comunicacao'));
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    if ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) || c.remetente === uid) {
+    if (
+      c.tipo !== 'mensagem' &&
+      ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) || c.remetente === uid)
+    ) {
       renderComm(c);
     }
   });
