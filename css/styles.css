@@ -112,30 +112,6 @@ body.has-sidebar .content-wrapper {
   color: var(--primary);
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse
-}
-
-.data-table th {
-  background-color: #f8f9fa;
-  padding: 12px 15px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--dark);
-  border-bottom: 2px solid #e9ecef;
-  position: sticky;
-  top: 0
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #e9ecef
-}
-
-.data-table tr:nth-child(2n) {
-  background-color: #f8f9fa
-}
 
 .alert-success {
   color: var(--success);
@@ -453,27 +429,6 @@ h4 {
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--primary);
-}
-table {
-  margin: 20px 0;
-  box-shadow: 0 4px 6px rgba(0,0,0,.05);
-  font-family: Inter,sans-serif;
-  border-radius: 10px;
-  overflow: hidden;
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 600px
-}
-td,
-th {
-  border-bottom: 1px solid var(--border)
-}
-tr:nth-child(2n) {
-  background-color: #f8f9fa
-}
-tr:hover {
-  background-color: #eef5fd
 }
 .btn-group {
   display: flex;
@@ -927,49 +882,6 @@ tr:hover {
 .input-with-icon input {
   padding-left: 3rem
 }
-.table-container {
-  overflow-x: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,.05);
-  margin: 1.5rem 0
-}
-thead {
-  position: sticky;
-  top: 0;
-  z-index: 10
-}
-th {
-  background-color: var(--secondary);
-  position: sticky;
-  top: 0;
-  background: var(--secondary);
-  color: #fff;
-  padding: 1rem;
-  text-align: center;
-  font-weight: 600;
-  border: none;
-  font-family: Inter,sans-serif
-}
-th:first-child {
-  border-radius: 10px 0 0
-}
-th:last-child {
-  border-radius: 0 10px 0 0
-}
-td {
-  padding: 1rem;
-  text-align: center;
-  border-bottom: 1px solid #edf2f7;
-  background: #fff
-}
-tr:nth-child(2n) td {
-  background: #f9fafb
-}
-tr:last-child td {
-  border-bottom: none
-}
-tr:hover td {
-  background: #f1f5f9
-}
 .badge {
   display: inline-block;
   padding: .4rem .8rem;
@@ -1310,7 +1222,8 @@ body.dark-mode .form-control {
   border-color: #4a5568;
   color: var(--text);
 }
-body.dark-mode th {
+body.dark-mode .table th,
+body.dark-mode .data-table th {
   background: #4a5568;
 }
 
