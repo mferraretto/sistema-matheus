@@ -131,6 +131,7 @@ async function loadComms(uid) {
   const snap = await getDocs(collection(db, 'comunicacao'));
   snap.forEach(docSnap => {
     const c = docSnap.data();
+    if (c.tipo === 'mensagem') return;
     if ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) || c.remetente === uid) {
       renderComm(c);
     }
