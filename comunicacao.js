@@ -31,9 +31,6 @@ function saveOpenChats() {
   localStorage.setItem('openChatUsers', JSON.stringify([...openChatUsers]));
 }
 
-function saveLastOpened() {
-  localStorage.setItem('chatLastOpened', JSON.stringify(chatLastOpened));
-}
 
 function addUserOption(user) {
   const li = document.createElement('li');

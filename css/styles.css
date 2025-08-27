@@ -16,7 +16,7 @@
   --bg-light: #F5F7FA;
   --background: #FAFAFA;
   --bg: #FAFAFA;
-  --border: #E0E0E0;
+  --border: #e5e7eb;
   --card: #FFFFFF;
   --card-bg: #FFFFFF;
   --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -92,15 +92,6 @@ body.has-sidebar .navbar {
 
 body.has-sidebar .content-wrapper {
   margin-left: var(--sidebar-width);
-}
-
-@media (max-width:768px) {
-  body.has-sidebar .navbar {
-    left: 0;
-  }
-  body.has-sidebar .content-wrapper {
-    margin-left: 0;
-  }
 }
 
 
@@ -201,7 +192,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 .introjs-prevbutton {
-  background-color: #e5e7eb;
+  background-color: var(--border);
   color: #333;
 }
 
@@ -242,7 +233,7 @@ input:checked + .dark-mode-slider:before {
 
 #tarefasCard .progress-wrapper {
   width: 100%;
-  background-color: #e5e7eb;
+  background-color: var(--border);
   border-radius: 0.5rem;
   overflow: hidden;
   height: 0.5rem;
@@ -295,7 +286,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .task-actions button {
-  background-color: #e5e7eb;
+  background-color: var(--border);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   transition: background-color .2s;
@@ -795,7 +786,7 @@ h4 {
 
 .faturamento-dia {
   width: 160px;
-  background: linear-gradient(135deg, #e5e7eb, #ffffff);
+  background: linear-gradient(135deg, var(--border), #ffffff);
   border-radius: 0.5rem;
   padding: 0.5rem;
   text-align: center;
@@ -995,18 +986,6 @@ h4 {
     transform: rotate(360deg)
   }
 }
-@media (max-width:992px) {
-  .navbar {
-    left: 0;
-    justify-content: space-between;
-  }
-  .main-content {
-    margin-left: 0;
-  }
-  .menu-toggle {
-    display: block;
-  }
-}
 @media (max-width:768px) {
   .tab-bar {
     gap: .3rem
@@ -1189,6 +1168,13 @@ h4 {
   cursor: pointer
 }
 @media (max-width:992px) {
+  .navbar {
+    left: 0;
+    justify-content: space-between;
+  }
+  .main-content {
+    margin-left: 0;
+  }
   .menu-toggle {
     display: block
   }
@@ -1264,7 +1250,8 @@ body.dark-mode .data-table th {
 
 @media (max-width:768px) {
   /* Sidebar visibility handled by container; remove legacy transforms */
-  .content-wrapper {
+  .content-wrapper,
+  body.has-sidebar .content-wrapper {
     margin-left: 0;
   }
 }
@@ -1576,7 +1563,7 @@ body.dark-mode .table tr:nth-child(2n) {
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 .product-card:hover {
