@@ -489,6 +489,8 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-desempenho',
   ];
 
+  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(id => id !== 'menu-comunicacao');
+
   function showOnly(ids) {
     document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
       const li = a.closest('li') || a.parentElement;
@@ -521,10 +523,10 @@ document.addEventListener('sidebarLoaded', async () => {
       if (isADM || isGestor) {
         showOnly(ADMIN_GESTOR_MENU_IDS);
       } else if (isCliente) {
-        hideIds(ADMIN_GESTOR_MENU_IDS);
+        hideIds(CLIENTE_HIDDEN_MENU_IDS);
         document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
           const li = a.closest('li') || a.parentElement;
-          if (li && !ADMIN_GESTOR_MENU_IDS.includes(a.id)) li.style.display = '';
+          if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id)) li.style.display = '';
         });
       }
     } catch (e) {
