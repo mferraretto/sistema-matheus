@@ -36,7 +36,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem; /* gap-2 */
-  border-radius: 9999px; /* rounded-full */
+  border-radius: 624.9375rem; /* rounded-full */
   padding: 0.5rem 1rem; /* px-4 py-2 */
   font-weight: 500; /* font-medium */
   transition: background-color .2s, color .2s, box-shadow .2s;
@@ -193,7 +193,7 @@
 .progress {
   background-color: #e5e7eb;
   height: 6px;
-  border-radius: 9999px;
+  border-radius: 624.9375rem;
   overflow: hidden;
 }
 .progress .progress-bar {
