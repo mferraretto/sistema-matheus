@@ -22,6 +22,9 @@ const closeChat = document.getElementById('closeChat');
 let chatUnsub = null;
 let currentChatUser = null;
 const usersMap = {};
+const chatDock = document.getElementById('chatDock');
+const chatButtons = {};
+const chatLastOpened = {};
 
 function addUserOption(user) {
   const li = document.createElement('li');
@@ -66,14 +69,50 @@ function renderChatMessage(msg) {
   chatMessages.appendChild(div);
 }
 
+function ensureChatButton(userInfo) {
+  const cid = getConversationId(auth.currentUser.uid, userInfo.id);
+  if (chatButtons[cid]) return chatButtons[cid];
+  const wrapper = document.createElement('div');
+  wrapper.className = 'relative';
+  const btn = document.createElement('button');
+  btn.className = 'bg-green-600 text-white px-3 py-1 rounded-t';
+  btn.textContent = userInfo.nome || userInfo.email || userInfo.id;
+  const dot = document.createElement('span');
+  dot.className = 'absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full hidden';
+  wrapper.appendChild(btn);
+  wrapper.appendChild(dot);
+  chatDock.appendChild(wrapper);
+  btn.addEventListener('click', () => openChat(userInfo));
+  const q = query(
+    collection(db, 'comunicacao'),
+    where('tipo', '==', 'mensagem'),
+    where('conversa', '==', cid),
+    orderBy('timestamp')
+  );
+  onSnapshot(q, snap => {
+    const msgs = [];
+    snap.forEach(d => msgs.push(d.data()));
+    if (msgs.length === 0) return;
+    const last = msgs[msgs.length - 1];
+    const ts = last.timestamp ? last.timestamp.toMillis() : Date.now();
+    if (ts > (chatLastOpened[cid] || 0) && last.remetente !== auth.currentUser.uid) {
+      dot.classList.remove('hidden');
+    }
+  });
+  chatButtons[cid] = { button: btn, dot };
+  return chatButtons[cid];
+}
+
 function openChat(userInfo) {
+  ensureChatButton(userInfo);
   currentChatUser = userInfo;
   chatUserName.textContent = userInfo.nome || userInfo.email || userInfo.id;
   chatModal.classList.remove('hidden');
-  chatModal.classList.add('flex');
   if (chatUnsub) chatUnsub();
   chatMessages.innerHTML = '';
   const cid = getConversationId(auth.currentUser.uid, userInfo.id);
+  chatLastOpened[cid] = Date.now();
+  if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
   const q = query(
     collection(db, 'comunicacao'),
     where('tipo', '==', 'mensagem'),
@@ -84,6 +123,8 @@ function openChat(userInfo) {
     chatMessages.innerHTML = '';
     snap.forEach(d => renderChatMessage(d.data()));
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    chatLastOpened[cid] = Date.now();
+    if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
   });
 }
 
