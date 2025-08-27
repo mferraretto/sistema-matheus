@@ -151,13 +151,13 @@ async function carregarHistoricoFaturamento() {
     const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
     let ultimoLiquido = 0;
     const col = document.createElement('div');
-    col.className = 'card p-4 min-w-[200px] text-sm';
-    col.innerHTML = `<h3 class="font-bold mb-1">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LÍQUIDA R$ ${metaDiaria.toLocaleString('pt-BR')}</div>`;
+    col.className = 'card metric-card text-sm';
+    col.innerHTML = `<h3 class="font-bold mb-1">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LÍQUIDA <span class="metric-value">R$ ${metaDiaria.toLocaleString('pt-BR')}</span></div>`;
     for (const dia of dias) {
       const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
       ultimoLiquido = liquido;
       const vendas = await calcularVendasDia(u.uid, dia);
-      col.innerHTML += `\n        <div class="mt-2">${formatarData(dia)}</div>\n        <div>Bruto R$ ${bruto.toLocaleString('pt-BR')}</div>\n        <div>Líquido R$ ${liquido.toLocaleString('pt-BR')}</div>\n        <div>Vendas ${vendas}</div>`;
+      col.innerHTML += `\n        <div class="metric-item mt-2">${formatarData(dia)}</div>\n        <div class="metric-item">Bruto <span class="metric-value">R$ ${bruto.toLocaleString('pt-BR')}</span></div>\n        <div class="metric-item">Líquido <span class="metric-value">R$ ${liquido.toLocaleString('pt-BR')}</span></div>\n        <div class="metric-item">Vendas <span class="metric-value">${vendas}</span></div>`;
     }
     const diff = metaDiaria - ultimoLiquido;
     const atingido = diff <= 0;

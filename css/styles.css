@@ -792,6 +792,28 @@ tr:hover {
   gap: .5rem;
   flex-wrap: wrap
 }
+
+/* Metric cards on Atualizações page */
+.card.metric-card {
+  min-width: 200px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+}
+.card.metric-card .metric-item + .metric-item {
+  margin-top: 0.5rem;
+}
+.card.metric-card .metric-value {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+@media (max-width: 768px) {
+  .card.metric-card {
+    min-width: 150px;
+    padding: 2rem;
+  }
+  .card.metric-card .metric-value {
+    font-size: 1.25rem;
+  }
+}
 .form-group {
   margin-bottom: 1.2rem
 }
