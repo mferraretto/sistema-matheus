@@ -1542,15 +1542,27 @@ const dataInput = document.getElementById("dataFaturamento");
               skusVendidos[sku].total++;
               skusVendidos[sku].valorLiquido += liquidoLinha;
 
-              const metaEsperada = metas[sku]?.valor || 0;
-              if (metaEsperada && Math.abs(liquidoLinha - metaEsperada) > 0.01) {
+              const headerPedido = headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
+              const pedidoId = headerPedido ? row[headerPedido] : null;
+              const headerQtd = headers.find(h => h.toLowerCase().includes('quantidade'));
+              const quantidade = headerQtd ? parseInt(row[headerQtd]) || 0 : 0;
+              const metaUnit = metas[sku]?.valor || 0;
+              const metaEsperada = metaUnit * (quantidade || 1);
+              const sobraReal = liquidoLinha;
+
+              if (metaEsperada && sobraReal < metaEsperada * 0.9) {
                 pedidosErrados.push({
                   dia: dataReferencia,
-                  sku: sku,
                   loja: loja,
-                  totalLiquido: liquidoLinha,
+                  pedido: pedidoId,
+                  sku: sku,
+                  quantidade: quantidade,
+                  subtotal: subtotal,
+                  sobraReal: sobraReal,
+                  totalLiquido: sobraReal,
                   sobraEsperada: metaEsperada,
-                  uid: usuarioLogado.uid
+                  uid: usuarioLogado.uid,
+                  critico: true
                 });
               }
             });
