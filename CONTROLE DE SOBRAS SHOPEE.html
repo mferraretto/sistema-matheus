@@ -72,6 +72,9 @@
         <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
           <i class="fas fa-boxes"></i> Controle de Vendas
          </button>
+        <button class="tab-btn" onclick="trocarAba('sobras'); carregarSobras()">
+          <i class="fas fa-exclamation-circle"></i> Sobras
+        </button>
         <button class="tab-btn" onclick="trocarAba('previsao'); carregarPrevisao()">
           <i class="fas fa-chart-area"></i> 📈 Previsão
         </button>
@@ -116,6 +119,11 @@
 
       <!-- Aba de Controle de Vendas -->
       <div id="controleVendas" class="tab-content">
+
+      </div>
+
+      <!-- Aba de Sobras -->
+      <div id="sobras" class="tab-content">
 
       </div>
 
@@ -164,7 +172,7 @@ let pedidosProcessados = [];
 let graficoBarras, graficoPizza, graficoPrevisao;
 let previsaoDados = {};
 const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
-   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','previsao','acompanhamento','acompanhamentoGestor'];
+   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','sobras','previsao','acompanhamento','acompanhamentoGestor'];
       const tabsLoaded = Promise.all(
         tabIds.map(t =>
           fetch(`sobras-tabs/${t}.html`)
@@ -2075,6 +2083,32 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
       }
     }
 
+    async function carregarSobras() {
+      await tabsLoaded;
+      const tbody = document.getElementById('listaSobras');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
+      try {
+        const snap = await db.collection('uid').doc(usuarioLogado.uid).collection('pedidosErrados').get();
+        if (tbody) {
+          if (snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-500">Sem pedidos</td></tr>';
+            return;
+          }
+          const format = v => Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+          tbody.innerHTML = '';
+          snap.forEach(doc => {
+            const d = doc.data();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${d.dia || ''}</td><td>${d.loja || d.shop || ''}</td><td>${d.pedido || d.idPedido || d.numeroPedido || ''}</td><td>${d.sku || ''}</td><td>${d.quantidade || d.qtd || 0}</td><td>R$ ${format(d.subtotal)}</td><td>R$ ${format(d.sobraReal || d.totalLiquido)}</td><td>R$ ${format(d.sobraEsperada || d.metaEsperada)}</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (e) {
+        console.error('Erro ao carregar sobras', e);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-red-500">Erro ao carregar dados</td></tr>';
+      }
+    }
+
     async function carregarPrevisao() {
       await tabsLoaded;
       const selectSku = document.getElementById('filtroSkuPrevisao');
@@ -3184,6 +3218,7 @@ function exportarSobrasGestorCSV() {
 }
 window.carregarRegistrosFaturamento = carregarRegistrosFaturamento;
 window.carregarControleVendas = carregarControleVendas;
+window.carregarSobras = carregarSobras;
 window.carregarPrevisao = carregarPrevisao;
 window.gerarPrevisao = gerarPrevisao;
 window.renderizarPrevisao = renderizarPrevisao;
@@ -3223,6 +3258,9 @@ window.toggleExportMenu = toggleExportMenu;
     const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
     if (initialTab && document.getElementById(initialTab)) {
       trocarAba(initialTab);
+      if (initialTab === 'sobras') {
+        carregarSobras();
+      }
     }
   });
 </script>
