@@ -362,10 +362,6 @@ input:checked + .dark-mode-slider:before {
   margin-left: 5px
 }
 
-.main-content {
-  flex: 1;
-}
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -1084,9 +1080,6 @@ tr:hover td {
     left: 0;
     justify-content: space-between;
   }
-  .main-content {
-    margin-left: 0;
-  }
   .menu-toggle {
     display: block;
   }
@@ -1436,12 +1429,6 @@ body.dark-mode th {
 .user-role {
   font-size: 12px;
   color: var(--text-light)
-}
-.main-content {
-  margin-top: 70px;
-  margin-left: var(--sidebar-width);
-  padding: 25px;
-  min-height: calc(100vh - 70px)
 }
 .card:hover {
   transform: translateY(-3px);
@@ -1831,10 +1818,10 @@ input:checked + .toggle-slider:before {
       display: block;
     }
     .main-content {
-      margin-left: 0;
-      padding-left: 1rem;
-      padding-right: 1rem;
-      padding-top: 60px;
+      padding: 1rem;
+    }
+    .sidebar {
+      transform: none;
     }
   }
 
@@ -1982,19 +1969,15 @@ body.dark .sidebar-link.active {
 
 /* Base layout spacing */
 .main-content {
+  flex: 1;
   margin-top: var(--navbar-height);
   margin-left: 0;
+  padding: 25px;
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 /* Desktop sidebar beside content */
 @media (min-width:1024px){
   .main-content { margin-left: var(--sidebar-width); }
-}
-
-/* Mobile off-canvas handled by container; sidebar stays static */
-@media (max-width:768px){
-  .sidebar {
-    transform: none;
-  }
 }
 
