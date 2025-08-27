@@ -139,30 +139,41 @@ async function carregarHistoricoFaturamento() {
   const mesNum = new Date().getMonth() + 1;
   const totalDiasMes = new Date(ano, mesNum, 0).getDate();
   for (const u of usuariosResponsaveis) {
-    let metaDiaria = 0;
+    let metaMensal = 0;
     try {
       const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mesAtual));
-      if (metaDoc.exists()) {
-        const metaMensal = Number(metaDoc.data().valor) || 0;
-        metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
-      }
+      if (metaDoc.exists()) metaMensal = Number(metaDoc.data().valor) || 0;
     } catch (_) {}
+    const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
+
     const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
     const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
-    let ultimoLiquido = 0;
+
     const col = document.createElement('div');
-    col.className = 'card metric-card text-sm';
-    col.innerHTML = `<h3 class="font-bold mb-1">${u.nome}</h3><div class="text-xs text-gray-500 mb-2">META LÍQUIDA <span class="metric-value">R$ ${metaDiaria.toLocaleString('pt-BR')}</span></div>`;
+    col.className = 'faturamento-col';
+
+    const header = document.createElement('div');
+    header.className = 'faturamento-header';
+    header.innerHTML = `<div>${u.nome}</div><div>META R$ ${metaMensal.toLocaleString('pt-BR')}</div>`;
+    col.appendChild(header);
+
     for (const dia of dias) {
       const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
-      ultimoLiquido = liquido;
       const vendas = await calcularVendasDia(u.uid, dia);
-      col.innerHTML += `\n        <div class="metric-item mt-2">${formatarData(dia)}</div>\n        <div class="metric-item">Bruto <span class="metric-value">R$ ${bruto.toLocaleString('pt-BR')}</span></div>\n        <div class="metric-item">Líquido <span class="metric-value">R$ ${liquido.toLocaleString('pt-BR')}</span></div>\n        <div class="metric-item">Vendas <span class="metric-value">${vendas}</span></div>`;
+      const diff = metaDiaria - liquido;
+      const atingido = diff <= 0;
+      const day = document.createElement('div');
+      day.className = 'faturamento-dia';
+      day.innerHTML = `
+        <div class="dia-data">${formatarData(dia)}</div>
+        <div>Bruto: <span class="valor">R$ ${bruto.toLocaleString('pt-BR')}</span></div>
+        <div>Líquido: <span class="valor">R$ ${liquido.toLocaleString('pt-BR')}</span></div>
+        <div>Qtd: <span class="valor">${vendas}</span></div>
+        <div class="resultado ${atingido ? 'positivo' : 'negativo'}">${atingido ? 'POSITIVO' : 'NEGATIVO'}${diff ? ` R$ ${Math.abs(diff).toLocaleString('pt-BR')}` : ''}</div>
+      `;
+      col.appendChild(day);
     }
-    const diff = metaDiaria - ultimoLiquido;
-    const atingido = diff <= 0;
-    const msg = atingido ? `ATINGIDO R$ ${Math.abs(diff).toLocaleString('pt-BR')} POSITIVO` : `NÃO ATINGIDO R$ ${diff.toLocaleString('pt-BR')} NEGATIVO`;
-    col.innerHTML += `<div class="mt-2 font-bold ${atingido ? 'text-green-600' : 'text-red-600'}">${msg}</div>`;
+
     container.appendChild(col);
   }
 }
