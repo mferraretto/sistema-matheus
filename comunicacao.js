@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
 
@@ -13,10 +13,23 @@ const teamListEl = document.getElementById('teamList');
 const selectEls = [document.getElementById('fileRecipients'), document.getElementById('messageRecipients'), document.getElementById('alertRecipients')];
 const commsListEl = document.getElementById('commsList');
 
+const chatModal = document.getElementById('chatModal');
+const chatUserName = document.getElementById('chatUserName');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const closeChat = document.getElementById('closeChat');
+let chatUnsub = null;
+let currentChatUser = null;
+const usersMap = {};
+
 function addUserOption(user) {
   const li = document.createElement('li');
   li.textContent = user.nome || user.email || user.id;
+  li.className = 'cursor-pointer hover:underline';
+  li.addEventListener('click', () => openChat(user));
   teamListEl.appendChild(li);
+  usersMap[user.id] = user;
   selectEls.forEach(sel => {
     const opt = document.createElement('option');
     opt.value = user.id;
@@ -36,6 +49,42 @@ function renderComm(c) {
     li.innerHTML = `<strong>Alerta:</strong> ${c.texto}`;
   }
   commsListEl.appendChild(li);
+}
+
+function getConversationId(a, b) {
+  return [a, b].sort().join('_');
+}
+
+function renderChatMessage(msg) {
+  const div = document.createElement('div');
+  const isMe = msg.remetente === auth.currentUser.uid;
+  div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+  const bubble = document.createElement('div');
+  bubble.className = `px-3 py-2 rounded-lg ${isMe ? 'bg-green-500 text-white' : 'bg-gray-300'}`;
+  bubble.textContent = msg.texto;
+  div.appendChild(bubble);
+  chatMessages.appendChild(div);
+}
+
+function openChat(userInfo) {
+  currentChatUser = userInfo;
+  chatUserName.textContent = userInfo.nome || userInfo.email || userInfo.id;
+  chatModal.classList.remove('hidden');
+  chatModal.classList.add('flex');
+  if (chatUnsub) chatUnsub();
+  chatMessages.innerHTML = '';
+  const cid = getConversationId(auth.currentUser.uid, userInfo.id);
+  const q = query(
+    collection(db, 'comunicacao'),
+    where('tipo', '==', 'mensagem'),
+    where('conversa', '==', cid),
+    orderBy('timestamp')
+  );
+  chatUnsub = onSnapshot(q, snap => {
+    chatMessages.innerHTML = '';
+    snap.forEach(d => renderChatMessage(d.data()));
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
 }
 
 async function loadTeam(user, perfil, data) {
@@ -64,6 +113,30 @@ async function loadComms(uid) {
     }
   });
 }
+
+closeChat.addEventListener('click', () => {
+  chatModal.classList.add('hidden');
+  if (chatUnsub) chatUnsub();
+});
+
+chatSend.addEventListener('click', async () => {
+  const texto = chatInput.value.trim();
+  if (!texto || !currentChatUser) return;
+  const cid = getConversationId(auth.currentUser.uid, currentChatUser.id);
+  await addDoc(collection(db, 'comunicacao'), {
+    tipo: 'mensagem',
+    texto,
+    remetente: auth.currentUser.uid,
+    destinatarios: [currentChatUser.id],
+    conversa: cid,
+    timestamp: serverTimestamp()
+  });
+  chatInput.value = '';
+});
+
+chatInput.addEventListener('keyup', e => {
+  if (e.key === 'Enter') chatSend.click();
+});
 
 onAuthStateChanged(auth, async user => {
   if (!user) return;
@@ -95,14 +168,17 @@ onAuthStateChanged(auth, async user => {
     const texto = document.getElementById('messageText').value.trim();
     const dest = Array.from(document.getElementById('messageRecipients').selectedOptions).map(o => o.value);
     if (!texto || dest.length === 0) return;
+    const conversa = dest.length === 1 ? getConversationId(user.uid, dest[0]) : null;
     await addDoc(collection(db, 'comunicacao'), {
       tipo: 'mensagem',
       texto,
       remetente: user.uid,
       destinatarios: dest,
+      ...(conversa && { conversa }),
       timestamp: serverTimestamp()
     });
     document.getElementById('messageText').value = '';
+    if (conversa && usersMap[dest[0]]) openChat(usersMap[dest[0]]);
   });
 
   document.getElementById('sendAlertBtn').addEventListener('click', async () => {

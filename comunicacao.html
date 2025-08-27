@@ -50,6 +50,22 @@
     </div>
   </main>
 
+
+<div id="chatModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden justify-center items-center">
+  <div class="bg-white w-full max-w-md h-full md:h-[80%] md:rounded-lg flex flex-col">
+    <div class="flex items-center bg-green-600 text-white p-4">
+      <button id="closeChat" class="mr-2 text-white">←</button>
+      <span id="chatUserName" class="font-semibold"></span>
+    </div>
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-100"></div>
+    <div class="p-2 flex">
+      <input id="chatInput" class="flex-1 border rounded-l px-2 py-1 text-sm" placeholder="Digite uma mensagem..." />
+      <button id="chatSend" class="bg-green-600 text-white px-4 rounded-r text-sm">Enviar</button>
+    </div>
+  </div>
+</div>
+
+
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="comunicacao.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>
