@@ -223,9 +223,8 @@
 function initShared() {
   function start() {
     if (window.ensureLayout) {
-      window.ensureLayout().then(function () {
-        window.initDarkMode();
-      });
+      // ensureLayout will initialize dark mode after loading partials
+      window.ensureLayout();
     } else {
       window.initDarkMode();
     }
@@ -365,6 +364,10 @@ async function ensureLayout(){
     loadPartial('#sidebar-container', window.CUSTOM_SIDEBAR_PATH),
     loadPartial('#navbar-container',  window.CUSTOM_NAVBAR_PATH),
   ]);
+  // Reapply dark mode listeners after layout reloads
+  if (typeof window.initDarkMode === 'function') {
+    window.initDarkMode();
+  }
 }
 
 // roda em várias fases para cobrir login/redirect/back-forward-cache
