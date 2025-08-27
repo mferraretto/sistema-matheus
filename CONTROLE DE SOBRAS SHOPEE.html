@@ -1558,7 +1558,7 @@ const dataInput = document.getElementById("dataFaturamento");
               const metaEsperada = metaUnit * (quantidade || 1);
               const sobraReal = liquidoLinha;
 
-              if (metaEsperada && sobraReal < metaEsperada * 0.9) {
+              if (metaEsperada && percentual <= -10) {
                 pedidosErrados.push({
                   dia: dataReferencia,
                   loja: loja,
