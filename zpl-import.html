@@ -571,7 +571,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             const originalHeightIn = 5.2; 
             const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm);
             const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8);
-            const numberY = totalPageHeightDots - 40;
+            const numberY = totalPageHeightDots - 400;
             const numberZpl = `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS`;
 
             return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}${numberZpl}^XZ`;
