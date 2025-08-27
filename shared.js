@@ -402,7 +402,10 @@ function setupMobileSidebar() {
 
   btns.forEach(btn => {
     if (btn.dataset.sidebarReady) return;
-    btn.addEventListener('click', toggleSidebar);
+    // Avoid double triggering if an inline onclick already exists
+    if (!btn.getAttribute('onclick')) {
+      btn.addEventListener('click', toggleSidebar);
+    }
     btn.dataset.sidebarReady = 'true';
   });
   if (!overlay.dataset.sidebarReady) {
