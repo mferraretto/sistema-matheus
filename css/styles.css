@@ -25,7 +25,7 @@
   --text-dark: #424242;
   --text-light: #9E9E9E;
   --transition: all 0.3s ease;
-  --navbar-height: 60px;
+  --navbar-height: 70px;
   --sidebar-width: 16rem;
 }
     
@@ -78,7 +78,7 @@ body {
 .content-wrapper {
   flex: 1;
   margin-left: 0;
-  margin-top: 60px;
+  margin-top: var(--navbar-height);
   padding: 30px;
 }
 
@@ -1386,7 +1386,7 @@ body.dark-mode th {
 
 
 .navbar {
-  height: 70px;
+  height: var(--navbar-height);
   background: var(--card);
   box-shadow: 0 2px 10px rgba(0,0,0,.05);
   position: fixed;
@@ -1438,10 +1438,10 @@ body.dark-mode th {
   color: var(--text-light)
 }
 .main-content {
-  margin-top: 70px;
+  margin-top: var(--navbar-height);
   margin-left: var(--sidebar-width);
   padding: 25px;
-  min-height: calc(100vh - 70px)
+  min-height: calc(100vh - var(--navbar-height))
 }
 .card:hover {
   transform: translateY(-3px);
@@ -1811,6 +1811,7 @@ input:checked + .toggle-slider:before {
 
     
   @media (max-width:768px) {
+    :root { --navbar-height: 50px; }
     .grid-cols-2 {
       grid-template-columns: 1fr
     }
@@ -1820,7 +1821,7 @@ input:checked + .toggle-slider:before {
     }
     .navbar {
       left: 0;
-      height: 50px;
+      height: var(--navbar-height);
       padding: 0 10px;
       background-color: rgba(0,0,0,0.8);
     }
@@ -1834,7 +1835,7 @@ input:checked + .toggle-slider:before {
       margin-left: 0;
       padding-left: 1rem;
       padding-right: 1rem;
-      padding-top: 60px;
+      padding-top: var(--navbar-height);
     }
   }
 
