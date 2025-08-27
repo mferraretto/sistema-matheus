@@ -171,6 +171,7 @@
 let pedidosProcessados = [];
 let graficoBarras, graficoPizza, graficoPrevisao;
 let previsaoDados = {};
+let initialTab = null;
 const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
    const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','sobras','previsao','acompanhamento','acompanhamentoGestor'];
       const tabsLoaded = Promise.all(
@@ -235,6 +236,9 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
           document.getElementById('filtroStatus').addEventListener('change', filtrarPorSKU);
           document.getElementById('tipoFiltro').addEventListener('change', filtrarPorSKU);
           document.getElementById('btnLimparFiltros')?.addEventListener('click', limparFiltros);
+          if (initialTab === 'sobras') {
+            carregarSobras();
+          }
         });
 
         // Configurações importantes para a conexão
@@ -2085,6 +2089,10 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
 
     async function carregarSobras() {
       await tabsLoaded;
+      if (!usuarioLogado.uid) {
+        console.error('Usuário não autenticado');
+        return;
+      }
       const tbody = document.getElementById('listaSobras');
       if (tbody) tbody.innerHTML = '<tr><td colspan="8">Carregando...</td></tr>';
       try {
@@ -3256,10 +3264,10 @@ window.toggleExportMenu = toggleExportMenu;
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const params = new URLSearchParams(window.location.search);
-    const initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
+    initialTab = params.get('tab') || (window.location.hash ? window.location.hash.substring(1) : null);
     if (initialTab && document.getElementById(initialTab)) {
       trocarAba(initialTab);
-      if (initialTab === 'sobras') {
+      if (initialTab === 'sobras' && usuarioLogado.uid) {
         carregarSobras();
       }
     }
