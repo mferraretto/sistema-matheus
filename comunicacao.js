@@ -13,18 +13,10 @@ const teamListEl = document.getElementById('teamList');
 const selectEls = [document.getElementById('fileRecipients'), document.getElementById('messageRecipients'), document.getElementById('alertRecipients')];
 const commsListEl = document.getElementById('commsList');
 
-const chatModal = document.getElementById('chatModal');
-const chatUserName = document.getElementById('chatUserName');
-const chatMessages = document.getElementById('chatMessages');
-const chatInput = document.getElementById('chatInput');
-const chatSend = document.getElementById('chatSend');
-const closeChat = document.getElementById('closeChat');
-let chatUnsub = null;
-let currentChatUser = null;
 const usersMap = {};
 const chatDock = document.getElementById('chatDock');
-const chatButtons = {};
-const chatLastOpened = {};
+const chatTemplate = document.getElementById('chatWindowTemplate');
+const chatWindows = {};
 
 function addUserOption(user) {
   const li = document.createElement('li');
@@ -58,7 +50,7 @@ function getConversationId(a, b) {
   return [a, b].sort().join('_');
 }
 
-function renderChatMessage(msg) {
+function renderChatMessage(container, msg) {
   const div = document.createElement('div');
   const isMe = msg.remetente === auth.currentUser.uid;
   div.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
@@ -66,66 +58,56 @@ function renderChatMessage(msg) {
   bubble.className = `px-3 py-2 rounded-lg ${isMe ? 'bg-green-500 text-white' : 'bg-gray-300'}`;
   bubble.textContent = msg.texto;
   div.appendChild(bubble);
-  chatMessages.appendChild(div);
-}
-
-function ensureChatButton(userInfo) {
-  const cid = getConversationId(auth.currentUser.uid, userInfo.id);
-  if (chatButtons[cid]) return chatButtons[cid];
-  const wrapper = document.createElement('div');
-  wrapper.className = 'relative';
-  const btn = document.createElement('button');
-  btn.className = 'bg-green-600 text-white px-3 py-1 rounded-t';
-  btn.textContent = userInfo.nome || userInfo.email || userInfo.id;
-  const dot = document.createElement('span');
-  dot.className = 'absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full hidden';
-  wrapper.appendChild(btn);
-  wrapper.appendChild(dot);
-  chatDock.appendChild(wrapper);
-  btn.addEventListener('click', () => openChat(userInfo));
-  const q = query(
-    collection(db, 'comunicacao'),
-    where('tipo', '==', 'mensagem'),
-    where('conversa', '==', cid),
-    orderBy('timestamp')
-  );
-  onSnapshot(q, snap => {
-    const msgs = [];
-    snap.forEach(d => msgs.push(d.data()));
-    if (msgs.length === 0) return;
-    const last = msgs[msgs.length - 1];
-    const ts = last.timestamp ? last.timestamp.toMillis() : Date.now();
-    if (ts > (chatLastOpened[cid] || 0) && last.remetente !== auth.currentUser.uid) {
-      dot.classList.remove('hidden');
-    }
-  });
-  chatButtons[cid] = { button: btn, dot };
-  return chatButtons[cid];
+  container.appendChild(div);
 }
 
 function openChat(userInfo) {
-  ensureChatButton(userInfo);
-  currentChatUser = userInfo;
-  chatUserName.textContent = userInfo.nome || userInfo.email || userInfo.id;
-  chatModal.classList.remove('hidden');
-  if (chatUnsub) chatUnsub();
-  chatMessages.innerHTML = '';
   const cid = getConversationId(auth.currentUser.uid, userInfo.id);
-  chatLastOpened[cid] = Date.now();
-  if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
-  const q = query(
-    collection(db, 'comunicacao'),
-    where('tipo', '==', 'mensagem'),
-    where('conversa', '==', cid),
-    orderBy('timestamp')
-  );
-  chatUnsub = onSnapshot(q, snap => {
-    chatMessages.innerHTML = '';
-    snap.forEach(d => renderChatMessage(d.data()));
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    chatLastOpened[cid] = Date.now();
-    if (chatButtons[cid]) chatButtons[cid].dot.classList.add('hidden');
-  });
+  if (!chatWindows[cid]) {
+    const clone = chatTemplate.content.firstElementChild.cloneNode(true);
+    chatDock.appendChild(clone);
+    const nameEl = clone.querySelector('.chatUserName');
+    const messagesEl = clone.querySelector('.chatMessages');
+    const inputEl = clone.querySelector('.chatInput');
+    const sendBtn = clone.querySelector('.chatSend');
+    const closeBtn = clone.querySelector('.closeChat');
+    nameEl.textContent = userInfo.nome || userInfo.email || userInfo.id;
+    const q = query(
+      collection(db, 'comunicacao'),
+      where('tipo', '==', 'mensagem'),
+      where('conversa', '==', cid),
+      orderBy('timestamp')
+    );
+    const unsub = onSnapshot(q, snap => {
+      messagesEl.innerHTML = '';
+      snap.forEach(d => renderChatMessage(messagesEl, d.data()));
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+    sendBtn.addEventListener('click', async () => {
+      const texto = inputEl.value.trim();
+      if (!texto) return;
+      await addDoc(collection(db, 'comunicacao'), {
+        tipo: 'mensagem',
+        texto,
+        remetente: auth.currentUser.uid,
+        destinatarios: [userInfo.id],
+        conversa: cid,
+        timestamp: serverTimestamp()
+      });
+      inputEl.value = '';
+    });
+    inputEl.addEventListener('keyup', e => { if (e.key === 'Enter') sendBtn.click(); });
+    closeBtn.addEventListener('click', () => {
+      if (chatWindows[cid].unsub) chatWindows[cid].unsub();
+      clone.remove();
+      delete chatWindows[cid];
+    });
+    chatWindows[cid] = { element: clone, unsub };
+  } else {
+    const win = chatWindows[cid];
+    const inputEl = win.element.querySelector('.chatInput');
+    if (inputEl) inputEl.focus();
+  }
 }
 
 async function loadTeam(user, perfil, data) {
@@ -154,30 +136,6 @@ async function loadComms(uid) {
     }
   });
 }
-
-closeChat.addEventListener('click', () => {
-  chatModal.classList.add('hidden');
-  if (chatUnsub) chatUnsub();
-});
-
-chatSend.addEventListener('click', async () => {
-  const texto = chatInput.value.trim();
-  if (!texto || !currentChatUser) return;
-  const cid = getConversationId(auth.currentUser.uid, currentChatUser.id);
-  await addDoc(collection(db, 'comunicacao'), {
-    tipo: 'mensagem',
-    texto,
-    remetente: auth.currentUser.uid,
-    destinatarios: [currentChatUser.id],
-    conversa: cid,
-    timestamp: serverTimestamp()
-  });
-  chatInput.value = '';
-});
-
-chatInput.addEventListener('keyup', e => {
-  if (e.key === 'Enter') chatSend.click();
-});
 
 onAuthStateChanged(auth, async user => {
   if (!user) return;
