@@ -55,36 +55,7 @@
         </button>
       </div>
       
-      <!-- Barra de navegação por abas -->
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="trocarAba('importar')">
-          <i class="fas fa-box-open"></i> Conferir Pedidos
-        </button>
-        <button class="tab-btn" onclick="trocarAba('historico')">
-          <i class="fas fa-history"></i> Histórico
-        </button>
-        <button class="tab-btn" onclick="trocarAba('faturamento')">
-          <i class="fas fa-cash-register"></i> Faturamento Diário
-        </button>
-        <button class="tab-btn" onclick="trocarAba('registroFaturamento'); carregarRegistrosFaturamento('listaFaturamentoRegistro', 'filtroMesRegistro')">
-          <i class="fas fa-file-alt"></i> Registro de Faturamento
-        </button>
-        <button class="tab-btn" onclick="trocarAba('controleVendas'); carregarControleVendas()">
-          <i class="fas fa-boxes"></i> Controle de Vendas
-         </button>
-        <button class="tab-btn" onclick="trocarAba('sobras'); carregarSobras()">
-          <i class="fas fa-exclamation-circle"></i> Sobras
-        </button>
-        <button class="tab-btn" onclick="trocarAba('previsao'); carregarPrevisao()">
-          <i class="fas fa-chart-area"></i> 📈 Previsão
-        </button>
-        <button class="tab-btn" onclick="trocarAba('acompanhamento'); carregarAcompanhamento()">
-          <i class="fas fa-chart-line"></i> Acompanhamento
-        </button>
-        <button id="btnAcompanhamentoGestor" class="tab-btn hidden" onclick="trocarAba('acompanhamentoGestor'); carregarAcompanhamentoGestor()">
-          <i class="fas fa-users"></i> Acompanhamento Sobras
-        </button>
-      </div>
+      <!-- Tab bar removida -->
 
       <!-- Aba de Importação/Conferência -->
       <div id="importar" class="tab-content active">
@@ -456,32 +427,19 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
     // =============================================
     
     window.trocarAba = function trocarAba(id) {
-      // Remove a classe 'active' de todas as abas
-      document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
-      
-      // Remove a classe 'active' de todos os botões de aba
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        // Remove a classe 'active' de todas as abas
+        document.querySelectorAll('.tab-content').forEach(aba => aba.classList.remove('active'));
 
-      // Ativa a aba correspondente, se existir
-      const abaSelecionada = document.getElementById(id);
-      if (abaSelecionada) {
-        abaSelecionada.classList.add('active');
-      } else {
-        console.warn(`❌ Aba com ID '${id}' não encontrada.`);
-        return;
-      }
+        // Ativa a aba correspondente, se existir
+        const abaSelecionada = document.getElementById(id);
+        if (abaSelecionada) {
+          abaSelecionada.classList.add('active');
+        } else {
+          console.warn(`❌ Aba com ID '${id}' não encontrada.`);
+          return;
+        }
 
-      // Ativa o botão correspondente
-      const botao = Array.from(document.querySelectorAll('.tab-btn'))
-        .find(btn => btn.getAttribute('onclick')?.includes(`trocarAba('${id}')`));
-      
-      if (botao) {
-        botao.classList.add('active');
-      } else {
-        console.warn(`❌ Botão com onclick trocarAba('${id}') não encontrado.`);
-      }
-
-      // Atualiza gráficos, se necessário
+        // Atualiza gráficos, se necessário
       if (id === 'graficos') {
         setTimeout(atualizarGraficos, 100);
       }
