@@ -7,6 +7,21 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Garante que os modais de autenticação estejam disponíveis
+if (typeof window !== 'undefined' && window.loadAuthModals) {
+  window.loadAuthModals();
+}
+
+function showLoginModal() {
+  const modal = document.getElementById('loginModal');
+  if (modal) {
+    modal.style.display = 'block';
+  } else {
+    // Re-tenta após um pequeno atraso caso os modais ainda não tenham sido carregados
+    setTimeout(showLoginModal, 500);
+  }
+}
+
 async function getIdToken() {
   const user = auth.currentUser;
   if (!user) throw new Error("Não logado");
@@ -14,10 +29,10 @@ async function getIdToken() {
 }
 
 // URLs públicas das Cloud Functions
-const URL_CONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/connectTiny";
-const URL_DISCONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/disconnectTiny";
-const URL_SYNC_PRODUCTS = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyProducts";
-const URL_SYNC_ORDERS   = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyOrders";
+const URL_CONNECT = "https://connecttiny-g6u4niudyq-uc.a.run.app";
+const URL_DISCONNECT = "https://disconnecttiny-g6u4niudyq-uc.a.run.app";
+const URL_SYNC_PRODUCTS = "https://synctinyproducts-g6u4niudyq-uc.a.run.app";
+const URL_SYNC_ORDERS   = "https://synctinyorders-g6u4niudyq-uc.a.run.app";
 
 const stateTiny = {
   produtos: { pageSize: 30, lastDoc: null, stack: [], search: '', page: 1 },
@@ -26,7 +41,7 @@ const stateTiny = {
 
 onAuthStateChanged(auth, user => {
   if (!user) {
-    window.location.href = 'index.html?login=1';
+    showLoginModal();
     return;
   }
   carregarProdutos();
