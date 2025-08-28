@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { initializeApp as firebaseInitializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 
 import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
@@ -20,7 +20,7 @@ import {
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 import { encryptString, decryptString } from './crypto.js';
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const app = getApps().length ? getApps()[0] : firebaseInitializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let wasLoggedIn = false;
@@ -192,6 +192,10 @@ window.sendRecovery = () => {
 
 async function showUserArea(user) {
   const nameEl = document.getElementById('currentUser');
+  if (!nameEl) {
+    console.warn('Elemento #currentUser não encontrado');
+    return;
+  }
   nameEl.textContent = user.email;
   nameEl.onclick = () => {
     const input = document.getElementById('displayNameInput');
@@ -267,6 +271,10 @@ async function showUserArea(user) {
 
 function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
+  if (!nameEl) {
+    console.warn('Elemento #currentUser não encontrado');
+    return;
+  }
   nameEl.textContent = 'Usuário';
   nameEl.onclick = null;
   // Oculta o botão de logout apenas se ele existir
