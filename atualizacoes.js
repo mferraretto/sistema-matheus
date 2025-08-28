@@ -223,6 +223,7 @@ async function enviarAtualizacao(e) {
     autorUid: currentUser.uid,
     autorNome: currentUser.displayName || currentUser.email,
     destinatarios,
+    tipo: 'atualizacao',
     createdAt: serverTimestamp(),
     anexos: []
   });
