@@ -4,10 +4,20 @@
     var scripts = document.getElementsByTagName('script');
     return scripts[scripts.length - 1];
   })();
+  
+  // Corrigido para apontar para a raiz do repositório
   var BASE_PATH = '';
   if (currentScript && currentScript.src) {
-    BASE_PATH = currentScript.src.split('/').slice(0, -1).join('/') + '/';
+    // Remove 'public/' do caminho para acessar os partials na raiz
+    var scriptPath = currentScript.src;
+    if (scriptPath.includes('/public/')) {
+      BASE_PATH = scriptPath.split('/public/')[0] + '/';
+    } else {
+      BASE_PATH = scriptPath.split('/').slice(0, -1).join('/') + '/';
+    }
   }
+  
+  console.log('BASE_PATH configurado:', BASE_PATH);
 
   // Flags globais para evitar carregamento duplicado
   if (!window.sharedComponentsState) {
@@ -95,9 +105,15 @@
     sidebarPath = sidebarPath || 'partials/sidebar.html';
     
     console.log('Carregando sidebar...');
+    console.log('Caminho do sidebar:', BASE_PATH + sidebarPath);
     
     return fetch(BASE_PATH + sidebarPath)
-      .then(function(res) { return res.text(); })
+      .then(function(res) { 
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.text(); 
+      })
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
@@ -123,9 +139,15 @@
     containerId = containerId || 'navbar-container';
     
     console.log('Carregando navbar...');
+    console.log('Caminho do navbar:', BASE_PATH + 'partials/navbar.html');
     
     return fetch(BASE_PATH + 'partials/navbar.html')
-      .then(function(res) { return res.text(); })
+      .then(function(res) { 
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.text(); 
+      })
       .then(function(html) {
         var container = document.getElementById(containerId);
         if (container) {
@@ -244,23 +266,32 @@
   document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM carregado, iniciando carregamento de componentes...');
     
-    // Carrega componentes apenas uma vez
-    loadTailwind().then(function () {
-      console.log('Tailwind carregado, carregando sidebar e navbar...');
+    // ✅ PRIMEIRO: Carrega os modais de login para evitar redirecionamento
+    // Isso é crítico para resolver o problema de "piscar"
+    console.log('Carregando modais de autenticação primeiro...');
+    window.loadAuthModals().then(() => {
+      console.log('Modais carregados, agora carregando outros componentes...');
       
-      // Carrega sidebar e navbar em paralelo
-      Promise.all([
-        window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH),
-        window.loadNavbar()
-      ]).then(function () {
-        console.log('Sidebar e navbar carregados, inicializando dark mode...');
-        window.initDarkMode();
+      // SEGUNDO: Carrega outros componentes
+      loadTailwind().then(function () {
+        console.log('Tailwind carregado, carregando sidebar e navbar...');
+        
+        // Carrega sidebar e navbar em paralelo
+        Promise.all([
+          window.loadSidebar(null, window.CUSTOM_SIDEBAR_PATH),
+          window.loadNavbar()
+        ]).then(function () {
+          console.log('Sidebar e navbar carregados, inicializando dark mode...');
+          window.initDarkMode();
+          
+          // TERCEIRO: Sinaliza que tudo está pronto
+          console.log('Todos os componentes carregados com sucesso!');
+          window.dispatchEvent(new CustomEvent('allComponentsLoaded'));
+        });
       });
+    }).catch(error => {
+      console.error('Erro ao carregar modais:', error);
     });
-
-    // ✅ Carrega os modais de login em todas as páginas para evitar redirecionamento
-    // Isso resolve o problema de "piscar" e duplicação
-    window.loadAuthModals();
 
     window.checkColorContrast();
   });

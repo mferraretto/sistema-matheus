@@ -34,19 +34,31 @@ const stateTiny = {
 
 // Função para mostrar modal de login
 function showLoginModal() {
+  console.log('Tentando mostrar modal de login...');
+  
   // Verifica se o modal já existe
   const modal = document.getElementById('loginModal');
   if (modal) {
+    console.log('Modal encontrado, exibindo...');
     modal.style.display = 'block';
     return;
   }
   
-  // Se não existir e não estiver redirecionando, redireciona uma vez
-  if (!window.tinyAppState.isRedirecting) {
-    window.tinyAppState.isRedirecting = true;
-    console.log('Redirecionando para index.html com login=1');
-    window.location.href = 'index.html?login=1';
-  }
+  // Se não existir, aguarda um pouco e tenta novamente
+  // Isso evita redirecionamento e permite que os modais sejam carregados
+  console.log('Modal não encontrado, aguardando carregamento...');
+  
+  setTimeout(() => {
+    const modalRetry = document.getElementById('loginModal');
+    if (modalRetry) {
+      console.log('Modal encontrado na segunda tentativa, exibindo...');
+      modalRetry.style.display = 'block';
+    } else {
+      console.log('Modal ainda não disponível, aguardando...');
+      // Continua aguardando em vez de redirecionar
+      setTimeout(showLoginModal, 500);
+    }
+  }, 1000);
 }
 
 // Função para inicializar a aplicação após autenticação
@@ -208,21 +220,28 @@ if (!window.tinyAppState.authListenerRegistered) {
   console.log('Registrando listener de autenticação...');
   window.tinyAppState.authListenerRegistered = true;
   
-  onAuthStateChanged(auth, user => {
-    console.log('Estado de autenticação mudou:', user ? 'Usuário logado' : 'Usuário não logado');
+  // Aguarda todos os componentes estarem carregados antes de verificar autenticação
+  window.addEventListener('allComponentsLoaded', () => {
+    console.log('Todos os componentes carregados, agora verificando autenticação...');
     
-    if (!user) {
-      // Se não há usuário, mostra modal de login ou redireciona
-      if (!window.tinyAppState.appInitialized) {
-        showLoginModal();
+    onAuthStateChanged(auth, user => {
+      console.log('Estado de autenticação mudou:', user ? 'Usuário logado' : 'Usuário não logado');
+      
+      if (!user) {
+        // Se não há usuário, mostra modal de login
+        if (!window.tinyAppState.appInitialized) {
+          console.log('Usuário não logado, tentando mostrar modal...');
+          showLoginModal();
+        }
+        return;
       }
-      return;
-    }
-    
-    // Usuário autenticado - inicializa a aplicação
-    if (!window.tinyAppState.appInitialized) {
-      initializeTinyApp();
-    }
+      
+      // Usuário autenticado - inicializa a aplicação
+      if (!window.tinyAppState.appInitialized) {
+        console.log('Usuário autenticado, inicializando aplicação...');
+        initializeTinyApp();
+      }
+    });
   });
 }
 
