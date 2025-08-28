@@ -10,6 +10,23 @@ export const firebaseConfig = {
       databaseURL: "https://matheus-35023.firebaseio.com"
    };
 
+// Configurações adicionais para resolver problemas de autenticação
+export const firebaseAuthSettings = {
+  // Domínios autorizados para autenticação
+  authorizedDomains: [
+    "matheus-35023.web.app",
+    "matheus-35023.firebaseapp.com",
+    "localhost",
+    "127.0.0.1"
+  ],
+  
+  // Configurações de persistência
+  persistence: "local", // browserLocalPersistence
+  
+  // Timeout para operações de autenticação
+  authTimeout: 10000
+};
+
 // Utility functions for storing the passphrase securely
 export function setPassphrase(pass) {
   if (typeof localStorage !== 'undefined' && pass) {
@@ -29,20 +46,36 @@ export function clearPassphrase() {
   }
 }
 
+// Função para verificar se o domínio atual está autorizado
+export function isDomainAuthorized() {
+  if (typeof window === 'undefined') return true;
+  
+  const currentDomain = window.location.hostname;
+  return firebaseAuthSettings.authorizedDomains.some(domain => 
+    currentDomain === domain || 
+    currentDomain.endsWith('.' + domain) ||
+    (domain === 'localhost' && (currentDomain === 'localhost' || currentDomain === '127.0.0.1'))
+  );
+}
+
 // Expose to global scope for inline scripts
 if (typeof window !== 'undefined') {
   window.firebaseConfig = firebaseConfig;
-      window.setPassphrase = setPassphrase;
+  window.firebaseAuthSettings = firebaseAuthSettings;
+  window.setPassphrase = setPassphrase;
   window.getPassphrase = getPassphrase;
   window.clearPassphrase = clearPassphrase;
+  window.isDomainAuthorized = isDomainAuthorized;
 }
 
 // Export for module environments
 if (typeof module !== 'undefined') {
  module.exports = {
     firebaseConfig,
+    firebaseAuthSettings,
     setPassphrase,
     getPassphrase,
-    clearPassphrase
+    clearPassphrase,
+    isDomainAuthorized
   };
 }

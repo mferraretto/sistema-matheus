@@ -28,9 +28,7 @@ let authListenerRegistered = false;
 let explicitLogout = false;
 let isExpedicao = false;
 let notifUnsub = null;
-let expNotifUnsub = null;
-let updNotifUnsub = null;
-let selectedRole = null;
+let loginModalShown = false; // Nova flag para controlar se o modal já foi mostrado
 
 
 function showToast(message, type = 'success') {
@@ -114,30 +112,14 @@ window.saveDisplayName = async () => {
 window.openModal = (id) => {
   const el = document.getElementById(id);
   if (el) {
-    if (id === 'loginModal') {
-      document.getElementById('roleSelection')?.classList.remove('hidden');
-      document.getElementById('loginForm')?.classList.add('hidden');
-      selectedRole = null;
-    }
     el.style.display = 'block';
   }
-};
-
-window.selectRole = (role) => {
-  selectedRole = role;
-  document.getElementById('roleSelection')?.classList.add('hidden');
-  document.getElementById('loginForm')?.classList.remove('hidden');
 };
 
 window.closeModal = (id) => {
   const el = document.getElementById(id);
   if (el) {
     el.style.display = 'none';
-    if (id === 'loginModal') {
-      document.getElementById('roleSelection')?.classList.remove('hidden');
-      document.getElementById('loginForm')?.classList.add('hidden');
-      selectedRole = null;
-    }
   }
 };
 
@@ -150,8 +132,6 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-  const roleInput = document.querySelector('input[name="userRole"]:checked');
-  const role = roleInput ? roleInput.value : (selectedRole || 'usuario');
 
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
@@ -162,10 +142,6 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
-      sessionStorage.setItem('selectedRole', role);
-      if (role === 'gestor') {
-        window.location.href = 'financeiro.html';
-      }
     })
     .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
 };
@@ -192,14 +168,20 @@ window.sendRecovery = () => {
 
 async function showUserArea(user) {
   const nameEl = document.getElementById('currentUser');
+  if (!nameEl) return; // Se o elemento não existe, sai da função
+  
   nameEl.textContent = user.email;
   nameEl.onclick = () => {
     const input = document.getElementById('displayNameInput');
     if (input) input.value = nameEl.textContent;
     openModal('displayNameModal');
   };
+  
   // Exibe o botão de logout apenas se estiver presente na navbar
-  document.getElementById('logoutBtn')?.classList.remove('hidden');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.classList.remove('hidden');
+  }
 
   window.sistema = window.sistema || {};
   window.sistema.uid = user.uid;
@@ -212,46 +194,26 @@ async function showUserArea(user) {
     }
   }
 
-  let perfilFallback = '';
   try {
     const uidSnap = await getDoc(doc(db, 'uid', user.uid));
     const uidData = uidSnap.data();
     if (uidData?.nome) {
       nameEl.textContent = uidData.nome;
-    }
-    if (uidData?.encrypted) {
+    } else if (uidData?.encrypted) {
       const pass = getPassphrase() || `chave-${user.uid}`;
-      try {
-        const data = JSON.parse(await decryptString(uidData.encrypted, pass));
-        if (!uidData?.nome && data.nome) {
-          nameEl.textContent = data.nome;
-        }
-        if (data.perfil) {
-          perfilFallback = String(data.perfil).toLowerCase().trim();
-        }
-      } catch {}
+      const data = JSON.parse(await decryptString(uidData.encrypted, pass));
+      if (data.nome) {
+        nameEl.textContent = data.nome;
+      }
     }
   } catch (e) {
-    console.error('Erro ao carregar nome/perfil do usuário:', e);
+    console.error('Erro ao carregar nome do usuário:', e);
   }
 
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
-    let perfil = '';
-    if (snap.exists() && snap.data().perfil) {
-      perfil = String(snap.data().perfil).toLowerCase().trim();
-    } else {
-      perfil = perfilFallback || 'usuario';
-    }
+    const perfil = snap.exists() ? String(snap.data().perfil || '').toLowerCase() : '';
     window.userPerfil = perfil;
-
-    if (perfil === 'gestor') {
-      const path = window.location.pathname.toLowerCase();
-      if (!path.endsWith('/financeiro.html')) {
-        window.location.href = 'financeiro.html';
-        return;
-      }
-    }
 
     // 1) aplica restrições de UI
     applyPerfilRestrictions(perfil);
@@ -267,10 +229,17 @@ async function showUserArea(user) {
 
 function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
-  nameEl.textContent = 'Usuário';
-  nameEl.onclick = null;
+  if (nameEl) {
+    nameEl.textContent = 'Usuário';
+    nameEl.onclick = null;
+  }
+  
   // Oculta o botão de logout apenas se ele existir
-  document.getElementById('logoutBtn')?.classList.add('hidden');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.classList.add('hidden');
+  }
+  
   if (window.sistema) delete window.sistema.uid;
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
@@ -301,9 +270,14 @@ function restoreSidebar() {
     link.parentElement.classList.remove('hidden');
   });
 }
+
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase();
-  document.querySelectorAll('[data-perfil]').forEach(el => {
+  const elements = document.querySelectorAll('[data-perfil]');
+  if (!elements || elements.length === 0) return;
+  
+  elements.forEach(el => {
+    if (!el) return;
     const allowed = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
       .split(',')
@@ -350,21 +324,23 @@ function initNotificationListener(uid) {
   const list = document.getElementById('notificationList');
   if (!btn || !badge || !list) return;
   if (notifUnsub) notifUnsub();
-  if (expNotifUnsub) expNotifUnsub();
-  if (updNotifUnsub) updNotifUnsub();
-
-  let finNotifs = [];
-  let expNotifs = [];
-  let updNotifs = [];
-
-  const render = () => {
+  const q = query(
+    collection(db, 'financeiroAtualizacoes'),
+    where('destinatarios', 'array-contains', uid),
+    where('tipo', '==', 'faturamento'),
+    orderBy('createdAt', 'desc')
+  );
+  notifUnsub = onSnapshot(q, snap => {
     list.innerHTML = '';
-    const all = [...finNotifs, ...expNotifs, ...updNotifs].sort((a, b) => b.ts - a.ts);
     let count = 0;
-    all.forEach(n => {
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      if (data.autorUid === uid) return;
+      const email = data.autorEmail || data.autorNome || '';
+      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
       const item = document.createElement('div');
       item.className = 'px-4 py-2 hover:bg-gray-100';
-      item.textContent = n.text;
+      item.textContent = `${email} - ${dataFat}`;
       list.appendChild(item);
       count++;
     });
@@ -374,120 +350,80 @@ function initNotificationListener(uid) {
     } else {
       badge.classList.add('hidden');
     }
-  };
-
-  const qFin = query(
-    collection(db, 'financeiroAtualizacoes'),
-    where('destinatarios', 'array-contains', uid),
-    where('tipo', '==', 'faturamento'),
-    orderBy('createdAt', 'desc')
-  );
-  notifUnsub = onSnapshot(qFin, snap => {
-    finNotifs = [];
-    snap.forEach(docSnap => {
-      const data = docSnap.data();
-      if (data.autorUid === uid) return;
-      const email = data.autorEmail || data.autorNome || '';
-      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
-      finNotifs.push({ text: `${email} - ${dataFat}`, ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0 });
-    });
-    render();
   }, err => {
     console.error('Erro no listener de notificações:', err);
   });
-
-  const qUpd = query(
-    collection(db, 'financeiroAtualizacoes'),
-    where('destinatarios', 'array-contains', uid),
-    where('tipo', '==', 'atualizacao'),
-    orderBy('createdAt', 'desc')
-  );
-  updNotifUnsub = onSnapshot(qUpd, snap => {
-    updNotifs = [];
-    snap.forEach(docSnap => {
-      const d = docSnap.data();
-      if (d.autorUid === uid) return;
-      const texto = `${d.autorNome || d.autorEmail || ''}: ${d.descricao || ''}`;
-      updNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
-    });
-    render();
-  }, err => {
-    console.error('Erro no listener de notificações de atualizações:', err);
-  });
-
-  const qExp = query(
-    collection(db, 'expedicaoMensagens'),
-    where('destinatarios', 'array-contains', uid),
-    orderBy('createdAt', 'desc')
-  );
-  expNotifUnsub = onSnapshot(qExp, snap => {
-    expNotifs = [];
-    snap.forEach(docSnap => {
-      const d = docSnap.data();
-      const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
-      expNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
-    });
-    render();
-  }, err => {
-    console.error('Erro no listener de notificações expedição:', err);
-  });
-
   btn.addEventListener('click', () => {
     list.classList.toggle('hidden');
   });
 }
 
 function checkLogin() {
- if (authListenerRegistered) return;
+  if (authListenerRegistered) return;
   authListenerRegistered = true;
+  
   onAuthStateChanged(auth, user => {
     if (user) {
       showUserArea(user);
       initNotificationListener(user.uid);
       wasLoggedIn = true;
+      loginModalShown = false; // Reset flag quando usuário loga
     } else {
       if (wasLoggedIn && explicitLogout) {
         clearPassphrase();
-                explicitLogout = false;
-
+        explicitLogout = false;
       }
       wasLoggedIn = false;
       hideUserArea();
       if (notifUnsub) { notifUnsub(); notifUnsub = null; }
-      if (expNotifUnsub) { expNotifUnsub(); expNotifUnsub = null; }
-      if (updNotifUnsub) { updNotifUnsub(); updNotifUnsub = null; }
 
-      // Sempre exibe o modal se estiver no index.html
+      // Verifica se deve mostrar o modal de login
       const path = window.location.pathname.toLowerCase();
       const file = path.substring(path.lastIndexOf('/') + 1);
-      if ((file === '' || file === 'index.html') && !sessionStorage.getItem('loginModalMostrado')) {
+      const hasLoginParam = window.location.search.includes('login=1');
+      
+      // Só mostra o modal se:
+      // 1. Estiver na index.html OU
+      // 2. Tiver o parâmetro login=1 na URL
+      // 3. O modal ainda não foi mostrado nesta sessão
+      if ((file === '' || file === 'index.html' || hasLoginParam) && 
+          !loginModalShown && 
+          !sessionStorage.getItem('loginModalMostrado')) {
+        
+        loginModalShown = true;
         sessionStorage.setItem('loginModalMostrado', 'true');
-                openModal('loginModal');
+        
+        // Aguarda um pouco para garantir que os componentes estejam carregados
+        setTimeout(() => {
+          openModal('loginModal');
+        }, 100);
       }
     }
   });
 }
 
-  document.addEventListener('navbarLoaded', () => {
-    const loginBtn = document.getElementById('loginBtn');
+document.addEventListener('navbarLoaded', () => {
+  document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
+  // Garante que o evento de logout só seja registrado se o botão existir
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
-    loginBtn?.addEventListener('click', () => {
-      openModal('loginModal');
-    });
-
-    // Garante que o evento de logout só seja registrado se o botão existir
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-
-    if (window.location.search.includes('login=1')) {
-      // Espera o estado do Firebase para decidir se deve abrir
-      onAuthStateChanged(auth, (user) => {
-        if (!user) {
+  // Verifica se deve abrir o modal de login baseado na URL
+  if (window.location.search.includes('login=1')) {
+    // Aguarda o estado do Firebase para decidir se deve abrir
+    onAuthStateChanged(auth, (user) => {
+      if (!user && !loginModalShown) {
+        loginModalShown = true;
+        sessionStorage.setItem('loginModalMostrado', 'true');
+        // Aguarda um pouco para garantir que os componentes estejam carregados
+        setTimeout(() => {
           openModal('loginModal');
-        }
-      });
-    }
-    checkLogin();
-  });
+        }, 100);
+      }
+    });
+  }
+  
+  checkLogin();
+});
 
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);

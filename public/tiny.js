@@ -7,6 +7,14 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Controle de estado global para evitar múltiplas execuções
+window.tinyAppState = window.tinyAppState || {
+  authInitialized: false,
+  appInitialized: false,
+  isRedirecting: false,
+  authListenerRegistered: false
+};
+
 async function getIdToken() {
   const user = auth.currentUser;
   if (!user) throw new Error("Não logado");
@@ -24,98 +32,199 @@ const stateTiny = {
   pedidos:  { pageSize: 20, lastDoc: null, stack: [], page: 1 }
 };
 
-onAuthStateChanged(auth, user => {
-  if (!user) {
-    window.location.href = 'index.html?login=1';
+// Função para mostrar modal de login
+function showLoginModal() {
+  // Verifica se o modal já existe
+  const modal = document.getElementById('loginModal');
+  if (modal) {
+    modal.style.display = 'block';
     return;
   }
-  carregarProdutos();
-  carregarPedidos();
-});
+  
+  // Se não existir e não estiver redirecionando, redireciona uma vez
+  if (!window.tinyAppState.isRedirecting) {
+    window.tinyAppState.isRedirecting = true;
+    console.log('Redirecionando para index.html com login=1');
+    window.location.href = 'index.html?login=1';
+  }
+}
 
-document.querySelectorAll('.tabTiny').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const t = btn.dataset.tab;
-    document.getElementById('tab-produtos').classList.toggle('hidden', t !== 'produtos');
-    document.getElementById('tab-pedidos').classList.toggle('hidden', t !== 'pedidos');
-    document.getElementById('tab-config').classList.toggle('hidden', t !== 'config');
+// Função para inicializar a aplicação após autenticação
+function initializeTinyApp() {
+  if (window.tinyAppState.appInitialized) {
+    console.log('Aplicação já inicializada, ignorando...');
+    return;
+  }
+  
+  console.log('Inicializando aplicação Tiny...');
+  window.tinyAppState.appInitialized = true;
+  
+  // Aguarda um pouco para garantir que o DOM esteja pronto
+  setTimeout(() => {
+    try {
+      carregarProdutos();
+      carregarPedidos();
+      setupEventListeners();
+      console.log('Aplicação Tiny inicializada com sucesso');
+    } catch (error) {
+      console.error('Erro ao inicializar aplicação:', error);
+    }
+  }, 100);
+}
+
+// Configurar event listeners
+function setupEventListeners() {
+  console.log('Configurando event listeners...');
+  
+  // Event listeners para tabs
+  document.querySelectorAll('.tabTiny').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.tab;
+      document.getElementById('tab-produtos').classList.toggle('hidden', t !== 'produtos');
+      document.getElementById('tab-pedidos').classList.toggle('hidden', t !== 'pedidos');
+      document.getElementById('tab-config').classList.toggle('hidden', t !== 'config');
+    });
   });
-});
 
-document.getElementById('btnSyncProdutos').onclick = async () => {
-  await syncProdutos();
-  stateTiny.produtos.lastDoc = null;
-  stateTiny.produtos.stack = [];
-  stateTiny.produtos.page = 1;
-  carregarProdutos();
-};
-
-document.getElementById('btnSyncPedidos').onclick = async () => {
-  await syncPedidosUltimos7d();
-  stateTiny.pedidos.lastDoc = null;
-  stateTiny.pedidos.stack = [];
-  stateTiny.pedidos.page = 1;
-  carregarPedidos();
-};
-
-document.getElementById('btnSyncPedidosPeriodo').onclick = async () => {
-  try {
-    const di = document.getElementById('dataInicial').value;
-    const df = document.getElementById('dataFinal').value;
-    if (!di || !df) return alert('Preencha data inicial e final');
-    const [yi,mi,di2] = di.split('-');
-    const [yf,mf,df2] = df.split('-');
-    const dataInicial = `${di2}/${mi}/${yi}`;
-    const dataFinal   = `${df2}/${mf}/${yf}`;
-    const idToken = await getIdToken();
-    const resp = await fetch(URL_SYNC_ORDERS, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ dataInicial, dataFinal })
-    });
-    const data = await resp.json();
-    if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha no sync de pedidos');
-    stateTiny.pedidos.lastDoc = null;
-    stateTiny.pedidos.stack = [];
-    stateTiny.pedidos.page = 1;
-    carregarPedidos();
-  } catch (e) {
-    alert(e.message);
+  // Event listeners para botões
+  const btnSyncProdutos = document.getElementById('btnSyncProdutos');
+  if (btnSyncProdutos) {
+    btnSyncProdutos.onclick = async () => {
+      await syncProdutos();
+      stateTiny.produtos.lastDoc = null;
+      stateTiny.produtos.stack = [];
+      stateTiny.produtos.page = 1;
+      carregarProdutos();
+    };
   }
-};
 
-document.getElementById('btnConectarTiny').onclick = async () => {
-  try {
-    const token = document.getElementById('tinyToken').value.trim();
-    if (!token) return alert("Cole o token do Tiny.");
-    const idToken = await getIdToken();
-    const resp = await fetch(URL_CONNECT, {
-      method: "POST",
-      headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
-      body: JSON.stringify({ token: token, integradorId: 12228, validar: true })
-    });
-    const data = await resp.json();
-    if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao conectar.");
-    document.getElementById('tinyStatus').textContent = "Tiny conectado com sucesso.";
-  } catch (e) {
-    alert("Erro ao conectar: " + e.message);
+  const btnSyncPedidos = document.getElementById('btnSyncPedidos');
+  if (btnSyncPedidos) {
+    btnSyncPedidos.onclick = async () => {
+      await syncPedidosUltimos7d();
+      stateTiny.pedidos.lastDoc = null;
+      stateTiny.pedidos.stack = [];
+      stateTiny.pedidos.page = 1;
+      carregarPedidos();
+    };
   }
-};
 
-document.getElementById('btnDesconectarTiny').onclick = async () => {
-  try {
-    const idToken = await getIdToken();
-    const resp = await fetch(URL_DISCONNECT, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${idToken}` }
-    });
-    const data = await resp.json();
-    if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao desconectar.");
-    document.getElementById('tinyStatus').textContent = "Tiny desconectado.";
-  } catch (e) {
-    alert("Erro ao desconectar: " + e.message);
+  const btnSyncPedidosPeriodo = document.getElementById('btnSyncPedidosPeriodo');
+  if (btnSyncPedidosPeriodo) {
+    btnSyncPedidosPeriodo.onclick = async () => {
+      try {
+        const di = document.getElementById('dataInicial').value;
+        const df = document.getElementById('dataFinal').value;
+        if (!di || !df) return alert('Preencha data inicial e final');
+        const [yi,mi,di2] = di.split('-');
+        const [yf,mf,df2] = df.split('-');
+        const dataInicial = `${di2}/${mi}/${yi}`;
+        const dataFinal   = `${df2}/${mf}/${yf}`;
+        const idToken = await getIdToken();
+        const resp = await fetch(URL_SYNC_ORDERS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ dataInicial, dataFinal })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha no sync de pedidos');
+        stateTiny.pedidos.lastDoc = null;
+        stateTiny.pedidos.stack = [];
+        stateTiny.pedidos.page = 1;
+        carregarPedidos();
+      } catch (e) {
+        alert(e.message);
+      }
+    };
   }
-};
+
+  const btnConectarTiny = document.getElementById('btnConectarTiny');
+  if (btnConectarTiny) {
+    btnConectarTiny.onclick = async () => {
+      try {
+        const token = document.getElementById('tinyToken').value.trim();
+        if (!token) return alert("Cole o token do Tiny.");
+        const idToken = await getIdToken();
+        const resp = await fetch(URL_CONNECT, {
+          method: "POST",
+          headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
+          body: JSON.stringify({ token: token, integradorId: 12228, validar: true })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao conectar.");
+        document.getElementById('tinyStatus').textContent = "Tiny conectado com sucesso.";
+      } catch (e) {
+        alert("Erro ao conectar: " + e.message);
+      }
+    };
+  }
+
+  const btnDesconectarTiny = document.getElementById('btnDesconectarTiny');
+  if (btnDesconectarTiny) {
+    btnDesconectarTiny.onclick = async () => {
+      try {
+        const idToken = await getIdToken();
+        const resp = await fetch(URL_DISCONNECT, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${idToken}` }
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || "Falha ao desconectar.");
+        document.getElementById('tinyStatus').textContent = "Tiny desconectado.";
+      } catch (e) {
+        alert("Erro ao desconectar: " + e.message);
+      }
+    };
+  }
+
+  const btnFiltrarProdutos = document.getElementById('btnFiltrarProdutos');
+  if (btnFiltrarProdutos) {
+    btnFiltrarProdutos.onclick = () => {
+      stateTiny.produtos.search = document.getElementById('buscaProduto').value.trim().toLowerCase();
+      stateTiny.produtos.lastDoc = null;
+      stateTiny.produtos.stack = [];
+      stateTiny.produtos.page = 1;
+      carregarProdutos();
+    };
+  }
+
+  const nextProdutos = document.getElementById('nextProdutos');
+  if (nextProdutos) nextProdutos.onclick = () => carregarProdutos(1);
+  
+  const prevProdutos = document.getElementById('prevProdutos');
+  if (prevProdutos) prevProdutos.onclick = () => carregarProdutos(-1);
+  
+  const nextPedidos = document.getElementById('nextPedidos');
+  if (nextPedidos) nextPedidos.onclick = () => carregarPedidos(1);
+  
+  const prevPedidos = document.getElementById('prevPedidos');
+  if (prevPedidos) prevPedidos.onclick = () => carregarPedidos(-1);
+  
+  console.log('Event listeners configurados');
+}
+
+// Listener de autenticação - executado apenas uma vez
+if (!window.tinyAppState.authListenerRegistered) {
+  console.log('Registrando listener de autenticação...');
+  window.tinyAppState.authListenerRegistered = true;
+  
+  onAuthStateChanged(auth, user => {
+    console.log('Estado de autenticação mudou:', user ? 'Usuário logado' : 'Usuário não logado');
+    
+    if (!user) {
+      // Se não há usuário, mostra modal de login ou redireciona
+      if (!window.tinyAppState.appInitialized) {
+        showLoginModal();
+      }
+      return;
+    }
+    
+    // Usuário autenticado - inicializa a aplicação
+    if (!window.tinyAppState.appInitialized) {
+      initializeTinyApp();
+    }
+  });
+}
 
 async function syncProdutos() {
   const idToken = await getIdToken();
@@ -145,22 +254,6 @@ async function syncPedidosUltimos7d() {
   if (!resp.ok) throw new Error(data.error || "Falha no sync de pedidos");
   return data;
 }
-
-document.getElementById('btnFiltrarProdutos').onclick = () => {
-  stateTiny.produtos.search = document.getElementById('buscaProduto').value.trim().toLowerCase();
-  stateTiny.produtos.lastDoc = null;
-  stateTiny.produtos.stack = [];
-  stateTiny.produtos.page = 1;
-  carregarProdutos();
-};
-
-document.getElementById('nextProdutos').onclick = () => carregarProdutos(1);
-
-document.getElementById('prevProdutos').onclick = () => carregarProdutos(-1);
-
-document.getElementById('nextPedidos').onclick = () => carregarPedidos(1);
-
-document.getElementById('prevPedidos').onclick = () => carregarPedidos(-1);
 
 async function carregarProdutos(direction = 0) {
   const uid = auth.currentUser.uid;
