@@ -649,17 +649,6 @@ h4 {
   justify-content: center;
   font-size: 1.5rem
 }
-.tab-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  margin-bottom: 2rem;
-  background: #fff;
-  border-radius: 0.75rem;
-  padding: .5rem;
-  box-shadow: var(--card-shadow);
-  justify-content: center;
-}
 .tab-btn {
   padding: .8rem 1.5rem;
   cursor: pointer;
@@ -987,9 +976,6 @@ h4 {
   }
 }
 @media (max-width:768px) {
-  .tab-bar {
-    gap: .3rem
-  }
   .tab-btn {
     padding: .6rem 1rem;
     font-size: .9rem
@@ -1014,9 +1000,6 @@ h4 {
     flex-direction: column;
     align-items: flex-start;
     gap: .8rem
-  }
-  .tab-bar {
-    justify-content: center
   }
   .tab-btn {
     flex: 1;
@@ -1196,7 +1179,6 @@ body.dark-mode {
 }
 body.dark-mode .card,
 body.dark-mode .chart-container,
-body.dark-mode .tab-bar,
 body.dark-mode .tab-content,
 body.dark-mode .table-container {
   background: var(--card-bg);
@@ -1768,7 +1750,6 @@ input:checked + .toggle-slider:before {
   /* Oculta elementos de navegação e botões */
   .sidebar,
   .navbar,
-  .tab-bar,
   .tab-btn,
   .btn,
   .connection-status,
