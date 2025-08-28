@@ -21,11 +21,11 @@ async function getIdToken() {
   return await user.getIdToken();
 }
 
-// URLs públicas das Cloud Functions
-const URL_CONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/connectTiny";
-const URL_DISCONNECT = "https://southamerica-east1-matheus-35023.cloudfunctions.net/disconnectTiny";
-const URL_SYNC_PRODUCTS = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyProducts";
-const URL_SYNC_ORDERS   = "https://southamerica-east1-matheus-35023.cloudfunctions.net/syncTinyOrders";
+// URLs públicas das Cloud Functions - Atualizadas para as URLs corretas do deploy
+const URL_CONNECT = "https://connecttiny-g6u4niudyq-uc.a.run.app";
+const URL_DISCONNECT = "https://disconnecttiny-g6u4niudyq-uc.a.run.app";
+const URL_SYNC_PRODUCTS = "https://synctinyproducts-g6u4niudyq-uc.a.run.app";
+const URL_SYNC_ORDERS   = "https://synctinyorders-g6u4niudyq-uc.a.run.app";
 
 const stateTiny = {
   produtos: { pageSize: 30, lastDoc: null, stack: [], search: '', page: 1 },
