@@ -29,6 +29,7 @@ let explicitLogout = false;
 let isExpedicao = false;
 let notifUnsub = null;
 let expNotifUnsub = null;
+let updNotifUnsub = null;
 let selectedRole = null;
 
 
@@ -350,13 +351,15 @@ function initNotificationListener(uid) {
   if (!btn || !badge || !list) return;
   if (notifUnsub) notifUnsub();
   if (expNotifUnsub) expNotifUnsub();
+  if (updNotifUnsub) updNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
+  let updNotifs = [];
 
   const render = () => {
     list.innerHTML = '';
-    const all = [...finNotifs, ...expNotifs].sort((a, b) => b.ts - a.ts);
+    const all = [...finNotifs, ...expNotifs, ...updNotifs].sort((a, b) => b.ts - a.ts);
     let count = 0;
     all.forEach(n => {
       const item = document.createElement('div');
@@ -391,6 +394,25 @@ function initNotificationListener(uid) {
     render();
   }, err => {
     console.error('Erro no listener de notificações:', err);
+  });
+
+  const qUpd = query(
+    collection(db, 'financeiroAtualizacoes'),
+    where('destinatarios', 'array-contains', uid),
+    where('tipo', '==', 'atualizacao'),
+    orderBy('createdAt', 'desc')
+  );
+  updNotifUnsub = onSnapshot(qUpd, snap => {
+    updNotifs = [];
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      if (d.autorUid === uid) return;
+      const texto = `${d.autorNome || d.autorEmail || ''}: ${d.descricao || ''}`;
+      updNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
+    });
+    render();
+  }, err => {
+    console.error('Erro no listener de notificações de atualizações:', err);
   });
 
   const qExp = query(
@@ -433,6 +455,7 @@ function checkLogin() {
       hideUserArea();
       if (notifUnsub) { notifUnsub(); notifUnsub = null; }
       if (expNotifUnsub) { expNotifUnsub(); expNotifUnsub = null; }
+      if (updNotifUnsub) { updNotifUnsub(); updNotifUnsub = null; }
 
       // Sempre exibe o modal se estiver no index.html
       const path = window.location.pathname.toLowerCase();
