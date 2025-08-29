@@ -7,7 +7,8 @@ import {
   deletarSaque as deletarSaqueSvc,
   atualizarSaque as atualizarSaqueSvc,
   fecharMes as fecharMesSvc,
-  watchResumoMes as watchResumoMesSvc
+  watchResumoMes as watchResumoMesSvc,
+  registrarComissaoRecebida as registrarComissaoRecebidaSvc
 } from './comissoes-service.js';
 import { anoMesBR } from './comissoes-utils.js';
 
@@ -61,6 +62,17 @@ export async function registrarSaque() {
   editandoId = null;
   document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-plus mr-1"></i> Registrar';
   carregarSaques();
+}
+
+export async function registrarComissaoRecebida() {
+  const dataISO = document.getElementById('dataComissao').value;
+  const valor = parseFloat(document.getElementById('valorComissao').value);
+  if (!dataISO || isNaN(valor) || valor <= 0) {
+    alert('Preencha data e valor corretamente.');
+    return;
+  }
+  await registrarComissaoRecebidaSvc({ db, uid: uidAtual, dataISO, valor });
+  document.getElementById('valorComissao').value = '';
 }
 
 async function carregarSaques() {
@@ -366,12 +378,17 @@ function assistirResumo() {
           <div class="text-xl font-bold">R$ ${r.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div>
-          <div class="text-sm text-gray-500">Taxa final</div>
-          <div class="text-xl font-bold">${(r.taxaFinal * 100).toFixed(0)}%</div>
+          <div class="text-sm text-gray-500">Total comissão</div>
+          <div class="text-xl font-bold">R$ ${(r.comissaoPrevista || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="text-sm text-gray-500">${(r.taxaFinal * 100).toFixed(0)}%</div>
         </div>
         <div>
-          <div class="text-sm text-gray-500">Ajuste estimado</div>
-          <div class="text-xl font-bold">R$ ${r.ajusteFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="text-sm text-gray-500">Total comissão paga</div>
+          <div class="text-xl font-bold">R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Total comissão falta pagar</div>
+          <div class="text-xl font-bold">R$ ${( (r.comissaoPrevista || 0) - (r.comissaoRecebida || 0) ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
       `;
       texto.textContent = `Faltam R$${r.faltamPara4.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 4% | R$${r.faltamPara5.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 5%`;
@@ -390,4 +407,5 @@ if (typeof window !== 'undefined') {
   window.mostrarResumoSelecionados = mostrarResumoSelecionados;
   window.exportarSelecionadosExcel = exportarSelecionadosExcel;
   window.exportarSelecionadosPDF = exportarSelecionadosPDF;
+  window.registrarComissaoRecebida = registrarComissaoRecebida;
 }

@@ -35,6 +35,20 @@
       </div>
     </section>
 
+    <!-- Formulário de Comissão Recebida -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="text-xl font-bold">💰 Comissão Recebida</h2>
+      </div>
+      <div class="card-body flex flex-col md:flex-row gap-4 items-end">
+        <input type="date" id="dataComissao" class="form-control" />
+        <input type="number" id="valorComissao" placeholder="Valor (R$)" step="0.01" class="form-control" />
+        <button onclick="registrarComissaoRecebida()" class="btn btn-primary">
+          <i class="fas fa-plus mr-1"></i> Registrar
+        </button>
+      </div>
+    </section>
+
     <!-- Resumo do mês -->
     <section class="card">
       <div class="card-header flex items-center justify-between">
@@ -44,7 +58,7 @@
           <button onclick="fecharMes()" class="btn btn-outline">Fechar mês</button>
         </div>
       </div>
-      <div id="cardsResumo" class="card-body grid grid-cols-1 md:grid-cols-3 gap-4 text-center"></div>
+      <div id="cardsResumo" class="card-body grid grid-cols-1 md:grid-cols-4 gap-4 text-center"></div>
       <p id="faltasTexto" class="px-4 pb-4 text-center text-sm text-gray-600"></p>
     </section>
 
