@@ -99,16 +99,20 @@
              </label>
         <input type="file" id="pdfInput" accept="application/pdf" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-400 p-2" />
         <input type="text" id="gestoresEmails" placeholder="E-mails do gestor de expedição (separados por vírgula)" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg mt-2 p-2" />
-      </div>
-      <button class="btn-main w-full" onclick="processar()">
-        <i class="fa-solid fa-magic-wand-sparkles mr-2"></i>
-        Processar e Gerar PDF
-      </button>
-      <a href="zpl-import.html" class="btn-main w-full text-center block mt-2">
-        <i class="fa-solid fa-file-code mr-2"></i>
-        Importar via ZPL
-      </a>
-      <div class="mt-6">
+        </div>
+        <button class="btn-main w-full" onclick="processar()">
+          <i class="fa-solid fa-magic-wand-sparkles mr-2"></i>
+          Processar e Gerar PDF
+        </button>
+        <button class="btn-main w-full mt-2" onclick="processarMercadoLivre()">
+          <i class="fa-solid fa-truck-fast mr-2"></i>
+          Processar Mercado Livre
+        </button>
+        <a href="zpl-import.html" class="btn-main w-full text-center block mt-2">
+          <i class="fa-solid fa-file-code mr-2"></i>
+          Importar via ZPL
+        </a>
+        <div class="mt-6">
         <div class="progress-bar-bg" id="progressBar" style="display:none;">
           <div class="progress-bar-fill" id="progressFill" style="width:0%;">
             <span id="progressText" class="w-full text-center"></span>
@@ -181,6 +185,21 @@ firebase.auth().onAuthStateChanged(async u => {
       return items;
     }
 
+    async function extractMercadoLivreData(canvas) {
+      const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+      const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
+      let sku = '', quantidade = 0, loja = '';
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const skuMatch = line.match(/SKU\s*[:\-]?\s*([\w\.\-\/]+)/i);
+        if (skuMatch) sku = skuMatch[1];
+        const qtdMatch = line.match(/(QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/i);
+        if (qtdMatch) quantidade = parseInt(qtdMatch[2], 10) || 0;
+        if (!loja && !line.match(/SKU|QTD|QUANTIDADE/i)) loja = line;
+      }
+      return { sku, quantidade, loja };
+    }
+
     async function savePrintedSkuQuantities(items) {
       if (!currentUser || !items || items.length === 0) return;
       const batch = db.batch();
@@ -190,6 +209,26 @@ firebase.auth().onAuthStateChanged(async u => {
         const data = {
           sku: item.sku,
           quantidade: item.quantidade,
+          userUid: currentUser.uid,
+          userEmail: currentUser.email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        batch.set(userDoc.collection('skuimpressos').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+      });
+      await batch.commit();
+    }
+
+    async function saveMercadoLivreData(items) {
+      if (!currentUser || !items || items.length === 0) return;
+      const batch = db.batch();
+      const userDoc = db.collection('uid').doc(currentUser.uid);
+      const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
+      items.forEach(item => {
+        const data = {
+          sku: item.sku,
+          quantidade: item.quantidade,
+          loja: item.loja,
           userUid: currentUser.uid,
           userEmail: currentUser.email,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -411,6 +450,96 @@ completoCtx.drawImage(
     }
 
     window.processar = processar;
+    async function processarMercadoLivre() {
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      progressBar.style.display = "block";
+      progressFill.style.width = "0%";
+      progressText.textContent = "";
+
+      const status = document.getElementById("status");
+      const pdfFile = document.getElementById("pdfInput").files[0];
+      if (!pdfFile) {
+        progressBar.style.display = "none";
+        return showMessage("Envie o arquivo PDF.");
+      }
+
+      status.textContent = "📸 Lendo PDF Mercado Livre...";
+      const arrayBuffer = await pdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.style.display = "block";
+      const allItems = [];
+
+      for (let i = 0; i < pdf.numPages; i++) {
+        const progress = Math.round((i / pdf.numPages) * 100);
+        progressFill.style.width = progress + "%";
+        progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+        const page = await pdf.getPage(i + 1);
+        const scale = 3;
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const data = await extractMercadoLivreData(canvas);
+        if (data.sku) allItems.push(data);
+      }
+
+      progressFill.style.width = "100%";
+      progressText.textContent = "✅ Concluído!";
+      setTimeout(() => { progressBar.style.display = "none"; }, 2000);
+
+      if (currentUser) {
+        const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+        const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+        const fileName = `mercado_livre_${Date.now()}.pdf`;
+        const docRef = await db.collection('pdfDocs').add({
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email,
+          gestoresExpedicaoEmails: gestoresEmails,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          name: fileName
+        });
+        const fileRef = storage.ref().child(`ml_pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        await fileRef.put(pdfFile);
+        const url = await fileRef.getDownloadURL();
+        await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        const record = {
+          name: fileName,
+          url: url,
+          path: fileRef.fullPath,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+        if (responsavelExpedicaoUid) {
+          const respDocRef = await db.collection('pdfDocs').add({
+            ownerUid: responsavelExpedicaoUid,
+            ownerEmail: '',
+            gestoresExpedicaoEmails: gestoresEmails,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            name: fileName
+          });
+          const respFileRef = storage.ref().child(`ml_pdfs/${responsavelExpedicaoUid}/${respDocRef.id}.pdf`);
+          await respFileRef.put(pdfFile);
+          const respUrl = await respFileRef.getDownloadURL();
+          await respDocRef.update({ url: respUrl, storagePath: respFileRef.fullPath });
+          const respRecord = {
+            name: fileName,
+            url: respUrl,
+            path: respFileRef.fullPath,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+        }
+      }
+
+      await saveMercadoLivreData(allItems);
+      status.textContent = "✅ Etiquetas Mercado Livre processadas!";
+    }
+
+    window.processarMercadoLivre = processarMercadoLivre;
     </script>
 
   <script src="shared.js"></script>
