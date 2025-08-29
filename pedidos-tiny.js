@@ -40,7 +40,7 @@ export async function carregarPedidosTiny() {
       const loja = p.loja || p.store || '';
       const sku = p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '');
       const valor = p.valor || p.total || '';
-      const idPedido = p.idpedido || p.id;
+      const idPedido = p.idPedido || p.idpedido || p.id;
       tr.innerHTML = `
         <td data-label="Data">${data}</td>
         <td data-label="ID">${idPedido}</td>
