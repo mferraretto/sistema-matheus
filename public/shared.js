@@ -296,19 +296,45 @@
     window.checkColorContrast();
   });
 
-  // Handle mobile sidebar toggle after navbar loads
-  document.addEventListener('navbarLoaded', function () {
-    var btn = document.querySelector('.mobile-menu-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var sidebar = document.querySelector('.sidebar');
-      if (sidebar) {
-        sidebar.classList.toggle('active');
-      }
-    });
-  });
+  // Controle de sidebar para mobile
+  function toggleSidebar() {
+    var container = document.getElementById('sidebar-container');
+    if (!container) return;
+    var overlay = document.getElementById('sidebar-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', toggleSidebar);
+    }
+    var isOpen = container.classList.toggle('open');
+    overlay.classList.toggle('show', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  }
+  window.toggleSidebar = toggleSidebar;
 
+  function setupMobileSidebar() {
+    var container = document.getElementById('sidebar-container');
+    var btn = document.querySelector('.mobile-menu-btn');
+    if (btn && !btn.dataset.sidebarReady) {
+      btn.addEventListener('click', toggleSidebar);
+      btn.dataset.sidebarReady = 'true';
+    }
+    if (container) {
+      container.querySelectorAll('a').forEach(function(a){
+        a.addEventListener('click', function(){
+          if (window.innerWidth <= 768) toggleSidebar();
+        });
+      });
+      if (window.innerWidth > 768) {
+        container.classList.add('open');
+      }
+    }
+  }
+
+  document.addEventListener('navbarLoaded', setupMobileSidebar);
   document.addEventListener('sidebarLoaded', function () {
+    setupMobileSidebar();
     loadIntroJs().then(function () {
       var btn = document.getElementById('startSidebarTourBtn');
       if (btn) {
@@ -316,6 +342,21 @@
       }
       window.startSidebarTour(false);
     });
+  });
+
+  window.addEventListener('resize', function () {
+    var container = document.getElementById('sidebar-container');
+    var overlay = document.getElementById('sidebar-overlay');
+    if (!container || !overlay) return;
+    if (window.innerWidth > 768) {
+      container.classList.add('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    } else {
+      container.classList.remove('open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
   });
 
 })();
