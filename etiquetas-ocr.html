@@ -502,7 +502,7 @@ completoCtx.drawImage(
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           name: fileName
         });
-        const fileRef = storage.ref().child(`ml_pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
         await fileRef.put(pdfFile);
         const url = await fileRef.getDownloadURL();
         await docRef.update({ url: url, storagePath: fileRef.fullPath });
@@ -521,7 +521,7 @@ completoCtx.drawImage(
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             name: fileName
           });
-          const respFileRef = storage.ref().child(`ml_pdfs/${responsavelExpedicaoUid}/${respDocRef.id}.pdf`);
+          const respFileRef = storage.ref().child(`pdfs/${responsavelExpedicaoUid}/${respDocRef.id}.pdf`);
           await respFileRef.put(pdfFile);
           const respUrl = await respFileRef.getDownloadURL();
           await respDocRef.update({ url: respUrl, storagePath: respFileRef.fullPath });
