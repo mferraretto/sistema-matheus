@@ -209,32 +209,11 @@ firebase.auth().onAuthStateChanged(async u => {
         const data = {
           sku: item.sku,
           quantidade: item.quantidade,
-          userUid: currentUser.uid,
-          userEmail: currentUser.email,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          loja: item.loja || '',
+          data: firebase.firestore.FieldValue.serverTimestamp()
         };
-        batch.set(userDoc.collection('skuimpressos').doc(), data);
-        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
-      });
-      await batch.commit();
-    }
-
-    async function saveMercadoLivreData(items) {
-      if (!currentUser || !items || items.length === 0) return;
-      const batch = db.batch();
-      const userDoc = db.collection('uid').doc(currentUser.uid);
-      const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
-      items.forEach(item => {
-        const data = {
-          sku: item.sku,
-          quantidade: item.quantidade,
-          loja: item.loja,
-          userUid: currentUser.uid,
-          userEmail: currentUser.email,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        batch.set(userDoc.collection('skuimpressos').doc(), data);
-        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+        batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
       });
       await batch.commit();
     }
@@ -535,7 +514,7 @@ completoCtx.drawImage(
         }
       }
 
-      await saveMercadoLivreData(allItems);
+      await savePrintedSkuQuantities(allItems);
       status.textContent = "✅ Etiquetas Mercado Livre processadas!";
     }
 
