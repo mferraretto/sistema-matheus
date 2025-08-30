@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
@@ -163,6 +163,7 @@ async function carregarDashboard(user) {
   renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
+  carregarPrevisaoDashboard(uid);
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
@@ -281,6 +282,149 @@ function renderTopSkus(lista) {
   el.innerHTML = lista
     .map(p => `<li>${p.sku} - ${p.vendas}</li>`)
     .join('');
+}
+
+async function carregarPrevisaoDashboard(uid) {
+  const cards = document.getElementById('cardsPrevisao');
+  const container = document.getElementById('topSkusPrevisao');
+  if (!cards || !container) return;
+  cards.innerHTML = '🔄 Carregando...';
+  container.innerHTML = '';
+
+  const hoje = new Date();
+  const proxMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+  const anoMes = proxMes.toISOString().slice(0,7);
+
+  try {
+    const docSnap = await getDoc(doc(db, `uid/${uid}/previsoes`, anoMes));
+    if (!docSnap.exists()) {
+      cards.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+      return;
+    }
+    const previsao = docSnap.data() || {};
+    renderPrevisaoCards(cards, previsao);
+    const { precos, metas } = await carregarProdutosEMetas(uid);
+    renderPrevisaoTopSkus(container, previsao, precos, metas);
+  } catch (err) {
+    console.error('Erro ao carregar previsão', err);
+    cards.innerHTML = '<p class="text-red-500">Erro ao carregar previsão</p>';
+  }
+}
+
+async function carregarProdutosEMetas(uid) {
+  const precos = {};
+  try {
+    const snap = await getDocs(collection(db, `uid/${uid}/produtos`));
+    for (const p of snap.docs) {
+      let d = p.data();
+      if (d.encrypted) {
+        const pass = getPassphrase() || `chave-${uid}`;
+        let txt;
+        try { txt = await decryptString(d.encrypted, pass); }
+        catch (e) {
+          try { txt = await decryptString(d.encrypted, uid); } catch (_) {}
+        }
+        if (txt) d = JSON.parse(txt);
+      }
+      const sku = d.sku || p.id;
+      precos[sku] = Number(d.custo) || 0;
+    }
+  } catch (err) {
+    console.error('Erro ao carregar produtos', err);
+  }
+
+  const metas = {};
+  try {
+    const q = query(collection(db, 'metasSKU'), where('uid', '==', uid));
+    const metasSnap = await getDocs(q);
+    metasSnap.forEach(m => {
+      const originalSku = m.id.replaceAll('__','/');
+      metas[originalSku] = Number(m.data().valor) || 0;
+    });
+  } catch (err) {
+    console.error('Erro ao carregar metasSKU', err);
+  }
+
+  Object.keys(precos).forEach(sku => {
+    if (metas[sku] === undefined) metas[sku] = precos[sku];
+  });
+  return { precos, metas };
+}
+
+function renderPrevisaoCards(el, previsao) {
+  const base = previsao.totalGeral || 0;
+  const pess = base * 0.85;
+  const otm = base * 1.15;
+  el.innerHTML = `
+    <div class="bg-red-100 text-red-800 p-4 rounded shadow text-center">
+      <div class="font-bold">Pessimista</div><div>${pess.toFixed(0)}</div>
+    </div>
+    <div class="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
+      <div class="font-bold">Base</div><div>${base.toFixed(0)}</div>
+    </div>
+    <div class="bg-green-100 text-green-800 p-4 rounded shadow text-center">
+      <div class="font-bold">Otimista</div><div>${otm.toFixed(0)}</div>
+    </div>`;
+}
+
+function renderPrevisaoTopSkus(container, previsao, precos, metas) {
+  const dadosSkus = Object.entries(previsao.skus || {});
+  if (!dadosSkus.length) {
+    container.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+    return;
+  }
+
+  const cenarios = [
+    { titulo: 'Pessimista', fator: 0.85 },
+    { titulo: 'Base', fator: 1 },
+    { titulo: 'Otimista', fator: 1.15 }
+  ];
+
+  const tabelas = cenarios.map(c => {
+    const lista = dadosSkus
+      .map(([sku, info]) => {
+        const quantidade = (info.total || 0) * c.fator;
+        const preco = precos[sku] || 0;
+        const sobraUnit = metas[sku] || 0;
+        const bruto = quantidade * preco;
+        const sobra = quantidade * sobraUnit;
+        return { sku, quantidade, bruto, sobra };
+      })
+      .sort((a,b) => b.quantidade - a.quantidade)
+      .slice(0,5);
+
+    if (!lista.length) {
+      return '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+    }
+
+    const linhas = lista.map(item => `
+        <tr>
+          <td class="px-2 py-1 border">${item.sku}</td>
+          <td class="px-2 py-1 border">${item.quantidade.toFixed(0)}</td>
+          <td class="px-2 py-1 border">R$ ${item.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td class="px-2 py-1 border">R$ ${item.sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+        </tr>`).join('');
+
+    return `
+      <div class="overflow-x-auto">
+        <h4 class="font-bold mb-2 text-center">Top 5 SKUs projeção ${c.titulo}</h4>
+        <table class="min-w-full text-sm text-left">
+          <thead>
+            <tr>
+              <th class="px-2 py-1 border">SKU</th>
+              <th class="px-2 py-1 border">Quantidade</th>
+              <th class="px-2 py-1 border">Bruto Esperado<br>(Valor de venda)</th>
+              <th class="px-2 py-1 border">Sobra Esperada<br>(Sobra esperada x quantidade)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhas}
+          </tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
 }
 
 document.getElementById('exportarFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
