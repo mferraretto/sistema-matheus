@@ -137,6 +137,8 @@ async function carregarDashboard(user) {
     console.error('Erro ao carregar produtos', err);
   }
 
+  let rentabilidade = [];
+  let topRentaveis = [];
   try {
     const skusSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
     const mapa = {};
@@ -148,13 +150,28 @@ async function carregarDashboard(user) {
         const d = item.data();
         const sku = d.sku || item.id;
         const qtd = Number(d.total || d.quantidade) || 0;
-        mapa[sku] = (mapa[sku] || 0) + qtd;
+        const valor = Number(d.valorLiquido || 0);
+        if (!mapa[sku]) mapa[sku] = { qtd: 0, valor: 0 };
+        mapa[sku].qtd += qtd;
+        mapa[sku].valor += valor;
       });
     }
+
     topSkus = Object.entries(mapa)
-      .map(([sku, vendas]) => ({ sku, vendas }))
+      .map(([sku, dados]) => ({ sku, vendas: dados.qtd }))
       .sort((a, b) => b.vendas - a.vendas)
       .slice(0, 5);
+
+    const { precos } = await carregarProdutosEMetas(uid);
+    rentabilidade = Object.entries(mapa)
+      .map(([sku, dados]) => {
+        const custo = (precos[sku] || 0) * dados.qtd;
+        const lucro = dados.valor - custo;
+        const margem = dados.valor ? (lucro / dados.valor) * 100 : 0;
+        return { sku, receita: dados.valor, custo, lucro, margem };
+      })
+      .sort((a, b) => b.lucro - a.lucro);
+    topRentaveis = rentabilidade.slice(0, 5);
   } catch (err) {
     console.error('Erro ao carregar skus vendidos', err);
   }
@@ -176,13 +193,16 @@ async function carregarDashboard(user) {
     comparativo,
     topProdutos,
     produtosCriticos,
-    topSkus
+    topSkus,
+    rentabilidade,
+    topRentaveis
   };
   window.dashboardData = dashboardData;
 
   renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
+  renderRentabilidade(rentabilidade, topRentaveis);
   carregarPrevisaoDashboard(uid);
 }
 
@@ -302,6 +322,29 @@ function renderTopSkus(lista) {
   el.innerHTML = lista
     .map(p => `<li>${p.sku} - ${p.vendas}</li>`)
     .join('');
+}
+
+function renderRentabilidade(lista, top5) {
+  const tbody = document.getElementById('tabelaRentabilidade');
+  if (tbody) {
+    tbody.innerHTML = lista
+      .map(p => `
+        <tr>
+          <td class="px-3 py-2">${p.sku}</td>
+          <td class="px-3 py-2 text-right">R$ ${p.receita.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td class="px-3 py-2 text-right">R$ ${p.custo.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td class="px-3 py-2 text-right">R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td class="px-3 py-2 text-right">${p.margem.toFixed(1)}%</td>
+        </tr>
+      `)
+      .join('');
+  }
+  const topEl = document.getElementById('topRentaveis');
+  if (topEl) {
+    topEl.innerHTML = top5
+      .map(p => `<li>${p.sku} - R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>`)
+      .join('');
+  }
 }
 
 async function carregarPrevisaoDashboard(uid) {
