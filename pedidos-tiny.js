@@ -21,7 +21,7 @@ onAuthStateChanged(auth, async user => {
 export async function carregarPedidosTiny() {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Carregando...</td></tr>';
   try {
     const uid = auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
@@ -40,7 +40,7 @@ export async function carregarPedidosTiny() {
     aplicarFiltros();
   } catch (err) {
     console.error('Erro ao carregar pedidos', err);
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
   }
 }
 
@@ -71,6 +71,58 @@ function parseDate(str) {
 
 function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function toNumber(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(n) || 0;
+  }
+  return 0;
+}
+
+function formatCurrency(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function calcularLiquido(p) {
+  const total = toNumber(p.valor || p.total || 0);
+  const loja = (p.loja || p.store || '').toLowerCase();
+  let taxa = 0;
+  if (loja.includes('shopee')) {
+    if (Array.isArray(p.itens) && p.itens.length) {
+      p.itens.forEach(i => {
+        const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
+        const comissao = Math.min(v * 0.20, 100);
+        taxa += comissao + 4;
+      });
+    } else {
+      const comissao = Math.min(total * 0.20, 100);
+      taxa = comissao + 4;
+    }
+  } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
+    if (Array.isArray(p.itens) && p.itens.length) {
+      p.itens.forEach(i => {
+        const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
+        let fixo = 0;
+        if (v < 12.5) fixo = v / 2;
+        else if (v < 29) fixo = 6.25;
+        else if (v < 50) fixo = 6.5;
+        else if (v < 79) fixo = 6.75;
+        taxa += v * 0.12 + fixo;
+      });
+    } else {
+      const v = total;
+      let fixo = 0;
+      if (v < 12.5) fixo = v / 2;
+      else if (v < 29) fixo = 6.25;
+      else if (v < 50) fixo = 6.5;
+      else if (v < 79) fixo = 6.75;
+      taxa = v * 0.12 + fixo;
+    }
+  }
+  return total - taxa;
 }
 
 export function aplicarFiltros() {
@@ -114,19 +166,21 @@ export function aplicarFiltros() {
     const data = p.data || p.dataPedido || p.date || '';
     const lojaPedido = p.loja || p.store || '';
     const sku = p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '');
-    const valor = p.valor || p.total || '';
+    const valorBruto = toNumber(p.valor || p.total || 0);
+    const liquido = calcularLiquido(p);
     const idPedido = p.idPedido || p.idpedido || p.id;
     tr.innerHTML = `
         <td data-label="Data">${data}</td>
         <td data-label="ID">${idPedido}</td>
         <td data-label="Loja">${lojaPedido}</td>
         <td data-label="SKU">${sku}</td>
-        <td data-label="Valor">${valor}</td>
+        <td data-label="Valor">${formatCurrency(valorBruto)}</td>
+        <td data-label="Líquido">${formatCurrency(liquido)}</td>
       `;
     tbody.appendChild(tr);
   });
   if (!tbody.children.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
   }
 }
 
