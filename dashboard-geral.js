@@ -8,9 +8,104 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 let dashboardData = {};
-const GEMINI_CACHE_KEY = 'dashGeminiCache';
-let geminiRequestInFlight = false;
-let geminiCircuitOpenUntil = 0;
+// === Gemini Guardrail: fila, rate-limit, cache, retries, circuit breaker ===
+// Ajustes finos
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_KEY = 'AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk';
+// Limites
+const RL_INTERVAL_MS = 3000;      // 1 token a cada 3s
+const RL_CAPACITY = 1;            // 1 chamada por vez
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1500;     // 1.5s, 3s, 6s
+const CACHE_TTL_MS = 20 * 60 * 1000; // 20 min
+const CIRCUIT_OPEN_MS = 30 * 1000;   // 30s
+
+// Estado
+let rlTokens = RL_CAPACITY;
+let rlQueue = [];
+let circuitOpen = false;
+let collapseMap = new Map();      // evita duplicadas simultâneas por payload
+const aiCache = new Map();        // hash -> { ts, data }
+
+// Reposição de tokens
+setInterval(() => {
+  if (rlTokens < RL_CAPACITY) rlTokens++;
+  processQueue();
+}, RL_INTERVAL_MS);
+
+function processQueue() {
+  if (circuitOpen) return;
+  while (rlTokens > 0 && rlQueue.length) {
+    const job = rlQueue.shift();
+    rlTokens--;
+    job();
+  }
+}
+
+function openCircuitTemporariamente() {
+  if (circuitOpen) return;
+  circuitOpen = true;
+  setTimeout(() => { circuitOpen = false; processQueue(); }, CIRCUIT_OPEN_MS);
+}
+
+function stableHash(obj) {
+  const json = typeof obj === 'string' ? obj : JSON.stringify(obj, Object.keys(obj).sort());
+  let h = 0;
+  for (let i = 0; i < json.length; i++) { h = (h << 5) - h + json.charCodeAt(i); h |= 0; }
+  return String(h);
+}
+
+function getCache(key) {
+  const hit = aiCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > CACHE_TTL_MS) { aiCache.delete(key); return null; }
+  return hit.data;
+}
+function setCache(key, data) { aiCache.set(key, { ts: Date.now(), data }); }
+
+function enqueueGeminiCall(fn) {
+  return new Promise((resolve, reject) => {
+    const job = () => fn().then(resolve).catch(reject);
+    rlQueue.push(job);
+    processQueue();
+  });
+}
+
+export async function analisarEstrategiaGemini(payload) {
+  // Não roda em background
+  if (typeof document !== 'undefined' && document.hidden) return { skipped: true, reason: 'document hidden' };
+
+  const key = stableHash(payload);
+  const cached = getCache(key);
+  if (cached) return { cached: true, ...cached };
+
+  if (collapseMap.has(key)) return collapseMap.get(key);
+
+  const executor = (retry = 0) => enqueueGeminiCall(async () => {
+    const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(GEMINI_KEY)}`;
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+
+    if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
+      openCircuitTemporariamente();
+      if (retry < MAX_RETRIES) {
+        const wait = BASE_BACKOFF_MS * Math.pow(2, retry);
+        await new Promise(r => setTimeout(r, wait));
+        return executor(retry + 1);
+      } else { const err = new Error('Limite de requisições atingido'); err.rateLimited = true; throw err; }
+    }
+
+    if (!res.ok) { const body = await res.text().catch(() => ''); throw new Error(body || `Erro ${res.status}`); }
+
+    const data = await res.json();
+    const wrapped = { cached: false, data };
+    setCache(key, wrapped);
+    return wrapped;
+  });
+
+  const p = executor().finally(() => { collapseMap.delete(key); });
+  collapseMap.set(key, p);
+  return p;
+}
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -211,7 +306,6 @@ async function carregarDashboard(user) {
   carregarPrevisaoDashboard(uid);
   setupTabs();
   setupSubTabs();
-  analisarEstrategiaGemini();
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
@@ -512,117 +606,6 @@ function setupSubTabs() {
   });
 }
 
-function hashPayload(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
-  }
-  return hash.toString();
-}
-
-function getGeminiCache(hash) {
-  try {
-    const raw = localStorage.getItem(GEMINI_CACHE_KEY);
-    if (!raw) return null;
-    const item = JSON.parse(raw);
-    if (item.hash === hash && Date.now() - item.time < 10 * 60 * 1000) {
-      return item.data;
-    }
-  } catch (e) {
-    console.error('Falha ao ler cache Gemini', e);
-  }
-  return null;
-}
-
-function setGeminiCache(hash, data) {
-  try {
-    localStorage.setItem(GEMINI_CACHE_KEY, JSON.stringify({ hash, data, time: Date.now() }));
-  } catch (e) {
-    console.error('Falha ao salvar cache Gemini', e);
-  }
-}
-
-async function analisarEstrategiaGemini() {
-  const ulFortes = document.getElementById('pontosFortes');
-  const ulRiscos = document.getElementById('principaisRiscos');
-  const ulAcoes = document.getElementById('acoesRecomendadas');
-  if (!ulFortes || !ulRiscos || !ulAcoes || !window.dashboardData) return;
-  if (geminiRequestInFlight || Date.now() < geminiCircuitOpenUntil) return;
-
-  const prompt = `Você é um analista de e-commerce. Com base nos dados a seguir do mês atual, responda em JSON com as chaves \"pontosFortes\", \"riscos\" e \"acoes\":\n${JSON.stringify(window.dashboardData)}`;
-
-  const payload = {
-    contents: [{ role: 'user', parts: [{ text: prompt }]}],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'OBJECT',
-        properties: {
-          pontosFortes: { type: 'ARRAY', items: { type: 'STRING' } },
-          riscos: { type: 'ARRAY', items: { type: 'STRING' } },
-          acoes: { type: 'ARRAY', items: { type: 'STRING' } }
-        }
-      }
-    }
-  };
-
-  const payloadStr = JSON.stringify(payload);
-  const hash = hashPayload(payloadStr);
-  const cached = getGeminiCache(hash);
-  if (cached) {
-    renderListaGemini(ulFortes, cached.pontosFortes);
-    renderListaGemini(ulRiscos, cached.riscos);
-    renderListaGemini(ulAcoes, cached.acoes);
-    return;
-  }
-
-  geminiRequestInFlight = true;
-  try {
-    const apiKey = 'AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk';
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    let response;
-    for (let tentativa = 0; tentativa < 3; tentativa++) {
-      response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payloadStr
-      });
-      if (response.status !== 429) break;
-      // Exponential backoff: 1s, 2s, 4s
-      await new Promise(r => setTimeout(r, Math.pow(2, tentativa) * 1000));
-    }
-    if (response.status === 429) {
-      // Abra o circuito por 5 minutos para evitar novas tentativas rápidas
-      geminiCircuitOpenUntil = Date.now() + 5 * 60 * 1000;
-      throw new Error('Limite de requisições atingido');
-    }
-    if (!response.ok) throw new Error(await response.text());
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    const dados = JSON.parse(text);
-    setGeminiCache(hash, dados);
-    renderListaGemini(ulFortes, dados.pontosFortes);
-    renderListaGemini(ulRiscos, dados.riscos);
-    renderListaGemini(ulAcoes, dados.acoes);
-  } catch (err) {
-    console.error('Erro ao obter análise estratégica', err);
-    const msg = '<li>Não foi possível gerar a análise.</li>';
-    ulFortes.innerHTML = msg;
-    ulRiscos.innerHTML = msg;
-    ulAcoes.innerHTML = msg;
-  } finally {
-    geminiRequestInFlight = false;
-  }
-}
-
-function renderListaGemini(el, itens) {
-  if (!Array.isArray(itens) || !itens.length) {
-    el.innerHTML = '<li>Nenhuma informação.</li>';
-    return;
-  }
-  el.innerHTML = itens.map(i => `<li>${i}</li>`).join('');
-}
-
 async function carregarPrevisaoDashboard(uid) {
   const cards = document.getElementById('cardsPrevisao');
   const container = document.getElementById('topSkusPrevisao');
@@ -868,8 +851,8 @@ function gerarHTMLFechamento() {
   const atencao = d.produtosCriticos.length ? 'Atenção aos produtos sem vendas com estoque disponível.' : 'Sem pontos de atenção.';
 
   return `
-    <div style="font-family: Arial, sans-serif; width:100%; max-width:170mm; box-sizing:border-box;">
-      <h1 style="text-align:center;">${d.nomeEmpresa || 'Empresa'}</h1>
+      <div style="font-family: Arial, sans-serif; width:100%; max-width:170mm; box-sizing:border-box;">
+        <h1 style="text-align:center;">${d.nomeEmpresa || 'Empresa'}</h1>
       <h2 style="text-align:center;">Fechamento ${mesBR}</h2>
       <p style="text-align:center;">Responsável: ${d.responsavel || ''}</p>
 
@@ -915,3 +898,92 @@ function gerarHTMLFechamento() {
     </div>
   `;
 }
+
+// === Handler de Análise de IA ===
+const btnAnalise = document.getElementById('btn-analise-ia');
+const alertBox = document.getElementById('analise-ia-alert');
+const outBox = document.getElementById('analise-ia-output');
+
+function setLoading(state) {
+  const icon = document.getElementById('icon-analise');
+  btnAnalise.disabled = state;
+  btnAnalise.classList.toggle('opacity-60', state);
+  btnAnalise.classList.toggle('cursor-not-allowed', state);
+  if (state) {
+    icon.outerHTML = `<svg id="icon-analise" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" opacity="0.25"></circle>
+      <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="2"></path>
+    </svg>`;
+    alertBox.className = 'mt-3 text-sm text-gray-700';
+    alertBox.textContent = 'Gerando análise...';
+  } else {
+    icon.outerHTML = `<svg id="icon-analise" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+      viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+      d="M11 5h2m-1-2v2m6 5h2m-2 0v2M4 12H2m2 0v2m12.243 4.243l1.414-1.414M7.757 7.757 6.343 6.343M9 17l3-3-3-3"/></svg>`;
+  }
+}
+
+function renderAviso(msg, tipo='info') {
+  const map = { info:'text-gray-700', warn:'text-amber-700', error:'text-red-700', success:'text-emerald-700' };
+  alertBox.className = `mt-3 text-sm ${map[tipo] || map.info}`;
+  alertBox.textContent = msg;
+}
+
+function renderResultadoGemini(resp) {
+  const candidates = resp?.data?.candidates || [];
+  const text = candidates[0]?.content?.parts?.map(p => p.text).join('\n') || 'Sem conteúdo retornado.';
+  outBox.innerHTML = `<div class="rounded-lg border border-gray-200 p-4 bg-white">
+    <pre class="whitespace-pre-wrap font-sans text-sm text-gray-900">${text}</pre></div>`;
+}
+
+function coletarResumoKPIsDoDashboard() {
+  const d = window.dashboardData || {};
+  return {
+    periodo: { inicio: d.mesAtual ? `${d.mesAtual}-01` : '', fim: new Date().toISOString().slice(0,10) },
+    vendas: { bruto: d.totalBruto || 0, liquido: d.totalLiquido || 0, unidades: d.totalUnidades || 0 },
+    funil: { cancelamentos: d.cancelamentosDiario ? Object.values(d.cancelamentosDiario).reduce((a,b)=>a+b,0) : 0 },
+    ads: {},
+    produtosTop: d.topProdutos || [],
+    riscos: d.produtosCriticos || [],
+    meta: { valor: d.meta || 0 }
+  };
+}
+
+function montarPayloadGemini() {
+  const resumo = coletarResumoKPIsDoDashboard();
+  return {
+    contents: [{
+      role: 'user',
+      parts: [{
+        text:
+`Você é um analista de performance de Shopee. Com base nos dados abaixo, responda em 5 itens:
+1) 3 pontos fortes do mês
+2) 3 riscos
+3) 5 ações práticas (curto prazo)
+4) Oportunidades em Ads (CTR, CPC, CPA, ROAS)
+5) Alertas urgentes
+
+DADOS:
+${JSON.stringify(resumo)}`
+      }]
+    }],
+    generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
+  };
+}
+
+btnAnalise?.addEventListener('click', async () => {
+  if (btnAnalise.disabled) return;
+  setLoading(true); outBox.innerHTML = '';
+  try {
+    const payload = montarPayloadGemini();
+    const resultado = await analisarEstrategiaGemini(payload);
+
+    if (resultado.skipped) return renderAviso('Análise pulada (aba em segundo plano).', 'warn');
+
+    renderAviso(resultado.cached ? 'Exibindo resultado em cache (últimos 20 min).' : 'Análise concluída!', resultado.cached ? 'info' : 'success');
+    renderResultadoGemini(resultado);
+  } catch (e) {
+    if (e?.rateLimited) { renderAviso('Limite por minuto atingido. Tente novamente em instantes.', 'warn'); }
+    else { renderAviso('Não foi possível gerar a análise agora.', 'error'); console.error('[AI] erro:', e); }
+  } finally { setLoading(false); }
+});
