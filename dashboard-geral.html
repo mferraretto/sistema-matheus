@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Geral</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <main class="main-content p-4 space-y-6">
+    <h1 class="text-2xl font-bold">Dashboard Geral</h1>
+    <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Evolução de Vendas</h2>
+        <canvas id="evolucaoChart" class="w-full h-64"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Dias em relação à Meta</h2>
+        <canvas id="diasMetaChart" class="w-full h-64"></canvas>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-4 lg:col-span-2">
+        <h2 class="text-xl font-semibold mb-2">Participação por Loja</h2>
+        <canvas id="lojasPieChart" class="w-full h-64"></canvas>
+      </div>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="dashboard-geral.js"></script>
+  <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>
+  <script src="shared.js"></script>
+</body>
+</html>
