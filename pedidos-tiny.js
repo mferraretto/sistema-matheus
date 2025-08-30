@@ -139,7 +139,10 @@ function atualizarTipoData() {
   document.getElementById('grupoFim')?.classList.toggle('hidden', perso);
 }
 
-document.getElementById('aplicarFiltros')?.addEventListener('click', aplicarFiltros);
+document.getElementById('aplicarFiltros')?.addEventListener('click', e => {
+  e.preventDefault();
+  aplicarFiltros();
+});
 ['tipoData', 'dataDia', 'dataMes', 'dataInicio', 'dataFim', 'filtroLoja'].forEach(id => {
   document.getElementById(id)?.addEventListener('change', aplicarFiltros);
 });
