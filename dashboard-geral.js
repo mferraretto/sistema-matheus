@@ -203,7 +203,9 @@ async function carregarDashboard(user) {
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
   renderRentabilidade(rentabilidade, topRentaveis);
+  renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
   carregarPrevisaoDashboard(uid);
+  setupTabs();
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
@@ -345,6 +347,89 @@ function renderRentabilidade(lista, top5) {
       .map(p => `<li>${p.sku} - R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>`)
       .join('');
   }
+}
+
+function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAtual) {
+  const barCtx = document.getElementById('metaComparativoChart');
+  if (barCtx) {
+    new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Meta', 'Realizado'],
+        datasets: [{
+          label: 'Valor (R$)',
+          data: [meta, liquido],
+          backgroundColor: ['#9ca3af', '#3b82f6']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  const semanaCtx = document.getElementById('progressoSemanalChart');
+  if (semanaCtx) {
+    const metaDiaria = meta / totalDiasMes;
+    const totalSemanas = Math.ceil(totalDiasMes / 7);
+    const labels = [];
+    const metaAcum = [];
+    const realAcum = [];
+    let acumulado = 0;
+    for (let s = 1; s <= totalSemanas; s++) {
+      const inicio = (s - 1) * 7 + 1;
+      const fim = Math.min(s * 7, totalDiasMes);
+      for (let dia = inicio; dia <= fim; dia++) {
+        const chave = `${mesAtual}-${String(dia).padStart(2, '0')}`;
+        acumulado += diarioLiquido[chave] || 0;
+      }
+      labels.push(`Semana ${s}`);
+      realAcum.push(acumulado);
+      metaAcum.push(metaDiaria * fim);
+    }
+    new Chart(semanaCtx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Realizado',
+            data: realAcum,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            tension: 0.3
+          },
+          {
+            label: 'Meta',
+            data: metaAcum,
+            borderColor: '#9ca3af',
+            backgroundColor: 'rgba(156,163,175,0.2)',
+            tension: 0.3
+          }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+}
+
+function setupTabs() {
+  const buttons = document.querySelectorAll('.tab-btn');
+  const tabs = {
+    overview: document.getElementById('tab-overview'),
+    meta: document.getElementById('tab-meta')
+  };
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-300', 'text-gray-700');
+      });
+      btn.classList.add('bg-blue-600', 'text-white');
+      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      Object.values(tabs).forEach(t => t.classList.add('hidden'));
+      const alvo = tabs[btn.dataset.tab];
+      if (alvo) alvo.classList.remove('hidden');
+    });
+  });
 }
 
 async function carregarPrevisaoDashboard(uid) {
