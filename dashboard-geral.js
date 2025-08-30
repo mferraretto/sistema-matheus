@@ -89,6 +89,16 @@ async function carregarDashboard(user) {
     else diasAbaixo++;
   });
 
+  let totalSaques = 0;
+  try {
+    const resumoDoc = await getDoc(doc(db, 'usuarios', uid, 'comissoes', mesAtual));
+    if (resumoDoc.exists()) {
+      totalSaques = Number(resumoDoc.data().totalSacado) || 0;
+    }
+  } catch (err) {
+    console.error('Erro ao carregar saques', err);
+  }
+
   let nomeEmpresa = '';
   let responsavel = user.email || '';
   try {
@@ -126,6 +136,7 @@ async function carregarDashboard(user) {
     totalUnidades,
     ticketMedio,
     meta,
+    totalSaques,
     diarioBruto,
     diarioLiquido,
     porLoja,
@@ -136,11 +147,11 @@ async function carregarDashboard(user) {
   };
   window.dashboardData = dashboardData;
 
-  renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo);
+  renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
 }
 
-function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo) {
+function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
@@ -177,6 +188,14 @@ function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaix
     <div class="bg-white rounded-2xl shadow-lg p-4">
       <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
       <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div class="bg-gray-100 px-4 py-2">
+        <h3 class="text-sm text-gray-500">Total Saques</h3>
+      </div>
+      <div class="p-4">
+        <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+      </div>
     </div>
   `;
 }
