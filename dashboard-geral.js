@@ -203,6 +203,7 @@ async function carregarDashboard(user) {
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
   renderRentabilidade(rentabilidade, topRentaveis);
+  renderTopSkusComparativo(topSkus, rentabilidade);
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
   carregarPrevisaoDashboard(uid);
   setupTabs();
@@ -316,6 +317,29 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       options: { responsive: true, maintainAspectRatio: false }
     });
   }
+
+  const ctxMargem = document.getElementById('margemChart');
+  if (ctxMargem) {
+    const margens = dias.map(d => {
+      const bruto = diarioBruto[d] || 0;
+      const liquido = diarioLiquido[d] || 0;
+      return bruto ? (liquido / bruto) * 100 : 0;
+    });
+    new Chart(ctxMargem, {
+      type: 'line',
+      data: {
+        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
+        datasets: [{
+          label: 'Margem (%)',
+          data: margens,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.2)',
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
 }
 
 function renderTopSkus(lista) {
@@ -324,6 +348,34 @@ function renderTopSkus(lista) {
   el.innerHTML = lista
     .map(p => `<li>${p.sku} - ${p.vendas}</li>`)
     .join('');
+}
+
+function renderTopSkusComparativo(lista, rentabilidade) {
+  const ctx = document.getElementById('topSkusMargemChart');
+  if (!ctx) return;
+  const labels = lista.map(p => p.sku);
+  const vendas = lista.map(p => p.vendas);
+  const margens = lista.map(p => {
+    const r = rentabilidade.find(x => x.sku === p.sku);
+    return r ? r.margem : 0;
+  });
+  new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#3b82f6', yAxisID: 'y' },
+        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, position: 'left' },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' } }
+      }
+    }
+  });
 }
 
 function renderRentabilidade(lista, top5) {
@@ -435,6 +487,7 @@ function setupTabs() {
 async function carregarPrevisaoDashboard(uid) {
   const cards = document.getElementById('cardsPrevisao');
   const container = document.getElementById('topSkusPrevisao');
+  const chartEl = document.getElementById('previsaoChart');
   if (!cards || !container) return;
   cards.innerHTML = '🔄 Carregando...';
   container.innerHTML = '';
@@ -451,6 +504,7 @@ async function carregarPrevisaoDashboard(uid) {
     }
     const previsao = docSnap.data() || {};
     renderPrevisaoCards(cards, previsao);
+    renderPrevisaoChart(chartEl, previsao);
     const { precos, metas } = await carregarProdutosEMetas(uid);
     renderPrevisaoTopSkus(container, previsao, precos, metas);
   } catch (err) {
@@ -513,6 +567,25 @@ function renderPrevisaoCards(el, previsao) {
     <div class="bg-green-100 text-green-800 p-4 rounded shadow text-center">
       <div class="font-bold">Otimista</div><div>${otm.toFixed(0)}</div>
     </div>`;
+}
+
+function renderPrevisaoChart(canvas, previsao) {
+  if (!canvas) return;
+  const base = previsao.totalGeral || 0;
+  const pess = base * 0.85;
+  const otm = base * 1.15;
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: ['Pessimista', 'Base', 'Otimista'],
+      datasets: [{
+        label: 'Projeção',
+        data: [pess, base, otm],
+        backgroundColor: ['#f87171', '#60a5fa', '#34d399']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
 }
 
 function renderPrevisaoTopSkus(container, previsao, precos, metas) {
