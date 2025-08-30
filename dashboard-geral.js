@@ -966,7 +966,17 @@ function montarPayloadGemini(pdfBase64) {
 async function solicitarAnaliseGeminiComPDF() {
   try {
     const elementoDoDashboard = document.getElementById('dashboard-completo');
-    const pdfBlob = await html2pdf().from(elementoDoDashboard).outputPdf('blob');
+    const htmlContent = elementoDoDashboard.outerHTML;
+
+    const pdfBlob = await html2pdf()
+      .set({
+        filename: 'dashboard.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      })
+      .from(htmlContent)
+      .outputPdf('blob');
     const pdfBase64 = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result.split(',')[1]);
