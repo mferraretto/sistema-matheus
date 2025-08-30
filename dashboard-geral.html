@@ -44,6 +44,27 @@
       <ol id="topSkusList" class="list-decimal list-inside"></ol>
     </div>
     <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h2 class="text-xl font-semibold mb-2">Análise de Rentabilidade</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-3 py-2 text-left">SKU</th>
+              <th class="px-3 py-2 text-right">Receita (R$)</th>
+              <th class="px-3 py-2 text-right">Custo Estimado (R$)</th>
+              <th class="px-3 py-2 text-right">Lucro Bruto (R$)</th>
+              <th class="px-3 py-2 text-right">Margem (%)</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRentabilidade"></tbody>
+        </table>
+      </div>
+      <div class="mt-4">
+        <h3 class="font-semibold">Top 5 mais rentáveis</h3>
+        <ol id="topRentaveis" class="list-decimal list-inside"></ol>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
       <h2 class="text-xl font-semibold mb-2">Previsão do Próximo Mês</h2>
       <div id="cardsPrevisao" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
       <div id="topSkusPrevisao" class="overflow-x-auto"></div>
