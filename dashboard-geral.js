@@ -467,7 +467,8 @@ function setupTabs() {
   const buttons = document.querySelectorAll('.tab-btn');
   const tabs = {
     overview: document.getElementById('tab-overview'),
-    meta: document.getElementById('tab-meta')
+    meta: document.getElementById('tab-meta'),
+    estrategica: document.getElementById('tab-estrategica')
   };
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
