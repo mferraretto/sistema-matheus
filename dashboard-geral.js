@@ -201,10 +201,11 @@ async function carregarDashboard(user) {
 
   renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
-  renderTopSkus(topSkus);
-  renderRentabilidade(rentabilidade, topRentaveis);
-  carregarPrevisaoDashboard(uid);
-}
+   renderTopSkus(topSkus);
+   renderRentabilidade(rentabilidade, topRentaveis);
+   renderPerspectivaEstrategica(dashboardData);
+   carregarPrevisaoDashboard(uid);
+  }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
@@ -345,6 +346,46 @@ function renderRentabilidade(lista, top5) {
       .map(p => `<li>${p.sku} - R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>`)
       .join('');
   }
+}
+
+function renderPerspectivaEstrategica(d) {
+  const pontos = document.getElementById('pontosFortes');
+  const riscos = document.getElementById('principaisRiscos');
+  const acoes = document.getElementById('acoesRecomendadas');
+  if (!pontos || !riscos || !acoes) return;
+
+  const lista = d.rentabilidade || [];
+  if (!lista.length) {
+    pontos.innerHTML = '<li>Nenhum dado disponível.</li>';
+    riscos.innerHTML = '<li>Nenhum dado disponível.</li>';
+    acoes.innerHTML = '<li>Nenhuma recomendação.</li>';
+    return;
+  }
+
+  const totalReceita = lista.reduce((s, p) => s + p.receita, 0);
+  const principal = [...lista].sort((a, b) => b.receita - a.receita)[0];
+  const pctReceita = totalReceita ? (principal.receita / totalReceita) * 100 : 0;
+  pontos.innerHTML = `<li>SKU ${principal.sku} foi responsável por ${pctReceita.toFixed(1)}% da receita, com margem ${principal.margem.toFixed(1)}%.</li>`;
+
+  if (pctReceita > 50) {
+    riscos.innerHTML += `<li>Dependência de poucos SKUs (ex.: ${principal.sku} com ${pctReceita.toFixed(1)}% da receita).</li>`;
+  }
+  if (principal.margem < 0) {
+    riscos.innerHTML += `<li>Margem negativa para ${principal.sku} (${principal.margem.toFixed(1)}%).</li>`;
+  } else if (principal.margem < 5) {
+    riscos.innerHTML += `<li>Margem muito baixa para ${principal.sku} (${principal.margem.toFixed(1)}%).</li>`;
+  }
+
+  const margensNegativas = lista.filter(p => p.margem < 0).length;
+  if (margensNegativas > 0) {
+    riscos.innerHTML += `<li>Margens negativas em ${margensNegativas} produtos.</li>`;
+  }
+
+  acoes.innerHTML = `
+    <li>Revisar precificação dos produtos com baixa margem.</li>
+    <li>Planejar promoções para itens estratégicos.</li>
+    <li>Avaliar cortes de SKUs deficitários.</li>
+  `;
 }
 
 async function carregarPrevisaoDashboard(uid) {
