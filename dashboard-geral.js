@@ -8,6 +8,9 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 let dashboardData = {};
+const GEMINI_CACHE_KEY = 'dashGeminiCache';
+let geminiRequestInFlight = false;
+let geminiCircuitOpenUntil = 0;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -509,11 +512,42 @@ function setupSubTabs() {
   });
 }
 
+function hashPayload(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
+  }
+  return hash.toString();
+}
+
+function getGeminiCache(hash) {
+  try {
+    const raw = localStorage.getItem(GEMINI_CACHE_KEY);
+    if (!raw) return null;
+    const item = JSON.parse(raw);
+    if (item.hash === hash && Date.now() - item.time < 10 * 60 * 1000) {
+      return item.data;
+    }
+  } catch (e) {
+    console.error('Falha ao ler cache Gemini', e);
+  }
+  return null;
+}
+
+function setGeminiCache(hash, data) {
+  try {
+    localStorage.setItem(GEMINI_CACHE_KEY, JSON.stringify({ hash, data, time: Date.now() }));
+  } catch (e) {
+    console.error('Falha ao salvar cache Gemini', e);
+  }
+}
+
 async function analisarEstrategiaGemini() {
   const ulFortes = document.getElementById('pontosFortes');
   const ulRiscos = document.getElementById('principaisRiscos');
   const ulAcoes = document.getElementById('acoesRecomendadas');
   if (!ulFortes || !ulRiscos || !ulAcoes || !window.dashboardData) return;
+  if (geminiRequestInFlight || Date.now() < geminiCircuitOpenUntil) return;
 
   const prompt = `Você é um analista de e-commerce. Com base nos dados a seguir do mês atual, responda em JSON com as chaves \"pontosFortes\", \"riscos\" e \"acoes\":\n${JSON.stringify(window.dashboardData)}`;
 
@@ -532,18 +566,34 @@ async function analisarEstrategiaGemini() {
     }
   };
 
+  const payloadStr = JSON.stringify(payload);
+  const hash = hashPayload(payloadStr);
+  const cached = getGeminiCache(hash);
+  if (cached) {
+    renderListaGemini(ulFortes, cached.pontosFortes);
+    renderListaGemini(ulRiscos, cached.riscos);
+    renderListaGemini(ulAcoes, cached.acoes);
+    return;
+  }
+
+  geminiRequestInFlight = true;
   try {
     const apiKey = 'AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: payloadStr
     });
+    if (response.status === 429) {
+      geminiCircuitOpenUntil = Date.now() + 60 * 1000;
+      throw new Error('Limite de requisições atingido');
+    }
     if (!response.ok) throw new Error(await response.text());
     const result = await response.json();
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     const dados = JSON.parse(text);
+    setGeminiCache(hash, dados);
     renderListaGemini(ulFortes, dados.pontosFortes);
     renderListaGemini(ulRiscos, dados.riscos);
     renderListaGemini(ulAcoes, dados.acoes);
@@ -553,6 +603,8 @@ async function analisarEstrategiaGemini() {
     ulFortes.innerHTML = msg;
     ulRiscos.innerHTML = msg;
     ulAcoes.innerHTML = msg;
+  } finally {
+    geminiRequestInFlight = false;
   }
 }
 
