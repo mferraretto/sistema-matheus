@@ -107,11 +107,20 @@ async function carregarDashboard(user) {
   try {
     const prodSnap = await getDocs(collection(db, `uid/${uid}/produtos`));
     const arr = [];
-    prodSnap.forEach(p => {
-      const d = p.data();
+    for (const p of prodSnap.docs) {
+      let d = p.data();
+      if (d.encrypted) {
+        const pass = getPassphrase() || `chave-${uid}`;
+        let txt;
+        try { txt = await decryptString(d.encrypted, pass); }
+        catch (e) {
+          try { txt = await decryptString(d.encrypted, uid); } catch (_) {}
+        }
+        if (txt) d = JSON.parse(txt);
+      }
       arr.push({ nome: d.nome || p.id, vendas: Number(d.vendas) || 0, estoque: Number(d.estoque) || 0 });
-    });
-    topProdutos = arr.sort((a,b) => b.vendas - a.vendas).slice(0,10);
+    }
+    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
     produtosCriticos = arr.filter(p => p.estoque > 0 && p.vendas === 0);
   } catch (err) {
     console.error('Erro ao carregar produtos', err);
@@ -248,6 +257,9 @@ function exportarFechamentoMes() {
   if (!dashboardData || !dashboardData.mesAtual) return;
   const container = document.createElement('div');
   container.style.padding = '20px';
+  container.style.width = '190mm';
+  container.style.margin = '0 auto';
+  container.style.boxSizing = 'border-box';
   container.innerHTML = gerarHTMLFechamento();
   document.body.appendChild(container);
 
@@ -312,13 +324,15 @@ function gerarHTMLFechamento() {
   const pctMeta = d.meta ? ((d.totalLiquido / d.meta) * 100).toFixed(1) : '0';
   const dias = Object.keys(d.diarioLiquido).sort();
   const linhasDia = dias.map(di => `<tr><td>${new Date(di).toLocaleDateString('pt-BR')}</td><td>R$ ${(d.diarioBruto[di]||0).toLocaleString('pt-BR')}</td><td>R$ ${(d.diarioLiquido[di]||0).toLocaleString('pt-BR')}</td></tr>`).join('');
-  const top = d.topProdutos.map((p,i)=>`<tr><td>${i+1}</td><td>${p.nome}</td><td>${p.vendas}</td></tr>`).join('');
+  const top = d.topProdutos.length
+    ? d.topProdutos.map((p,i)=>`<tr><td>${i+1}</td><td>${p.nome}</td><td>${p.vendas}</td></tr>`).join('')
+    : '<tr><td colspan="3">Nenhum produto</td></tr>';
   const criticos = d.produtosCriticos.map(p=>`<li>${p.nome} (Estoque: ${p.estoque})</li>`).join('') || '<li>Nenhum</li>';
   const destaques = d.totalLiquido >= d.meta ? 'Meta atingida no período.' : 'Meta não atingida.';
   const atencao = d.produtosCriticos.length ? 'Atenção aos produtos sem vendas com estoque disponível.' : 'Sem pontos de atenção.';
 
   return `
-    <div style="font-family: Arial, sans-serif; width: 800px;">
+    <div style="font-family: Arial, sans-serif; width:100%; max-width:170mm; box-sizing:border-box;">
       <h1 style="text-align:center;">${d.nomeEmpresa || 'Empresa'}</h1>
       <h2 style="text-align:center;">Fechamento ${mesBR}</h2>
       <p style="text-align:center;">Responsável: ${d.responsavel || ''}</p>
@@ -339,10 +353,10 @@ function gerarHTMLFechamento() {
         <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
         ${linhasDia}
       </table>
-      <img src="${document.getElementById('evolucaoChart').toDataURL('image/png')}" style="width:100%; max-height:300px;"/>
+      <img src="${document.getElementById('evolucaoChart').toDataURL('image/png')}" style="width:100%; height:auto; max-height:300px; page-break-inside:avoid;"/>
 
       <h3>Comparativo Mensal</h3>
-      <div style="width:100%;height:300px"><canvas id="comparativoChart"></canvas></div>
+      <div style="width:100%;height:300px;page-break-inside:avoid"><canvas id="comparativoChart"></canvas></div>
 
       <h3>Ranking de Produtos</h3>
       <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:12px;">
@@ -353,7 +367,7 @@ function gerarHTMLFechamento() {
       <ul>${criticos}</ul>
 
       <h3>Cancelamentos e Taxas</h3>
-      <div style="width:100%;height:300px"><canvas id="cancelamentoChart"></canvas></div>
+      <div style="width:100%;height:300px;page-break-inside:avoid"><canvas id="cancelamentoChart"></canvas></div>
 
       <h3>Projeção e Recomendações</h3>
       <p>Meta sugerida para o próximo mês: R$ ${(d.totalLiquido*1.05).toLocaleString('pt-BR')}</p>
