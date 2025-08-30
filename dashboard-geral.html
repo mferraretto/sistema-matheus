@@ -18,56 +18,76 @@
       <h1 class="text-2xl font-bold">Dashboard Geral</h1>
       <button id="exportarFechamentoBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Exportar Fechamento</button>
     </div>
-    <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-white rounded-2xl shadow-lg p-4">
-        <h2 class="text-xl font-semibold mb-2">Evolução de Vendas</h2>
-        <div class="chart-wrapper">
-          <canvas id="evolucaoChart"></canvas>
+    <div class="flex space-x-4">
+      <button class="tab-btn px-4 py-2 rounded bg-blue-600 text-white" data-tab="overview">Visão Geral</button>
+      <button class="tab-btn px-4 py-2 rounded bg-gray-300 text-gray-700" data-tab="meta">Comparativo com a Meta</button>
+    </div>
+    <div id="tab-overview" class="space-y-6">
+      <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Evolução de Vendas</h2>
+          <div class="chart-wrapper">
+            <canvas id="evolucaoChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Dias em relação à Meta</h2>
+          <div class="chart-wrapper">
+            <canvas id="diasMetaChart"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-4 lg:col-span-2">
+          <h2 class="text-xl font-semibold mb-2">Participação por Loja</h2>
+          <div class="chart-wrapper">
+            <canvas id="lojasPieChart"></canvas>
+          </div>
         </div>
       </div>
       <div class="bg-white rounded-2xl shadow-lg p-4">
-        <h2 class="text-xl font-semibold mb-2">Dias em relação à Meta</h2>
-        <div class="chart-wrapper">
-          <canvas id="diasMetaChart"></canvas>
+        <h2 class="text-xl font-semibold mb-2">Top 5 SKUs do mês</h2>
+        <ol id="topSkusList" class="list-decimal list-inside"></ol>
+      </div>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Análise de Rentabilidade</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left">SKU</th>
+                <th class="px-3 py-2 text-right">Receita (R$)</th>
+                <th class="px-3 py-2 text-right">Custo Estimado (R$)</th>
+                <th class="px-3 py-2 text-right">Lucro Bruto (R$)</th>
+                <th class="px-3 py-2 text-right">Margem (%)</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRentabilidade"></tbody>
+          </table>
+        </div>
+        <div class="mt-4">
+          <h3 class="font-semibold">Top 5 mais rentáveis</h3>
+          <ol id="topRentaveis" class="list-decimal list-inside"></ol>
         </div>
       </div>
-      <div class="bg-white rounded-2xl shadow-lg p-4 lg:col-span-2">
-        <h2 class="text-xl font-semibold mb-2">Participação por Loja</h2>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Previsão do Próximo Mês</h2>
+        <div id="cardsPrevisao" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
+        <div id="topSkusPrevisao" class="overflow-x-auto"></div>
+      </div>
+    </div>
+    <div id="tab-meta" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Meta vs Realizado</h2>
         <div class="chart-wrapper">
-          <canvas id="lojasPieChart"></canvas>
+          <canvas id="metaComparativoChart"></canvas>
         </div>
       </div>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h2 class="text-xl font-semibold mb-2">Top 5 SKUs do mês</h2>
-      <ol id="topSkusList" class="list-decimal list-inside"></ol>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h2 class="text-xl font-semibold mb-2">Análise de Rentabilidade</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-3 py-2 text-left">SKU</th>
-              <th class="px-3 py-2 text-right">Receita (R$)</th>
-              <th class="px-3 py-2 text-right">Custo Estimado (R$)</th>
-              <th class="px-3 py-2 text-right">Lucro Bruto (R$)</th>
-              <th class="px-3 py-2 text-right">Margem (%)</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaRentabilidade"></tbody>
-        </table>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Progresso Semanal Acumulado</h2>
+        <div class="chart-wrapper">
+          <canvas id="progressoSemanalChart"></canvas>
+        </div>
       </div>
-      <div class="mt-4">
-        <h3 class="font-semibold">Top 5 mais rentáveis</h3>
-        <ol id="topRentaveis" class="list-decimal list-inside"></ol>
-      </div>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h2 class="text-xl font-semibold mb-2">Previsão do Próximo Mês</h2>
-      <div id="cardsPrevisao" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
-      <div id="topSkusPrevisao" class="overflow-x-auto"></div>
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
