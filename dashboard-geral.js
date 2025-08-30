@@ -74,47 +74,61 @@ async function carregarDashboard(uid) {
     else diasAbaixo++;
   });
 
-  renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo);
+  let totalSaques = 0;
+  try {
+    const saquesSnap = await getDocs(collection(db, `usuarios/${uid}/comissoes/${mesAtual}/saques`));
+    saquesSnap.forEach(doc => {
+      totalSaques += Number(doc.data().valor) || 0;
+    });
+  } catch (err) {
+    console.error('Erro ao buscar saques:', err);
+  }
+
+  renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
 }
 
-function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo) {
+function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
   if (!kpis) return;
   kpis.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Faturamento Bruto</h3>
       <p class="text-2xl font-semibold text-blue-600">R$ ${bruto.toLocaleString('pt-BR')}</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Faturamento Líquido</h3>
       <p class="text-2xl font-semibold text-blue-600">R$ ${liquido.toLocaleString('pt-BR')}</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Unidades Vendidas</h3>
       <p class="text-2xl font-semibold text-orange-500">${unidades}</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Ticket Médio</h3>
       <p class="text-2xl font-semibold text-gray-700">R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">% Meta Atingida Bruto</h3>
       <p class="text-2xl font-semibold ${pctBruto >= 100 ? 'text-green-600' : 'text-red-600'}">${pctBruto.toFixed(1)}%</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">% Meta Atingida Líquido</h3>
       <p class="text-2xl font-semibold ${pctLiquido >= 100 ? 'text-green-600' : 'text-red-600'}">${pctLiquido.toFixed(1)}%</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Dias Acima da Meta</h3>
       <p class="text-2xl font-semibold text-green-600">${diasAcima}</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
+    <div class="bg-white rounded-lg shadow p-4">
       <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
       <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
+    </div>
+    <div class="bg-gray-100 rounded-lg shadow p-4">
+      <h3 class="text-sm text-gray-500">Total Saques</h3>
+      <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
     </div>
   `;
 }
