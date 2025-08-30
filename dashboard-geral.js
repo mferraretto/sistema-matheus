@@ -114,6 +114,7 @@ async function carregarDashboard(user) {
 
   let topProdutos = [];
   let produtosCriticos = [];
+  let topSkus = [];
   try {
     const prodSnap = await getDocs(collection(db, `uid/${uid}/produtos`));
     const arr = [];
@@ -128,9 +129,11 @@ async function carregarDashboard(user) {
         }
         if (txt) d = JSON.parse(txt);
       }
-      arr.push({ nome: d.nome || p.id, vendas: Number(d.vendas) || 0, estoque: Number(d.estoque) || 0 });
+      arr.push({ nome: d.nome || p.id, sku: d.sku || p.id, vendas: Number(d.vendas) || 0, estoque: Number(d.estoque) || 0 });
     }
-    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
+    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas);
+    topSkus = topProdutos.slice(0, 5);
+    topProdutos = topProdutos.slice(0, 10);
     produtosCriticos = arr.filter(p => p.estoque > 0 && p.vendas === 0);
   } catch (err) {
     console.error('Erro ao carregar produtos', err);
@@ -152,12 +155,14 @@ async function carregarDashboard(user) {
     cancelamentosDiario,
     comparativo,
     topProdutos,
-    produtosCriticos
+    produtosCriticos,
+    topSkus
   };
   window.dashboardData = dashboardData;
 
   renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
+  renderTopSkus(topSkus);
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
@@ -268,6 +273,14 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       options: { responsive: true, maintainAspectRatio: false }
     });
   }
+}
+
+function renderTopSkus(lista) {
+  const el = document.getElementById('topSkusList');
+  if (!el) return;
+  el.innerHTML = lista
+    .map(p => `<li>${p.sku} - ${p.vendas}</li>`)
+    .join('');
 }
 
 document.getElementById('exportarFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
