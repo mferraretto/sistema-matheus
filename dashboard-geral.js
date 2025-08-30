@@ -109,29 +109,6 @@ export async function analisarEstrategiaGemini(payload) {
   return p;
 }
 
-// === Batching de requisições para o Gemini ===
-const GEMINI_BATCH_INTERVAL_MS = 5000;
-const geminiBatchQueue = [];
-setInterval(processGeminiBatch, GEMINI_BATCH_INTERVAL_MS);
-
-function solicitarAnaliseGemini(dados) {
-  return new Promise((resolve, reject) => {
-    geminiBatchQueue.push({ dados, resolve, reject });
-  });
-}
-
-async function processGeminiBatch() {
-  if (!geminiBatchQueue.length) return;
-  const batch = geminiBatchQueue.splice(0, geminiBatchQueue.length);
-  const payload = montarPayloadGemini(batch.map(i => i.dados));
-  try {
-    const resp = await analisarEstrategiaGemini(payload);
-    batch.forEach(item => item.resolve(resp));
-  } catch (e) {
-    batch.forEach(item => item.reject(e));
-  }
-}
-
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -961,51 +938,71 @@ function renderResultadoGemini(resp) {
     <pre class="whitespace-pre-wrap font-sans text-sm text-gray-900">${text}</pre></div>`;
 }
 
-function coletarResumoKPIsDoDashboard() {
-  const d = window.dashboardData || {};
+function montarPayloadGemini(pdfBase64) {
   return {
-    periodo: { inicio: d.mesAtual ? `${d.mesAtual}-01` : '', fim: new Date().toISOString().slice(0,10) },
-    vendas: { bruto: d.totalBruto || 0, liquido: d.totalLiquido || 0, unidades: d.totalUnidades || 0 },
-    funil: { cancelamentos: d.cancelamentosDiario ? Object.values(d.cancelamentosDiario).reduce((a,b)=>a+b,0) : 0 },
-    ads: {},
-    produtosTop: d.topProdutos || [],
-    riscos: d.produtosCriticos || [],
-    meta: { valor: d.meta || 0 }
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: 'ATRAVÉS DAS INFORMAÇÕES DESSA ABA, VOCÊ CONSEGUE TIRAR OS Principais pontos fortes do mês, OS Principais riscos, E aS Decisões/ações recomendadas para corrigir perdas?'
+          },
+          {
+            inlineData: {
+              mimeType: 'application/pdf',
+              data: pdfBase64
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 1024
+    }
   };
 }
 
-function montarPayloadGemini(resumos) {
-  const contents = resumos.map(resumo => ({
-    role: 'user',
-    parts: [{
-      text:
-`Você é um analista de performance de Shopee. Com base nos dados abaixo, responda em 5 itens:
-1) 3 pontos fortes do mês
-2) 3 riscos
-3) 5 ações práticas (curto prazo)
-4) Oportunidades em Ads (CTR, CPC, CPA, ROAS)
-5) Alertas urgentes
+async function solicitarAnaliseGeminiComPDF() {
+  try {
+    const elementoDoDashboard = document.getElementById('dashboard-completo');
+    const pdfBlob = await html2pdf().from(elementoDoDashboard).outputPdf('blob');
+    const pdfBase64 = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(pdfBlob);
+    });
 
-DADOS:
-${JSON.stringify(resumo)}`
-    }]
-  }));
-  return { contents, generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } };
+    const payload = montarPayloadGemini(pdfBase64);
+    const resultado = await analisarEstrategiaGemini(payload);
+
+    if (resultado.skipped) {
+      return renderAviso('Análise pulada (aba em segundo plano).', 'warn');
+    }
+
+    renderAviso(
+      resultado.cached
+        ? 'Exibindo resultado em cache (últimos 20 min).'
+        : 'Análise concluída!',
+      resultado.cached ? 'info' : 'success'
+    );
+    renderResultadoGemini(resultado);
+  } catch (erro) {
+    if (erro?.rateLimited) {
+      renderAviso('Limite por minuto atingido. Tente novamente em instantes.', 'warn');
+    } else {
+      renderAviso('Não foi possível gerar a análise agora.', 'error');
+      console.error('Erro na requisição da análise de PDF:', erro);
+    }
+  } finally {
+    setLoading(false);
+  }
 }
 
-btnAnalise?.addEventListener('click', async () => {
+btnAnalise?.addEventListener('click', () => {
   if (btnAnalise.disabled) return;
   setLoading(true); outBox.innerHTML = '';
-  try {
-    const resumo = coletarResumoKPIsDoDashboard();
-    const resultado = await solicitarAnaliseGemini(resumo);
+  renderAviso('Analisando o dashboard via PDF, por favor aguarde...', 'info');
 
-    if (resultado.skipped) return renderAviso('Análise pulada (aba em segundo plano).', 'warn');
-
-    renderAviso(resultado.cached ? 'Exibindo resultado em cache (últimos 20 min).' : 'Análise concluída!', resultado.cached ? 'info' : 'success');
-    renderResultadoGemini(resultado);
-  } catch (e) {
-    if (e?.rateLimited) { renderAviso('Limite por minuto atingido. Tente novamente em instantes.', 'warn'); }
-    else { renderAviso('Não foi possível gerar a análise agora.', 'error'); console.error('[AI] erro:', e); }
-  } finally { setLoading(false); }
+  solicitarAnaliseGeminiComPDF();
 });
