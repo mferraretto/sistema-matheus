@@ -964,19 +964,38 @@ function montarPayloadGemini(pdfBase64) {
 }
 
 async function solicitarAnaliseGeminiComPDF() {
-  try {
-    const elementoDoDashboard = document.getElementById('dashboard-completo');
-    const htmlContent = elementoDoDashboard.outerHTML;
+  const btnAnalise = document.getElementById('btn-analise-ia');
 
+  if (btnAnalise.disabled) {
+    console.warn('Botão de análise desabilitado. Aguarde o processo anterior finalizar.');
+    return;
+  }
+
+  setLoading(true);
+  outBox.innerHTML = '';
+  renderAviso('Analisando o dashboard via PDF, por favor aguarde...', 'info');
+
+  try {
+    // Garante que os gráficos em canvas estejam totalmente renderizados
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const elementoDoDashboard = document.querySelector('main');
     const pdfBlob = await html2pdf()
       .set({
         filename: 'dashboard.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: {
+          scale: 2,
+          onclone: (doc) => {
+            const scripts = doc.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+          }
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       })
-      .from(htmlContent)
+      .from(elementoDoDashboard)
       .outputPdf('blob');
+
     const pdfBase64 = await new Promise(resolve => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result.split(',')[1]);
@@ -987,32 +1006,21 @@ async function solicitarAnaliseGeminiComPDF() {
     const resultado = await analisarEstrategiaGemini(payload);
 
     if (resultado.skipped) {
-      return renderAviso('Análise pulada (aba em segundo plano).', 'warn');
+      renderAviso('Análise pulada (aba em segundo plano).', 'warn');
+      return;
     }
 
     renderAviso(
-      resultado.cached
-        ? 'Exibindo resultado em cache (últimos 20 min).'
-        : 'Análise concluída!',
+      resultado.cached ? 'Exibindo resultado em cache (últimos 20 min).' : 'Análise concluída!',
       resultado.cached ? 'info' : 'success'
     );
     renderResultadoGemini(resultado);
   } catch (erro) {
-    if (erro?.rateLimited) {
-      renderAviso('Limite por minuto atingido. Tente novamente em instantes.', 'warn');
-    } else {
-      renderAviso('Não foi possível gerar a análise agora.', 'error');
-      console.error('Erro na requisição da análise de PDF:', erro);
-    }
+    renderAviso('Não foi possível gerar a análise agora.', 'error');
+    console.error('Erro na requisição da análise de PDF:', erro);
   } finally {
     setLoading(false);
   }
 }
 
-btnAnalise?.addEventListener('click', () => {
-  if (btnAnalise.disabled) return;
-  setLoading(true); outBox.innerHTML = '';
-  renderAviso('Analisando o dashboard via PDF, por favor aguarde...', 'info');
-
-  solicitarAnaliseGeminiComPDF();
-});
+btnAnalise?.addEventListener('click', solicitarAnaliseGeminiComPDF);
