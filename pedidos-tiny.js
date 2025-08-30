@@ -9,6 +9,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let todosPedidos = [];
+let custosProdutos = {};
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -25,7 +26,12 @@ export async function carregarPedidosTiny() {
   try {
     const uid = auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
-    const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
+
+    const [snap, produtosSnap] = await Promise.all([
+      getDocs(collection(db, `usuarios/${uid}/pedidostiny`)),
+      getDocs(collection(db, `uid/${uid}/produtos`))
+    ]);
+
     const pedidos = [];
     for (const d of snap.docs) {
       let pedido = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
@@ -36,6 +42,13 @@ export async function carregarPedidosTiny() {
       if (pedido) pedidos.push({ id: d.id, ...pedido });
     }
     todosPedidos = pedidos;
+
+    custosProdutos = {};
+    produtosSnap.forEach(p => {
+      const dados = p.data();
+      const chave = (dados.sku || p.id || '').toLowerCase();
+      custosProdutos[chave] = Number(dados.custo || 0);
+    });
     preencherFiltroLoja(pedidos);
     aplicarFiltros();
   } catch (err) {
@@ -181,6 +194,20 @@ export function aplicarFiltros() {
     const sku = p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '');
     const valorBruto = toNumber(p.valor || p.total || 0);
     const liquido = calcularLiquido(p);
+    let custoTotal = 0;
+    if (Array.isArray(p.itens) && p.itens.length) {
+      p.itens.forEach(i => {
+        const skuItem = (i.sku || '').toLowerCase();
+        const qtd = Number(i.quantidade || i.qtd || i.quantity || 1) || 1;
+        const c = custosProdutos[skuItem] || 0;
+        custoTotal += c * qtd;
+      });
+    } else {
+      const skuItem = (p.sku || '').toLowerCase();
+      const qtd = Number(p.quantidade || p.qtd || p.quantity || 1) || 1;
+      const c = custosProdutos[skuItem] || 0;
+      custoTotal += c * qtd;
+    }
     const idPedido = p.idPedido || p.idpedido || p.id;
     tr.innerHTML = `
         <td data-label="Data">${data}</td>
@@ -190,6 +217,7 @@ export function aplicarFiltros() {
         <td data-label="Valor">${formatCurrency(valorBruto)}</td>
         <td data-label="Líquido">${formatCurrency(liquido)}</td>
       `;
+    if (custoTotal && liquido < custoTotal * 0.9) tr.classList.add('bg-red-100');
     tbody.appendChild(tr);
   });
   if (!tbody.children.length) {
