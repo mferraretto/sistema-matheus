@@ -207,6 +207,7 @@ async function carregarDashboard(user) {
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
   carregarPrevisaoDashboard(uid);
   setupTabs();
+  analisarEstrategiaGemini();
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
@@ -483,6 +484,61 @@ function setupTabs() {
       if (alvo) alvo.classList.remove('hidden');
     });
   });
+}
+
+async function analisarEstrategiaGemini() {
+  const ulFortes = document.getElementById('pontosFortes');
+  const ulRiscos = document.getElementById('principaisRiscos');
+  const ulAcoes = document.getElementById('acoesRecomendadas');
+  if (!ulFortes || !ulRiscos || !ulAcoes || !window.dashboardData) return;
+
+  const prompt = `Você é um analista de e-commerce. Com base nos dados a seguir do mês atual, responda em JSON com as chaves \"pontosFortes\", \"riscos\" e \"acoes\":\n${JSON.stringify(window.dashboardData)}`;
+
+  const payload = {
+    contents: [{ role: 'user', parts: [{ text: prompt }]}],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          pontosFortes: { type: 'ARRAY', items: { type: 'STRING' } },
+          riscos: { type: 'ARRAY', items: { type: 'STRING' } },
+          acoes: { type: 'ARRAY', items: { type: 'STRING' } }
+        }
+      }
+    }
+  };
+
+  try {
+    const apiKey = 'AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const dados = JSON.parse(text);
+    renderListaGemini(ulFortes, dados.pontosFortes);
+    renderListaGemini(ulRiscos, dados.riscos);
+    renderListaGemini(ulAcoes, dados.acoes);
+  } catch (err) {
+    console.error('Erro ao obter análise estratégica', err);
+    const msg = '<li>Não foi possível gerar a análise.</li>';
+    ulFortes.innerHTML = msg;
+    ulRiscos.innerHTML = msg;
+    ulAcoes.innerHTML = msg;
+  }
+}
+
+function renderListaGemini(el, itens) {
+  if (!Array.isArray(itens) || !itens.length) {
+    el.innerHTML = '<li>Nenhuma informação.</li>';
+    return;
+  }
+  el.innerHTML = itens.map(i => `<li>${i}</li>`).join('');
 }
 
 async function carregarPrevisaoDashboard(uid) {
