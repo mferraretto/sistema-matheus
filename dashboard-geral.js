@@ -207,6 +207,7 @@ async function carregarDashboard(user) {
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
   carregarPrevisaoDashboard(uid);
   setupTabs();
+  setupSubTabs();
   analisarEstrategiaGemini();
 }
 
@@ -481,6 +482,28 @@ function setupTabs() {
       btn.classList.remove('bg-gray-300', 'text-gray-700');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
+      if (alvo) alvo.classList.remove('hidden');
+    });
+  });
+}
+
+function setupSubTabs() {
+  const buttons = document.querySelectorAll('.subtab-btn');
+  const tabs = {
+    resumo: document.getElementById('subtab-resumo'),
+    desempenho: document.getElementById('subtab-desempenho'),
+    previsao: document.getElementById('subtab-previsao')
+  };
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-300', 'text-gray-700');
+      });
+      btn.classList.add('bg-blue-600', 'text-white');
+      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      Object.values(tabs).forEach(t => t.classList.add('hidden'));
+      const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
     });
   });
