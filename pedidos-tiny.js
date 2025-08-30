@@ -125,6 +125,19 @@ function calcularLiquido(p) {
   return total - taxa;
 }
 
+function atualizarResumo(pedidos) {
+  const resumo = document.getElementById('resumoPedidosTiny');
+  if (!resumo) return;
+  const totalBruto = pedidos.reduce((s, p) => s + toNumber(p.valor || p.total || 0), 0);
+  const totalLiquido = pedidos.reduce((s, p) => s + calcularLiquido(p), 0);
+  const quantidade = pedidos.length;
+  resumo.innerHTML = `
+    <div class="resumo-card"><h4>Valor Bruto</h4><p>${formatCurrency(totalBruto)}</p></div>
+    <div class="resumo-card"><h4>Valor Líquido</h4><p>${formatCurrency(totalLiquido)}</p></div>
+    <div class="resumo-card"><h4>Pedidos</h4><p>${quantidade}</p></div>
+  `;
+}
+
 export function aplicarFiltros() {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
@@ -182,6 +195,7 @@ export function aplicarFiltros() {
   if (!tbody.children.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
   }
+  atualizarResumo(filtrados);
 }
 
 function atualizarTipoData() {
