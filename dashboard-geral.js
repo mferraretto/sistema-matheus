@@ -107,6 +107,29 @@ export async function analisarEstrategiaGemini(payload) {
   return p;
 }
 
+// === Batching de requisições para o Gemini ===
+const GEMINI_BATCH_INTERVAL_MS = 5000;
+const geminiBatchQueue = [];
+setInterval(processGeminiBatch, GEMINI_BATCH_INTERVAL_MS);
+
+function solicitarAnaliseGemini(dados) {
+  return new Promise((resolve, reject) => {
+    geminiBatchQueue.push({ dados, resolve, reject });
+  });
+}
+
+async function processGeminiBatch() {
+  if (!geminiBatchQueue.length) return;
+  const batch = geminiBatchQueue.splice(0, geminiBatchQueue.length);
+  const payload = montarPayloadGemini(batch.map(i => i.dados));
+  try {
+    const resp = await analisarEstrategiaGemini(payload);
+    batch.forEach(item => item.resolve(resp));
+  } catch (e) {
+    batch.forEach(item => item.reject(e));
+  }
+}
+
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -949,13 +972,11 @@ function coletarResumoKPIsDoDashboard() {
   };
 }
 
-function montarPayloadGemini() {
-  const resumo = coletarResumoKPIsDoDashboard();
-  return {
-    contents: [{
-      role: 'user',
-      parts: [{
-        text:
+function montarPayloadGemini(resumos) {
+  const contents = resumos.map(resumo => ({
+    role: 'user',
+    parts: [{
+      text:
 `Você é um analista de performance de Shopee. Com base nos dados abaixo, responda em 5 itens:
 1) 3 pontos fortes do mês
 2) 3 riscos
@@ -965,18 +986,17 @@ function montarPayloadGemini() {
 
 DADOS:
 ${JSON.stringify(resumo)}`
-      }]
-    }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
-  };
+    }]
+  }));
+  return { contents, generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } };
 }
 
 btnAnalise?.addEventListener('click', async () => {
   if (btnAnalise.disabled) return;
   setLoading(true); outBox.innerHTML = '';
   try {
-    const payload = montarPayloadGemini();
-    const resultado = await analisarEstrategiaGemini(payload);
+    const resumo = coletarResumoKPIsDoDashboard();
+    const resultado = await solicitarAnaliseGemini(resumo);
 
     if (resultado.skipped) return renderAviso('Análise pulada (aba em segundo plano).', 'warn');
 
