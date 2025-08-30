@@ -131,12 +131,32 @@ async function carregarDashboard(user) {
       }
       arr.push({ nome: d.nome || p.id, sku: d.sku || p.id, vendas: Number(d.vendas) || 0, estoque: Number(d.estoque) || 0 });
     }
-    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas);
-    topSkus = topProdutos.slice(0, 5);
-    topProdutos = topProdutos.slice(0, 10);
+    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
     produtosCriticos = arr.filter(p => p.estoque > 0 && p.vendas === 0);
   } catch (err) {
     console.error('Erro ao carregar produtos', err);
+  }
+
+  try {
+    const skusSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
+    const mapa = {};
+    for (const docSnap of skusSnap.docs) {
+      if (!docSnap.id.includes(mesAtual)) continue;
+      const listaRef = collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`);
+      const listaSnap = await getDocs(listaRef);
+      listaSnap.forEach(item => {
+        const d = item.data();
+        const sku = d.sku || item.id;
+        const qtd = Number(d.total || d.quantidade) || 0;
+        mapa[sku] = (mapa[sku] || 0) + qtd;
+      });
+    }
+    topSkus = Object.entries(mapa)
+      .map(([sku, vendas]) => ({ sku, vendas }))
+      .sort((a, b) => b.vendas - a.vendas)
+      .slice(0, 5);
+  } catch (err) {
+    console.error('Erro ao carregar skus vendidos', err);
   }
 
   dashboardData = {
