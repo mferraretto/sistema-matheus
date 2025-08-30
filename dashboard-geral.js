@@ -580,13 +580,20 @@ async function analisarEstrategiaGemini() {
   try {
     const apiKey = 'AIzaSyBm0JQ2vVEFGDfKWIQVcBmQ7CVaH6D3BTk';
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payloadStr
-    });
+    let response;
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payloadStr
+      });
+      if (response.status !== 429) break;
+      // Exponential backoff: 1s, 2s, 4s
+      await new Promise(r => setTimeout(r, Math.pow(2, tentativa) * 1000));
+    }
     if (response.status === 429) {
-      geminiCircuitOpenUntil = Date.now() + 60 * 1000;
+      // Abra o circuito por 5 minutos para evitar novas tentativas rápidas
+      geminiCircuitOpenUntil = Date.now() + 5 * 60 * 1000;
       throw new Error('Limite de requisições atingido');
     }
     if (!response.ok) throw new Error(await response.text());
