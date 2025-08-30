@@ -42,10 +42,10 @@ function processQueue() {
   }
 }
 
-function openCircuitTemporariamente() {
+function openCircuitTemporariamente(ms = CIRCUIT_OPEN_MS) {
   if (circuitOpen) return;
   circuitOpen = true;
-  setTimeout(() => { circuitOpen = false; processQueue(); }, CIRCUIT_OPEN_MS);
+  setTimeout(() => { circuitOpen = false; processQueue(); }, ms);
 }
 
 function stableHash(obj) {
@@ -86,9 +86,11 @@ export async function analisarEstrategiaGemini(payload) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
     if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-      openCircuitTemporariamente();
+      const retryAfter = Number(res.headers.get('retry-after')) || 0;
+      const retryAfterMs = retryAfter * 1000;
+      openCircuitTemporariamente(retryAfterMs || CIRCUIT_OPEN_MS);
       if (retry < MAX_RETRIES) {
-        const wait = BASE_BACKOFF_MS * Math.pow(2, retry);
+        const wait = Math.max(BASE_BACKOFF_MS * Math.pow(2, retry), retryAfterMs);
         await new Promise(r => setTimeout(r, wait));
         return executor(retry + 1);
       } else { const err = new Error('Limite de requisições atingido'); err.rateLimited = true; throw err; }
