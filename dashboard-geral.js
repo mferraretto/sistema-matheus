@@ -71,51 +71,6 @@ function enqueueGeminiCall(fn) {
   });
 }
 
-export async function analisarEstrategiaGemini(payload) {
-  // Não roda em background
-  if (typeof document !== 'undefined' && document.hidden) return { skipped: true, reason: 'document hidden' };
-
-  const key = stableHash(payload);
-  const cached = getCache(key);
-  if (cached) return { cached: true, ...cached };
-
-  if (collapseMap.has(key)) return collapseMap.get(key);
-
-  const executor = (retry = 0) => enqueueGeminiCall(async () => {
-    const url = `${GEMINI_ENDPOINT}?key=${encodeURIComponent(GEMINI_KEY)}`;
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-
-    if (res.status === 429 || (res.status >= 500 && res.status < 600)) {
-      const retryAfter = Number(res.headers.get('retry-after')) || 0;
-      const retryAfterMs = retryAfter * 1000;
-      openCircuitTemporariamente(retryAfterMs || CIRCUIT_OPEN_MS);
-      if (retry < MAX_RETRIES) {
-        const wait = Math.max(BASE_BACKOFF_MS * Math.pow(2, retry), retryAfterMs);
-        await new Promise(r => setTimeout(r, wait));
-        return executor(retry + 1);
-      } else { const err = new Error('Limite de requisições atingido'); err.rateLimited = true; throw err; }
-    }
-
-    if (!res.ok) { const body = await res.text().catch(() => ''); throw new Error(body || `Erro ${res.status}`); }
-
-    const data = await res.json();
-    const wrapped = { cached: false, data };
-    setCache(key, wrapped);
-    return wrapped;
-  });
-
-  const p = executor().finally(() => { collapseMap.delete(key); });
-  collapseMap.set(key, p);
-  return p;
-}
-
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.href = 'index.html?login=1';
-    return;
-  }
-  await carregarDashboard(user);
-});
 
 async function carregarDashboard(user) {
   const uid = user.uid;
