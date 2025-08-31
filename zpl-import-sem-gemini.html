@@ -374,11 +374,15 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
 
         async function getStoreFromLabel(zplCode, dpmm, width, height) {
             try {
+                // 1) tenta direto do ZPL
                 const lojaFromZpl = extractStoreFromZpl(zplCode);
                 if (lojaFromZpl) return lojaFromZpl;
+
+                // 2) fallback OCR
                 const labelBlob = await generateImageFromZpl(zplCode, dpmm, width, height);
-                const labelBase64 = await blobToBase64(labelBlob);
-                return await extractStoreFromImage(labelBase64);
+                const text = await ocrImageToText(labelBlob);
+                const loja = parseLojaFromText(text);
+                return loja || null;
             } catch (e) {
                 console.error('Erro ao obter loja da etiqueta:', e);
                 return null;
@@ -480,89 +484,11 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             const text = await ocrImageToText(checklistBlob);
             return parseItemsFromText(text);
         }
-async function extractStoreFromImage(base64Image) {
-            const prompt = `A etiqueta de envio possui o texto \"Remetente\" seguido do nome da loja. Identifique esse nome e retorne apenas um objeto JSON com a chave \"loja\".`;
+        async function extractDataFromImage(base64Image) {
+            const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU, a quantidade e a loja. Retorne os resultados num array de objetos JSON, com as chaves "sku", "quantidade" e "loja". Por favor, apenas retorne o JSON e nada mais.`;
             const payload = {
                 contents: [
                     {
-                        role: "user",
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: "image/png",
-                                    data: base64Image
-                                }
-                            }
-                        ]
-                    }
-                ],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            "loja": { "type": "STRING" }
-                        }
-                    }
-                }
-            };
-            /* const apiKey = null; */
-            /* const apiUrl = null; */
-            let result;
-            let attempts = 0;
-            const maxAttempts = 5;
-            let delay = 1000;
-            while (attempts < maxAttempts) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) {
-                        console.error(`Attempt ${attempts + 1} failed with status: ${response.status} - ${await response.text()}`);
-                        if (response.status === 429) {
-                            await new Promise(r => setTimeout(r, delay));
-                            delay *= 2;
-                            attempts++;
-                            continue;
-                        }
-                        throw new Error(`Erro na API Gemini: ${response.status} - ${await response.text()}`);
-                    }
-                    result = await response.json();
-                    break;
-                } catch (error) {
-                    console.error('API loja call failed, retrying...', error);
-                    attempts++;
-                    if (attempts === maxAttempts) {
-                        throw error;
-                    }
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                }
-            }
-
-            if (!result || !result.candidates || result.candidates.length === 0 ||
-                !result.candidates.at(0).content || !result.candidates.at(0).content.parts ||
-                result.candidates.at(0).content.parts.length === 0) {
-                throw new Error("Resposta da API Gemini inválida para loja.");
-            }
-
-            const json = result.candidates.at(0).content.parts.at(0).text;
-            console.log('Loja extraída da API:', json);
-            try {
-                return JSON.parse(json).loja || null;
-            } catch {
-                return null;
-            }
-        }
-
-        async function extractDataFromImage(base64Image) {
-            const prompt = `Dada a imagem de um checklist ZPL, extraia o SKU, a quantidade e a loja. Retorne os resultados num array de objetos JSON, com as chaves "sku", "quantidade" e "loja". Por favor, apenas retorne o JSON e nada mais.`;
-            const payload = { 
-                contents: [ 
-                    { 
                         role: "user", 
                         parts: [ 
                             { text: prompt }, 
