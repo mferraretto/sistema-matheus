@@ -10,7 +10,6 @@ const auth = getAuth(app);
 let dashboardData = {};
 // === Gemini Guardrail: fila, rate-limit, cache, retries, circuit breaker ===
 // Ajustes finos
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 const GEMINI_KEY = 'k';
 // Limites
 const RL_INTERVAL_MS = 3000;      // 1 token a cada 3s
