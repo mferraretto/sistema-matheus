@@ -214,7 +214,7 @@ async function carregarDashboard(user, mesSelecionado) {
   renderRentabilidade(rentabilidade, topRentaveis);
   renderTopSkusComparativo(topSkus, rentabilidade);
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
-  carregarPrevisaoDashboard(uid, baseDate);
+  await carregarPrevisaoDashboard(uid, baseDate);
   setupTabs();
   setupSubTabs();
 }
@@ -352,16 +352,14 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
   }
 }
 
-function renderTopSkus(lista) {
-  const el = document.getElementById('topSkusList');
+function renderTopSkus(lista, root = document) {
+  const el = root.querySelector('#topSkusList');
   if (!el) return;
-  el.innerHTML = lista
-    .map(p => `<li>${p.sku} - ${p.vendas}</li>`)
-    .join('');
+  el.innerHTML = lista.map(p => `<li>${p.sku} - ${p.vendas}</li>`).join('');
 }
 
-function renderTopSkusComparativo(lista, rentabilidade) {
-  const ctx = document.getElementById('topSkusMargemChart');
+function renderTopSkusComparativo(lista, rentabilidade, root = document) {
+  const ctx = root.querySelector('#topSkusMargemChart');
   if (!ctx) return;
   const labels = lista.map(p => p.sku);
   const vendas = lista.map(p => p.vendas);
@@ -388,22 +386,22 @@ function renderTopSkusComparativo(lista, rentabilidade) {
   });
 }
 
-function renderRentabilidade(lista, top5) {
-  const tbody = document.getElementById('tabelaRentabilidade');
+function renderRentabilidade(lista, top5, root = document) {
+  const tbody = root.querySelector('#tabelaRentabilidade');
   if (tbody) {
     tbody.innerHTML = lista
       .map(p => `
         <tr>
-          <td class="px-3 py-2">${p.sku}</td>
-          <td class="px-3 py-2 text-right">R$ ${p.receita.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td class="px-3 py-2 text-right">R$ ${p.custo.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td class="px-3 py-2 text-right">R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td class="px-3 py-2 text-right">${p.margem.toFixed(1)}%</td>
-        </tr>
+          <td>${p.sku}</td>
+          <td style="text-align:right">R$ ${p.receita.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td style="text-align:right">R$ ${p.custo.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td style="text-align:right">R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td style="text-align:right">${p.margem.toFixed(1)}%</td>
+      </tr>
       `)
       .join('');
   }
-  const topEl = document.getElementById('topRentaveis');
+  const topEl = root.querySelector('#topRentaveis');
   if (topEl) {
     topEl.innerHTML = top5
       .map(p => `<li>${p.sku} - R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>`)
@@ -539,6 +537,7 @@ async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
     renderPrevisaoChart(chartEl, previsao);
     const { precos, metas } = await carregarProdutosEMetas(uid);
     renderPrevisaoTopSkus(container, previsao, precos, metas);
+    dashboardData.previsao = { dados: previsao, precos, metas };
   } catch (err) {
     console.error('Erro ao carregar previsão', err);
     cards.innerHTML = '<p class="text-red-500">Erro ao carregar previsão</p>';
@@ -773,6 +772,29 @@ async function exportarFechamentoMes() {
     });
   }
 
+  // Secção Desempenho & Rentabilidade
+  renderTopSkusComparativo(dashboardData.topSkus, dashboardData.rentabilidade, container);
+  renderTopSkus(dashboardData.topSkus, container);
+  renderRentabilidade(dashboardData.rentabilidade, dashboardData.topRentaveis, container);
+
+  // Secção Projeção & Previsão
+  if (dashboardData.previsao) {
+    const prev = dashboardData.previsao;
+    const cardsPrev = container.querySelector('#cardsPrevisao');
+    if (cardsPrev) {
+      const base = prev.dados.totalGeral || 0;
+      const pess = base * 0.85;
+      const otm = base * 1.15;
+      cardsPrev.innerHTML = `
+        <div class="card" style="background:#fee2e2;color:#991b1b;"><div>Pessimista</div><strong>${pess.toFixed(0)}</strong></div>
+        <div class="card" style="background:#dbeafe;color:#1e3a8a;"><div>Base</div><strong>${base.toFixed(0)}</strong></div>
+        <div class="card" style="background:#d1fae5;color:#065f46;"><div>Otimista</div><strong>${otm.toFixed(0)}</strong></div>
+      `;
+    }
+    renderPrevisaoChart(container.querySelector('#previsaoChart'), prev.dados);
+    renderPrevisaoTopSkus(container.querySelector('#topSkusPrevisao'), prev.dados, prev.precos, prev.metas);
+  }
+
   setTimeout(() => {
     html2pdf().set({
       margin: 10,
@@ -842,6 +864,31 @@ function gerarHTMLFechamento() {
           <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
           ${linhasDia}
         </table>
+
+        <h2 class="section-title">Desempenho &amp; Rentabilidade</h2>
+        <div class="chart-box"><canvas id="topSkusMargemChart"></canvas></div>
+        <h3 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h3>
+        <ol id="topSkusList"></ol>
+        <h3 class="section-title" style="font-size:14px;">Análise de Rentabilidade</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Receita (R$)</th>
+              <th>Custo Estimado (R$)</th>
+              <th>Lucro Bruto (R$)</th>
+              <th>Margem (%)</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaRentabilidade"></tbody>
+        </table>
+        <h3 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h3>
+        <ol id="topRentaveis"></ol>
+
+        <h2 class="section-title">Projeção &amp; Previsão</h2>
+        <div id="cardsPrevisao" class="cards"></div>
+        <div class="chart-box"><canvas id="previsaoChart"></canvas></div>
+        <div id="topSkusPrevisao"></div>
       </div>
   `;
 }
