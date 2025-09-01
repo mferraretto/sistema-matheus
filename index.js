@@ -322,7 +322,7 @@ async function carregarTarefas(uid, isAdmin) {
     '<a class="action-link" href="https://seller.shopee.com.br/portal/sale/order" target="_blank" rel="noopener">Baixar planilha vendas Shopee</a>',
     '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento" target="_blank" rel="noopener">Registrar no sistema - Fechamento dia anterior</a>',
     '<a class="action-link" href="https://seller.shopee.com.br/portal/sale/mass/ship?mass_shipment_tab=201&filter.shipping_method=91003&filter.order_item_filter_type=item0&filter.order_process_status=1&filter.sort.sort_type=1&filter.sort.ascending=true&filter.pre_order=2&filter.shipping_urgency_filter.current_time=1755177333&filter.shipping_urgency_filter.shipping_urgency=1" target="_blank" rel="noopener">Organizar coleta e imprimir etiquetas + lista de empacotamento ZPL</a>',
-    '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/zpl-import-sem-gemini.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
+    '<a class="action-link" href="https://mferraretto.github.io/VendedorPro/zpl-import-ocr.html" target="_blank" rel="noopener">Importar o arquivo ZPL para o sistema e aguardar a impressão das etiquetas do dia</a>'
   ];
   const hoje = new Date();
   const storageKey = `tarefasStatus_${hoje.toISOString().slice(0,10)}`;
