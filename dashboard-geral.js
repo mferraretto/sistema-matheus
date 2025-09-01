@@ -36,11 +36,11 @@ async function carregarDashboard(user, mesSelecionado) {
   const comparativo = {};
   mesesComparativos.forEach(m => comparativo[m] = 0);
 
-  const snap = await getDocs(collection(db, `uid/${uid}/faturamento`));
+  const snap = await getDocs(collection(db, `usuarios/${uid}/faturamento`));
   for (const docSnap of snap.docs) {
     const mesDoc = docSnap.id.slice(0,7);
     if (!mesesComparativos.includes(mesDoc)) continue;
-    const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`));
+    const lojasSnap = await getDocs(collection(db, `usuarios/${uid}/faturamento/${docSnap.id}/lojas`));
     for (const lojaDoc of lojasSnap.docs) {
       let dados = lojaDoc.data();
       if (dados.encrypted) {
@@ -73,7 +73,7 @@ async function carregarDashboard(user, mesSelecionado) {
 
   let meta = 0;
   try {
-    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
+    const metaDoc = await getDoc(doc(db, `usuarios/${uid}/metasFaturamento`, mesAtual));
     if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
   } catch (err) {
     console.error('Erro ao buscar meta:', err);
@@ -114,7 +114,7 @@ async function carregarDashboard(user, mesSelecionado) {
   let produtosCriticos = [];
   let topSkus = [];
   try {
-    const prodSnap = await getDocs(collection(db, `uid/${uid}/produtos`));
+    const prodSnap = await getDocs(collection(db, `usuarios/${uid}/produtos`));
     const arr = [];
     for (const p of prodSnap.docs) {
       let d = p.data();
@@ -138,11 +138,11 @@ async function carregarDashboard(user, mesSelecionado) {
   let rentabilidade = [];
   let topRentaveis = [];
   try {
-    const skusSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos`));
+    const skusSnap = await getDocs(collection(db, `usuarios/${uid}/skusVendidos`));
     const mapa = {};
     for (const docSnap of skusSnap.docs) {
       if (!docSnap.id.includes(mesAtual)) continue;
-      const listaRef = collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`);
+      const listaRef = collection(db, `usuarios/${uid}/skusVendidos/${docSnap.id}/lista`);
       const listaSnap = await getDocs(listaRef);
       listaSnap.forEach(item => {
         const d = item.data();
@@ -518,7 +518,7 @@ async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
   const anoMes = proxMes.toISOString().slice(0,7);
 
   try {
-    const docSnap = await getDoc(doc(db, `uid/${uid}/previsoes`, anoMes));
+    const docSnap = await getDoc(doc(db, `usuarios/${uid}/previsoes`, anoMes));
     if (!docSnap.exists()) {
       cards.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
       return;
@@ -537,7 +537,7 @@ async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
 async function carregarProdutosEMetas(uid) {
   const precos = {};
   try {
-    const snap = await getDocs(collection(db, `uid/${uid}/produtos`));
+    const snap = await getDocs(collection(db, `usuarios/${uid}/produtos`));
     for (const p of snap.docs) {
       let d = p.data();
       if (d.encrypted) {
