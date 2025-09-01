@@ -10,6 +10,11 @@ const auth = getAuth(app);
 if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
 }
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = 'Inter, sans-serif';
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = '#475569';
+}
 let dashboardData = {};
 
 // Helper to safely (re)initialize charts without leaving orphaned instances
@@ -224,57 +229,68 @@ async function carregarDashboard(user, mesSelecionado) {
   setupSubTabs();
 }
 
+function showKpiSkeleton(count = 8) {
+  const kpis = document.getElementById('kpis');
+  if (!kpis) return;
+  kpis.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const sk = document.createElement('kpi-card');
+    sk.setAttribute('loading', '');
+    kpis.appendChild(sk);
+  }
+}
+
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
+  const empty = document.getElementById('kpis-empty');
   if (!kpis) return;
-  kpis.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Bruto</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${bruto.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Líquido</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${liquido.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Unidades Vendidas</h3>
-      <p class="text-2xl font-semibold text-orange-500">${unidades}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Ticket Médio</h3>
-      <p class="text-2xl font-semibold text-gray-700">R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Bruto</h3>
-      <p class="text-2xl font-semibold ${pctBruto >= 100 ? 'text-green-600' : 'text-red-600'}">${pctBruto.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Líquido</h3>
-      <p class="text-2xl font-semibold ${pctLiquido >= 100 ? 'text-green-600' : 'text-red-600'}">${pctLiquido.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Acima da Meta</h3>
-      <p class="text-2xl font-semibold text-green-600">${diasAcima}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
-      <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <div class="bg-gray-100 px-4 py-2">
-        <h3 class="text-sm text-gray-500">Total Saques</h3>
-      </div>
-      <div class="p-4">
-        <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-      </div>
-    </div>
-  `;
+  kpis.innerHTML = '';
+  const items = [
+    { title: 'Faturamento Bruto', value: `R$ ${bruto.toLocaleString('pt-BR')}` },
+    { title: 'Faturamento Líquido', value: `R$ ${liquido.toLocaleString('pt-BR')}` },
+    { title: 'Unidades Vendidas', value: unidades },
+    { title: 'Ticket Médio', value: `R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}` },
+    { title: '% Meta Atingida Bruto', value: `${pctBruto.toFixed(1)}%`, valueClass: pctBruto >= 100 ? 'text-green-600' : 'text-red-600' },
+    { title: '% Meta Atingida Líquido', value: `${pctLiquido.toFixed(1)}%`, valueClass: pctLiquido >= 100 ? 'text-green-600' : 'text-red-600' },
+    { title: 'Dias Acima da Meta', value: diasAcima, valueClass: 'text-green-600' },
+    { title: 'Dias Abaixo da Meta', value: diasAbaixo, valueClass: 'text-red-600' },
+    { title: 'Total Saques', value: `R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}` }
+  ];
+  items.forEach(c => {
+    const el = document.createElement('kpi-card');
+    el.setAttribute('title', c.title);
+    el.setAttribute('value', c.value);
+    if (c.subtitle) el.setAttribute('subtitle', c.subtitle);
+    if (c.valueClass) el.setAttribute('value-class', c.valueClass);
+    kpis.appendChild(el);
+  });
+  if (bruto === 0 && liquido === 0 && unidades === 0) {
+    empty?.classList.remove('hidden');
+  } else {
+    empty?.classList.add('hidden');
+  }
 }
 
 function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja) {
   const dias = Object.keys(diarioBruto).sort();
+  const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${currency.format(ctx.parsed.y !== undefined ? ctx.parsed.y : ctx.parsed)}` } },
+      datalabels: { display: false }
+    },
+    scales: {
+      x: { grid: { color: '#E2E8F0', drawBorder: false }, ticks: { color: '#475569' } },
+      y: { grid: { color: '#E2E8F0', drawBorder: false }, ticks: { color: '#475569' }, beginAtZero: true }
+    }
+  };
+
   const ctxLinhas = document.getElementById('evolucaoChart');
   if (ctxLinhas) {
     initChart(ctxLinhas, {
@@ -282,23 +298,11 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
-          {
-            label: 'Bruto',
-            data: dias.map(d => diarioBruto[d]),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
-            tension: 0.3
-          },
-          {
-            label: 'Líquido',
-            data: dias.map(d => diarioLiquido[d]),
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249,115,22,0.2)',
-            tension: 0.3
-          }
+          { label: 'Bruto', data: dias.map(d => diarioBruto[d]), borderColor: '#6366F1', backgroundColor: 'rgba(99,102,241,0.15)', tension: 0.35 },
+          { label: 'Líquido', data: dias.map(d => diarioLiquido[d]), borderColor: '#818CF8', backgroundColor: 'rgba(129,140,248,0.15)', tension: 0.35 }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: commonOptions
     });
   }
 
@@ -308,12 +312,9 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'bar',
       data: {
         labels: ['Acima da Meta', 'Abaixo da Meta'],
-        datasets: [{
-          data: [diasAcima, diasAbaixo],
-          backgroundColor: ['#86efac', '#fca5a5']
-        }]
+        datasets: [{ data: [diasAcima, diasAbaixo], backgroundColor: ['#86efac', '#fca5a5'] }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: commonOptions
     });
   }
 
@@ -324,12 +325,17 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'pie',
       data: {
         labels: lojas,
-        datasets: [{
-          data: lojas.map(l => porLoja[l]),
-          backgroundColor: ['#3b82f6','#f97316','#6366f1','#10b981','#f59e0b','#ef4444']
-        }]
+        datasets: [{ data: lojas.map(l => porLoja[l]), backgroundColor: ['#6366F1','#818CF8','#A5B4FC','#C7D2FE','#E0E7FF','#CBD5E1'] }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12 } },
+          datalabels: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${currency.format(ctx.parsed)}` } }
+        }
+      }
     });
   }
 
@@ -344,15 +350,13 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
-        datasets: [{
-          label: 'Margem (%)',
-          data: margens,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16,185,129,0.2)',
-          tension: 0.3
-        }]
+        datasets: [{ label: 'Margem (%)', data: margens, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', tension: 0.35 }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } } },
+        scales: { x: commonOptions.scales.x, y: { ...commonOptions.scales.y, ticks: { ...commonOptions.scales.y.ticks, callback: v => `${v}%` } } }
+      }
     });
   }
 }
@@ -385,16 +389,20 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
     data: {
       labels,
       datasets: [
-        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#3b82f6', yAxisID: 'y' },
-        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
+        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#6366F1', yAxisID: 'y' },
+        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#818CF8', backgroundColor: 'rgba(129,140,248,0.15)', yAxisID: 'y1', tension: 0.35 }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      plugins: {
+        datalabels: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.type === 'bar' ? `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR')}` : `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } }
+      },
       scales: {
-        y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
-        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
+        y: { beginAtZero: true, position: 'left' },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' }, suggestedMax: 100 }
       }
     }
   });
@@ -500,12 +508,8 @@ function setupTabs() {
   };
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
-      });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
       if (alvo) alvo.classList.remove('hidden');
@@ -522,12 +526,8 @@ function setupSubTabs() {
   };
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
-      });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
@@ -1134,8 +1134,10 @@ if (filtroMes) {
 onAuthStateChanged(auth, user => {
   if (user) {
     const mesInicial = filtroMes?.value;
+    showKpiSkeleton();
     carregarDashboard(user, mesInicial);
     filtroMes?.addEventListener('change', () => {
+      showKpiSkeleton();
       carregarDashboard(user, filtroMes.value);
     });
   }
