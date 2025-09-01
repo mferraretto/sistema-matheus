@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 import {
@@ -434,119 +434,159 @@ async function imprimirFechamento() {
 
   const saques = snapSaques.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
   const recebidas = snapRecebidas.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
-
-  const doc = new jsPDF();
-  await carregarFonteRoboto(doc);
-
-  const dataTitulo = new Date(anoMes + '-01');
-  const mesNome = dataTitulo.toLocaleDateString('pt-BR', { month: 'long' });
-  const mesAno = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}/${dataTitulo.getFullYear()}`;
-  doc.setFont('Roboto', 'bold');
-  doc.setFontSize(18);
-  doc.text(`📑 Fechamento de Saques – ${mesAno}`, 105, 20, { align: 'center' });
-
-  const saquesBody = saques.map(s => [
-    (s.data || '').substring(0, 10),
-    s.origem || '',
-    (Number(s.valor) || 0).toFixed(2)
-  ]);
-
-  doc.autoTable({
-    head: [['Data', 'Loja', 'Saque']],
-    body: saquesBody,
-    startY: 30,
-    styles: { font: 'Roboto', fontSize: 10 },
-    headStyles: { fillColor: [229, 231, 235], textColor: 33, fontStyle: 'bold' },
-    columnStyles: { 0: { halign: 'center' }, 2: { halign: 'right' } },
-    didParseCell: data => {
-      if (data.section === 'body' && data.column.index === 1) {
-        if (data.cell.raw === 'SW') data.cell.styles.textColor = '#1d4ed8';
-        if (data.cell.raw === 'BL') data.cell.styles.textColor = '#ea580c';
-      }
-    }
-  });
-
-  let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 40;
-
-  const comissoesBody = recebidas.map(c => [
-    (c.data || '').substring(0, 10),
-    (Number(c.valor) || 0).toFixed(2)
-  ]);
-
-  doc.autoTable({
-    head: [['Data', 'Comissão']],
-    body: comissoesBody,
-    startY: y,
-    styles: { font: 'Roboto', fontSize: 10 },
-    headStyles: { fillColor: [229, 231, 235], textColor: 33, fontStyle: 'bold' },
-    columnStyles: { 0: { halign: 'center' }, 1: { halign: 'right' } }
-  });
-
-  y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 10;
-
   const resumoCalc = calcularResumo(saques);
   const { totalSacado, taxaFinal, comissaoPrevista } = resumoCalc;
   const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
   const totalPagar = comissaoPrevista - totalPago;
 
-  if (y + 50 > 280) { doc.addPage(); y = 20; }
-  const cards = [
-    { titulo: '💰 Total Sacado', valor: `R$ ${totalSacado.toFixed(2)}` },
-    { titulo: '🏬 Total Comissão', valor: `R$ ${comissaoPrevista.toFixed(2)}` },
-    { titulo: '💸 Total já Pago', valor: `R$ ${totalPago.toFixed(2)}` },
-    { titulo: '📊 Total a Pagar', valor: `R$ ${totalPagar.toFixed(2)}` }
-  ];
-  const cardW = 90, cardH = 20, gap = 10;
-  let cx = 14;
-  cards.forEach((c, i) => {
-    doc.setFillColor(243, 244, 246);
-    doc.roundedRect(cx, y, cardW, cardH, 2, 2, 'F');
-    doc.setTextColor(33);
-    doc.setFont('Roboto', 'bold');
-    doc.setFontSize(10);
-    doc.text(c.titulo, cx + 2, y + 8);
-    doc.setFont('Roboto', 'normal');
-    doc.setFontSize(12);
-    doc.text(c.valor, cx + 2, y + 16);
-    cx += cardW + gap;
-    if (i === 1) { cx = 14; y += cardH + gap; }
-  });
-  y += cardH + gap;
+  let responsavel = auth.currentUser?.displayName || auth.currentUser?.email || '';
+  let loja = '';
+  try {
+    const perfil = await getDoc(doc(db, 'perfil', uidAtual));
+    if (perfil.exists()) {
+      const pdata = perfil.data();
+      responsavel = pdata.nomeCompleto || responsavel;
+      loja = pdata.empresa || '';
+    }
+  } catch (_) {}
 
-  if (typeof Chart !== 'undefined') {
-    const datas = [...new Set(saques.map(s => (s.data || '').substring(0, 10)))];
-    const lojas = [...new Set(saques.map(s => s.origem || ''))];
-    const datasets = lojas.map(loja => ({
-      label: loja,
-      backgroundColor: loja === 'SW' ? '#3b82f6' : loja === 'BL' ? '#f97316' : '#9ca3af',
-      data: datas.map(dt => saques.filter(s => (s.data || '').substring(0,10) === dt && (s.origem || '') === loja)
-        .reduce((sum, s) => sum + (Number(s.valor) || 0), 0))
-    }));
+  const dataTitulo = new Date(anoMes + '-01');
+  const mesNome = dataTitulo.toLocaleDateString('pt-BR', { month: 'long' });
+  const mesAno = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}/${dataTitulo.getFullYear()}`;
+  const emissao = new Date().toLocaleDateString('pt-BR');
 
-    const barCanvas = document.createElement('canvas');
-    barCanvas.width = 400; barCanvas.height = 200;
-    new Chart(barCanvas.getContext('2d'), {
-      type: 'bar',
-      data: { labels: datas, datasets },
-      options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
-    });
-    await new Promise(r => setTimeout(r, 100));
-    doc.addImage(barCanvas.toDataURL('image/png'), 'PNG', 14, y, 180, 80);
-    y += 90;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  await carregarFonteRoboto(doc);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const accent = [79, 70, 229];
 
-    const valoresPorLoja = lojas.map(loja => saques.filter(s => (s.origem || '') === loja)
-      .reduce((sum, s) => sum + (Number(s.valor) || 0), 0));
-    const pieCanvas = document.createElement('canvas');
-    pieCanvas.width = 200; pieCanvas.height = 200;
-    new Chart(pieCanvas.getContext('2d'), {
-      type: 'pie',
-      data: { labels: lojas, datasets: [{ data: valoresPorLoja, backgroundColor: lojas.map(l => l === 'SW' ? '#3b82f6' : l === 'BL' ? '#f97316' : '#9ca3af') }] },
-      options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
-    });
-    await new Promise(r => setTimeout(r, 100));
-    if (y + 90 > 280) { doc.addPage(); y = 20; }
-    doc.addImage(pieCanvas.toDataURL('image/png'), 'PNG', 60, y, 90, 90);
+  function formatCurrency(v) {
+    return `R$ ${(Number(v) || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
   }
+  function formatDate(iso) {
+    return iso ? new Date(iso).toLocaleDateString('pt-BR') : '';
+  }
+
+  const header = data => {
+    doc.setFont('Roboto', 'bold');
+    doc.setFontSize(20);
+    doc.text(`Fechamento de Saques — ${mesAno}`, margin, 20);
+    doc.setDrawColor(229, 231, 235);
+    doc.line(margin, 24, pageWidth - margin, 24);
+    doc.setFont('Roboto', 'normal');
+    doc.setFontSize(10);
+    const right = `${responsavel}${loja ? ' / ' + loja : ''} / ${emissao}`;
+    doc.text(right, pageWidth - margin, 20, { align: 'right' });
+  };
+
+  const footer = data => {
+    doc.setFontSize(10);
+    doc.text(`Página ${data.pageNumber}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+  };
+
+  header();
+
+  let y = 30;
+  const cardGap = 5;
+  const cardW = (pageWidth - margin * 2 - cardGap * 3) / 4;
+  const cardH = 24;
+  const cards = [
+    { icon: '💰', label: 'Total Sacado', valor: formatCurrency(totalSacado) },
+    { icon: '🧾', label: 'Comissão do Mês', valor: formatCurrency(comissaoPrevista) },
+    { icon: '✅', label: 'Pago', valor: formatCurrency(totalPago) },
+    { icon: '⌛', label: 'A Pagar', valor: formatCurrency(totalPagar) }
+  ];
+  cards.forEach((c, i) => {
+    const x = margin + i * (cardW + cardGap);
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(x, y, cardW, cardH, 3, 3, 'S');
+    doc.setFontSize(10);
+    doc.text(c.icon, x + 3, y + 9);
+    doc.setFont('Roboto', 'bold');
+    doc.setFontSize(14);
+    doc.text(c.valor, x + cardW / 2, y + 15, { align: 'center' });
+    doc.setFont('Roboto', 'normal');
+    doc.setFontSize(10);
+    doc.text(c.label, x + cardW / 2, y + cardH - 4, { align: 'center' });
+  });
+
+  y += cardH + 12;
+
+  const saquesBody = saques.map(s => [
+    formatDate(s.data),
+    s.origem || '',
+    formatCurrency(s.valor)
+  ]);
+  const saquesFoot = [[
+    { content: 'Total', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } },
+    { content: formatCurrency(totalSacado), styles: { halign: 'right', fontStyle: 'bold' } }
+  ]];
+
+  doc.autoTable({
+    startY: y,
+    head: [['Data', 'Loja', 'Saque']],
+    body: saquesBody,
+    foot: saquesFoot,
+    margin: { left: margin, right: margin },
+    styles: { font: 'Roboto', fontSize: 12, lineColor: [241, 245, 249], lineWidth: 0.1 },
+    headStyles: { fillColor: accent, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [249, 250, 251] },
+    columnStyles: { 0: { halign: 'left' }, 1: { halign: 'center' }, 2: { halign: 'right' } },
+    didDrawPage: data => {
+      header();
+      footer(data);
+    }
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  const comissoesBody = [
+    ...recebidas.map(c => [
+      formatDate(c.data),
+      `${(taxaFinal * 100).toFixed(0)}%`,
+      formatCurrency(c.valor),
+      'Pago'
+    ]),
+    ['', `${(taxaFinal * 100).toFixed(0)}%`, formatCurrency(totalPagar), 'A pagar']
+  ];
+  const comissoesFoot = [[
+    { content: 'Total', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } },
+    { content: formatCurrency(comissaoPrevista), styles: { halign: 'right', fontStyle: 'bold' } },
+    ''
+  ]];
+
+  doc.autoTable({
+    startY: y,
+    head: [['Data', '%', 'Valor', 'Status']],
+    body: comissoesBody,
+    foot: comissoesFoot,
+    margin: { left: margin, right: margin },
+    styles: { font: 'Roboto', fontSize: 12, lineColor: [241, 245, 249], lineWidth: 0.1 },
+    headStyles: { fillColor: accent, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [249, 250, 251] },
+    columnStyles: {
+      0: { halign: 'left' },
+      1: { halign: 'center' },
+      2: { halign: 'right' },
+      3: { halign: 'center' }
+    },
+    didParseCell: data => {
+      if (data.section === 'body' && data.column.index === 3) {
+        const val = data.cell.raw;
+        data.cell.styles.textColor = val === 'Pago' ? '#16a34a' : '#d97706';
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    didDrawPage: data => {
+      header();
+      footer(data);
+    }
+  });
 
   doc.save('fechamento-saques.pdf');
 }
