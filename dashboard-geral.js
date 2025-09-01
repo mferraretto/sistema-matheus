@@ -8,6 +8,13 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 let dashboardData = {};
+
+// Helper to safely (re)initialize charts without leaving orphaned instances
+function initChart(ctx, config) {
+  const existing = Chart.getChart(ctx);
+  if (existing) existing.destroy();
+  return new Chart(ctx, config);
+}
 async function carregarDashboard(user, mesSelecionado) {
   const uid = user.uid;
   const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
@@ -254,7 +261,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
   const dias = Object.keys(diarioBruto).sort();
   const ctxLinhas = document.getElementById('evolucaoChart');
   if (ctxLinhas) {
-    new Chart(ctxLinhas, {
+    initChart(ctxLinhas, {
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
@@ -281,7 +288,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
 
   const ctxBar = document.getElementById('diasMetaChart');
   if (ctxBar) {
-    new Chart(ctxBar, {
+    initChart(ctxBar, {
       type: 'bar',
       data: {
         labels: ['Acima da Meta', 'Abaixo da Meta'],
@@ -297,7 +304,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
   const ctxPie = document.getElementById('lojasPieChart');
   if (ctxPie) {
     const lojas = Object.keys(porLoja);
-    new Chart(ctxPie, {
+    initChart(ctxPie, {
       type: 'pie',
       data: {
         labels: lojas,
@@ -317,7 +324,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       const liquido = diarioLiquido[d] || 0;
       return bruto ? (liquido / bruto) * 100 : 0;
     });
-    new Chart(ctxMargem, {
+    initChart(ctxMargem, {
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
@@ -351,7 +358,7 @@ function renderTopSkusComparativo(lista, rentabilidade) {
     const r = rentabilidade.find(x => x.sku === p.sku);
     return r ? r.margem : 0;
   });
-  new Chart(ctx, {
+  initChart(ctx, {
     data: {
       labels,
       datasets: [
@@ -396,7 +403,7 @@ function renderRentabilidade(lista, top5) {
 function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAtual) {
   const barCtx = document.getElementById('metaComparativoChart');
   if (barCtx) {
-    new Chart(barCtx, {
+    initChart(barCtx, {
       type: 'bar',
       data: {
         labels: ['Meta', 'Realizado'],
@@ -429,7 +436,7 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
       realAcum.push(acumulado);
       metaAcum.push(metaDiaria * fim);
     }
-    new Chart(semanaCtx, {
+    initChart(semanaCtx, {
       type: 'line',
       data: {
         labels,
@@ -588,7 +595,7 @@ function renderPrevisaoChart(canvas, previsao) {
   const base = previsao.totalGeral || 0;
   const pess = base * 0.85;
   const otm = base * 1.15;
-  new Chart(canvas, {
+  initChart(canvas, {
     type: 'bar',
     data: {
       labels: ['Pessimista', 'Base', 'Otimista'],
@@ -677,7 +684,7 @@ function exportarFechamentoMes() {
   const compCtx = container.querySelector('#comparativoChart');
   if (compCtx) {
     const meses = Object.keys(dashboardData.comparativo).sort();
-    new Chart(compCtx, {
+    initChart(compCtx, {
       type: 'bar',
       data: {
         labels: meses.map(m => m.split('-').reverse().join('/')),
@@ -694,7 +701,7 @@ function exportarFechamentoMes() {
   const cancelCtx = container.querySelector('#cancelamentoChart');
   if (cancelCtx) {
     const dias = Object.keys(dashboardData.cancelamentosDiario).sort();
-    new Chart(cancelCtx, {
+    initChart(cancelCtx, {
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
