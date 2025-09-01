@@ -351,9 +351,14 @@ function applyPerfilRestrictions(perfil) {
 }
 
 function ensureFinanceiroMenu() {
-  if (window.isFinanceiroResponsavel) {
-    const menu = document.getElementById('menu-vendas');
-    if (menu) menu.classList.remove('hidden');
+  const menu = document.getElementById('menu-vendas');
+  if (!menu) return;
+  if (
+    window.isFinanceiroResponsavel ||
+    window.userPerfil === 'responsavel' ||
+    window.userPerfil === 'gestor financeiro'
+  ) {
+    menu.classList.remove('hidden');
   }
 }
 
