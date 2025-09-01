@@ -693,7 +693,10 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
   container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
 }
 
-document.getElementById('exportarFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
+document.getElementById('imprimirFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
+
+// Expose function globally in case the button is rendered dynamically
+window.exportarFechamentoMes = exportarFechamentoMes;
 
 async function exportarFechamentoMes() {
   const filtro = document.getElementById('filtroMes');
