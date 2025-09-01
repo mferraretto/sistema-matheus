@@ -7,6 +7,9 @@ import { decryptString } from './crypto.js';
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+  Chart.register(ChartDataLabels);
+}
 let dashboardData = {};
 
 // Helper to safely (re)initialize charts without leaving orphaned instances
@@ -614,10 +617,23 @@ function renderPrevisaoChart(canvas, previsao) {
       datasets: [{
         label: 'Projeção',
         data: [pess, base, otm],
-        backgroundColor: ['#f87171', '#60a5fa', '#34d399']
+        backgroundColor: ['#ec4899', '#60a5fa', '#34d399']
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end',
+          align: 'start',
+          color: '#111827',
+          font: { weight: 'bold' },
+          formatter: v => v.toFixed(0)
+        }
+      }
+    }
   });
 }
 
@@ -639,10 +655,8 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
       .map(([sku, info]) => {
         const quantidade = (info.total || 0) * c.fator;
         const preco = precos[sku] || 0;
-        const sobraUnit = metas[sku] || 0;
         const bruto = quantidade * preco;
-        const sobra = quantidade * sobraUnit;
-        return { sku, quantidade, bruto, sobra };
+        return { sku, quantidade, bruto };
       })
       .sort((a,b) => b.quantidade - a.quantidade)
       .slice(0,5);
@@ -656,7 +670,6 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
           <td class="px-2 py-1 border">${item.sku}</td>
           <td class="px-2 py-1 border">${item.quantidade.toFixed(0)}</td>
           <td class="px-2 py-1 border">R$ ${item.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-          <td class="px-2 py-1 border">R$ ${item.sobra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
         </tr>`).join('');
 
     return `
@@ -667,8 +680,7 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
             <tr>
               <th class="px-2 py-1 border">SKU</th>
               <th class="px-2 py-1 border">Quantidade</th>
-              <th class="px-2 py-1 border">Bruto Esperado<br>(Valor de venda)</th>
-              <th class="px-2 py-1 border">Sobra Esperada<br>(Sobra esperada x quantidade)</th>
+              <th class="px-2 py-1 border">Bruto Esperado</th>
             </tr>
           </thead>
           <tbody>
@@ -721,7 +733,13 @@ async function exportarFechamentoMes() {
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido' }
+        }
+      }
     });
   }
 
@@ -756,7 +774,13 @@ async function exportarFechamentoMes() {
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: 'Faturamento Acumulado vs. Meta' }
+        }
+      }
     });
   }
 
@@ -813,95 +837,75 @@ async function exportarFechamentoMes() {
 function gerarHTMLFechamento() {
   const d = dashboardData;
   const mesBR = new Date(d.mesAtual + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const mesTitle = mesBR.charAt(0).toUpperCase() + mesBR.slice(1);
   const pctMeta = d.meta ? ((d.totalLiquido / d.meta) * 100).toFixed(1) : '0';
-  const dias = Object.keys(d.diarioLiquido).sort();
-  const linhasDia = dias.map(di => `<tr><td>${new Date(di).toLocaleDateString('pt-BR')}</td><td>R$ ${(d.diarioBruto[di]||0).toLocaleString('pt-BR')}</td><td>R$ ${(d.diarioLiquido[di]||0).toLocaleString('pt-BR')}</td></tr>`).join('');
 
   return `
-      <div style="font-family:'Poppins',sans-serif; width:100%; max-width:190mm; box-sizing:border-box; color:#111827;">
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-          .header{background:#4C1D95;color:#fff;padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;border-radius:8px;}
-          .header img{height:40px;}
-          .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0;}
-          .card{background:#fff;color:#111827;padding:12px;border:1px solid #e5e7eb;border-radius:8px;text-align:center;}
-          .card .icon{font-size:24px;margin-bottom:4px;}
-          .mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0;}
-          .mini-card{background:#fff;color:#111827;border:1px solid #e5e7eb;padding:12px;border-radius:8px;text-align:center;}
-          .mini-card.success strong{color:#10b981;}
-          .mini-card.warn strong{color:#ef4444;}
-          .mini-card.total{background:#4C1D95;color:#fff;border:none;}
-          .section-title{color:#4C1D95;margin-top:20px;margin-bottom:10px;font-weight:600;}
-          table{width:100%;border-collapse:collapse;font-size:12px;}
-          th,td{padding:6px;border:1px solid #e5e7eb;}
-          tr:nth-child(even){background:#f9fafb;}
-          .highlight{padding:10px;border-radius:6px;color:#fff;margin-top:10px;}
-          .highlight.success{background:#10b981;}
-          .highlight.warn{background:#ef4444;}
-          .charts{display:flex;flex-direction:column;gap:20px;}
-          .chart-box{width:100%;height:260px;page-break-inside:avoid;}
-          .page-break{page-break-after:always;}
-        </style>
+    <div style="font-family:'Poppins',sans-serif;width:100%;max-width:190mm;color:#111827;">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        .page{page-break-after:always;padding:0 10px;}
+        .page:last-child{page-break-after:auto;}
+        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+        .header img{height:40px;}
+        .header .title{flex:1;text-align:center;font-size:18px;font-weight:600;}
+        .header .responsavel{text-align:right;font-size:12px;}
+        .section-title{color:#4C1D95;font-weight:600;margin:10px 0;}
+        .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+        .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;}
+        .card .icon{font-size:24px;margin-bottom:4px;}
+        .meta-indicador{text-align:center;font-weight:600;margin:10px 0;}
+        .obs-box{display:flex;justify-content:center;gap:20px;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:20px;}
+        .chart-box{width:100%;height:260px;margin-bottom:20px;}
+        .tables{display:flex;gap:20px;margin-top:10px;}
+        .table-box{flex:1;}
+        .table-box ol{padding-left:20px;}
+      </style>
+      <div class="page">
         <div class="header">
-          ${d.logoUrl ? `<img src="${d.logoUrl}" alt="Logo">` : ''}
-          <h1>${d.nomeEmpresa || 'Empresa'}</h1>
-          <p>Fechamento ${mesBR}</p>
-          <p>${d.responsavel ? `Responsável: ${d.responsavel}` : ''}</p>
+          ${d.logoUrl ? `<img src="${d.logoUrl}" alt="Logo">` : '<div></div>'}
+          <div class="title">Fechamento de ${mesTitle}</div>
+          <div class="responsavel">${d.responsavel ? `Responsável: ${d.responsavel}` : ''}</div>
         </div>
-
+        <h2 class="section-title">1. Resumo Executivo</h2>
+        <h3 class="section-title">Indicadores Chave do Mês</h3>
         <div class="cards">
           <div class="card"><div class="icon">💰</div><div>Faturamento Bruto</div><strong>R$ ${d.totalBruto.toLocaleString('pt-BR')}</strong></div>
           <div class="card"><div class="icon">🏦</div><div>Faturamento Líquido</div><strong>R$ ${d.totalLiquido.toLocaleString('pt-BR')}</strong></div>
-          <div class="card"><div class="icon">📈</div><div>Ticket Médio</div><strong>R$ ${d.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></div>
-          <div class="card"><div class="icon">📦</div><div>Pedidos</div><strong>${d.totalUnidades}</strong></div>
-          <div class="card"><div class="icon">🎯</div><div>% da Meta</div><strong>${pctMeta}%</strong></div>
+          <div class="card"><div class="icon">📦</div><div>Pedidos Totais</div><strong>${d.totalUnidades}</strong></div>
+          <div class="card"><div class="icon">📈</div><div>Ticket Médio</div><strong>R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
         </div>
-
-        <div class="mini-cards">
-          <div class="mini-card success"><div>Dias Acima da Meta</div><strong>${d.diasAcima}</strong></div>
-          <div class="mini-card warn"><div>Dias Abaixo da Meta</div><strong>${d.diasAbaixo}</strong></div>
-          <div class="mini-card total"><div>Total Saques</div><strong>R$ ${d.totalSaques.toLocaleString('pt-BR')}</strong></div>
+        <div class="meta-indicador">Meta Atingida: ${pctMeta}%</div>
+        <div class="obs-box">
+          <span>${d.diasAcima} dias acima da meta</span>
+          <span>${d.diasAbaixo} dias abaixo da meta</span>
         </div>
-
-        <div class="page-break"></div>
-
-        <div class="charts">
-          <div class="chart-box"><canvas id="diarioBarChart"></canvas></div>
-          <div class="chart-box"><canvas id="tendenciaChart"></canvas></div>
-          <div class="chart-box"><canvas id="proporcaoChart"></canvas></div>
-        </div>
-
-        <div class="highlight ${d.totalLiquido >= d.meta ? 'success' : 'warn'}">
-          ${d.totalLiquido >= d.meta ? `Meta atingida com ${pctMeta}%` : `Meta não atingida (${pctMeta}%)`}
-        </div>
-        <div class="highlight ${d.produtosCriticos.length ? 'warn' : 'success'}">
-          ${d.produtosCriticos.length ? 'Atenção aos produtos com estoque e sem vendas.' : 'Sem pontos de atenção'}
-        </div>
-
-        <div class="page-break"></div>
-
-        <h2 class="section-title">Desempenho Diário</h2>
-        <table>
-          <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
-          ${linhasDia}
-        </table>
-
-        <div class="page-break"></div>
-
-        <h2 class="section-title">Desempenho &amp; Rentabilidade</h2>
+        <h3 class="section-title">Desempenho Faturamento</h3>
+        <div class="chart-box"><canvas id="diarioBarChart"></canvas></div>
+        <div class="chart-box"><canvas id="tendenciaChart"></canvas></div>
+      </div>
+      <div class="page">
+        <h2 class="section-title">2. Análise Detalhada</h2>
+        <h3 class="section-title">Desempenho por Produto (SKU)</h3>
         <div class="chart-box"><canvas id="topSkusMargemChart"></canvas></div>
-        <h3 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h3>
-        <ol id="topSkusList"></ol>
-        <h3 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h3>
-        <ol id="topRentaveis"></ol>
-
-        <div class="page-break"></div>
-
-        <h2 class="section-title">Projeção &amp; Previsão</h2>
-        <div id="cardsPrevisao" class="cards"></div>
+        <div class="tables">
+          <div class="table-box">
+            <h4 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h4>
+            <ol id="topSkusList"></ol>
+          </div>
+          <div class="table-box">
+            <h4 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h4>
+            <ol id="topRentaveis"></ol>
+          </div>
+        </div>
+      </div>
+      <div class="page">
+        <h2 class="section-title">3. Projeções e Previsões</h2>
+        <h3 class="section-title">Projeção de Vendas</h3>
         <div class="chart-box"><canvas id="previsaoChart"></canvas></div>
         <div id="topSkusPrevisao"></div>
       </div>
+    </div>
   `;
 }
 
