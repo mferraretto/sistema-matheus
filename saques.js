@@ -391,6 +391,27 @@ function assistirResumo() {
   });
 }
 
+async function carregarFonteRoboto(doc) {
+  if (doc.getFontList().Roboto) return;
+  function toBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+  const [regular, medium] = await Promise.all([
+    fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf').then(r => r.arrayBuffer()),
+    fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf').then(r => r.arrayBuffer())
+  ]);
+  doc.addFileToVFS('Roboto-Regular.ttf', toBase64(regular));
+  doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+  doc.addFileToVFS('Roboto-Medium.ttf', toBase64(medium));
+  doc.addFont('Roboto-Medium.ttf', 'Roboto', 'bold');
+}
+
 async function imprimirFechamento() {
   if (!window.jspdf) return;
   const { jsPDF } = window.jspdf;
@@ -407,8 +428,14 @@ async function imprimirFechamento() {
   const recebidas = snapRecebidas.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
 
   const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text('Fechamento de Saques', 105, 15, { align: 'center' });
+  await carregarFonteRoboto(doc);
+
+  const dataTitulo = new Date(anoMes + '-01');
+  const mesNome = dataTitulo.toLocaleDateString('pt-BR', { month: 'long' });
+  const mesAno = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}/${dataTitulo.getFullYear()}`;
+  doc.setFont('Roboto', 'bold');
+  doc.setFontSize(18);
+  doc.text(`📑 Fechamento de Saques – ${mesAno}`, 105, 20, { align: 'center' });
 
   const saquesBody = saques.map(s => [
     (s.data || '').substring(0, 10),
@@ -419,10 +446,19 @@ async function imprimirFechamento() {
   doc.autoTable({
     head: [['Data', 'Loja', 'Saque']],
     body: saquesBody,
-    startY: 25
+    startY: 30,
+    styles: { font: 'Roboto', fontSize: 10 },
+    headStyles: { fillColor: [229, 231, 235], textColor: 33, fontStyle: 'bold' },
+    columnStyles: { 0: { halign: 'center' }, 2: { halign: 'right' } },
+    didParseCell: data => {
+      if (data.section === 'body' && data.column.index === 1) {
+        if (data.cell.raw === 'SW') data.cell.styles.textColor = '#1d4ed8';
+        if (data.cell.raw === 'BL') data.cell.styles.textColor = '#ea580c';
+      }
+    }
   });
 
-  let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 25;
+  let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 40;
 
   const comissoesBody = recebidas.map(c => [
     (c.data || '').substring(0, 10),
@@ -432,7 +468,10 @@ async function imprimirFechamento() {
   doc.autoTable({
     head: [['Data', 'Comissão']],
     body: comissoesBody,
-    startY: y
+    startY: y,
+    styles: { font: 'Roboto', fontSize: 10 },
+    headStyles: { fillColor: [229, 231, 235], textColor: 33, fontStyle: 'bold' },
+    columnStyles: { 0: { halign: 'center' }, 1: { halign: 'right' } }
   });
 
   y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 10;
@@ -442,11 +481,64 @@ async function imprimirFechamento() {
   const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
   const totalPagar = comissaoPrevista - totalPago;
 
-  doc.setFontSize(12);
-  doc.text(`Total sacado: R$ ${totalSacado.toFixed(2)}`, 14, y);
-  doc.text(`Total comissão (${(taxaFinal * 100).toFixed(0)}%): R$ ${comissaoPrevista.toFixed(2)}`, 14, y + 10);
-  doc.text(`Total já pago: R$ ${totalPago.toFixed(2)}`, 14, y + 20);
-  doc.text(`Total a pagar: R$ ${totalPagar.toFixed(2)}`, 14, y + 30);
+  if (y + 50 > 280) { doc.addPage(); y = 20; }
+  const cards = [
+    { titulo: '💰 Total Sacado', valor: `R$ ${totalSacado.toFixed(2)}` },
+    { titulo: '🏬 Total Comissão', valor: `R$ ${comissaoPrevista.toFixed(2)}` },
+    { titulo: '💸 Total já Pago', valor: `R$ ${totalPago.toFixed(2)}` },
+    { titulo: '📊 Total a Pagar', valor: `R$ ${totalPagar.toFixed(2)}` }
+  ];
+  const cardW = 90, cardH = 20, gap = 10;
+  let cx = 14;
+  cards.forEach((c, i) => {
+    doc.setFillColor(243, 244, 246);
+    doc.roundedRect(cx, y, cardW, cardH, 2, 2, 'F');
+    doc.setTextColor(33);
+    doc.setFont('Roboto', 'bold');
+    doc.setFontSize(10);
+    doc.text(c.titulo, cx + 2, y + 8);
+    doc.setFont('Roboto', 'normal');
+    doc.setFontSize(12);
+    doc.text(c.valor, cx + 2, y + 16);
+    cx += cardW + gap;
+    if (i === 1) { cx = 14; y += cardH + gap; }
+  });
+  y += cardH + gap;
+
+  if (typeof Chart !== 'undefined') {
+    const datas = [...new Set(saques.map(s => (s.data || '').substring(0, 10)))];
+    const lojas = [...new Set(saques.map(s => s.origem || ''))];
+    const datasets = lojas.map(loja => ({
+      label: loja,
+      backgroundColor: loja === 'SW' ? '#3b82f6' : loja === 'BL' ? '#f97316' : '#9ca3af',
+      data: datas.map(dt => saques.filter(s => (s.data || '').substring(0,10) === dt && (s.origem || '') === loja)
+        .reduce((sum, s) => sum + (Number(s.valor) || 0), 0))
+    }));
+
+    const barCanvas = document.createElement('canvas');
+    barCanvas.width = 400; barCanvas.height = 200;
+    new Chart(barCanvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels: datas, datasets },
+      options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
+    });
+    await new Promise(r => setTimeout(r, 100));
+    doc.addImage(barCanvas.toDataURL('image/png'), 'PNG', 14, y, 180, 80);
+    y += 90;
+
+    const valoresPorLoja = lojas.map(loja => saques.filter(s => (s.origem || '') === loja)
+      .reduce((sum, s) => sum + (Number(s.valor) || 0), 0));
+    const pieCanvas = document.createElement('canvas');
+    pieCanvas.width = 200; pieCanvas.height = 200;
+    new Chart(pieCanvas.getContext('2d'), {
+      type: 'pie',
+      data: { labels: lojas, datasets: [{ data: valoresPorLoja, backgroundColor: lojas.map(l => l === 'SW' ? '#3b82f6' : l === 'BL' ? '#f97316' : '#9ca3af') }] },
+      options: { responsive: false, plugins: { legend: { position: 'bottom' } } }
+    });
+    await new Promise(r => setTimeout(r, 100));
+    if (y + 90 > 280) { doc.addPage(); y = 20; }
+    doc.addImage(pieCanvas.toDataURL('image/png'), 'PNG', 60, y, 90, 90);
+  }
 
   doc.save('fechamento-saques.pdf');
 }
