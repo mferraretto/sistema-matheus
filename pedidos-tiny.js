@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
@@ -10,21 +10,44 @@ const auth = getAuth(app);
 
 let todosPedidos = [];
 let custosProdutos = {};
+let usuariosCache = [];
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
-  await carregarPedidosTiny();
+  let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
+  try {
+    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
+    if (!snap.empty) {
+      const extras = await Promise.all(snap.docs.map(async d => {
+        let nome = d.data().nome;
+        if (!nome) {
+          try {
+            const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
+            if (perfil.exists()) nome = perfil.data().nome;
+          } catch (_) {}
+        }
+        return { uid: d.id, nome: nome || d.data().email || d.id };
+      }));
+      usuarios = usuarios.concat(extras);
+    }
+  } catch (err) {
+    console.error('Erro ao verificar acesso financeiro:', err);
+  }
+  usuariosCache = usuarios;
+  setupUsuariosFiltro(usuarios);
+  const uidSel = document.getElementById('usuarioFiltro')?.value || user.uid;
+  await carregarPedidosTiny(uidSel);
 });
 
-export async function carregarPedidosTiny() {
+export async function carregarPedidosTiny(uidParam) {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Carregando...</td></tr>';
   try {
-    const uid = auth.currentUser.uid;
+    const uid = uidParam || auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
 
     const [snap, produtosSnap] = await Promise.all([
@@ -57,9 +80,29 @@ export async function carregarPedidosTiny() {
   }
 }
 
+function setupUsuariosFiltro(usuarios) {
+  const select = document.getElementById('usuarioFiltro');
+  const grupo = document.getElementById('grupoUsuario');
+  if (!select) return;
+  select.innerHTML = '';
+  usuarios.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.uid;
+    opt.textContent = u.nome;
+    select.appendChild(opt);
+  });
+  if (usuarios.length > 1) {
+    grupo?.classList.remove('hidden');
+  } else {
+    grupo?.classList.add('hidden');
+  }
+  select.addEventListener('change', () => carregarPedidosTiny(select.value));
+}
+
 function preencherFiltroLoja(pedidos) {
   const select = document.getElementById('filtroLoja');
   if (!select) return;
+  select.innerHTML = '<option value="">Todas</option>';
   const lojas = [...new Set(pedidos.map(p => p.loja || p.store || '').filter(Boolean))].sort();
   lojas.forEach(loja => {
     const opt = document.createElement('option');
