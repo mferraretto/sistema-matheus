@@ -9,15 +9,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
-  Chart.defaults.font.family = 'Inter, sans-serif';
-  Chart.defaults.font.size = 12;
-  Chart.defaults.color = '#475569';
-  Chart.defaults.plugins.legend.labels.boxWidth = 12;
-  Chart.defaults.plugins.legend.labels.boxHeight = 12;
-  Chart.defaults.plugins.tooltip.titleFont = { size: 13 };
-  Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
-  Chart.defaults.plugins.datalabels.display = false;
-  Chart.defaults.elements.line.tension = 0.35;
 }
 let dashboardData = {};
 
@@ -36,29 +27,7 @@ function toNumber(v) {
   }
   return 0;
 }
-
-function showKpiSkeleton(count = 4) {
-  const kpis = document.getElementById('kpis');
-  if (!kpis) return;
-  kpis.innerHTML = Array.from({ length: count })
-    .map(() => `<div class="h-24 rounded-2xl border border-slate-200 bg-slate-200/60 shadow animate-pulse"></div>`)
-    .join('');
-}
-
-function createKpiCard({ title, value, subtitle = '', legendClass = '' }) {
-  return `
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/10">
-      <div class="flex items-center gap-2">
-        ${legendClass ? `<span class="h-2 w-2 rounded-full ${legendClass}"></span>` : ''}
-        <span class="text-slate-600 text-sm font-medium tracking-wide uppercase">${title}</span>
-      </div>
-      <p class="mt-2 text-2xl md:text-3xl font-semibold text-slate-900">${value}</p>
-      ${subtitle ? `<p class="mt-1 text-xs text-slate-500">${subtitle}</p>` : ''}
-    </div>
-  `;
-}
 async function carregarDashboard(user, mesSelecionado) {
-  showKpiSkeleton(8);
   const uid = user.uid;
   const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
   const mesAtual = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
@@ -256,48 +225,56 @@ async function carregarDashboard(user, mesSelecionado) {
 }
 
 function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
-  const kpis = document.getElementById('kpis');
-  if (!kpis) return;
-
-  if (!bruto && !liquido && !unidades) {
-    kpis.innerHTML = `<div class="col-span-full py-10 text-center text-slate-500"><svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="mt-2 text-sm">Sem dados para o período selecionado</p></div>`;
-    return;
-  }
-
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
-  const data = [
-    { title: 'Faturamento Bruto', value: `R$ ${bruto.toLocaleString('pt-BR')}`, subtitle: `${pctBruto.toFixed(1)}% da meta`, legendClass: 'bg-indigo-600' },
-    { title: 'Faturamento Líquido', value: `R$ ${liquido.toLocaleString('pt-BR')}`, subtitle: `${pctLiquido.toFixed(1)}% da meta`, legendClass: 'bg-indigo-300' },
-    { title: 'Unidades Vendidas', value: unidades.toLocaleString('pt-BR') },
-    { title: 'Ticket Médio', value: `R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}` },
-    { title: '% Meta Atingida', value: `${pctLiquido.toFixed(1)}%`, subtitle: `Meta: R$ ${meta.toLocaleString('pt-BR')}` },
-    { title: 'Dias Acima da Meta', value: diasAcima },
-    { title: 'Dias Abaixo da Meta', value: diasAbaixo },
-    { title: 'Total Saques', value: `R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}` }
-  ];
-  kpis.innerHTML = data.map(createKpiCard).join('');
+  const kpis = document.getElementById('kpis');
+  if (!kpis) return;
+  kpis.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Faturamento Bruto</h3>
+      <p class="text-2xl font-semibold text-blue-600">R$ ${bruto.toLocaleString('pt-BR')}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Faturamento Líquido</h3>
+      <p class="text-2xl font-semibold text-blue-600">R$ ${liquido.toLocaleString('pt-BR')}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Unidades Vendidas</h3>
+      <p class="text-2xl font-semibold text-orange-500">${unidades}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Ticket Médio</h3>
+      <p class="text-2xl font-semibold text-gray-700">R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">% Meta Atingida Bruto</h3>
+      <p class="text-2xl font-semibold ${pctBruto >= 100 ? 'text-green-600' : 'text-red-600'}">${pctBruto.toFixed(1)}%</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">% Meta Atingida Líquido</h3>
+      <p class="text-2xl font-semibold ${pctLiquido >= 100 ? 'text-green-600' : 'text-red-600'}">${pctLiquido.toFixed(1)}%</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Dias Acima da Meta</h3>
+      <p class="text-2xl font-semibold text-green-600">${diasAcima}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg p-4">
+      <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
+      <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div class="bg-gray-100 px-4 py-2">
+        <h3 class="text-sm text-gray-500">Total Saques</h3>
+      </div>
+      <div class="p-4">
+        <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
+      </div>
+    </div>
+  `;
 }
 
 function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja) {
   const dias = Object.keys(diarioBruto).sort();
-  const currency = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-  const lineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 12 } } },
-      y: { grid: { color: 'rgba(203,213,225,0.4)', drawBorder: false }, ticks: { font: { size: 12 } } }
-    },
-    plugins: {
-      legend: { labels: { usePointStyle: true } },
-      tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${currency(ctx.parsed.y)}` } },
-      datalabels: { display: false }
-    }
-  };
-
   const ctxLinhas = document.getElementById('evolucaoChart');
   if (ctxLinhas) {
     initChart(ctxLinhas, {
@@ -308,18 +285,20 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           {
             label: 'Bruto',
             data: dias.map(d => diarioBruto[d]),
-            borderColor: '#4f46e5',
-            backgroundColor: 'rgba(79,70,229,0.15)'
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            tension: 0.3
           },
           {
             label: 'Líquido',
             data: dias.map(d => diarioLiquido[d]),
-            borderColor: '#818cf8',
-            backgroundColor: 'rgba(129,140,248,0.15)'
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249,115,22,0.2)',
+            tension: 0.3
           }
         ]
       },
-      options: lineOptions
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
@@ -329,12 +308,12 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'bar',
       data: {
         labels: ['Acima da Meta', 'Abaixo da Meta'],
-        datasets: [{ label: 'Dias', data: [diasAcima, diasAbaixo], backgroundColor: ['#4f46e5', '#c7d2fe'] }]
+        datasets: [{
+          data: [diasAcima, diasAbaixo],
+          backgroundColor: ['#86efac', '#fca5a5']
+        }]
       },
-      options: {
-        ...lineOptions,
-        plugins: { ...lineOptions.plugins, legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed.y}` } } }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
@@ -345,17 +324,12 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'pie',
       data: {
         labels: lojas,
-        datasets: [{ data: lojas.map(l => porLoja[l]), backgroundColor: ['#4f46e5','#818cf8','#a5b4fc','#c7d2fe','#e0e7ff','#f1f5ff'] }]
+        datasets: [{
+          data: lojas.map(l => porLoja[l]),
+          backgroundColor: ['#3b82f6','#f97316','#6366f1','#10b981','#f59e0b','#ef4444']
+        }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { usePointStyle: true } },
-          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${currency(ctx.parsed)}` } },
-          datalabels: { display: false }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
@@ -370,13 +344,15 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
-        datasets: [{ label: 'Margem (%)', data: margens, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)' }]
+        datasets: [{
+          label: 'Margem (%)',
+          data: margens,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.2)',
+          tension: 0.3
+        }]
       },
-      options: {
-        ...lineOptions,
-        plugins: { ...lineOptions.plugins, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } } },
-        scales: { ...lineOptions.scales, y: { ...lineOptions.scales.y, ticks: { callback: v => v + '%', font: { size: 12 } } } }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 }
@@ -409,26 +385,16 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
     data: {
       labels,
       datasets: [
-        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#4f46e5', yAxisID: 'y' },
-        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.15)', yAxisID: 'y1' }
+        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#3b82f6', yAxisID: 'y' },
+        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
       scales: {
-        y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(203,213,225,0.4)', drawBorder: false }, ticks: { font: { size: 12 } } },
-        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 12 } }, suggestedMax: 100 }
-      },
-      plugins: {
-        legend: { labels: { usePointStyle: true } },
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.dataset.type === 'line' ? `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` : `${ctx.dataset.label}: ${ctx.parsed.y}`
-          }
-        },
-        datalabels: { display: false }
+        y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
       }
     }
   });
@@ -470,21 +436,13 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
       type: 'bar',
       data: {
         labels: ['Meta', 'Realizado'],
-        datasets: [{ label: 'Valor (R$)', data: [meta, liquido], backgroundColor: ['#e2e8f0', '#4f46e5'] }]
+        datasets: [{
+          label: 'Valor (R$)',
+          data: [meta, liquido],
+          backgroundColor: ['#9ca3af', '#3b82f6']
+        }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed.y.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` } },
-          datalabels: { display: false }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 12 } } },
-          y: { grid: { color: 'rgba(203,213,225,0.4)', drawBorder: false }, ticks: { font: { size: 12 } } }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
@@ -512,24 +470,23 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
       data: {
         labels,
         datasets: [
-          { label: 'Realizado', data: realAcum, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.15)' },
-          { label: 'Meta', data: metaAcum, borderColor: '#e2e8f0', backgroundColor: 'rgba(226,232,240,0.3)' }
+          {
+            label: 'Realizado',
+            data: realAcum,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            tension: 0.3
+          },
+          {
+            label: 'Meta',
+            data: metaAcum,
+            borderColor: '#9ca3af',
+            backgroundColor: 'rgba(156,163,175,0.2)',
+            tension: 0.3
+          }
         ]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 12 } } },
-          y: { grid: { color: 'rgba(203,213,225,0.4)', drawBorder: false }, ticks: { font: { size: 12 } } }
-        },
-        plugins: {
-          legend: { labels: { usePointStyle: true } },
-          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` } },
-          datalabels: { display: false }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
   }
 }
@@ -543,14 +500,17 @@ function setupTabs() {
   };
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => b.removeAttribute('data-active'));
-      btn.setAttribute('data-active', 'true');
+      buttons.forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-300', 'text-gray-700');
+      });
+      btn.classList.add('bg-blue-600', 'text-white');
+      btn.classList.remove('bg-gray-300', 'text-gray-700');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
       if (alvo) alvo.classList.remove('hidden');
     });
   });
-  buttons[0]?.setAttribute('data-active', 'true');
 }
 
 function setupSubTabs() {
@@ -562,14 +522,17 @@ function setupSubTabs() {
   };
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => b.removeAttribute('data-active'));
-      btn.setAttribute('data-active', 'true');
+      buttons.forEach(b => {
+        b.classList.remove('bg-blue-600', 'text-white');
+        b.classList.add('bg-gray-300', 'text-gray-700');
+      });
+      btn.classList.add('bg-blue-600', 'text-white');
+      btn.classList.remove('bg-gray-300', 'text-gray-700');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
     });
   });
-  buttons[0]?.setAttribute('data-active', 'true');
 }
 
 async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
