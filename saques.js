@@ -10,7 +10,7 @@ import {
   watchResumoMes as watchResumoMesSvc,
   registrarComissaoRecebida as registrarComissaoRecebidaSvc
 } from './comissoes-service.js';
-import { anoMesBR } from './comissoes-utils.js';
+import { anoMesBR, calcularResumo } from './comissoes-utils.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -442,8 +442,9 @@ async function imprimirFechamento() {
 
   y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 10;
 
-  const totalSacado = saques.reduce((s, x) => s + (Number(x.valor) || 0), 0);
-  const totalPrev = saques.reduce((s, x) => s + (Number(x.comissaoPaga) || 0), 0);
+  const resumoCalc = calcularResumo(saques);
+  const totalSacado = resumoCalc.totalSacado;
+  const totalPrev = resumoCalc.comissaoPrevista;
   const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
   const totalPagar = totalPrev - totalPago;
 
