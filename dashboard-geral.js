@@ -15,6 +15,15 @@ function initChart(ctx, config) {
   if (existing) existing.destroy();
   return new Chart(ctx, config);
 }
+
+function toNumber(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(n) || 0;
+  }
+  return 0;
+}
 async function carregarDashboard(user, mesSelecionado) {
   const uid = user.uid;
   const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
@@ -53,9 +62,9 @@ async function carregarDashboard(user, mesSelecionado) {
         }
         if (txt) dados = JSON.parse(txt);
       }
-      const bruto = Number(dados.valorBruto) || 0;
-      const liquido = Number(dados.valorLiquido) || 0;
-      const qtd = Number(dados.qtdVendas || dados.quantidade) || 0;
+      const bruto = toNumber(dados.valorBruto);
+      const liquido = toNumber(dados.valorLiquido);
+      const qtd = toNumber(dados.qtdVendas || dados.quantidade);
       comparativo[mesDoc] = (comparativo[mesDoc] || 0) + liquido;
       if (mesDoc === mesAtual) {
         totalBruto += bruto;
@@ -64,7 +73,9 @@ async function carregarDashboard(user, mesSelecionado) {
         diarioBruto[docSnap.id] = (diarioBruto[docSnap.id] || 0) + bruto;
         diarioLiquido[docSnap.id] = (diarioLiquido[docSnap.id] || 0) + liquido;
         porLoja[lojaDoc.id] = (porLoja[lojaDoc.id] || 0) + liquido;
-        cancelamentosDiario[docSnap.id] = (cancelamentosDiario[docSnap.id] || 0) + (Number(dados.valorCancelado) || Number(dados.cancelado) || 0);
+        const cancel = toNumber(dados.valorCancelado);
+        const cancelAlt = toNumber(dados.cancelado);
+        cancelamentosDiario[docSnap.id] = (cancelamentosDiario[docSnap.id] || 0) + (cancel || cancelAlt);
       }
     }
   }
@@ -74,7 +85,7 @@ async function carregarDashboard(user, mesSelecionado) {
   let meta = 0;
   try {
     const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
-    if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
+    if (metaDoc.exists()) meta = toNumber(metaDoc.data().valor);
   } catch (err) {
     console.error('Erro ao buscar meta:', err);
   }
@@ -91,7 +102,7 @@ async function carregarDashboard(user, mesSelecionado) {
   try {
     const resumoDoc = await getDoc(doc(db, 'usuarios', uid, 'comissoes', mesAtual));
     if (resumoDoc.exists()) {
-      totalSaques = Number(resumoDoc.data().totalSacado) || 0;
+      totalSaques = toNumber(resumoDoc.data().totalSacado);
     }
   } catch (err) {
     console.error('Erro ao carregar saques', err);
@@ -127,7 +138,7 @@ async function carregarDashboard(user, mesSelecionado) {
         }
         if (txt) d = JSON.parse(txt);
       }
-      arr.push({ nome: d.nome || p.id, sku: d.sku || p.id, vendas: Number(d.vendas) || 0, estoque: Number(d.estoque) || 0 });
+      arr.push({ nome: d.nome || p.id, sku: d.sku || p.id, vendas: toNumber(d.vendas), estoque: toNumber(d.estoque) });
     }
     topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
     produtosCriticos = arr.filter(p => p.estoque > 0 && p.vendas === 0);
@@ -147,8 +158,8 @@ async function carregarDashboard(user, mesSelecionado) {
       listaSnap.forEach(item => {
         const d = item.data();
         const sku = d.sku || item.id;
-        const qtd = Number(d.total || d.quantidade) || 0;
-        const valor = Number(d.valorLiquido || 0);
+        const qtd = toNumber(d.total || d.quantidade);
+        const valor = toNumber(d.valorLiquido);
         if (!mapa[sku]) mapa[sku] = { qtd: 0, valor: 0 };
         mapa[sku].qtd += qtd;
         mapa[sku].valor += valor;
@@ -550,7 +561,7 @@ async function carregarProdutosEMetas(uid) {
         if (txt) d = JSON.parse(txt);
       }
       const sku = d.sku || p.id;
-      precos[sku] = Number(d.custo) || 0;
+      precos[sku] = toNumber(d.custo);
     }
   } catch (err) {
     console.error('Erro ao carregar produtos', err);
@@ -562,7 +573,7 @@ async function carregarProdutosEMetas(uid) {
     const metasSnap = await getDocs(q);
     metasSnap.forEach(m => {
       const originalSku = m.id.replaceAll('__','/');
-      metas[originalSku] = Number(m.data().valor) || 0;
+      metas[originalSku] = toNumber(m.data().valor);
     });
   } catch (err) {
     console.error('Erro ao carregar metasSKU', err);
