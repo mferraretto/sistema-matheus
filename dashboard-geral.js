@@ -360,7 +360,15 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
 function renderTopSkus(lista, root = document) {
   const el = root.querySelector('#topSkusList');
   if (!el) return;
-  el.innerHTML = lista.map(p => `<li>${p.sku} - ${p.vendas}</li>`).join('');
+  el.innerHTML = lista
+    .map(
+      p =>
+        `<li style="display:flex;justify-content:space-between;">
+          <span>${p.sku}</span>
+          <span>${p.vendas.toLocaleString('pt-BR')}</span>
+        </li>`
+    )
+    .join('');
 }
 
 function renderTopSkusComparativo(lista, rentabilidade, root = document) {
@@ -370,7 +378,8 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
   const vendas = lista.map(p => p.vendas);
   const margens = lista.map(p => {
     const r = rentabilidade.find(x => x.sku === p.sku);
-    return r ? r.margem : 0;
+    if (!r) return 0;
+    return r.margem > 1 ? r.margem : r.margem * 100;
   });
   initChart(ctx, {
     data: {
@@ -384,8 +393,8 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        y: { beginAtZero: true, position: 'left' },
-        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' } }
+        y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
       }
     }
   });
@@ -409,7 +418,13 @@ function renderRentabilidade(lista, top5, root = document) {
   const topEl = root.querySelector('#topRentaveis');
   if (topEl) {
     topEl.innerHTML = top5
-      .map(p => `<li>${p.sku} - R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>`)
+      .map(
+        p =>
+          `<li style="display:flex;justify-content:space-between;">
+            <span>${p.sku}</span>
+            <span>R$ ${p.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </li>`
+      )
       .join('');
   }
 }
@@ -644,51 +659,55 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
     return;
   }
 
+  const baseLista = dadosSkus
+    .map(([sku, info]) => {
+      const quantidade = info.total || 0;
+      const preco = precos[sku] || 0;
+      const bruto = quantidade * preco;
+      return { sku, quantidade, bruto };
+    })
+    .sort((a, b) => b.quantidade - a.quantidade)
+    .slice(0, 5);
+
   const cenarios = [
     { titulo: 'Pessimista', fator: 0.85 },
     { titulo: 'Base', fator: 1 },
     { titulo: 'Otimista', fator: 1.15 }
   ];
 
-  const tabelas = cenarios.map(c => {
-    const lista = dadosSkus
-      .map(([sku, info]) => {
-        const quantidade = (info.total || 0) * c.fator;
-        const preco = precos[sku] || 0;
-        const bruto = quantidade * preco;
-        return { sku, quantidade, bruto };
-      })
-      .sort((a,b) => b.quantidade - a.quantidade)
-      .slice(0,5);
-
-    if (!lista.length) {
-      return '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
-    }
-
-    const linhas = lista.map(item => `
-        <tr>
-          <td class="px-2 py-1 border">${item.sku}</td>
-          <td class="px-2 py-1 border">${item.quantidade.toFixed(0)}</td>
-          <td class="px-2 py-1 border">R$ ${item.bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-        </tr>`).join('');
-
-    return `
-      <div class="overflow-x-auto">
-        <h4 class="font-bold mb-2 text-center">Top 5 SKUs projeção ${c.titulo}</h4>
-        <table class="min-w-full text-sm text-left">
-          <thead>
+  const tabelas = cenarios
+    .map(c => {
+      const linhas = baseLista
+        .map(item => {
+          const quantidade = item.quantidade * c.fator;
+          const bruto = item.bruto * c.fator;
+          return `
             <tr>
-              <th class="px-2 py-1 border">SKU</th>
-              <th class="px-2 py-1 border">Quantidade</th>
-              <th class="px-2 py-1 border">Bruto Esperado</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${linhas}
-          </tbody>
-        </table>
-      </div>`;
-  }).join('');
+              <td class="px-2 py-1 border">${item.sku}</td>
+              <td class="px-2 py-1 border">${quantidade.toFixed(0)}</td>
+              <td class="px-2 py-1 border">R$ ${bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+            </tr>`;
+        })
+        .join('');
+
+      return `
+        <div class="overflow-x-auto">
+          <h4 class="font-bold mb-2 text-center">Top 5 SKUs projeção ${c.titulo}</h4>
+          <table class="min-w-full text-sm text-left">
+            <thead>
+              <tr>
+                <th class="px-2 py-1 border">SKU</th>
+                <th class="px-2 py-1 border">Quantidade</th>
+                <th class="px-2 py-1 border">Bruto Esperado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhas}
+            </tbody>
+          </table>
+        </div>`;
+    })
+    .join('');
 
   container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
 }
@@ -737,7 +756,21 @@ async function exportarFechamentoMes() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido' }
+          title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido', font: { size: 14 } }
+        },
+        scales: {
+          x: {
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 10,
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 45
+            }
+          },
+          y: {
+            ticks: { font: { size: 10 } }
+          }
         }
       }
     });
@@ -778,7 +811,21 @@ async function exportarFechamentoMes() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          title: { display: true, text: 'Faturamento Acumulado vs. Meta' }
+          title: { display: true, text: 'Faturamento Acumulado vs. Meta', font: { size: 14 } }
+        },
+        scales: {
+          x: {
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 10,
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 45
+            }
+          },
+          y: {
+            ticks: { font: { size: 10 } }
+          }
         }
       }
     });
@@ -870,8 +917,8 @@ function gerarHTMLFechamento() {
         <h2 class="section-title">1. Resumo Executivo</h2>
         <h3 class="section-title">Indicadores Chave do Mês</h3>
         <div class="cards">
-          <div class="card"><div class="icon">💰</div><div>Faturamento Bruto</div><strong>R$ ${d.totalBruto.toLocaleString('pt-BR')}</strong></div>
-          <div class="card"><div class="icon">🏦</div><div>Faturamento Líquido</div><strong>R$ ${d.totalLiquido.toLocaleString('pt-BR')}</strong></div>
+          <div class="card"><div class="icon">💰</div><div>Faturamento Bruto</div><strong>R$ ${d.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
+          <div class="card"><div class="icon">🏦</div><div>Faturamento Líquido</div><strong>R$ ${d.totalLiquido.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
           <div class="card"><div class="icon">📦</div><div>Pedidos Totais</div><strong>${d.totalUnidades}</strong></div>
           <div class="card"><div class="icon">📈</div><div>Ticket Médio</div><strong>R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
         </div>
