@@ -803,8 +803,9 @@ async function exportarFechamentoMes() {
       margin: 10,
       filename: `fechamento-${dashboardData.mesAtual}.pdf`,
       pagebreak: { mode: ['css', 'legacy'] },
-      html2canvas: { scale: 1, useCORS: true, backgroundColor: '#fff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#fff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: false }
     }).from(container).save().then(() => container.remove());
   }, 1000);
 }
