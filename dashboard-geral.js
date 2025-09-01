@@ -7,9 +7,24 @@ import { decryptString } from './crypto.js';
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
-  Chart.register(ChartDataLabels);
-}
+const opts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { position: 'top', labels: { boxWidth: 12, color: '#0f172a', font: { size: 12 } } },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+      }
+    }
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { color: '#334155', font: { size: 12 } } },
+    y: { grid: { color: 'rgba(148,163,184,0.2)' }, ticks: { color: '#334155', font: { size: 12 } } }
+  },
+  elements: { line: { tension: 0.35 }, point: { radius: 0, hoverRadius: 4 } }
+};
 let dashboardData = {};
 
 // Helper to safely (re)initialize charts without leaving orphaned instances
@@ -229,48 +244,24 @@ function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaix
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
   if (!kpis) return;
-  kpis.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Bruto</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${bruto.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Líquido</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${liquido.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Unidades Vendidas</h3>
-      <p class="text-2xl font-semibold text-orange-500">${unidades}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Ticket Médio</h3>
-      <p class="text-2xl font-semibold text-gray-700">R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Bruto</h3>
-      <p class="text-2xl font-semibold ${pctBruto >= 100 ? 'text-green-600' : 'text-red-600'}">${pctBruto.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Líquido</h3>
-      <p class="text-2xl font-semibold ${pctLiquido >= 100 ? 'text-green-600' : 'text-red-600'}">${pctLiquido.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Acima da Meta</h3>
-      <p class="text-2xl font-semibold text-green-600">${diasAcima}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
-      <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <div class="bg-gray-100 px-4 py-2">
-        <h3 class="text-sm text-gray-500">Total Saques</h3>
+  const card = (titulo, valor, subt = '') => `
+    <div class="card">
+      <div class="text-slate-600 text-sm font-medium tracking-wide uppercase">${titulo}</div>
+      <div class="mt-2 flex items-end gap-2">
+        <div class="text-2xl md:text-3xl font-semibold text-slate-900">${valor}</div>
       </div>
-      <div class="p-4">
-        <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-      </div>
-    </div>
-  `;
+      ${subt ? `<div class="mt-1 text-xs text-slate-500">${subt}</div>` : ''}
+    </div>`;
+  kpis.innerHTML =
+    card('Faturamento Bruto', `R$ ${bruto.toLocaleString('pt-BR')}`) +
+    card('Faturamento Líquido', `R$ ${liquido.toLocaleString('pt-BR')}`) +
+    card('Unidades Vendidas', `${unidades}`) +
+    card('Ticket Médio', `R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) +
+    card('% Meta Atingida Bruto', `${pctBruto.toFixed(1)}%`, 'Meta atingida (bruto)') +
+    card('% Meta Atingida Líquido', `${pctLiquido.toFixed(1)}%`, 'Meta atingida (líquido)') +
+    card('Dias Acima da Meta', `${diasAcima}`) +
+    card('Dias Abaixo da Meta', `${diasAbaixo}`) +
+    card('Total Saques', `R$ ${saques.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 }
 
 function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja) {
@@ -298,7 +289,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 
@@ -313,7 +304,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           backgroundColor: ['#86efac', '#fca5a5']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 
@@ -329,7 +320,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           backgroundColor: ['#3b82f6','#f97316','#6366f1','#10b981','#f59e0b','#ef4444']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 
@@ -352,7 +343,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           tension: 0.3
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 }
@@ -390,9 +381,9 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      ...opts,
       scales: {
+        ...opts.scales,
         y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
         y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
       }
@@ -442,7 +433,7 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
           backgroundColor: ['#9ca3af', '#3b82f6']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 
@@ -486,7 +477,7 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 }
@@ -501,11 +492,11 @@ function setupTabs() {
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
+        b.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
+        b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
       });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      btn.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+      btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
       if (alvo) alvo.classList.remove('hidden');
@@ -523,11 +514,11 @@ function setupSubTabs() {
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
+        b.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
+        b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
       });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      btn.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
+      btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
@@ -636,18 +627,8 @@ function renderPrevisaoChart(canvas, previsao) {
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          anchor: 'end',
-          align: 'start',
-          color: '#111827',
-          font: { weight: 'bold' },
-          formatter: v => v.toFixed(0)
-        }
-      }
+      ...opts,
+      plugins: { ...opts.plugins, legend: { display: false } }
     }
   });
 }
@@ -759,13 +740,10 @@ async function exportarFechamentoMes() {
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido', font: { size: 14 } }
-        },
+        ...opts,
+        plugins: { ...opts.plugins, title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido', font: { size: 14 } } },
         scales: {
+          ...opts.scales,
           x: {
             ticks: {
               autoSkip: true,
@@ -775,9 +753,7 @@ async function exportarFechamentoMes() {
               minRotation: 45
             }
           },
-          y: {
-            ticks: { font: { size: 10 } }
-          }
+          y: { ticks: { font: { size: 10 } } }
         }
       }
     });
@@ -817,13 +793,10 @@ async function exportarFechamentoMes() {
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          title: { display: true, text: 'Faturamento Acumulado vs. Meta', font: { size: 14 } }
-        },
+        ...opts,
+        plugins: { ...opts.plugins, title: { display: true, text: 'Faturamento Acumulado vs. Meta', font: { size: 14 } } },
         scales: {
+          ...opts.scales,
           x: {
             ticks: {
               autoSkip: true,
@@ -833,9 +806,7 @@ async function exportarFechamentoMes() {
               minRotation: 45
             }
           },
-          y: {
-            ticks: { font: { size: 10 } }
-          }
+          y: { ticks: { font: { size: 10 } } }
         }
       }
     });
@@ -855,12 +826,12 @@ async function exportarFechamentoMes() {
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        ...opts,
         rotation: -90,
         circumference: 180,
         cutout: '80%',
         plugins: {
+          ...opts.plugins,
           legend: { display: false },
           tooltip: { enabled: false },
           title: { display: true, text: `Progresso da Meta (${pct.toFixed(1)}%)`, font: { size: 14 } }
@@ -880,7 +851,7 @@ async function exportarFechamentoMes() {
           backgroundColor: ['#4C1D95', '#3b82f6']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: opts
     });
   }
 
