@@ -694,6 +694,7 @@ async function exportarFechamentoMes() {
   container.style.width = '190mm';
   container.style.margin = '0 auto';
   container.style.boxSizing = 'border-box';
+  container.style.backgroundColor = '#fff';
   container.innerHTML = gerarHTMLFechamento();
   document.body.appendChild(container);
 
@@ -799,7 +800,8 @@ async function exportarFechamentoMes() {
     html2pdf().set({
       margin: 10,
       filename: `fechamento-${dashboardData.mesAtual}.pdf`,
-      html2canvas: { scale: 2 },
+      pagebreak: { mode: ['css', 'legacy'] },
+      html2canvas: { scale: 1, useCORS: true, backgroundColor: '#fff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(container).save().then(() => container.remove());
   }, 1000);
