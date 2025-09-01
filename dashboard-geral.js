@@ -733,28 +733,35 @@ async function exportarFechamentoMes() {
 
   const dias = Object.keys(dashboardData.diarioBruto).sort();
 
-  const diarioCtx = container.querySelector('#diarioBarChart');
+  const diarioCtx = container.querySelector('#diarioChart');
   if (diarioCtx) {
     initChart(diarioCtx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
           {
             label: 'Bruto',
             data: dias.map(d => dashboardData.diarioBruto[d] || 0),
-            backgroundColor: '#4C1D95'
+            borderColor: '#4C1D95',
+            backgroundColor: 'rgba(76,29,149,0.15)',
+            fill: false,
+            tension: 0.3
           },
           {
             label: 'Líquido',
             data: dias.map(d => dashboardData.diarioLiquido[d] || 0),
-            backgroundColor: '#3b82f6'
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.15)',
+            fill: false,
+            tension: 0.3
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido', font: { size: 14 } }
         },
@@ -803,6 +810,8 @@ async function exportarFechamentoMes() {
             data: metaLinha,
             borderColor: '#10b981',
             backgroundColor: 'rgba(16,185,129,0.2)',
+            borderDash: [6,4],
+            pointRadius: 0,
             tension: 0.3
           }
         ]
@@ -810,6 +819,7 @@ async function exportarFechamentoMes() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           title: { display: true, text: 'Faturamento Acumulado vs. Meta', font: { size: 14 } }
         },
@@ -826,6 +836,34 @@ async function exportarFechamentoMes() {
           y: {
             ticks: { font: { size: 10 } }
           }
+        }
+      }
+    });
+  }
+
+  const metaGaugeCtx = container.querySelector('#metaGaugeChart');
+  if (metaGaugeCtx) {
+    const pct = dashboardData.meta ? (dashboardData.totalLiquido / dashboardData.meta) * 100 : 0;
+    initChart(metaGaugeCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Atingido', 'Restante'],
+        datasets: [{
+          data: [pct, Math.max(100 - pct, 0)],
+          backgroundColor: ['#4C1D95', '#e5e7eb'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        rotation: -90,
+        circumference: 180,
+        cutout: '80%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+          title: { display: true, text: `Progresso da Meta (${pct.toFixed(1)}%)`, font: { size: 14 } }
         }
       }
     });
@@ -1053,12 +1091,13 @@ function gerarHTMLFechamento() {
           <div>Meta Atingida: ${pctMeta}%</div>
           <div class="meta-bar"><div class="progress" style="width:${pctMeta}%;"></div></div>
         </div>
+        <div class="chart-container"><canvas id="metaGaugeChart"></canvas></div>
         <div class="obs-box">
           <span>${d.diasAcima} dias acima da meta</span>
           <span>${d.diasAbaixo} dias abaixo da meta</span>
         </div>
         <h3 class="section-title">Desempenho Faturamento</h3>
-        <div class="chart-container"><canvas id="diarioBarChart"></canvas></div>
+        <div class="chart-container"><canvas id="diarioChart"></canvas></div>
         <div class="chart-container"><canvas id="tendenciaChart"></canvas></div>
       </div>
       <div class="page">
