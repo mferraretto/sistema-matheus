@@ -10,13 +10,93 @@ const auth = getAuth(app);
 if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
   Chart.register(ChartDataLabels);
 }
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = 'Inter, sans-serif';
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = '#475569';
+  Chart.defaults.plugins.legend.labels.usePointStyle = true;
+  Chart.defaults.plugins.legend.labels.font.size = 12;
+  Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
+  Chart.defaults.plugins.datalabels.display = false;
+}
 let dashboardData = {};
 
 // Helper to safely (re)initialize charts without leaving orphaned instances
 function initChart(ctx, config) {
   const existing = Chart.getChart(ctx);
   if (existing) existing.destroy();
+  const baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { usePointStyle: true } },
+      tooltip: {
+        callbacks: {
+          label: context => {
+            const v = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+            const label = context.dataset.label ? context.dataset.label + ': ' : '';
+            return label + (typeof v === 'number' ? v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : v);
+          }
+        }
+      },
+      datalabels: { display: false }
+    },
+    elements: { line: { tension: 0.35 } },
+    scales: {
+      x: { grid: { display: false, drawBorder: false }, ticks: { color: '#64748b' } },
+      y: { grid: { color: 'rgba(100,116,139,0.1)', drawBorder: false }, ticks: { color: '#64748b' } }
+    }
+  };
+  config.options = Object.assign({}, baseOptions, config.options || {});
   return new Chart(ctx, config);
+}
+
+function KpiCard({ title, value, subtitle = '', indicator, valueClass = '' }) {
+  return `
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
+      <h3 class="flex items-center gap-2 text-slate-600 text-sm font-medium tracking-wide uppercase">
+        ${indicator ? `<span class='h-2 w-2 rounded-full' style='background:${indicator}'></span>` : ''}
+        ${title}
+      </h3>
+      <p class="mt-2 text-2xl md:text-3xl font-semibold text-slate-900 ${valueClass}">${value}</p>
+      ${subtitle ? `<p class='mt-1 text-xs text-slate-500'>${subtitle}</p>` : ''}
+    </div>`;
+}
+
+function renderLoadingState() {
+  const kpis = document.getElementById('kpis');
+  if (kpis) {
+    kpis.innerHTML = Array.from({ length: 4 })
+      .map(() => '<div class="h-24 rounded-2xl border border-slate-200 bg-slate-200/60 animate-pulse" data-skeleton></div>')
+      .join('');
+  }
+  document.querySelectorAll('.chart-wrapper').forEach(w => {
+    const canvas = w.querySelector('canvas');
+    if (canvas) canvas.classList.add('hidden');
+    const sk = document.createElement('div');
+    sk.setAttribute('data-skeleton', '');
+    sk.className = 'h-full w-full rounded-2xl bg-slate-200/60 animate-pulse';
+    w.appendChild(sk);
+  });
+}
+
+function clearLoadingState() {
+  document.querySelectorAll('[data-skeleton]').forEach(el => el.remove());
+  document.querySelectorAll('.chart-wrapper canvas').forEach(c => c.classList.remove('hidden'));
+}
+
+function renderEmptyState() {
+  const container = document.getElementById('subtab-resumo');
+  if (container) {
+    container.innerHTML = `
+      <div class="flex flex-col items-center justify-center p-10 text-center text-slate-500">
+        <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a4 4 0 0 0 4 4h10a4 4 0 0 0 4-4V7M3 7l9 6 9-6M3 7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4" />
+        </svg>
+        <p>Nenhum dado disponível para o período.</p>
+        <button class="btn btn-primary mt-4" aria-label="Selecionar período" onclick="document.getElementById('filtroMes').focus()">Selecionar período</button>
+      </div>`;
+  }
 }
 
 function toNumber(v) {
@@ -28,6 +108,7 @@ function toNumber(v) {
   return 0;
 }
 async function carregarDashboard(user, mesSelecionado) {
+  renderLoadingState();
   const uid = user.uid;
   const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
   const mesAtual = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
@@ -213,6 +294,14 @@ async function carregarDashboard(user, mesSelecionado) {
   };
   window.dashboardData = dashboardData;
 
+  if (totalBruto === 0 && totalLiquido === 0 && totalUnidades === 0) {
+    clearLoadingState();
+    renderEmptyState();
+    setupTabs();
+    setupSubTabs();
+    return;
+  }
+
   renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
@@ -220,6 +309,7 @@ async function carregarDashboard(user, mesSelecionado) {
   renderTopSkusComparativo(topSkus, rentabilidade);
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
   await carregarPrevisaoDashboard(uid, baseDate);
+  clearLoadingState();
   setupTabs();
   setupSubTabs();
 }
@@ -229,48 +319,28 @@ function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaix
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
   if (!kpis) return;
-  kpis.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Bruto</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${bruto.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Faturamento Líquido</h3>
-      <p class="text-2xl font-semibold text-blue-600">R$ ${liquido.toLocaleString('pt-BR')}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Unidades Vendidas</h3>
-      <p class="text-2xl font-semibold text-orange-500">${unidades}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Ticket Médio</h3>
-      <p class="text-2xl font-semibold text-gray-700">R$ ${ticket.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Bruto</h3>
-      <p class="text-2xl font-semibold ${pctBruto >= 100 ? 'text-green-600' : 'text-red-600'}">${pctBruto.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">% Meta Atingida Líquido</h3>
-      <p class="text-2xl font-semibold ${pctLiquido >= 100 ? 'text-green-600' : 'text-red-600'}">${pctLiquido.toFixed(1)}%</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Acima da Meta</h3>
-      <p class="text-2xl font-semibold text-green-600">${diasAcima}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg p-4">
-      <h3 class="text-sm text-gray-500">Dias Abaixo da Meta</h3>
-      <p class="text-2xl font-semibold text-red-600">${diasAbaixo}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <div class="bg-gray-100 px-4 py-2">
-        <h3 class="text-sm text-gray-500">Total Saques</h3>
-      </div>
-      <div class="p-4">
-        <p class="text-2xl font-semibold text-gray-700">R$ ${saques.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</p>
-      </div>
-    </div>
-  `;
+  const cards = [
+    KpiCard({
+      title: 'Faturamento Bruto',
+      value: `R$ ${bruto.toLocaleString('pt-BR')}`,
+      subtitle: `${pctBruto.toFixed(1)}% da meta`,
+      indicator: '#4f46e5'
+    }),
+    KpiCard({
+      title: 'Faturamento Líquido',
+      value: `R$ ${liquido.toLocaleString('pt-BR')}`,
+      subtitle: `${pctLiquido.toFixed(1)}% da meta`,
+      indicator: '#94a3b8'
+    }),
+    KpiCard({ title: 'Unidades Vendidas', value: unidades.toLocaleString('pt-BR') }),
+    KpiCard({ title: 'Ticket Médio', value: `R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }),
+    KpiCard({ title: '% Meta Atingida Bruto', value: `${pctBruto.toFixed(1)}%`, valueClass: pctBruto >= 100 ? 'text-green-600' : 'text-red-600' }),
+    KpiCard({ title: '% Meta Atingida Líquido', value: `${pctLiquido.toFixed(1)}%`, valueClass: pctLiquido >= 100 ? 'text-green-600' : 'text-red-600' }),
+    KpiCard({ title: 'Dias Acima da Meta', value: diasAcima.toLocaleString('pt-BR') }),
+    KpiCard({ title: 'Dias Abaixo da Meta', value: diasAbaixo.toLocaleString('pt-BR') }),
+    KpiCard({ title: 'Saques', value: `R$ ${saques.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` })
+  ];
+  kpis.innerHTML = cards.join('');
 }
 
 function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja) {
@@ -285,20 +355,20 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           {
             label: 'Bruto',
             data: dias.map(d => diarioBruto[d]),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
-            tension: 0.3
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.2)',
+            tension: 0.35
           },
           {
             label: 'Líquido',
             data: dias.map(d => diarioLiquido[d]),
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249,115,22,0.2)',
-            tension: 0.3
+            borderColor: '#94a3b8',
+            backgroundColor: 'rgba(148,163,184,0.2)',
+            tension: 0.35
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {}
     });
   }
 
@@ -310,10 +380,10 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
         labels: ['Acima da Meta', 'Abaixo da Meta'],
         datasets: [{
           data: [diasAcima, diasAbaixo],
-          backgroundColor: ['#86efac', '#fca5a5']
+          backgroundColor: ['#4f46e5', '#94a3b8']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {}
     });
   }
 
@@ -326,10 +396,10 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
         labels: lojas,
         datasets: [{
           data: lojas.map(l => porLoja[l]),
-          backgroundColor: ['#3b82f6','#f97316','#6366f1','#10b981','#f59e0b','#ef4444']
+          backgroundColor: ['#4f46e5','#94a3b8','#cbd5e1','#e2e8f0','#f1f5f9','#d1d5db']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: { scales: {} }
     });
   }
 
@@ -347,12 +417,12 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
         datasets: [{
           label: 'Margem (%)',
           data: margens,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16,185,129,0.2)',
-          tension: 0.3
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79,70,229,0.2)',
+          tension: 0.35
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {}
     });
   }
 }
@@ -385,16 +455,15 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
     data: {
       labels,
       datasets: [
-        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#3b82f6', yAxisID: 'y' },
-        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
+        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#4f46e5', yAxisID: 'y' },
+        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#94a3b8', backgroundColor: 'rgba(148,163,184,0.2)', yAxisID: 'y1', tension: 0.35 }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
       scales: {
-        y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
-        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
+        x: { grid: { display: false, drawBorder: false }, ticks: { color: '#64748b' } },
+        y: { beginAtZero: true, position: 'left', grid: { color: 'rgba(100,116,139,0.1)', drawBorder: false }, ticks: { color: '#64748b' } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', color: '#64748b' }, suggestedMax: 100 }
       }
     }
   });
@@ -439,10 +508,10 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
         datasets: [{
           label: 'Valor (R$)',
           data: [meta, liquido],
-          backgroundColor: ['#9ca3af', '#3b82f6']
+          backgroundColor: ['#94a3b8', '#4f46e5']
         }]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {}
     });
   }
 
@@ -473,20 +542,20 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
           {
             label: 'Realizado',
             data: realAcum,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
-            tension: 0.3
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.2)',
+            tension: 0.35
           },
           {
             label: 'Meta',
             data: metaAcum,
-            borderColor: '#9ca3af',
-            backgroundColor: 'rgba(156,163,175,0.2)',
-            tension: 0.3
+            borderColor: '#94a3b8',
+            backgroundColor: 'rgba(148,163,184,0.2)',
+            tension: 0.35
           }
         ]
       },
-      options: { responsive: true, maintainAspectRatio: false }
+      options: {}
     });
   }
 }
@@ -501,11 +570,13 @@ function setupTabs() {
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-ghost');
+        b.setAttribute('aria-selected', 'false');
       });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      btn.classList.add('btn-primary');
+      btn.classList.remove('btn-ghost');
+      btn.setAttribute('aria-selected', 'true');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
       if (alvo) alvo.classList.remove('hidden');
@@ -523,11 +594,13 @@ function setupSubTabs() {
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => {
-        b.classList.remove('bg-blue-600', 'text-white');
-        b.classList.add('bg-gray-300', 'text-gray-700');
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-ghost');
+        b.setAttribute('aria-selected', 'false');
       });
-      btn.classList.add('bg-blue-600', 'text-white');
-      btn.classList.remove('bg-gray-300', 'text-gray-700');
+      btn.classList.add('btn-primary');
+      btn.classList.remove('btn-ghost');
+      btn.setAttribute('aria-selected', 'true');
       Object.values(tabs).forEach(t => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
@@ -609,14 +682,14 @@ function renderPrevisaoCards(el, previsao) {
   const pess = base * 0.85;
   const otm = base * 1.15;
   el.innerHTML = `
-    <div class="bg-red-100 text-red-800 p-4 rounded shadow text-center">
-      <div class="font-bold">Pessimista</div><div>${pess.toFixed(0)}</div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow text-center">
+      <div class="text-slate-600 text-sm font-medium tracking-wide uppercase">Pessimista</div><div class="mt-2 text-2xl font-semibold text-slate-900">${pess.toFixed(0)}</div>
     </div>
-    <div class="bg-blue-100 text-blue-800 p-4 rounded shadow text-center">
-      <div class="font-bold">Base</div><div>${base.toFixed(0)}</div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow text-center">
+      <div class="text-slate-600 text-sm font-medium tracking-wide uppercase">Base</div><div class="mt-2 text-2xl font-semibold text-slate-900">${base.toFixed(0)}</div>
     </div>
-    <div class="bg-green-100 text-green-800 p-4 rounded shadow text-center">
-      <div class="font-bold">Otimista</div><div>${otm.toFixed(0)}</div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow text-center">
+      <div class="text-slate-600 text-sm font-medium tracking-wide uppercase">Otimista</div><div class="mt-2 text-2xl font-semibold text-slate-900">${otm.toFixed(0)}</div>
     </div>`;
 }
 
@@ -632,23 +705,10 @@ function renderPrevisaoChart(canvas, previsao) {
       datasets: [{
         label: 'Projeção',
         data: [pess, base, otm],
-        backgroundColor: ['#ec4899', '#60a5fa', '#34d399']
+        backgroundColor: ['#94a3b8', '#4f46e5', '#cbd5e1']
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          anchor: 'end',
-          align: 'start',
-          color: '#111827',
-          font: { weight: 'bold' },
-          formatter: v => v.toFixed(0)
-        }
-      }
-    }
+    options: { plugins: { legend: { display: false } } }
   });
 }
 
