@@ -150,12 +150,12 @@ function calcularLiquido(p) {
     if (Array.isArray(p.itens) && p.itens.length) {
       p.itens.forEach(i => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
-        const comissao = Math.min(v * 0.21, 100);
-        taxa += comissao + 4.5;
+        const comissao = Math.min(v * 0.22, 100);
+        taxa += comissao + 4.0;
       });
     } else {
-      const comissao = Math.min(total * 0.21, 100);
-      taxa = comissao + 4.5;
+      const comissao = Math.min(total * 0.22, 100);
+      taxa = comissao + 4.0;
     }
   } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
     if (Array.isArray(p.itens) && p.itens.length) {
