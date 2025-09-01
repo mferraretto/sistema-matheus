@@ -4,87 +4,79 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard Geral</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.4/dist/tailwind.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/dashboard-geral.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 dashboard-geral">
+<body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <main id="dashboard-completo" class="main-content p-4 space-y-6" aria-labelledby="dashboard-title">
-    <header class="sticky top-0 z-10 flex flex-col gap-4 bg-white/80 backdrop-blur border-b border-slate-200 pb-4">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 id="dashboard-title" class="text-2xl font-semibold text-slate-900">Dashboard Geral</h1>
-        <div class="flex items-center gap-2">
-          <label for="filtroMes" class="sr-only">Selecionar mês</label>
-          <input type="month" id="filtroMes" class="h-10 rounded border border-slate-300 px-2 focus-visible:ring-2 focus-visible:ring-indigo-500" />
-          <button id="exportarFechamentoBtn" class="btn-primary h-10" aria-label="Exportar Fechamento">Exportar Fechamento</button>
-        </div>
+  <main id="dashboard-completo" class="main-content p-4 space-y-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Dashboard Geral</h1>
+      <div class="flex items-center space-x-2">
+        <input type="month" id="filtroMes" class="border rounded px-2 py-1" />
+        <button id="exportarFechamentoBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Exportar Fechamento</button>
       </div>
-      <div class="flex flex-wrap gap-2" role="tablist" aria-label="Seções do Dashboard">
-        <button class="tab-btn btn-ghost active" data-tab="overview">Visão Geral</button>
-        <button class="tab-btn btn-ghost" data-tab="meta">Comparativo com a Meta</button>
-        <button class="tab-btn btn-ghost" data-tab="estrategica">Perspectiva Estratégica</button>
-      </div>
-    </header>
+    </div>
+    <div class="flex space-x-4">
+      <button class="tab-btn px-4 py-2 rounded bg-blue-600 text-white" data-tab="overview">Visão Geral</button>
+      <button class="tab-btn px-4 py-2 rounded bg-gray-300 text-gray-700" data-tab="meta">Comparativo com a Meta</button>
+      <button class="tab-btn px-4 py-2 rounded bg-gray-300 text-gray-700" data-tab="estrategica">Perspectiva Estratégica</button>
+    </div>
     <div id="tab-overview" class="space-y-6">
-      <div class="flex flex-wrap gap-2" role="tablist" aria-label="Subseções">
-        <button class="subtab-btn btn-ghost active" data-subtab="resumo">Resumo Executivo</button>
-        <button class="subtab-btn btn-ghost" data-subtab="desempenho">Desempenho &amp; Rentabilidade</button>
-        <button class="subtab-btn btn-ghost" data-subtab="previsao">Projeção &amp; Previsão</button>
+      <div class="flex space-x-4">
+        <button class="subtab-btn px-4 py-2 rounded bg-blue-600 text-white" data-subtab="resumo">Resumo Executivo</button>
+        <button class="subtab-btn px-4 py-2 rounded bg-gray-300 text-gray-700" data-subtab="desempenho">Desempenho &amp; Rentabilidade</button>
+        <button class="subtab-btn px-4 py-2 rounded bg-gray-300 text-gray-700" data-subtab="previsao">Projeção &amp; Previsão</button>
       </div>
       <div id="subtab-resumo" class="space-y-6">
-        <div id="kpis" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6"></div>
-        <div id="kpis-empty" class="hidden flex flex-col items-center justify-center py-10 text-slate-500">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18"/></svg>
-          <p class="mt-2 text-sm">Sem dados para o período.</p>
-        </div>
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6" id="charts-resumo">
-          <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg" aria-labelledby="evolucaoTitle">
-            <h2 id="evolucaoTitle" class="text-slate-600 text-sm font-medium tracking-wide uppercase">Evolução de Vendas</h2>
-            <div class="mt-4 chart-wrapper" aria-labelledby="evolucaoTitle">
+        <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-white rounded-2xl shadow-lg p-4">
+            <h2 class="text-xl font-semibold mb-2">Evolução de Vendas</h2>
+            <div class="chart-wrapper">
               <canvas id="evolucaoChart"></canvas>
             </div>
-          </section>
-          <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg" aria-labelledby="margemTitle">
-            <h2 id="margemTitle" class="text-slate-600 text-sm font-medium tracking-wide uppercase">Evolução de Margem</h2>
-            <div class="mt-4 chart-wrapper" aria-labelledby="margemTitle">
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-4">
+            <h2 class="text-xl font-semibold mb-2">Evolução de Margem</h2>
+            <div class="chart-wrapper">
               <canvas id="margemChart"></canvas>
             </div>
-          </section>
-          <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg" aria-labelledby="diasMetaTitle">
-            <h2 id="diasMetaTitle" class="text-slate-600 text-sm font-medium tracking-wide uppercase">Dias em relação à Meta</h2>
-            <div class="mt-4 chart-wrapper" aria-labelledby="diasMetaTitle">
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-4">
+            <h2 class="text-xl font-semibold mb-2">Dias em relação à Meta</h2>
+            <div class="chart-wrapper">
               <canvas id="diasMetaChart"></canvas>
             </div>
-          </section>
-          <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg xl:col-span-2" aria-labelledby="lojasTitle">
-            <h2 id="lojasTitle" class="text-slate-600 text-sm font-medium tracking-wide uppercase">Participação por Loja</h2>
-            <div class="mt-4 chart-wrapper" aria-labelledby="lojasTitle">
+          </div>
+          <div class="bg-white rounded-2xl shadow-lg p-4 lg:col-span-2">
+            <h2 class="text-xl font-semibold mb-2">Participação por Loja</h2>
+            <div class="chart-wrapper">
               <canvas id="lojasPieChart"></canvas>
             </div>
-          </section>
+          </div>
         </div>
       </div>
       <div id="subtab-desempenho" class="hidden space-y-6">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-          <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Comparativo Top 5 SKUs: Vendas x Margem</h2>
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Comparativo Top 5 SKUs: Vendas x Margem</h2>
           <div class="chart-wrapper">
             <canvas id="topSkusMargemChart"></canvas>
           </div>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-          <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Top 5 SKUs do mês</h2>
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Top 5 SKUs do mês</h2>
           <ol id="topSkusList" class="list-decimal list-inside"></ol>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-          <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Análise de Rentabilidade</h2>
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Análise de Rentabilidade</h2>
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
-              <thead class="bg-slate-50">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50">
                 <tr>
                   <th class="px-3 py-2 text-left">SKU</th>
                   <th class="px-3 py-2 text-right">Receita (R$)</th>
@@ -103,8 +95,8 @@
         </div>
       </div>
       <div id="subtab-previsao" class="hidden space-y-6">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-          <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Previsão do Próximo Mês</h2>
+        <div class="bg-white rounded-2xl shadow-lg p-4">
+          <h2 class="text-xl font-semibold mb-2">Previsão do Próximo Mês</h2>
           <div id="cardsPrevisao" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4"></div>
           <div class="chart-wrapper mb-4">
             <canvas id="previsaoChart"></canvas>
@@ -114,14 +106,14 @@
       </div>
     </div>
     <div id="tab-meta" class="hidden space-y-6">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-        <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Meta vs Realizado</h2>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Meta vs Realizado</h2>
         <div class="chart-wrapper">
           <canvas id="metaComparativoChart"></canvas>
         </div>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-        <h2 class="text-slate-600 text-sm font-medium tracking-wide uppercase mb-4">Progresso Semanal Acumulado</h2>
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <h2 class="text-xl font-semibold mb-2">Progresso Semanal Acumulado</h2>
         <div class="chart-wrapper">
           <canvas id="progressoSemanalChart"></canvas>
         </div>
@@ -131,10 +123,13 @@
       <!-- BEGIN: Botão de Análise de IA -->
       <button
         id="btn-analise-ia"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-        aria-label="Rodar análise de IA">
-        <svg id="icon-analise" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5h2m-1-2v2m6 5h2m-2 0v2M4 12H2m2 0v2m12.243 4.243l1.414-1.414M7.757 7.757 6.343 6.343M9 17l3-3-3-3" />
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900
+               hover:bg-gray-50 active:bg-gray-100
+               focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+        <svg id="icon-analise" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M11 5h2m-1-2v2m6 5h2m-2 0v2M4 12H2m2 0v2m12.243 4.243l1.414-1.414M7.757 7.757 6.343 6.343M9 17l3-3-3-3" />
         </svg>
         Rodar análise de IA
       </button>
@@ -147,7 +142,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <script type="module" src="firebase-config.js"></script>
-  <script src="components/kpi-card.js"></script>
   <script type="module" src="dashboard-geral.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';</script>
   <script src="shared.js"></script>
