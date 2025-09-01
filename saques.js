@@ -60,7 +60,7 @@ export async function registrarSaque() {
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
   editandoId = null;
-  document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-plus mr-1"></i> Registrar';
+  document.getElementById('btnRegistrar').textContent = 'Registrar';
   carregarSaques();
 }
 
@@ -99,25 +99,31 @@ async function carregarSaques() {
   dados.forEach(s => {
     saquesCache[s.id] = s;
     const dia = (s.data || '').substring(0, 10);
-    const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
-    if (status === 'A PAGAR') todosPagos = false;
+    const pago = s.percentualPago > 0;
+    const status = pago ? 'Pago' : 'A pagar';
+    if (!pago) todosPagos = false;
     totalValor += Number(s.valor) || 0;
     totalComissao += Number(s.comissaoPaga) || 0;
 
     const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 even:bg-slate-50/50';
     tr.innerHTML = `
-      <td class="px-4 py-2 text-center">
-        <input type="checkbox" class="saque-select" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)" />
+      <td class="px-4 py-3 text-center">
+        <input type="checkbox" class="saque-select h-4 w-4 rounded border-slate-300" data-id="${s.id}" onchange="toggleSelecao('${s.id}', this.checked)" />
       </td>
-      <td class="px-4 py-2">${dia}</td>
-      <td class="px-4 py-2">${s.origem || '-'}</td>
-      <td class="px-4 py-2 text-right">R$ ${(Number(s.valor)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-2 text-right">${((Number(s.percentualPago)||0) * 100).toFixed(0)}%</td>
-      <td class="px-4 py-2 text-right">R$ ${(Number(s.comissaoPaga)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-2 text-right">${status}</td>
-      <td class="px-4 py-2 text-right space-x-2">
-        <button onclick="editarSaque('${s.id}')" class="text-blue-500"><i class="fas fa-edit"></i></button>
-        <button onclick="excluirSaque('${s.id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+      <td class="px-4 py-3 text-slate-800">${dia}</td>
+      <td class="px-4 py-3 text-slate-600">${s.origem || '-'}</td>
+      <td class="px-4 py-3 text-right font-medium text-slate-900">R$ ${(Number(s.valor)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-3 text-right text-slate-600">${((Number(s.percentualPago)||0) * 100).toFixed(0)}%</td>
+      <td class="px-4 py-3 text-right text-slate-800">R$ ${(Number(s.comissaoPaga)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-3">
+        <span class="inline-flex items-center rounded-full ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'} px-2 py-0.5 text-xs font-medium">${status}</span>
+      </td>
+      <td class="px-4 py-3 text-right">
+        <div class="inline-flex gap-1">
+          <button class="h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-slate-50" aria-label="Editar" onclick="editarSaque('${s.id}')">✎</button>
+          <button class="h-8 w-8 grid place-items-center rounded-lg border border-slate-200 hover:bg-rose-50" aria-label="Excluir" onclick="excluirSaque('${s.id}')">🗑</button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -128,19 +134,18 @@ async function carregarSaques() {
     if (dados.length === 0) {
       tfoot.innerHTML = `
         <tr>
-          <td colspan="8" class="px-4 py-3 text-center text-sm text-gray-500">Sem saques registrados.</td>
+          <td colspan="8" class="px-4 py-3 text-center text-sm text-slate-500">Sem saques registrados.</td>
         </tr>`;
     } else {
       const perc = totalValor > 0 ? (totalComissao / totalValor) * 100 : 0;
       tfoot.innerHTML = `
-        <tr class="bg-gray-50 font-semibold">
+        <tr>
           <td></td>
-          <td colspan="2" class="px-4 py-2 text-right">TOTAL</td>
-          <td class="px-4 py-2 text-right">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td class="px-4 py-2 text-right">${perc.toFixed(0)}%</td>
-          <td class="px-4 py-2 text-right">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td class="px-4 py-2 text-right">${todosPagos ? 'JÁ PAGO' : 'A PAGAR'}</td>
-          <td></td>
+          <td colspan="2" class="px-4 py-3 font-medium text-slate-700">Total</td>
+          <td class="px-4 py-3 text-right font-semibold text-slate-900">R$ ${totalValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td class="px-4 py-3 text-right text-slate-700">${perc.toFixed(0)}%</td>
+          <td class="px-4 py-3 text-right font-semibold text-slate-900">R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td colspan="2"></td>
         </tr>`;
     }
   }
@@ -343,7 +348,7 @@ function editarSaque(id) {
   document.getElementById('percentualSaque').value = String(s.percentualPago || 0);
   document.getElementById('lojaSaque').value = s.origem || '';
   editandoId = id;
-  document.getElementById('btnRegistrar').innerHTML = '<i class="fas fa-save mr-1"></i> Atualizar';
+  document.getElementById('btnRegistrar').textContent = 'Atualizar';
 }
 
 async function fecharMes() {
@@ -363,27 +368,30 @@ function assistirResumo() {
       const cards = document.getElementById('cardsResumo');
       const texto = document.getElementById('faltasTexto');
       if (!r) {
-        cards.innerHTML = '<p class="text-gray-500">Sem dados</p>';
+        cards.innerHTML = '<p class="text-slate-500">Sem dados</p>';
         texto.textContent = '';
         return;
       }
       cards.innerHTML = `
-        <div>
-          <div class="text-sm text-gray-500">Total sacado</div>
-          <div class="text-xl font-bold">R$ ${r.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="text-slate-600 text-xs font-medium tracking-wide uppercase">Total Saques</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900">R$ ${r.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="mt-1 text-xs text-slate-500">Mês atual</div>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Total comissão</div>
-          <div class="text-xl font-bold">R$ ${(r.comissaoPrevista || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div class="text-sm text-gray-500">${(r.taxaFinal * 100).toFixed(0)}%</div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="text-slate-600 text-xs font-medium tracking-wide uppercase">% Comissão</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900">${(r.taxaFinal * 100).toFixed(0)}%</div>
+          <div class="mt-1 text-xs text-slate-500">Padrão</div>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Total comissão paga</div>
-          <div class="text-xl font-bold">R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="text-slate-600 text-xs font-medium tracking-wide uppercase">Comissão Paga</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900">R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="mt-1 text-xs text-slate-500">Até agora</div>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Total comissão falta pagar</div>
-          <div class="text-xl font-bold">R$ ${( (r.comissaoPrevista || 0) - (r.comissaoRecebida || 0) ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="text-slate-600 text-xs font-medium tracking-wide uppercase">Falta Pagar</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900">R$ ${((r.comissaoPrevista || 0) - (r.comissaoRecebida || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="mt-1 text-xs text-slate-500">Estimado</div>
         </div>
       `;
       texto.textContent = `Faltam R$${r.faltamPara4.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 4% | R$${r.faltamPara5.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 5%`;
