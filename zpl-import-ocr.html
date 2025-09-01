@@ -167,6 +167,7 @@
                     sku: item.sku,
                     quantidade: item.quantidade,
                     loja: item.loja || '',
+                    pedido: item.pedido || '',
                     userUid: currentUser.uid,
                     userEmail: currentUser.email,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -221,13 +222,13 @@
             converterButton.disabled = true; 
 
             try { 
-                const zplCode = await readFileAsync(file); 
-                // Regex to find ^XA...^XZ blocks, ignoring ^DGR to capture both blocks. 
-                const blocks = zplCode.match(/(~DGR[\s\S]*?\^XA[\s\S]*?\^XZ)/g); 
+                const zplCode = await readFileAsync(file);
+                // Captura genericamente blocos ^XA...^XZ para suportar ficheiros sem ~DGR.
+                const blocks = zplCode.match(/\^XA[\s\S]*?\^XZ/g);
 
-                if (!blocks || blocks.length < 2 || blocks.length % 2 !== 0) { 
-                    throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist, ou o número de blocos é ímpar.'); 
-                } 
+                if (!blocks || blocks.length < 2 || blocks.length % 2 !== 0) {
+                    throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist, ou o número de blocos é ímpar.');
+                }
                 
                 const dpmm = 8;
                 const originalWidthIn = 4.0;
@@ -252,6 +253,9 @@
 
                     // 1. Extrai dados do checklist
                     const extractedData = await extractDataFromChecklist(checklistBlock, dpmm, originalWidthIn, originalHeightIn);
+                    if (!extractedData.length) {
+                        console.warn(`Checklist sem SKU encontrado para a etiqueta ${currentLabelIndex}.`);
+                    }
                     if (loja) {
                         extractedData.forEach(item => item.loja = loja);
                     }
@@ -398,15 +402,23 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             const fdTexts = Array.from(zpl.matchAll(/\^FD([^\^]+)\^FS/g)).map(m => m[1]);
 
             let current = {};
+            let currentPedido = null;
             for (const raw of fdTexts) {
                 const line = raw.replace(/\s+/g, ' ').trim();
 
+                const mPedido = line.match(/\b(Pedido|Order)[:\s-]*([0-9]+)/i);
+                if (mPedido) {
+                    currentPedido = mPedido[2];
+                    continue;
+                }
+
                 const mSku = line.match(/\bSKU[:\s-]*([A-Z0-9._\-\/]+)\b/i);
                 if (mSku) {
-                    if (current.sku) { 
+                    if (current.sku) {
                         if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                        items.push(current); 
-                        current = {}; 
+                        if (currentPedido) current.pedido = currentPedido;
+                        items.push(current);
+                        current = {};
                     }
                     current.sku = mSku[1];
                     continue;
@@ -420,13 +432,16 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
 
                 const mInline = line.match(/SKU[:\s-]*([A-Z0-9._\-\/]+).*?(x|×)?\s*([0-9]{1,4})/i);
                 if (mInline) {
-                    items.push({ sku: mInline[1], quantidade: Number(mInline[3]) || 1 });
+                    const item = { sku: mInline[1], quantidade: Number(mInline[3]) || 1 };
+                    if (currentPedido) item.pedido = currentPedido;
+                    items.push(item);
                     current = {};
                     continue;
                 }
             }
             if (current.sku) {
                 if (typeof current.quantidade !== 'number') current.quantidade = 1;
+                if (currentPedido) current.pedido = currentPedido;
                 items.push(current);
             }
             return items;
@@ -437,13 +452,21 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             const lines = text.split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
 
             let current = {};
+            let currentPedido = null;
             for (const line of lines) {
+                const mPedido = line.match(/\b(Pedido|Order)[:\s-]*([0-9]+)/i);
+                if (mPedido) {
+                    currentPedido = mPedido[2];
+                    continue;
+                }
+
                 const mSku = line.match(/\bSKU[:\s-]*([A-Z0-9._\-\/]+)\b/i);
                 if (mSku) {
-                    if (current.sku) { 
+                    if (current.sku) {
                         if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                        items.push(current); 
-                        current = {}; 
+                        if (currentPedido) current.pedido = currentPedido;
+                        items.push(current);
+                        current = {};
                     }
                     current.sku = mSku[1];
                     continue;
@@ -455,13 +478,16 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
                 }
                 const mInline = line.match(/SKU[:\s-]*([A-Z0-9._\-\/]+).*?(x|×)?\s*([0-9]{1,4})/i);
                 if (mInline) {
-                    items.push({ sku: mInline[1], quantidade: Number(mInline[3]) || 1 });
+                    const item = { sku: mInline[1], quantidade: Number(mInline[3]) || 1 };
+                    if (currentPedido) item.pedido = currentPedido;
+                    items.push(item);
                     current = {};
                     continue;
                 }
             }
             if (current.sku) {
                 if (typeof current.quantidade !== 'number') current.quantidade = 1;
+                if (currentPedido) current.pedido = currentPedido;
                 items.push(current);
             }
             return items;
