@@ -682,7 +682,13 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
 
 document.getElementById('exportarFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
 
-function exportarFechamentoMes() {
+async function exportarFechamentoMes() {
+  const filtro = document.getElementById('filtroMes');
+  const mesFiltro = filtro?.value;
+  const user = auth.currentUser;
+  if (user && mesFiltro && dashboardData.mesAtual !== mesFiltro) {
+    await carregarDashboard(user, mesFiltro);
+  }
   if (!dashboardData || !dashboardData.mesAtual) return;
   const container = document.createElement('div');
   container.style.padding = '20px';
