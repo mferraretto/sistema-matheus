@@ -817,15 +817,15 @@ function gerarHTMLFechamento() {
   const linhasDia = dias.map(di => `<tr><td>${new Date(di).toLocaleDateString('pt-BR')}</td><td>R$ ${(d.diarioBruto[di]||0).toLocaleString('pt-BR')}</td><td>R$ ${(d.diarioLiquido[di]||0).toLocaleString('pt-BR')}</td></tr>`).join('');
 
   return `
-      <div style="font-family:'Poppins',sans-serif; width:100%; max-width:170mm; box-sizing:border-box; color:#111827;">
+      <div style="font-family:'Poppins',sans-serif; width:100%; max-width:190mm; box-sizing:border-box; color:#111827;">
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
           .header{background:#4C1D95;color:#fff;padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;border-radius:8px;}
           .header img{height:40px;}
-          .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0;}
-          .card{background:#1E3A8A;color:#fff;padding:12px;border-radius:8px;text-align:center;}
+          .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0;}
+          .card{background:#fff;color:#111827;padding:12px;border:1px solid #e5e7eb;border-radius:8px;text-align:center;}
           .card .icon{font-size:24px;margin-bottom:4px;}
-          .mini-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0;}
+          .mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0;}
           .mini-card{background:#fff;color:#111827;border:1px solid #e5e7eb;padding:12px;border-radius:8px;text-align:center;}
           .mini-card.success strong{color:#10b981;}
           .mini-card.warn strong{color:#ef4444;}
