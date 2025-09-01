@@ -32,6 +32,7 @@ let expNotifUnsub = null;
 let updNotifUnsub = null;
 let selectedRole = null;
 window.isFinanceiroResponsavel = false;
+window.isGestorFinanceiro = false;
 
 // Ping a local file to test online status without CORS issues.
 async function pingOnline(timeout = 3000) {
@@ -284,11 +285,16 @@ async function showUserArea(user) {
       await checkExpedicao(user);
     }
 
-    // 3) verifica se usuário é responsável financeiro e garante acesso às sobras
+    // 3) verifica se usuário é responsável ou gestor financeiro e garante acesso às sobras
     try {
       const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
       const respSnap = await getDocs(q);
       window.isFinanceiroResponsavel = !respSnap.empty;
+
+      const qGestor = query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email));
+      const gestorSnap = await getDocs(qGestor);
+      window.isGestorFinanceiro = !gestorSnap.empty;
+
       ensureFinanceiroMenu();
     } catch (e) {
       console.error('Erro ao verificar responsável financeiro:', e);
@@ -351,7 +357,7 @@ function applyPerfilRestrictions(perfil) {
 }
 
 function ensureFinanceiroMenu() {
-  if (window.isFinanceiroResponsavel) {
+  if (window.isFinanceiroResponsavel || window.isGestorFinanceiro) {
     const menu = document.getElementById('menu-vendas');
     if (menu) menu.classList.remove('hidden');
   }
