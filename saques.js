@@ -396,6 +396,66 @@ function assistirResumo() {
   });
 }
 
+async function imprimirFechamento() {
+  if (!window.jspdf) return;
+  const { jsPDF } = window.jspdf;
+  const anoMes = document.getElementById('filtroMes').value || anoMesBR();
+
+  const colSaques = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
+  const colRecebidas = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'recebidas');
+  const [snapSaques, snapRecebidas] = await Promise.all([
+    getDocs(colSaques),
+    getDocs(colRecebidas)
+  ]);
+
+  const saques = snapSaques.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
+  const recebidas = snapRecebidas.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
+
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text('Fechamento de Saques', 105, 15, { align: 'center' });
+
+  const saquesBody = saques.map(s => [
+    (s.data || '').substring(0, 10),
+    s.origem || '',
+    (Number(s.valor) || 0).toFixed(2)
+  ]);
+
+  doc.autoTable({
+    head: [['Data', 'Loja', 'Saque']],
+    body: saquesBody,
+    startY: 25
+  });
+
+  let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 25;
+
+  const comissoesBody = recebidas.map(c => [
+    (c.data || '').substring(0, 10),
+    (Number(c.valor) || 0).toFixed(2)
+  ]);
+
+  doc.autoTable({
+    head: [['Data', 'Comissão']],
+    body: comissoesBody,
+    startY: y
+  });
+
+  y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 10;
+
+  const totalSacado = saques.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+  const totalPrev = saques.reduce((s, x) => s + (Number(x.comissaoPaga) || 0), 0);
+  const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+  const totalPagar = totalPrev - totalPago;
+
+  doc.setFontSize(12);
+  doc.text(`Total sacado: R$ ${totalSacado.toFixed(2)}`, 14, y);
+  doc.text(`Total comissão: R$ ${totalPrev.toFixed(2)}`, 14, y + 10);
+  doc.text(`Total já pago: R$ ${totalPago.toFixed(2)}`, 14, y + 20);
+  doc.text(`Total a pagar: R$ ${totalPagar.toFixed(2)}`, 14, y + 30);
+
+  doc.save('fechamento-saques.pdf');
+}
+
 if (typeof window !== 'undefined') {
   window.registrarSaque = registrarSaque;
   window.excluirSaque = excluirSaque;
@@ -408,4 +468,5 @@ if (typeof window !== 'undefined') {
   window.exportarSelecionadosExcel = exportarSelecionadosExcel;
   window.exportarSelecionadosPDF = exportarSelecionadosPDF;
   window.registrarComissaoRecebida = registrarComissaoRecebida;
+  window.imprimirFechamento = imprimirFechamento;
 }
