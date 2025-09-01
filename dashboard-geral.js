@@ -887,26 +887,136 @@ function gerarHTMLFechamento() {
   const mesTitle = mesBR.charAt(0).toUpperCase() + mesBR.slice(1);
   const pctMeta = d.meta ? ((d.totalLiquido / d.meta) * 100).toFixed(1) : '0';
 
+  const meses = Object.keys(d.comparativo || {}).sort();
+  const idxAtual = meses.indexOf(d.mesAtual);
+  const mesAnterior = idxAtual > 0 ? meses[idxAtual - 1] : null;
+  const liquidoAnterior = mesAnterior ? d.comparativo[mesAnterior] : null;
+  const variacaoLiquido = liquidoAnterior !== null ? d.totalLiquido - liquidoAnterior : 0;
+  const iconLiquido = variacaoLiquido >= 0 ? 'bx-up-arrow-alt' : 'bx-down-arrow-alt';
+  const classeLiquido = variacaoLiquido >= 0 ? 'trend-up' : 'trend-down';
+
   return `
     <div style="font-family:'Poppins',sans-serif;width:100%;max-width:190mm;color:#111827;">
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-        .page{page-break-after:always;padding:0 10px;}
-        .page:last-child{page-break-after:auto;}
-        .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-        .header img{height:40px;}
-        .header .title{flex:1;text-align:center;font-size:18px;font-weight:600;}
-        .header .responsavel{text-align:right;font-size:12px;}
-        .section-title{color:#4C1D95;font-weight:600;margin:10px 0;}
-        .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
-        .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center;}
-        .card .icon{font-size:24px;margin-bottom:4px;}
-        .meta-indicador{text-align:center;font-weight:600;margin:10px 0;}
-        .obs-box{display:flex;justify-content:center;gap:20px;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:20px;}
-        .chart-box{width:100%;height:260px;margin-bottom:20px;}
-        .tables{display:flex;gap:20px;margin-top:10px;}
-        .table-box{flex:1;}
-        .table-box ol{padding-left:20px;}
+        @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
+        :root {
+          --primary-color: #4C1D95;
+          --secondary-color: #3b82f6;
+          --text-color: #111827;
+          --bg-color: #f8f8f8;
+          --card-bg: #ffffff;
+        }
+
+        body { background-color: var(--bg-color); }
+        .page {
+          page-break-after: always;
+          padding: 20px;
+          background: var(--card-bg);
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          border-radius: 12px;
+          margin-bottom: 20px;
+        }
+        .page:last-child { page-break-after: auto; }
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-bottom: 20px;
+          border-bottom: 2px solid var(--primary-color);
+          margin-bottom: 20px;
+        }
+        .header img { height: 40px; }
+        .header .title {
+          flex-grow: 1;
+          text-align: center;
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--primary-color);
+        }
+        .header .responsavel { text-align: right; font-size: 12px; }
+        .section-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--primary-color);
+          margin-top: 30px;
+          margin-bottom: 15px;
+          border-left: 4px solid var(--secondary-color);
+          padding-left: 10px;
+        }
+        .cards {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 15px;
+          margin-bottom: 20px;
+        }
+        .card {
+          background-color: var(--card-bg);
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 16px;
+          text-align: center;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .card .icon {
+          font-size: 28px;
+          margin-bottom: 8px;
+          color: var(--secondary-color);
+        }
+        .card .label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .card .value {
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--text-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+        .trend-up { color: #16a34a; }
+        .trend-down { color: #dc2626; }
+        .meta-wrapper { margin: 20px 0; text-align: center; }
+        .meta-bar {
+          background: #e5e7eb;
+          border-radius: 8px;
+          overflow: hidden;
+          height: 12px;
+          margin-top: 6px;
+        }
+        .meta-bar .progress { background: var(--secondary-color); height: 100%; }
+        .obs-box { display: flex; justify-content: center; gap: 30px; margin-top: 10px; }
+        .chart-container {
+          width: 100%;
+          height: 300px;
+          margin: 20px 0;
+          padding: 15px;
+          background: var(--card-bg);
+          border-radius: 12px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tables-container {
+          display: flex;
+          gap: 20px;
+          margin-top: 20px;
+          flex-wrap: wrap;
+        }
+        .table-box {
+          flex: 1;
+          min-width: 300px;
+          background: var(--card-bg);
+          border-radius: 12px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          padding: 15px;
+        }
+        .list-items { list-style-type: none; padding: 0; margin: 0; }
+        .list-items li {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .list-items li:nth-child(even) { background: #f9fafb; }
+        .list-items li:last-child { border-bottom: none; }
       </style>
       <div class="page">
         <div class="header">
@@ -915,41 +1025,61 @@ function gerarHTMLFechamento() {
           <div class="responsavel">${d.responsavel ? `Responsável: ${d.responsavel}` : ''}</div>
         </div>
         <h2 class="section-title">1. Resumo Executivo</h2>
+        <p>Desempenho financeiro consolidado do período com comparação à meta estabelecida.</p>
         <h3 class="section-title">Indicadores Chave do Mês</h3>
         <div class="cards">
-          <div class="card"><div class="icon">💰</div><div>Faturamento Bruto</div><strong>R$ ${d.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
-          <div class="card"><div class="icon">🏦</div><div>Faturamento Líquido</div><strong>R$ ${d.totalLiquido.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
-          <div class="card"><div class="icon">📦</div><div>Pedidos Totais</div><strong>${d.totalUnidades}</strong></div>
-          <div class="card"><div class="icon">📈</div><div>Ticket Médio</div><strong>R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
+          <div class="card">
+            <div class="icon"><i class='bx bx-money'></i></div>
+            <div class="label">Faturamento Bruto</div>
+            <div class="value">R$ ${d.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          </div>
+          <div class="card">
+            <div class="icon"><i class='bx bx-wallet'></i></div>
+            <div class="label">Faturamento Líquido</div>
+            <div class="value">R$ ${d.totalLiquido.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} <i class='bx ${iconLiquido} ${classeLiquido}'></i></div>
+          </div>
+          <div class="card">
+            <div class="icon"><i class='bx bx-package'></i></div>
+            <div class="label">Pedidos Totais</div>
+            <div class="value">${d.totalUnidades}</div>
+          </div>
+          <div class="card">
+            <div class="icon"><i class='bx bx-stats'></i></div>
+            <div class="label">Ticket Médio</div>
+            <div class="value">R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          </div>
         </div>
-        <div class="meta-indicador">Meta Atingida: ${pctMeta}%</div>
+        <div class="meta-wrapper">
+          <div>Meta Atingida: ${pctMeta}%</div>
+          <div class="meta-bar"><div class="progress" style="width:${pctMeta}%;"></div></div>
+        </div>
         <div class="obs-box">
           <span>${d.diasAcima} dias acima da meta</span>
           <span>${d.diasAbaixo} dias abaixo da meta</span>
         </div>
         <h3 class="section-title">Desempenho Faturamento</h3>
-        <div class="chart-box"><canvas id="diarioBarChart"></canvas></div>
-        <div class="chart-box"><canvas id="tendenciaChart"></canvas></div>
+        <div class="chart-container"><canvas id="diarioBarChart"></canvas></div>
+        <div class="chart-container"><canvas id="tendenciaChart"></canvas></div>
       </div>
       <div class="page">
         <h2 class="section-title">2. Análise Detalhada</h2>
         <h3 class="section-title">Desempenho por Produto (SKU)</h3>
-        <div class="chart-box"><canvas id="topSkusMargemChart"></canvas></div>
-        <div class="tables">
+        <div class="chart-container"><canvas id="topSkusMargemChart"></canvas></div>
+        <div class="tables-container">
           <div class="table-box">
             <h4 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h4>
-            <ol id="topSkusList"></ol>
+            <ol id="topSkusList" class="list-items"></ol>
           </div>
           <div class="table-box">
             <h4 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h4>
-            <ol id="topRentaveis"></ol>
+            <ol id="topRentaveis" class="list-items"></ol>
           </div>
         </div>
       </div>
       <div class="page">
         <h2 class="section-title">3. Projeções e Previsões</h2>
         <h3 class="section-title">Projeção de Vendas</h3>
-        <div class="chart-box"><canvas id="previsaoChart"></canvas></div>
+        <div class="chart-container"><canvas id="previsaoChart"></canvas></div>
         <div id="topSkusPrevisao"></div>
       </div>
     </div>
