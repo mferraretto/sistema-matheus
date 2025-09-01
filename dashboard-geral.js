@@ -194,6 +194,8 @@ async function carregarDashboard(user, mesSelecionado) {
     totalUnidades,
     ticketMedio,
     meta,
+    diasAcima,
+    diasAbaixo,
     totalSaques,
     diarioBruto,
     diarioLiquido,
@@ -823,6 +825,11 @@ function gerarHTMLFechamento() {
           .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0;}
           .card{background:#1E3A8A;color:#fff;padding:12px;border-radius:8px;text-align:center;}
           .card .icon{font-size:24px;margin-bottom:4px;}
+          .mini-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0;}
+          .mini-card{background:#fff;color:#111827;border:1px solid #e5e7eb;padding:12px;border-radius:8px;text-align:center;}
+          .mini-card.success strong{color:#10b981;}
+          .mini-card.warn strong{color:#ef4444;}
+          .mini-card.total{background:#4C1D95;color:#fff;border:none;}
           .section-title{color:#4C1D95;margin-top:20px;margin-bottom:10px;font-weight:600;}
           table{width:100%;border-collapse:collapse;font-size:12px;}
           th,td{padding:6px;border:1px solid #e5e7eb;}
@@ -832,6 +839,7 @@ function gerarHTMLFechamento() {
           .highlight.warn{background:#ef4444;}
           .charts{display:flex;flex-direction:column;gap:20px;}
           .chart-box{width:100%;height:260px;page-break-inside:avoid;}
+          .page-break{page-break-after:always;}
         </style>
         <div class="header">
           ${d.logoUrl ? `<img src="${d.logoUrl}" alt="Logo">` : ''}
@@ -848,6 +856,14 @@ function gerarHTMLFechamento() {
           <div class="card"><div class="icon">🎯</div><div>% da Meta</div><strong>${pctMeta}%</strong></div>
         </div>
 
+        <div class="mini-cards">
+          <div class="mini-card success"><div>Dias Acima da Meta</div><strong>${d.diasAcima}</strong></div>
+          <div class="mini-card warn"><div>Dias Abaixo da Meta</div><strong>${d.diasAbaixo}</strong></div>
+          <div class="mini-card total"><div>Total Saques</div><strong>R$ ${d.totalSaques.toLocaleString('pt-BR')}</strong></div>
+        </div>
+
+        <div class="page-break"></div>
+
         <div class="charts">
           <div class="chart-box"><canvas id="diarioBarChart"></canvas></div>
           <div class="chart-box"><canvas id="tendenciaChart"></canvas></div>
@@ -861,31 +877,24 @@ function gerarHTMLFechamento() {
           ${d.produtosCriticos.length ? 'Atenção aos produtos com estoque e sem vendas.' : 'Sem pontos de atenção'}
         </div>
 
+        <div class="page-break"></div>
+
         <h2 class="section-title">Desempenho Diário</h2>
         <table>
           <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
           ${linhasDia}
         </table>
 
+        <div class="page-break"></div>
+
         <h2 class="section-title">Desempenho &amp; Rentabilidade</h2>
         <div class="chart-box"><canvas id="topSkusMargemChart"></canvas></div>
         <h3 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h3>
         <ol id="topSkusList"></ol>
-        <h3 class="section-title" style="font-size:14px;">Análise de Rentabilidade</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>Receita (R$)</th>
-              <th>Custo Estimado (R$)</th>
-              <th>Lucro Bruto (R$)</th>
-              <th>Margem (%)</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaRentabilidade"></tbody>
-        </table>
         <h3 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h3>
         <ol id="topRentaveis"></ol>
+
+        <div class="page-break"></div>
 
         <h2 class="section-title">Projeção &amp; Previsão</h2>
         <div id="cardsPrevisao" class="cards"></div>
