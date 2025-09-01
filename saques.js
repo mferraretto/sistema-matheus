@@ -10,7 +10,7 @@ import {
   watchResumoMes as watchResumoMesSvc,
   registrarComissaoRecebida as registrarComissaoRecebidaSvc
 } from './comissoes-service.js';
-import { anoMesBR, calcularResumo } from './comissoes-utils.js';
+import { anoMesBR, calcularResumo, taxaFinalPorTotal } from './comissoes-utils.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -267,38 +267,34 @@ function exportarSelecionadosPDF() {
   doc.setFontSize(16);
   doc.text('Fechamento Comissão', 105, 15, { align: 'center' });
 
-  let totalSaque = 0;
-  let totalComissaoPdf = 0;
+  // Reunir itens selecionados
+  const itens = Array.from(selecionados)
+    .map(id => saquesCache[id])
+    .filter(Boolean);
+
+  const totalSaque = itens.reduce((s, x) => s + (Number(x.valor) || 0), 0);
+  const taxaFinal = taxaFinalPorTotal(totalSaque);
   const body = [];
   const resumo = {};
 
-  selecionados.forEach(id => {
-    const s = saquesCache[id];
-    if (!s) return;
+  itens.forEach(s => {
     const valor = Number(s.valor || 0);
-    const comissao = Number(s.comissaoPaga || 0);
-    const perc = (typeof s.percentualPago === 'number' && isFinite(s.percentualPago))
-      ? s.percentualPago * 100
-      : (valor > 0 ? (comissao / valor) * 100 : 0);
+    const comissaoPrev = valor * taxaFinal;
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
 
     body.push([
       (s.data || '').substring(0, 10),
       s.origem || '',
       valor.toFixed(2),
-      `${perc.toFixed(0)}%`,
-      comissao.toFixed(2),
+      `${(taxaFinal * 100).toFixed(0)}%`,
+      comissaoPrev.toFixed(2),
       status
     ]);
 
-    totalSaque += valor;
-    totalComissaoPdf += comissao;
-
     if (!resumo[s.origem || '-']) {
-      resumo[s.origem || '-'] = { total: 0, comissao: 0, pagos: true };
+      resumo[s.origem || '-'] = { total: 0, pagos: true };
     }
     resumo[s.origem || '-'].total += valor;
-    resumo[s.origem || '-'].comissao += comissao;
     resumo[s.origem || '-'].pagos = resumo[s.origem || '-'].pagos && s.percentualPago > 0;
   });
 
@@ -313,12 +309,11 @@ function exportarSelecionadosPDF() {
   // Resumo por loja
   const resumoBody = Object.keys(resumo).map(loja => {
     const r = resumo[loja];
-    const perc = r.total > 0 ? (r.comissao / r.total) * 100 : 0;
     return [
       loja,
       r.total.toFixed(2),
-      perc.toFixed(0) + '%',
-      r.comissao.toFixed(2),
+      `${(taxaFinal * 100).toFixed(0)}%`,
+      (r.total * taxaFinal).toFixed(2),
       r.pagos ? 'PAGO' : 'A PAGAR'
     ];
   });
@@ -330,12 +325,12 @@ function exportarSelecionadosPDF() {
   });
 
   const finalY2 = doc.lastAutoTable ? doc.lastAutoTable.finalY : finalY;
-  const percComissaoMedio = totalSaque > 0 ? (totalComissaoPdf / totalSaque) * 100 : 0;
+  const totalComissaoPdf = totalSaque * taxaFinal;
 
   doc.setFontSize(12);
   doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY2 + 10);
-  doc.text(`Total de Comissão: R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY2 + 20);
-  doc.text(`Percentual Médio: ${percComissaoMedio.toFixed(2)}%`, 14, finalY2 + 30);
+  doc.text(`Total de Comissão (${(taxaFinal * 100).toFixed(0)}%): R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY2 + 20);
+  doc.text(`Percentual Médio: ${(taxaFinal * 100).toFixed(2)}%`, 14, finalY2 + 30);
 
   // Evite acentos no nome de arquivo para compatibilidade
   doc.save('fechamento-comissao.pdf');
@@ -443,14 +438,13 @@ async function imprimirFechamento() {
   y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y + 10;
 
   const resumoCalc = calcularResumo(saques);
-  const totalSacado = resumoCalc.totalSacado;
-  const totalPrev = resumoCalc.comissaoPrevista;
+  const { totalSacado, taxaFinal, comissaoPrevista } = resumoCalc;
   const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
-  const totalPagar = totalPrev - totalPago;
+  const totalPagar = comissaoPrevista - totalPago;
 
   doc.setFontSize(12);
   doc.text(`Total sacado: R$ ${totalSacado.toFixed(2)}`, 14, y);
-  doc.text(`Total comissão: R$ ${totalPrev.toFixed(2)}`, 14, y + 10);
+  doc.text(`Total comissão (${(taxaFinal * 100).toFixed(0)}%): R$ ${comissaoPrevista.toFixed(2)}`, 14, y + 10);
   doc.text(`Total já pago: R$ ${totalPago.toFixed(2)}`, 14, y + 20);
   doc.text(`Total a pagar: R$ ${totalPagar.toFixed(2)}`, 14, y + 30);
 
