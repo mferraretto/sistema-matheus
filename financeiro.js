@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 import { atualizarSaque as atualizarSaqueSvc } from './comissoes-service.js';
+import { calcularResumo } from './comissoes-utils.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -730,8 +731,6 @@ function renderTabelaSaques() {
   dados.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
   tbody.innerHTML = '';
   chkAll.checked = false;
-  let total = 0;
-  let totalComissao = 0;
   dados.forEach(s => {
     const pago = (s.percentual || 0) > 0;
     const tr = document.createElement('tr');
@@ -744,10 +743,13 @@ function renderTabelaSaques() {
       <td class="px-4 py-2 text-right">R$ ${s.comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-2 text-center ${pago ? 'text-green-600' : 'text-red-600'}">${pago ? 'PAGO' : 'A PAGAR'}</td>`;
     tbody.appendChild(tr);
-    total += s.valor;
-    totalComissao += s.comissao;
   });
-  resumo.textContent = `Total: R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Comissão Total: R$ ${totalComissao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const resumoCalc = calcularResumo(dados.map(s => ({ valor: s.valor, percentualPago: s.percentual })));
+  resumo.textContent =
+    `Total Saque: R$ ${resumoCalc.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+    `Total Comissão: R$ ${resumoCalc.comissaoPrevista.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+    `Total já pago: R$ ${resumoCalc.comissaoJaPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+    `Total a pagar: R$ ${resumoCalc.ajusteFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 async function marcarSaquesSelecionados() {
