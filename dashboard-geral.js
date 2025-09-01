@@ -698,46 +698,76 @@ async function exportarFechamentoMes() {
   container.innerHTML = gerarHTMLFechamento();
   document.body.appendChild(container);
 
-  const compCtx = container.querySelector('#comparativoChart');
-  if (compCtx) {
-    const meses = Object.keys(dashboardData.comparativo).sort();
-    initChart(compCtx, {
+  const dias = Object.keys(dashboardData.diarioBruto).sort();
+
+  const diarioCtx = container.querySelector('#diarioBarChart');
+  if (diarioCtx) {
+    initChart(diarioCtx, {
       type: 'bar',
       data: {
-        labels: meses.map(m => m.split('-').reverse().join('/')),
-        datasets: [{
-          label: 'Líquido',
-          data: meses.map(m => dashboardData.comparativo[m]),
-          backgroundColor: '#3b82f6'
-        }]
+        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
+        datasets: [
+          {
+            label: 'Bruto',
+            data: dias.map(d => dashboardData.diarioBruto[d] || 0),
+            backgroundColor: '#4C1D95'
+          },
+          {
+            label: 'Líquido',
+            data: dias.map(d => dashboardData.diarioLiquido[d] || 0),
+            backgroundColor: '#3b82f6'
+          }
+        ]
       },
       options: { responsive: true, maintainAspectRatio: false }
     });
   }
 
-  const cancelCtx = container.querySelector('#cancelamentoChart');
-  if (cancelCtx) {
-    const dias = Object.keys(dashboardData.cancelamentosDiario).sort();
-    initChart(cancelCtx, {
+  const tendenciaCtx = container.querySelector('#tendenciaChart');
+  if (tendenciaCtx) {
+    const acumulado = [];
+    dias.forEach((dia, idx) => {
+      const prev = acumulado[idx - 1] || 0;
+      acumulado[idx] = prev + (dashboardData.diarioLiquido[dia] || 0);
+    });
+    const metaLinha = dias.map((_, idx) => {
+      return dashboardData.meta ? (dashboardData.meta * (idx + 1)) / dias.length : 0;
+    });
+    initChart(tendenciaCtx, {
       type: 'line',
       data: {
         labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
           {
-            label: 'Cancelado',
-            data: dias.map(d => dashboardData.cancelamentosDiario[d]),
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239,68,68,0.2)',
+            label: 'Acumulado',
+            data: acumulado,
+            borderColor: '#4C1D95',
+            backgroundColor: 'rgba(76,29,149,0.2)',
             tension: 0.3
           },
           {
-            label: 'Líquido',
-            data: dias.map(d => dashboardData.diarioLiquido[d] || 0),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
+            label: 'Meta',
+            data: metaLinha,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.2)',
             tension: 0.3
           }
         ]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  const proporcaoCtx = container.querySelector('#proporcaoChart');
+  if (proporcaoCtx) {
+    initChart(proporcaoCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Bruto', 'Líquido'],
+        datasets: [{
+          data: [dashboardData.totalBruto, dashboardData.totalLiquido],
+          backgroundColor: ['#4C1D95', '#3b82f6']
+        }]
       },
       options: { responsive: true, maintainAspectRatio: false }
     });
@@ -750,7 +780,7 @@ async function exportarFechamentoMes() {
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(container).save().then(() => container.remove());
-  }, 500);
+  }, 1000);
 }
 
 function gerarHTMLFechamento() {
@@ -759,59 +789,60 @@ function gerarHTMLFechamento() {
   const pctMeta = d.meta ? ((d.totalLiquido / d.meta) * 100).toFixed(1) : '0';
   const dias = Object.keys(d.diarioLiquido).sort();
   const linhasDia = dias.map(di => `<tr><td>${new Date(di).toLocaleDateString('pt-BR')}</td><td>R$ ${(d.diarioBruto[di]||0).toLocaleString('pt-BR')}</td><td>R$ ${(d.diarioLiquido[di]||0).toLocaleString('pt-BR')}</td></tr>`).join('');
-  const top = d.topProdutos.length
-    ? d.topProdutos.map((p,i)=>`<tr><td>${i+1}</td><td>${p.nome}</td><td>${p.vendas}</td></tr>`).join('')
-    : '<tr><td colspan="3">Nenhum produto</td></tr>';
-  const criticos = d.produtosCriticos.map(p=>`<li>${p.nome} (Estoque: ${p.estoque})</li>`).join('') || '<li>Nenhum</li>';
-  const destaques = d.totalLiquido >= d.meta ? 'Meta atingida no período.' : 'Meta não atingida.';
-  const atencao = d.produtosCriticos.length ? 'Atenção aos produtos sem vendas com estoque disponível.' : 'Sem pontos de atenção.';
 
   return `
-      <div style="font-family: Arial, sans-serif; width:100%; max-width:170mm; box-sizing:border-box;">
-        <h1 style="text-align:center;">${d.nomeEmpresa || 'Empresa'}</h1>
-      <h2 style="text-align:center;">Fechamento ${mesBR}</h2>
-      <p style="text-align:center;">Responsável: ${d.responsavel || ''}</p>
+      <div style="font-family:'Poppins',sans-serif; width:100%; max-width:170mm; box-sizing:border-box; color:#111827;">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+          .header{background:#4C1D95;color:#fff;padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;border-radius:8px;}
+          .header img{height:40px;}
+          .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:20px 0;}
+          .card{background:#1E3A8A;color:#fff;padding:12px;border-radius:8px;text-align:center;}
+          .card .icon{font-size:24px;margin-bottom:4px;}
+          .section-title{color:#4C1D95;margin-top:20px;margin-bottom:10px;font-weight:600;}
+          table{width:100%;border-collapse:collapse;font-size:12px;}
+          th,td{padding:6px;border:1px solid #e5e7eb;}
+          tr:nth-child(even){background:#f9fafb;}
+          .highlight{padding:10px;border-radius:6px;color:#fff;margin-top:10px;}
+          .highlight.success{background:#10b981;}
+          .highlight.warn{background:#ef4444;}
+          .charts{display:flex;flex-direction:column;gap:20px;}
+          .chart-box{width:100%;height:260px;page-break-inside:avoid;}
+        </style>
+        <div class="header">
+          ${d.logoUrl ? `<img src="${d.logoUrl}" alt="Logo">` : ''}
+          <h1>${d.nomeEmpresa || 'Empresa'}</h1>
+          <p>Fechamento ${mesBR}</p>
+          <p>${d.responsavel ? `Responsável: ${d.responsavel}` : ''}</p>
+        </div>
 
-      <h3>Resumo Executivo</h3>
-      <ul>
-        <li>Faturamento Bruto: R$ ${d.totalBruto.toLocaleString('pt-BR')}</li>
-        <li>Faturamento Líquido: R$ ${d.totalLiquido.toLocaleString('pt-BR')}</li>
-        <li>Ticket Médio: R$ ${d.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</li>
-        <li>Pedidos: ${d.totalUnidades}</li>
-        <li>% Meta: ${pctMeta}%</li>
-      </ul>
-      <p><strong>Destaques:</strong> ${destaques}</p>
-      <p><strong>Pontos de atenção:</strong> ${atencao}</p>
+        <div class="cards">
+          <div class="card"><div class="icon">💰</div><div>Faturamento Bruto</div><strong>R$ ${d.totalBruto.toLocaleString('pt-BR')}</strong></div>
+          <div class="card"><div class="icon">🏦</div><div>Faturamento Líquido</div><strong>R$ ${d.totalLiquido.toLocaleString('pt-BR')}</strong></div>
+          <div class="card"><div class="icon">📈</div><div>Ticket Médio</div><strong>R$ ${d.ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong></div>
+          <div class="card"><div class="icon">📦</div><div>Pedidos</div><strong>${d.totalUnidades}</strong></div>
+          <div class="card"><div class="icon">🎯</div><div>% da Meta</div><strong>${pctMeta}%</strong></div>
+        </div>
 
-      <h3>Desempenho Diário</h3>
-      <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:12px;">
-        <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
-        ${linhasDia}
-      </table>
-      <img src="${document.getElementById('evolucaoChart').toDataURL('image/png')}" style="width:100%; height:auto; max-height:300px; page-break-inside:avoid;"/>
+        <div class="charts">
+          <div class="chart-box"><canvas id="diarioBarChart"></canvas></div>
+          <div class="chart-box"><canvas id="tendenciaChart"></canvas></div>
+          <div class="chart-box"><canvas id="proporcaoChart"></canvas></div>
+        </div>
 
-      <h3>Comparativo Mensal</h3>
-      <div style="width:100%;height:300px;page-break-inside:avoid"><canvas id="comparativoChart"></canvas></div>
+        <div class="highlight ${d.totalLiquido >= d.meta ? 'success' : 'warn'}">
+          ${d.totalLiquido >= d.meta ? `Meta atingida com ${pctMeta}%` : `Meta não atingida (${pctMeta}%)`}
+        </div>
+        <div class="highlight ${d.produtosCriticos.length ? 'warn' : 'success'}">
+          ${d.produtosCriticos.length ? 'Atenção aos produtos com estoque e sem vendas.' : 'Sem pontos de atenção'}
+        </div>
 
-      <h3>Ranking de Produtos</h3>
-      <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:12px;">
-        <tr><th>#</th><th>Produto</th><th>Vendas</th></tr>
-        ${top}
-      </table>
-      <h4>Produtos Críticos</h4>
-      <ul>${criticos}</ul>
-
-      <h3>Cancelamentos e Taxas</h3>
-      <div style="width:100%;height:300px;page-break-inside:avoid"><canvas id="cancelamentoChart"></canvas></div>
-
-      <h3>Projeção e Recomendações</h3>
-      <p>Meta sugerida para o próximo mês: R$ ${(d.totalLiquido*1.05).toLocaleString('pt-BR')}</p>
-      <ul>
-        <li>Investir em produto ${d.topProdutos[0]?.nome || '-'}</li>
-        <li>Revisar preço de ${d.topProdutos[1]?.nome || '-'}</li>
-        <li>Melhorar estoque de ${d.produtosCriticos[0]?.nome || '-'}</li>
-      </ul>
-    </div>
+        <h2 class="section-title">Desempenho Diário</h2>
+        <table>
+          <tr><th>Dia</th><th>Bruto</th><th>Líquido</th></tr>
+          ${linhasDia}
+        </table>
+      </div>
   `;
 }
 
