@@ -197,6 +197,18 @@
         const pdfLinksDiv = document.getElementById('pdf-links');
         const previewImage = document.getElementById('preview-image');
 
+        const GEMINI_DELAY_MS = 3000;
+        let lastGeminiCall = 0;
+        async function fetchWithGeminiDelay(url, options) {
+            const now = Date.now();
+            const elapsed = now - lastGeminiCall;
+            if (elapsed < GEMINI_DELAY_MS) {
+                await new Promise(r => setTimeout(r, GEMINI_DELAY_MS - elapsed));
+            }
+            lastGeminiCall = Date.now();
+            return fetch(url, options);
+        }
+
         // Initial state of the user interface
         converterButton.disabled = true; 
 
@@ -421,7 +433,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             let delay = 1000;
             while (attempts < maxAttempts) {
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetchWithGeminiDelay(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -507,11 +519,11 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
 
             while (attempts < maxAttempts) { 
                 try { 
-                    const response = await fetch(apiUrl, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(payload) 
-                    }); 
+                    const response = await fetchWithGeminiDelay(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
                     
                     if (!response.ok) { 
                         console.error(`Attempt ${attempts + 1} failed with status: ${response.status} - ${await response.text()}`); 
