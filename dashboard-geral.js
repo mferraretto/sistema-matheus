@@ -27,7 +27,7 @@ function toNumber(v) {
 async function carregarDashboard(user, mesSelecionado) {
   const uid = user.uid;
   const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
-  const mesAtual = baseDate.toISOString().slice(0,7);
+  const mesAtual = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
   const totalDiasMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate();
 
   let totalBruto = 0;
@@ -40,7 +40,7 @@ async function carregarDashboard(user, mesSelecionado) {
   const mesesComparativos = [];
   for (let i = 0; i < 3; i++) {
     const dt = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
-    mesesComparativos.push(dt.toISOString().slice(0,7));
+    mesesComparativos.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`);
   }
   const comparativo = {};
   mesesComparativos.forEach(m => comparativo[m] = 0);
@@ -526,7 +526,7 @@ async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
   container.innerHTML = '';
 
   const proxMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
-  const anoMes = proxMes.toISOString().slice(0,7);
+  const anoMes = `${proxMes.getFullYear()}-${String(proxMes.getMonth() + 1).padStart(2, '0')}`;
 
   try {
     const docSnap = await getDoc(doc(db, `uid/${uid}/previsoes`, anoMes));
@@ -811,7 +811,8 @@ function gerarHTMLFechamento() {
 
 const filtroMes = document.getElementById('filtroMes');
 if (filtroMes) {
-  filtroMes.value = new Date().toISOString().slice(0,7);
+  const agora = new Date();
+  filtroMes.value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
 }
 
 onAuthStateChanged(auth, user => {
