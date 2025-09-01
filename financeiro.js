@@ -3,8 +3,7 @@ import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, o
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
-import { atualizarSaque as atualizarSaqueSvc } from './comissoes-service.js';
-import { calcularResumo } from './comissoes-utils.js';
+import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -17,6 +16,7 @@ let dadosFaturamentoExport = [];
 let resumoUsuarios = {};
 let kpiUnsubs = [];
 let vendasChart;
+let resumoUnsub = null;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -160,6 +160,17 @@ async function carregar() {
   await carregarDevolucoes(listaUsuarios, mes);
   renderResumoUsuarios(Object.values(resumoUsuarios));
   renderTabelaSaques();
+  if (uid !== 'todos') {
+    assistirResumoFinanceiro(uid, mes);
+  } else {
+    if (resumoUnsub) resumoUnsub();
+    const cards = document.getElementById('cardsResumoFinanceiro');
+    const texto = document.getElementById('faltasTextoFinanceiro');
+    const resumo = document.getElementById('resumoSaquesFinanceiro');
+    if (cards) cards.innerHTML = '';
+    if (texto) texto.textContent = '';
+    if (resumo) resumo.textContent = '';
+  }
   await renderVendasDiaAnterior(listaUsuarios);
 }
 
@@ -744,12 +755,53 @@ function renderTabelaSaques() {
       <td class="px-4 py-2 text-center ${pago ? 'text-green-600' : 'text-red-600'}">${pago ? 'PAGO' : 'A PAGAR'}</td>`;
     tbody.appendChild(tr);
   });
-  const resumoCalc = calcularResumo(dados.map(s => ({ valor: s.valor, percentualPago: s.percentual })));
-  resumo.textContent =
-    `Total Saque: R$ ${resumoCalc.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
-    `Total Comissão: R$ ${resumoCalc.comissaoPrevista.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
-    `Total já pago: R$ ${resumoCalc.comissaoJaPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
-    `Total a pagar: R$ ${resumoCalc.ajusteFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  resumo.textContent = '';
+}
+
+function assistirResumoFinanceiro(uid, anoMes) {
+  if (resumoUnsub) resumoUnsub();
+  resumoUnsub = watchResumoMesSvc({
+    db,
+    uid,
+    anoMes,
+    onChange: r => {
+      const cards = document.getElementById('cardsResumoFinanceiro');
+      const texto = document.getElementById('faltasTextoFinanceiro');
+      const resumo = document.getElementById('resumoSaquesFinanceiro');
+      if (!cards || !texto || !resumo) return;
+      if (!r) {
+        cards.innerHTML = '<p class="text-gray-500">Sem dados</p>';
+        texto.textContent = '';
+        resumo.textContent = '';
+        return;
+      }
+      cards.innerHTML = `
+        <div>
+          <div class="text-sm text-gray-500">Total sacado</div>
+          <div class="text-xl font-bold">R$ ${r.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Total comissão</div>
+          <div class="text-xl font-bold">R$ ${(r.comissaoPrevista || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="text-sm text-gray-500">${(r.taxaFinal * 100).toFixed(0)}%</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Total comissão paga</div>
+          <div class="text-xl font-bold">R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Total comissão falta pagar</div>
+          <div class="text-xl font-bold">R$ ${((r.comissaoPrevista || 0) - (r.comissaoRecebida || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+      `;
+      texto.textContent = `Faltam R$${r.faltamPara4.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 4% | R$${r.faltamPara5.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 5%`;
+      resumo.textContent =
+        `Total Saque: R$ ${r.totalSacado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+        `Total Comissão: R$ ${(r.comissaoPrevista || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+        `Total já pago: R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
+        `Total a pagar: R$ ${((r.comissaoPrevista || 0) - (r.comissaoRecebida || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+  });
 }
 
 async function marcarSaquesSelecionados() {
