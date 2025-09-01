@@ -16,7 +16,10 @@
   <main id="dashboard-completo" class="main-content p-4 space-y-6">
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold">Dashboard Geral</h1>
-      <button id="exportarFechamentoBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Exportar Fechamento</button>
+      <div class="flex items-center space-x-2">
+        <input type="month" id="filtroMes" class="border rounded px-2 py-1" />
+        <button id="exportarFechamentoBtn" class="bg-blue-600 text-white px-4 py-2 rounded">Exportar Fechamento</button>
+      </div>
     </div>
     <div class="flex space-x-4">
       <button class="tab-btn px-4 py-2 rounded bg-blue-600 text-white" data-tab="overview">Visão Geral</button>

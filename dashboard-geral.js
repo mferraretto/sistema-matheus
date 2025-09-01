@@ -8,11 +8,11 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 let dashboardData = {};
-async function carregarDashboard(user) {
+async function carregarDashboard(user, mesSelecionado) {
   const uid = user.uid;
-  const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7);
-  const totalDiasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
+  const mesAtual = baseDate.toISOString().slice(0,7);
+  const totalDiasMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate();
 
   let totalBruto = 0;
   let totalLiquido = 0;
@@ -23,7 +23,7 @@ async function carregarDashboard(user) {
   const porLoja = {};
   const mesesComparativos = [];
   for (let i = 0; i < 3; i++) {
-    const dt = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+    const dt = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
     mesesComparativos.push(dt.toISOString().slice(0,7));
   }
   const comparativo = {};
@@ -196,7 +196,7 @@ async function carregarDashboard(user) {
   renderRentabilidade(rentabilidade, topRentaveis);
   renderTopSkusComparativo(topSkus, rentabilidade);
   renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
-  carregarPrevisaoDashboard(uid);
+  carregarPrevisaoDashboard(uid, baseDate);
   setupTabs();
   setupSubTabs();
 }
@@ -499,7 +499,7 @@ function setupSubTabs() {
   });
 }
 
-async function carregarPrevisaoDashboard(uid) {
+async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
   const cards = document.getElementById('cardsPrevisao');
   const container = document.getElementById('topSkusPrevisao');
   const chartEl = document.getElementById('previsaoChart');
@@ -507,8 +507,7 @@ async function carregarPrevisaoDashboard(uid) {
   cards.innerHTML = '🔄 Carregando...';
   container.innerHTML = '';
 
-  const hoje = new Date();
-  const proxMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+  const proxMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
   const anoMes = proxMes.toISOString().slice(0,7);
 
   try {
@@ -791,4 +790,19 @@ function gerarHTMLFechamento() {
     </div>
   `;
 }
+
+const filtroMes = document.getElementById('filtroMes');
+if (filtroMes) {
+  filtroMes.value = new Date().toISOString().slice(0,7);
+}
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    const mesInicial = filtroMes?.value;
+    carregarDashboard(user, mesInicial);
+    filtroMes?.addEventListener('change', () => {
+      carregarDashboard(user, filtroMes.value);
+    });
+  }
+});
 
