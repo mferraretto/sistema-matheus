@@ -430,7 +430,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             let result;
             let attempts = 0;
             const maxAttempts = 5;
-            let delay = 1000;
+            let delay = 9000;
             while (attempts < maxAttempts) {
                 try {
                     const response = await fetchWithGeminiDelay(apiUrl, {
@@ -442,7 +442,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
                         console.error(`Attempt ${attempts + 1} failed with status: ${response.status} - ${await response.text()}`);
                         if (response.status === 429) {
                             await new Promise(r => setTimeout(r, delay));
-                            delay *= 2;
+                            delay *= 9;
                             attempts++;
                             continue;
                         }
@@ -457,7 +457,7 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
                         throw error;
                     }
                     await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
+                    delay *= 9;
                 }
             }
 
