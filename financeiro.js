@@ -3,6 +3,7 @@ import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, o
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
+import { loadSecureDoc } from './secure-firestore.js';
 import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -193,45 +194,61 @@ function atualizarContexto() {
   }
 }
 
+function parseDate(str) {
+  if (!str) return new Date('');
+  const parts = str.split(/[\/\-]/);
+  if (parts.length === 3) {
+    if (str.includes('-') && parts[0].length === 4) {
+      return new Date(str);
+    }
+    const [d, m, y] = parts;
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  }
+  return new Date(str);
+}
+
+function sameMonth(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 async function carregarSkus(usuarios, mes) {
   dadosSkusExport = [];
+  const resumoGeral = {};
+  const mesData = mes ? new Date(mes + '-01') : null;
   for (const usuario of usuarios) {
-    const snap = await getDocs(collection(db, `uid/${usuario.uid}/skusVendidos`));
-    const produtosSnap = await getDocs(collection(db, `uid/${usuario.uid}/produtos`));
-    const custos = {};
-    produtosSnap.forEach(p => {
-      const dados = p.data();
-      const chave = dados.sku || p.id;
-      custos[chave] = Number(dados.custo || 0);
-    });
+    const pass = getPassphrase() || `chave-${usuario.uid}`;
+    const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
     const resumo = {};
     for (const docSnap of snap.docs) {
-      if (mes && !docSnap.id.includes(mes)) continue;
-      const listaRef = collection(db, `uid/${usuario.uid}/skusVendidos/${docSnap.id}/lista`);
-      const listaSnap = await getDocs(listaRef);
-      listaSnap.forEach(item => {
-        const dados = item.data();
-        const sku = dados.sku || 'sem-sku';
-        const qtd = Number(dados.total || dados.quantidade) || 0;
-        const sobraReal = Number(dados.valorLiquido || dados.sobraReal || 0);
-        const custo = custos[sku] || 0;
-        const sobraEsperada = qtd * custo;
-        if (!resumo[sku]) resumo[sku] = { qtd: 0, sobraEsperada: 0, sobraReal: 0 };
-        resumo[sku].qtd += qtd;
-        resumo[sku].sobraEsperada += sobraEsperada;
-        resumo[sku].sobraReal += sobraReal;
+      let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
+      if (!pedido) {
+        const raw = docSnap.data();
+        if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+      }
+      if (!pedido) continue;
+      const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
+      const data = parseDate(dataStr);
+      if (mesData && !sameMonth(data, mesData)) continue;
+      const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
+      itens.forEach(item => {
+        const sku = item.sku || pedido.sku || 'sem-sku';
+        const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
+        if (!resumo[sku]) resumo[sku] = 0;
+        resumo[sku] += qtd;
+        if (!resumoGeral[sku]) resumoGeral[sku] = 0;
+        resumoGeral[sku] += qtd;
       });
     }
     let totalUnidades = 0;
     let topSku = '-';
     let topQtd = 0;
-    Object.entries(resumo).forEach(([sku, info]) => {
-      totalUnidades += info.qtd;
-      if (info.qtd > topQtd) {
+    Object.entries(resumo).forEach(([sku, qtd]) => {
+      totalUnidades += qtd;
+      if (qtd > topQtd) {
         topSku = sku;
-        topQtd = info.qtd;
+        topQtd = qtd;
       }
-      dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: info.qtd, sobraEsperada: info.sobraEsperada, sobraReal: info.sobraReal });
+      dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: qtd, sobraEsperada: 0, sobraReal: 0 });
     });
     resumoUsuarios[usuario.uid].skus = {
       topSku,
@@ -241,6 +258,7 @@ async function carregarSkus(usuarios, mes) {
     };
     resumoUsuarios[usuario.uid].skusDetalhes = resumo;
   }
+  renderSkusCard(resumoGeral);
 }
 
 async function carregarSaques(usuarios, mes) {
@@ -698,6 +716,25 @@ function createResumoCard(u) {
     <div class="text-sm">Comissão: R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
     <div class="progress ${statusColor}"><div class="progress-bar" style="width:${progresso.toFixed(0)}%"></div></div>`;
   return card;
+}
+
+function renderSkusCard(resumo) {
+  const card = document.getElementById('skusMesCard');
+  if (!card) return;
+  const entries = Object.entries(resumo).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) {
+    card.classList.add('hidden');
+    card.innerHTML = '';
+    return;
+  }
+  card.classList.remove('hidden');
+  let html = '<h4 class="text-sm text-gray-500 mb-2">SKUs vendidos no mês</h4>';
+  html += '<ul class="text-sm space-y-1">';
+  entries.forEach(([sku, qtd]) => {
+    html += `<li>${sku}: ${qtd}</li>`;
+  });
+  html += '</ul>';
+  card.innerHTML = html;
 }
 
 async function renderVendasDiaAnterior(lista) {
