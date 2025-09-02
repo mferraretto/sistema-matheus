@@ -197,7 +197,7 @@
         const pdfLinksDiv = document.getElementById('pdf-links');
         const previewImage = document.getElementById('preview-image');
 
-        const GEMINI_DELAY_MS = 10000;
+        const GEMINI_DELAY_MS = 50000;
         let lastGeminiCall = 0;
         async function fetchWithGeminiDelay(url, options) {
             const now = Date.now();
