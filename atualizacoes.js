@@ -50,13 +50,21 @@ async function carregarUsuarios() {
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
   try {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email)));
-    if (snap.empty) {
+    const [snapUsuarios, snapUid] = await Promise.all([
+      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email))),
+      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', currentUser.email)))
+    ]);
+
+    if (snapUsuarios.empty && snapUid.empty) {
       card?.classList.add('hidden');
       return;
     }
     card?.classList.remove('hidden');
-    for (const d of snap.docs) {
+
+    const processado = new Set();
+    const adicionarUsuario = async d => {
+      if (processado.has(d.id)) return;
+      processado.add(d.id);
       const dados = d.data();
       let nome = dados.nome;
       if (!nome) {
@@ -78,7 +86,11 @@ async function carregarUsuarios() {
         li.textContent = `${nome} - ${dados.email || ''}`;
         lista.appendChild(li);
       }
-    }
+    };
+
+    for (const d of snapUsuarios.docs) await adicionarUsuario(d);
+    for (const d of snapUid.docs) await adicionarUsuario(d);
+
     carregarHistoricoFaturamento();
   } catch (err) {
     console.error('Erro ao carregar usuários:', err);
