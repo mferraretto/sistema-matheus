@@ -50,14 +50,12 @@ async function carregarUsuarios() {
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
   try {
-    const [snapUsuarios, snapUid, snapUsuariosGest, snapUidGest] = await Promise.all([
+    const [snapUsuarios, snapUid] = await Promise.all([
       getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email))),
-      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', currentUser.email))),
-      getDocs(query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', currentUser.email))),
-      getDocs(query(collection(db, 'uid'), where('gestoresFinanceirosEmails', 'array-contains', currentUser.email)))
+      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', currentUser.email)))
     ]);
 
-    if (snapUsuarios.empty && snapUid.empty && snapUsuariosGest.empty && snapUidGest.empty) {
+    if (snapUsuarios.empty && snapUid.empty) {
       card?.classList.add('hidden');
       return;
     }
@@ -90,8 +88,8 @@ async function carregarUsuarios() {
       }
     };
 
-    const docs = [...snapUsuarios.docs, ...snapUid.docs, ...snapUsuariosGest.docs, ...snapUidGest.docs];
-    for (const d of docs) await adicionarUsuario(d);
+    for (const d of snapUsuarios.docs) await adicionarUsuario(d);
+    for (const d of snapUid.docs) await adicionarUsuario(d);
 
     carregarHistoricoFaturamento();
   } catch (err) {

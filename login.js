@@ -286,13 +286,9 @@ async function showUserArea(user) {
 
     // 3) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
-      const [snapResp, snapGest, snapUidResp, snapUidGest] = await Promise.all([
-        getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
-        getDocs(query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email))),
-        getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', user.email))),
-        getDocs(query(collection(db, 'uid'), where('gestoresFinanceirosEmails', 'array-contains', user.email)))
-      ]);
-      window.isFinanceiroResponsavel = [snapResp, snapGest, snapUidResp, snapUidGest].some(s => !s.empty);
+      const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
+      const respSnap = await getDocs(q);
+      window.isFinanceiroResponsavel = !respSnap.empty;
       ensureFinanceiroMenu();
     } catch (e) {
       console.error('Erro ao verificar responsável financeiro:', e);
