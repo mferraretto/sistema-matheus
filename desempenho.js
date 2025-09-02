@@ -18,14 +18,10 @@ onAuthStateChanged(auth, async user => {
   }
   usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const [snapResp, snapGest] = await Promise.all([
-      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
-      getDocs(query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email)))
-    ]);
-    const docs = [...snapResp.docs, ...snapGest.docs];
-    if (docs.length) {
+    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
+    if (!snap.empty) {
       usuarios = await Promise.all(
-        docs.map(async d => {
+        snap.docs.map(async d => {
           let nome = d.data().nome;
           if (!nome) {
             try {

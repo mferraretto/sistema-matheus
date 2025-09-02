@@ -80,29 +80,21 @@
         });
       });
 
-      async function atualizarFinanceiros() {
-        const [snapResp, snapGest] = await Promise.all([
-          db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).get(),
-          db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', user.email).get()
-        ]);
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
         financialUsersList.innerHTML = '';
-        const docs = [...snapResp.docs, ...snapGest.docs];
-        if (!docs.length) {
+        if (snap.empty) {
           financialUsersTitle.classList.add('hidden');
           return;
         }
         financialUsersTitle.classList.remove('hidden');
-        docs.forEach(doc => {
+        snap.forEach(doc => {
           const dados = doc.data();
           const li = document.createElement('li');
           const nome = dados.nome || dados.email || doc.id;
           li.textContent = `${nome} - ${dados.email || ''}`;
           financialUsersList.appendChild(li);
         });
-      }
-      atualizarFinanceiros();
-      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(atualizarFinanceiros);
-      db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', user.email).onSnapshot(atualizarFinanceiros);
+      });
     });
 
     document.getElementById('emailForm').addEventListener('submit', async e => {
