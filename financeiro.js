@@ -4,7 +4,6 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
-import { loadSecureDoc } from './secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -159,7 +158,6 @@ async function carregar() {
   await carregarSaques(listaUsuarios, mes);
   await carregarFaturamentoMeta(listaUsuarios, mes);
   await carregarDevolucoes(listaUsuarios, mes);
-  await carregarSkusTinyResumo(listaUsuarios, mes);
   renderResumoUsuarios(Object.values(resumoUsuarios));
   renderTabelaSaques();
   if (uid !== 'todos') {
@@ -354,66 +352,6 @@ async function carregarDevolucoes(usuarios, mes) {
     });
     resumoUsuarios[usuario.uid].devolucoes = total;
   }
-}
-
-function parseDate(str) {
-  if (!str) return new Date('');
-  const parts = str.split(/[\/\-]/);
-  if (parts.length === 3) {
-    if (str.includes('-') && parts[0].length === 4) {
-      return new Date(str);
-    }
-    const [d, m, y] = parts;
-    return new Date(`${y}-${m}-${d}`);
-  }
-  return new Date(str);
-}
-
-async function carregarSkusTinyResumo(usuarios, mes) {
-  const card = document.getElementById('skusMesCard');
-  const lista = document.getElementById('listaSkusMes');
-  if (!card || !lista) return;
-  const resumo = {};
-  for (const u of usuarios) {
-    try {
-      const pass = getPassphrase() || `chave-${u.uid}`;
-      const snap = await getDocs(collection(db, `usuarios/${u.uid}/pedidostiny`));
-      for (const docSnap of snap.docs) {
-        let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, docSnap.id, pass);
-        if (!pedido) {
-          const raw = docSnap.data();
-          if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-        }
-        if (!pedido) continue;
-        const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
-        const data = parseDate(dataStr);
-        const mesDoc = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2,'0')}`;
-        if (mes && mesDoc !== mes) continue;
-        if (Array.isArray(pedido.itens) && pedido.itens.length) {
-          pedido.itens.forEach(item => {
-            const sku = (item.sku || '').trim();
-            const qtd = Number(item.quantidade || item.qtd || item.quantity || 1) || 1;
-            if (!sku) return;
-            resumo[sku] = (resumo[sku] || 0) + qtd;
-          });
-        } else {
-          const sku = (pedido.sku || '').trim();
-          const qtd = Number(pedido.quantidade || pedido.qtd || pedido.quantity || 1) || 1;
-          if (sku) resumo[sku] = (resumo[sku] || 0) + qtd;
-        }
-      }
-    } catch (e) {
-      console.error('Erro ao carregar pedidos Tiny:', e);
-    }
-  }
-  const entries = Object.entries(resumo).sort((a,b)=>b[1]-a[1]);
-  if (!entries.length) {
-    card.classList.add('hidden');
-    lista.innerHTML = '';
-    return;
-  }
-  card.classList.remove('hidden');
-  lista.innerHTML = entries.map(([sku, qtd]) => `<div class="flex justify-between"><span>${sku}</span><span>${qtd}</span></div>`).join('');
 }
 
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
