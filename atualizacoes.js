@@ -50,7 +50,14 @@ async function carregarUsuarios() {
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
   try {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email)));
+    const email = currentUser.email || '';
+    const variations = [...new Set([email, email.toLowerCase(), email.toUpperCase()])];
+    const snap = await getDocs(
+      query(
+        collection(db, 'usuarios'),
+        where('responsavelFinanceiroEmail', 'in', variations)
+      )
+    );
     if (snap.empty) {
       card?.classList.add('hidden');
       return;
