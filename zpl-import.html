@@ -199,6 +199,18 @@
 
         const GEMINI_DELAY_MS = 5000;
         let lastGeminiCall = 0;
+        const GEMINI_API_KEYS = [
+            "AIzaSyAKFps1dbK5gRjUiL5r1nplFMj6DH4VIWU",
+            "AIzaSyBv6hDqN-gnTOOJZLDfxHeUXgqxG21sAXI",
+            "AIzaSyBMPs0EgLA-bj5ly2uLw03lKJFT6AplarI",
+            "AIzaSyDJH-VEkF4ip5dx5sijbvWb6epE4M7JG1s"
+        ];
+        let geminiKeyIndex = 0;
+        function getNextGeminiApiKey() {
+            const key = GEMINI_API_KEYS[geminiKeyIndex];
+            geminiKeyIndex = (geminiKeyIndex + 1) % GEMINI_API_KEYS.length;
+            return key;
+        }
         async function fetchWithGeminiDelay(url, options) {
             const now = Date.now();
             const elapsed = now - lastGeminiCall;
@@ -425,13 +437,13 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
                     }
                 }
             };
-            const apiKey = "AIzaSyAKFps1dbK5gRjUiL5r1nplFMj6DH4VIWU";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`;
             let result;
             let attempts = 0;
             const maxAttempts = 5;
             let delay = 1000;
             while (attempts < maxAttempts) {
+                const apiKey = getNextGeminiApiKey();
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`;
                 try {
                     const response = await fetchWithGeminiDelay(apiUrl, {
                         method: 'POST',
@@ -509,16 +521,15 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
                 }
             };
             
-            const apiKey = "AIzaSyAKFps1dbK5gRjUiL5r1nplFMj6DH4VIWU";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`; 
-            
-            let result; 
-            let attempts = 0; 
-            const maxAttempts = 5; 
-            let delay = 1000; 
+            let result;
+            let attempts = 0;
+            const maxAttempts = 5;
+            let delay = 1000;
 
-            while (attempts < maxAttempts) { 
-                try { 
+            while (attempts < maxAttempts) {
+                const apiKey = getNextGeminiApiKey();
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`;
+                try {
                     const response = await fetchWithGeminiDelay(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
