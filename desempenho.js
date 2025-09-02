@@ -18,32 +18,19 @@ onAuthStateChanged(auth, async user => {
   }
   usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const [snapUsuarios, snapUid] = await Promise.all([
-      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
-      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', user.email)))
-    ]);
-    const docs = [...snapUsuarios.docs, ...snapUid.docs];
-    if (docs.length) {
-      const vistos = new Set();
+    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
+    if (!snap.empty) {
       usuarios = await Promise.all(
-        docs
-          .filter(d => {
-            const uid = d.data().uid || d.id;
-            if (vistos.has(uid)) return false;
-            vistos.add(uid);
-            return true;
-          })
-          .map(async d => {
-            const uid = d.data().uid || d.id;
-            let nome = d.data().nome;
-            if (!nome) {
-              try {
-                const perfil = await getDoc(doc(db, 'perfilMentorado', uid));
-                if (perfil.exists()) nome = perfil.data().nome;
-              } catch (_) {}
-            }
-            return { uid, nome: nome || d.data().email || uid };
-          })
+        snap.docs.map(async d => {
+          let nome = d.data().nome;
+          if (!nome) {
+            try {
+              const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
+              if (perfil.exists()) nome = perfil.data().nome;
+            } catch (_) {}
+          }
+          return { uid: d.id, nome: nome || d.data().email || d.id };
+        })
       );
     }
   } catch (err) {
