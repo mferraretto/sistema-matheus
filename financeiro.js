@@ -164,10 +164,12 @@ async function carregar() {
   atualizarContexto();
   resumoUsuarios = {};
   listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { uid: u.uid, nome: u.nome });
-  await carregarSkus(listaUsuarios, mes);
-  await carregarSaques(listaUsuarios, mes);
-  await carregarFaturamentoMeta(listaUsuarios, mes);
-  await carregarDevolucoes(listaUsuarios, mes);
+  await Promise.all([
+    carregarSkus(listaUsuarios, mes),
+    carregarSaques(listaUsuarios, mes),
+    carregarFaturamentoMeta(listaUsuarios, mes),
+    carregarDevolucoes(listaUsuarios, mes)
+  ]);
   renderResumoUsuarios(Object.values(resumoUsuarios));
   renderTabelaSaques();
   if (uid !== 'todos') {
@@ -224,7 +226,7 @@ async function carregarSkus(usuarios, mes) {
   dadosSkusExport = [];
   const resumoGeral = {};
   const mesData = mes ? new Date(mes + '-01') : null;
-  for (const usuario of usuarios) {
+  await Promise.all(usuarios.map(async usuario => {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
     const resumo = {};
@@ -266,13 +268,13 @@ async function carregarSkus(usuarios, mes) {
       totalUnidades
     };
     resumoUsuarios[usuario.uid].skusDetalhes = resumo;
-  }
+  }));
   renderSkusCard(resumoGeral);
 }
 
 async function carregarSaques(usuarios, mes) {
   dadosSaquesExport = [];
-  for (const usuario of usuarios) {
+  await Promise.all(usuarios.map(async usuario => {
     let total = 0;
     let totalComissao = 0;
     const detalhes = [];
@@ -302,12 +304,12 @@ async function carregarSaques(usuarios, mes) {
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
     resumoUsuarios[usuario.uid].saques = { total, comissao: totalComissao };
     resumoUsuarios[usuario.uid].saquesDetalhes = detalhes;
-  }
+  }));
 }
 
 async function carregarFaturamentoMeta(usuarios, mes) {
   dadosFaturamentoExport = [];
-  for (const usuario of usuarios) {
+  await Promise.all(usuarios.map(async usuario => {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
@@ -365,11 +367,11 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       diferenca
     };
     resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
-  }
+  }));
 }
 
 async function carregarDevolucoes(usuarios, mes) {
-  for (const usuario of usuarios) {
+  await Promise.all(usuarios.map(async usuario => {
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/devolucoes`));
     let total = 0;
     snap.forEach(docSnap => {
@@ -378,7 +380,7 @@ async function carregarDevolucoes(usuarios, mes) {
       total += Number(dados.quantidade || dados.total || 1);
     });
     resumoUsuarios[usuario.uid].devolucoes = total;
-  }
+  }));
 }
 
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
@@ -753,7 +755,7 @@ async function renderVendasDiaAnterior(lista) {
   const dia = new Date();
   dia.setDate(dia.getDate() - 1);
   const diaStr = dia.toISOString().slice(0,10);
-  for (const u of lista) {
+  const cards = await Promise.all(lista.map(async u => {
     const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, diaStr);
     const skusSnap = await getDocs(collection(db, `uid/${u.uid}/skusVendidos/${diaStr}/lista`));
     let totalSkus = 0;
@@ -768,8 +770,9 @@ async function renderVendasDiaAnterior(lista) {
       <div>Bruto dia: R$ ${bruto.toLocaleString('pt-BR')}</div>
       <div>Líquido dia: R$ ${liquido.toLocaleString('pt-BR')}</div>
       <div>SKU vendidos dia: ${totalSkus}</div>`;
-    container.appendChild(card);
-  }
+    return card;
+  }));
+  cards.forEach(card => container.appendChild(card));
 }
 
 function renderTabelaSaques() {
