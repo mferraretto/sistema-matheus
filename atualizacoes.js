@@ -63,21 +63,22 @@ async function carregarUsuarios() {
 
     const processado = new Set();
     const adicionarUsuario = async d => {
-      if (processado.has(d.id)) return;
-      processado.add(d.id);
+      const uid = d.data().uid || d.id;
+      if (processado.has(uid)) return;
+      processado.add(uid);
       const dados = d.data();
       let nome = dados.nome;
       if (!nome) {
         try {
-          const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
+          const perfil = await getDoc(doc(db, 'perfilMentorado', uid));
           if (perfil.exists()) nome = perfil.data().nome;
         } catch (_) {}
       }
-      nome = nome || dados.email || d.id;
-      usuariosResponsaveis.push({ uid: d.id, nome });
+      nome = nome || dados.email || uid;
+      usuariosResponsaveis.push({ uid, nome });
       if (select) {
         const opt = document.createElement('option');
-        opt.value = d.id;
+        opt.value = uid;
         opt.textContent = nome;
         select.appendChild(opt);
       }

@@ -34,20 +34,24 @@ onAuthStateChanged(auth, async user => {
     if (docs.length) {
       const vistos = new Set();
       usuarios = await Promise.all(
-        docs.filter(d => {
-          if (vistos.has(d.id)) return false;
-          vistos.add(d.id);
-          return true;
-        }).map(async d => {
-          let nome = d.data().nome;
-          if (!nome) {
-            try {
-              const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
-              if (perfil.exists()) nome = perfil.data().nome;
-            } catch (_) {}
-          }
-          return { uid: d.id, nome: nome || d.data().email || d.id };
-        })
+        docs
+          .filter(d => {
+            const uid = d.data().uid || d.id;
+            if (vistos.has(uid)) return false;
+            vistos.add(uid);
+            return true;
+          })
+          .map(async d => {
+            const uid = d.data().uid || d.id;
+            let nome = d.data().nome;
+            if (!nome) {
+              try {
+                const perfil = await getDoc(doc(db, 'perfilMentorado', uid));
+                if (perfil.exists()) nome = perfil.data().nome;
+              } catch (_) {}
+            }
+            return { uid, nome: nome || d.data().email || uid };
+          })
       );
     }
   } catch (err) {
