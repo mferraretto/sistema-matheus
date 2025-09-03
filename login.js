@@ -32,6 +32,7 @@ let expNotifUnsub = null;
 let updNotifUnsub = null;
 let selectedRole = null;
 window.isFinanceiroResponsavel = false;
+window.responsavelFinanceiro = null;
 
 // Ping a local file to test online status without CORS issues.
 async function pingOnline(timeout = 3000) {
@@ -284,7 +285,26 @@ async function showUserArea(user) {
       await checkExpedicao(user);
     }
 
-    // 3) verifica se usuário é responsável financeiro e garante acesso às sobras
+    // 3) localiza responsável financeiro do usuário, se houver
+    try {
+      let respEmail = snap.data()?.responsavelFinanceiroEmail;
+      if (!respEmail) {
+        const altDoc = await getDoc(doc(db, 'uid', user.uid));
+        if (altDoc.exists()) respEmail = altDoc.data().responsavelFinanceiroEmail;
+      }
+      if (respEmail) {
+        const respQuery = query(collection(db, 'usuarios'), where('email', '==', respEmail));
+        const respDocs = await getDocs(respQuery);
+        if (!respDocs.empty) {
+          const d = respDocs.docs[0];
+          window.responsavelFinanceiro = { uid: d.id, ...d.data() };
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao localizar responsável financeiro do usuário:', e);
+    }
+
+    // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
       const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
       const respSnap = await getDocs(q);
