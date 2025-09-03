@@ -104,12 +104,14 @@ async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
   for (const lojaDoc of lojasSnap.docs) {
     let dados = lojaDoc.data();
     if (dados.encrypted) {
-      const pass = getPassphrase() || `chave-${uid}`;
       let txt;
-      try {
-        txt = await decryptString(dados.encrypted, pass);
-      } catch (e) {
-        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+      const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
+      for (const p of candidates) {
+        if (!p) continue;
+        try {
+          txt = await decryptString(dados.encrypted, p);
+          if (txt) break;
+        } catch (_) {}
       }
       if (txt) dados = JSON.parse(txt);
     }
