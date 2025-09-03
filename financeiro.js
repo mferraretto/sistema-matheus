@@ -18,12 +18,14 @@ let resumoUsuarios = {};
 let kpiUnsubs = [];
 let vendasChart;
 let resumoUnsub = null;
+let currentUser = null;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
+  currentUser = user;
   let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
     const [snapUsuarios, snapUid] = await Promise.all([
@@ -813,6 +815,55 @@ function renderSkusCard(resumo) {
   card.innerHTML = html;
 }
 
+async function calcularFaturamentoDiaDetalhadoGestor(responsavelUid, uid, dia) {
+  const lojasSnap = await getDocs(collection(db, `uid/${responsavelUid}/uid/${uid}/faturamento/${dia}/lojas`));
+  let liquido = 0;
+  let bruto = 0;
+  for (const lojaDoc of lojasSnap.docs) {
+    let dados = lojaDoc.data();
+    if (dados.encrypted) {
+      let txt;
+      const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
+      for (const p of candidates) {
+        if (!p) continue;
+        try {
+          txt = await decryptString(dados.encrypted, p);
+          if (txt) break;
+        } catch (_) {}
+      }
+      if (txt) dados = JSON.parse(txt);
+    }
+    liquido += Number(dados.valorLiquido) || 0;
+    bruto += Number(dados.valorBruto) || 0;
+  }
+  return { liquido, bruto };
+}
+
+async function calcularVendasDiaGestor(responsavelUid, uid, dia) {
+  try {
+    const resumoDoc = await getDoc(doc(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia));
+    if (resumoDoc.exists()) {
+      let dados = resumoDoc.data();
+      if (dados.encrypted) {
+        let txt;
+        const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
+        for (const p of candidates) {
+          if (!p) continue;
+          try {
+            txt = await decryptString(dados.encrypted, p);
+            if (txt) break;
+          } catch (_) {}
+        }
+        if (txt) dados = JSON.parse(txt);
+      }
+      return Number(dados.vendas || dados.qtdVendas || dados.quantidade) || 0;
+    }
+  } catch (e) {
+    console.error('Erro ao calcular vendas do dia:', e);
+  }
+  return 0;
+}
+
 async function renderVendasDiaAnterior(lista) {
   const container = document.getElementById('vendasDiaAnterior');
   if (!container) return;
@@ -821,20 +872,15 @@ async function renderVendasDiaAnterior(lista) {
   dia.setDate(dia.getDate() - 1);
   const diaStr = dia.toISOString().slice(0,10);
   const cards = await Promise.all(lista.map(async u => {
-    const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, diaStr);
-    const skusSnap = await getDocs(collection(db, `uid/${u.uid}/skusVendidos/${diaStr}/lista`));
-    let totalSkus = 0;
-    skusSnap.forEach(item => {
-      const dados = item.data();
-      totalSkus += Number(dados.total || dados.quantidade) || 0;
-    });
+    const { liquido, bruto } = await calcularFaturamentoDiaDetalhadoGestor(currentUser.uid, u.uid, diaStr);
+    const vendas = await calcularVendasDiaGestor(currentUser.uid, u.uid, diaStr);
     const card = document.createElement('div');
     card.className = 'card p-4';
     card.innerHTML = `
       <h4 class="font-bold mb-2">${u.nome}</h4>
       <div>Bruto dia: R$ ${bruto.toLocaleString('pt-BR')}</div>
       <div>Líquido dia: R$ ${liquido.toLocaleString('pt-BR')}</div>
-      <div>SKU vendidos dia: ${totalSkus}</div>`;
+      <div>Qtd dia: ${vendas}</div>`;
     return card;
   }));
   cards.forEach(card => container.appendChild(card));
