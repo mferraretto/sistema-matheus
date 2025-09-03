@@ -183,8 +183,10 @@ async function carregar() {
     if (texto) texto.textContent = '';
     if (resumo) resumo.textContent = '';
   }
-  await renderVendasDiaAnterior(listaUsuarios);
-  await renderPedidosTinyHoje(listaUsuarios);
+  await Promise.all([
+    renderVendasDiaAnterior(listaUsuarios),
+    renderPedidosTinyHoje(listaUsuarios)
+  ]);
 }
 
 function atualizarContexto() {
@@ -287,16 +289,16 @@ async function carregarSkus(usuarios, mes) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
     const resumo = {};
-    for (const docSnap of snap.docs) {
+    await Promise.all(snap.docs.map(async docSnap => {
       let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
       if (!pedido) {
         const raw = docSnap.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
       }
-      if (!pedido) continue;
+      if (!pedido) return;
       const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
       const data = parseDate(dataStr);
-      if (mesData && !sameMonth(data, mesData)) continue;
+      if (mesData && !sameMonth(data, mesData)) return;
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
       itens.forEach(item => {
         const sku = item.sku || pedido.sku || 'sem-sku';
@@ -306,7 +308,7 @@ async function carregarSkus(usuarios, mes) {
         if (!resumoGeral[sku]) resumoGeral[sku] = 0;
         resumoGeral[sku] += qtd;
       });
-    }
+    }));
     let totalUnidades = 0;
     let topSku = '-';
     let topQtd = 0;
@@ -371,30 +373,36 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let totalBruto = 0;
     const diario = {};
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
-    for (const docSnap of snap.docs) {
-      if (mes && !docSnap.id.includes(mes)) continue;
-      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
-      let totalDia = 0;
-      let totalDiaBruto = 0;
-      for (const lojaDoc of lojasSnap.docs) {
-        let dados = lojaDoc.data();
-        if (dados.encrypted) {
-          const pass = getPassphrase() || `chave-${usuario.uid}`;
-          let txt;
-          try {
-            txt = await decryptString(dados.encrypted, pass);
-          } catch (e) {
-            try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
-          }
-          if (txt) dados = JSON.parse(txt);
-        }
-        totalDia += Number(dados.valorLiquido) || 0;
-        totalDiaBruto += Number(dados.valorBruto) || 0;
-      }
+    const dias = await Promise.all(
+      snap.docs
+        .filter(docSnap => !mes || docSnap.id.includes(mes))
+        .map(async docSnap => {
+          const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
+          let totalDia = 0;
+          let totalDiaBruto = 0;
+          await Promise.all(lojasSnap.docs.map(async lojaDoc => {
+            let dados = lojaDoc.data();
+            if (dados.encrypted) {
+              const pass = getPassphrase() || `chave-${usuario.uid}`;
+              let txt;
+              try {
+                txt = await decryptString(dados.encrypted, pass);
+              } catch (e) {
+                try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
+              }
+              if (txt) dados = JSON.parse(txt);
+            }
+            totalDia += Number(dados.valorLiquido) || 0;
+            totalDiaBruto += Number(dados.valorBruto) || 0;
+          }));
+          return { dia: docSnap.id, totalDia, totalDiaBruto };
+        })
+    );
+    dias.forEach(({ dia, totalDia, totalDiaBruto }) => {
       total += totalDia;
       totalBruto += totalDiaBruto;
-      diario[docSnap.id] = totalDia;
-    }
+      diario[dia] = totalDia;
+    });
     let meta = 0;
     let esperado = 0;
     let diferenca = 0;
