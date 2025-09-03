@@ -184,6 +184,7 @@ async function carregar() {
     if (resumo) resumo.textContent = '';
   }
   await renderVendasDiaAnterior(listaUsuarios);
+  await renderPedidosTinyHoje(listaUsuarios);
 }
 
 function atualizarContexto() {
@@ -220,6 +221,62 @@ function parseDate(str) {
 
 function sameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function toNumber(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(n) || 0;
+  }
+  return 0;
+}
+
+function formatCurrency(v) {
+  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function calcularLiquido(p) {
+  const total = toNumber(p.valor || p.total || 0);
+  const loja = (p.loja || p.store || '').toLowerCase();
+  let taxa = 0;
+  if (loja.includes('shopee')) {
+    if (Array.isArray(p.itens) && p.itens.length) {
+      p.itens.forEach(i => {
+        const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
+        const comissao = Math.min(v * 0.22, 100);
+        taxa += comissao + 4.0;
+      });
+    } else {
+      const comissao = Math.min(total * 0.22, 100);
+      taxa = comissao + 4.0;
+    }
+  } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
+    if (Array.isArray(p.itens) && p.itens.length) {
+      p.itens.forEach(i => {
+        const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
+        let fixo = 0;
+        if (v < 12.5) fixo = v / 2;
+        else if (v < 29) fixo = 6.25;
+        else if (v < 50) fixo = 6.5;
+        else if (v < 79) fixo = 6.75;
+        taxa += v * 0.12 + fixo;
+      });
+    } else {
+      const v = total;
+      let fixo = 0;
+      if (v < 12.5) fixo = v / 2;
+      else if (v < 29) fixo = 6.25;
+      else if (v < 50) fixo = 6.5;
+      else if (v < 79) fixo = 6.75;
+      taxa = v * 0.12 + fixo;
+    }
+  }
+  return total - taxa;
 }
 
 async function carregarSkus(usuarios, mes) {
@@ -773,6 +830,43 @@ async function renderVendasDiaAnterior(lista) {
     return card;
   }));
   cards.forEach(card => container.appendChild(card));
+}
+
+async function renderPedidosTinyHoje(lista) {
+  const container = document.getElementById('financeiroUsuarios');
+  if (!container) return;
+  container.innerHTML = '';
+  const hoje = new Date();
+  const cards = await Promise.all(lista.map(async u => {
+    const pass = getPassphrase() || `chave-${u.uid}`;
+    const snap = await getDocs(collection(db, `usuarios/${u.uid}/pedidostiny`));
+    let bruto = 0;
+    let liquido = 0;
+    let pedidos = 0;
+    for (const d of snap.docs) {
+      let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
+      if (!pedido) {
+        const raw = d.data();
+        if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+      }
+      if (!pedido) continue;
+      const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
+      const data = parseDate(dataStr);
+      if (!sameDay(data, hoje)) continue;
+      bruto += toNumber(pedido.valor || pedido.total || 0);
+      liquido += calcularLiquido(pedido);
+      pedidos++;
+    }
+    const card = document.createElement('div');
+    card.className = 'card p-4 text-sm';
+    card.innerHTML = `
+      <h4 class="font-bold mb-2">${u.nome}</h4>
+      <div>Valor Bruto: ${formatCurrency(bruto)}</div>
+      <div>Valor Líquido: ${formatCurrency(liquido)}</div>
+      <div>Pedidos: ${pedidos}</div>`;
+    return card;
+  }));
+  cards.forEach(c => container.appendChild(c));
 }
 
 function renderTabelaSaques() {
