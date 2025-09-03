@@ -798,14 +798,19 @@ function createResumoCard(u) {
 
 function renderSkusCard(resumo) {
   const card = document.getElementById('skusMesCard');
-  if (!card) return;
+  const topCard = document.getElementById('topSkusCard');
+  if (!card || !topCard) return;
   const entries = Object.entries(resumo).sort((a, b) => b[1] - a[1]);
   if (!entries.length) {
     card.classList.add('hidden');
+    topCard.classList.add('hidden');
     card.innerHTML = '';
+    topCard.innerHTML = '';
     return;
   }
   card.classList.remove('hidden');
+  topCard.classList.remove('hidden');
+
   let html = '<h4 class="text-sm text-gray-500 mb-2">SKUs vendidos no mês</h4>';
   html += '<ul class="text-sm space-y-1">';
   entries.forEach(([sku, qtd]) => {
@@ -813,6 +818,14 @@ function renderSkusCard(resumo) {
   });
   html += '</ul>';
   card.innerHTML = html;
+
+  let topHtml = '<h4 class="text-sm text-gray-500 mb-2">Top 5 SKUs</h4>';
+  topHtml += '<ul class="text-sm space-y-1">';
+  entries.slice(0, 5).forEach(([sku, qtd]) => {
+    topHtml += `<li>${sku}: ${qtd}</li>`;
+  });
+  topHtml += '</ul>';
+  topCard.innerHTML = topHtml;
 }
 
 async function calcularFaturamentoDiaDetalhadoGestor(responsavelUid, uid, dia) {
