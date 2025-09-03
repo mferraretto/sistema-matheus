@@ -3189,17 +3189,23 @@ async function atualizarResponsavelFinanceiro(btn) {
   try {
     const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
     const dadosUsuario = usuarioDoc.data() || {};
-    const respEmail = dadosUsuario.responsavelFinanceiroEmail;
+    const respEmail = (dadosUsuario.responsavelFinanceiroEmail || '').trim();
     if (!respEmail) {
       alert('Nenhum responsável financeiro configurado.');
       return;
     }
     const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+    let respDoc;
     if (respSnap.empty) {
-      alert('Responsável financeiro não encontrado.');
-      return;
+      const altSnap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
+      if (altSnap.empty) {
+        alert('Responsável financeiro não encontrado.');
+        return;
+      }
+      respDoc = altSnap.docs[0];
+    } else {
+      respDoc = respSnap.docs[0];
     }
-    const respDoc = respSnap.docs[0];
     const respData = respDoc.data() || {};
     const responsavelUid = respData.uid || respDoc.id;
     const baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
