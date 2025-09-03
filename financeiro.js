@@ -464,10 +464,16 @@ async function carregarFaturamentoMeta(usuarios, mes) {
 
 async function carregarDevolucoes(usuarios, mes) {
   for (const usuario of usuarios) {
-    const snap = await getDocs(collection(db, `uid/${usuario.uid}/devolucoes`));
+    const colDev = collection(db, `uid/${usuario.uid}/devolucoes`);
+    let q = colDev;
+    if (mes) {
+      const inicio = `${mes}-01`;
+      const fim = `${mes}-31`;
+      q = query(colDev, orderBy('__name__'), startAt(inicio), endAt(fim));
+    }
+    const snap = await getDocs(q);
     let total = 0;
     snap.forEach(docSnap => {
-      if (mes && !docSnap.id.startsWith(mes)) return;
       const dados = docSnap.data();
       total += Number(dados.quantidade || dados.total || 1);
     });
