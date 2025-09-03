@@ -82,7 +82,7 @@ function setupFiltros(usuarios) {
     userSel.appendChild(opt);
   });
   userSel.value = 'todos';
-  mesSel.value = new Date().toISOString().slice(0,7);
+  mesSel.value = formatMes(new Date());
 
   // Evita que cliques nesses filtros acionem links subjacentes
   userSel.addEventListener('click', e => e.stopPropagation());
@@ -158,7 +158,7 @@ async function carregar() {
   const mesSel = document.getElementById('mesFiltro');
   let mes = mesSel?.value;
   if (!mes) {
-    mes = new Date().toISOString().slice(0,7);
+    mes = formatMes(new Date());
     if (mesSel) mesSel.value = mes;
   }
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
@@ -197,7 +197,8 @@ function atualizarContexto() {
   const mes = document.getElementById('mesFiltro')?.value;
   const uid = document.getElementById('usuarioFiltro')?.value;
   if (contextoEl) {
-    const mesTxt = mes ? new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
+    const mesData = mes ? parseMes(mes) : null;
+    const mesTxt = mesData ? mesData.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
     let usuarioTxt = 'Todos os usuários';
     if (uid && uid !== 'todos') {
       const u = usuariosCache.find(x => x.uid === uid);
@@ -221,6 +222,18 @@ function parseDate(str) {
     return new Date(Number(y), Number(m) - 1, Number(d));
   }
   return new Date(str);
+}
+
+function parseMes(str) {
+  const [ano, mes] = (str || '').split('-').map(Number);
+  if (!ano || !mes) return new Date('');
+  return new Date(ano, mes - 1, 1);
+}
+
+function formatMes(date) {
+  const ano = date.getFullYear();
+  const mes = String(date.getMonth() + 1).padStart(2, '0');
+  return `${ano}-${mes}`;
 }
 
 function sameMonth(a, b) {
@@ -286,7 +299,7 @@ function calcularLiquido(p) {
 async function carregarSkus(usuarios, mes) {
   dadosSkusExport = [];
   const resumoGeral = {};
-  const mesData = mes ? new Date(mes + '-01') : null;
+  const mesData = mes ? parseMes(mes) : null;
   await Promise.all(usuarios.map(async usuario => {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
@@ -420,7 +433,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       const totalDias = new Date(ano, mesNum, 0).getDate();
       let diasDecorridos = totalDias;
       const hoje = new Date();
-      if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+      if (mes === formatMes(hoje)) diasDecorridos = hoje.getDate();
       metaDiaria = meta / totalDias;
       esperado = metaDiaria * diasDecorridos;
       diferenca = total - esperado;
@@ -611,7 +624,7 @@ async function subscribeKPIs() {
         const totalDias = new Date(ano, mesNum, 0).getDate();
         const hoje = new Date();
         let diasDecorridos = totalDias;
-        if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+        if (mes === formatMes(hoje)) diasDecorridos = hoje.getDate();
         const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
         const projTotal = mediaDiaria * totalDias;
         const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
@@ -677,7 +690,7 @@ async function subscribeKPIs() {
     const totalDias = new Date(ano, mesNum, 0).getDate();
     const hoje = new Date();
     let diasDecorridos = totalDias;
-    if (mes === hoje.toISOString().slice(0,7)) diasDecorridos = hoje.getDate();
+    if (mes === formatMes(hoje)) diasDecorridos = hoje.getDate();
     const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
     const projTotal = mediaDiaria * totalDias;
     const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
