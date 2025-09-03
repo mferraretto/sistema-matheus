@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
@@ -387,30 +387,44 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
-    const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
-    const dias = [];
-    for (const docSnap of snap.docs) {
-      if (mes && !docSnap.id.includes(mes)) continue;
-      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
-      let totalDia = 0;
-      let totalDiaBruto = 0;
-      for (const lojaDoc of lojasSnap.docs) {
-        let dados = lojaDoc.data();
-        if (dados.encrypted) {
-          const pass = getPassphrase() || `chave-${usuario.uid}`;
-          let txt;
-          try {
-            txt = await decryptString(dados.encrypted, pass);
-          } catch (e) {
-            try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
-          }
-          if (txt) dados = JSON.parse(txt);
-        }
-        totalDia += Number(dados.valorLiquido) || 0;
-        totalDiaBruto += Number(dados.valorBruto) || 0;
-      }
-      dias.push({ dia: docSnap.id, totalDia, totalDiaBruto });
+
+    const colFat = collection(db, `uid/${usuario.uid}/faturamento`);
+    let q = colFat;
+    if (mes) {
+      const inicio = `${mes}-01`;
+      const fim = `${mes}-31`;
+      q = query(colFat, orderBy('__name__'), startAt(inicio), endAt(fim));
     }
+    const snap = await getDocs(q);
+
+    const dias = await Promise.all(
+      snap.docs.map(async docSnap => {
+        const lojasSnap = await getDocs(
+          collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`)
+        );
+        let totalDia = 0;
+        let totalDiaBruto = 0;
+        for (const lojaDoc of lojasSnap.docs) {
+          let dados = lojaDoc.data();
+          if (dados.encrypted) {
+            const pass = getPassphrase() || `chave-${usuario.uid}`;
+            let txt;
+            try {
+              txt = await decryptString(dados.encrypted, pass);
+            } catch (e) {
+              try {
+                txt = await decryptString(dados.encrypted, usuario.uid);
+              } catch (_) {}
+            }
+            if (txt) dados = JSON.parse(txt);
+          }
+          totalDia += Number(dados.valorLiquido) || 0;
+          totalDiaBruto += Number(dados.valorBruto) || 0;
+        }
+        return { dia: docSnap.id, totalDia, totalDiaBruto };
+      })
+    );
+
     dias.forEach(({ dia, totalDia, totalDiaBruto }) => {
       total += totalDia;
       totalBruto += totalDiaBruto;
