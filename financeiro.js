@@ -981,9 +981,12 @@ async function renderPedidosTinyHoje(lista) {
       <div>Valor Bruto: ${formatCurrency(bruto)}</div>
       <div>Valor Líquido: ${formatCurrency(liquido)}</div>
       <div>Pedidos: ${pedidos}</div>`;
-    cards.push(card);
+    cards.push({ card, bruto });
   }
-  cards.forEach(c => container.appendChild(c));
+  cards
+    .sort((a, b) => b.bruto - a.bruto)
+    .slice(0, 10)
+    .forEach(c => container.appendChild(c.card));
 }
 
 function renderTabelaSaques() {
