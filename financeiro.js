@@ -387,13 +387,12 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
-    const basePath = `uid/${currentUser.uid}/uid/${usuario.uid}/faturamento`;
-    const snap = await getDocs(collection(db, basePath));
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
     const dias = await Promise.all(
       snap.docs
         .filter(docSnap => !mes || docSnap.id.includes(mes))
         .map(async docSnap => {
-          const lojasSnap = await getDocs(collection(db, `${basePath}/${docSnap.id}/lojas`));
+          const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
           let totalDia = 0;
           let totalDiaBruto = 0;
           await Promise.all(lojasSnap.docs.map(async lojaDoc => {
