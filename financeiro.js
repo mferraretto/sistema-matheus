@@ -300,20 +300,20 @@ async function carregarSkus(usuarios, mes) {
   dadosSkusExport = [];
   const resumoGeral = {};
   const mesData = mes ? parseMes(mes) : null;
-  await Promise.all(usuarios.map(async usuario => {
+  for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
     const resumo = {};
-    await Promise.all(snap.docs.map(async docSnap => {
+    for (const docSnap of snap.docs) {
       let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
       if (!pedido) {
         const raw = docSnap.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
       }
-      if (!pedido) return;
+      if (!pedido) continue;
       const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
       const data = parseDate(dataStr);
-      if (mesData && !sameMonth(data, mesData)) return;
+      if (mesData && !sameMonth(data, mesData)) continue;
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
       itens.forEach(item => {
         const sku = item.sku || pedido.sku || 'sem-sku';
@@ -323,7 +323,7 @@ async function carregarSkus(usuarios, mes) {
         if (!resumoGeral[sku]) resumoGeral[sku] = 0;
         resumoGeral[sku] += qtd;
       });
-    }));
+    }
     let totalUnidades = 0;
     let topSku = '-';
     let topQtd = 0;
@@ -342,13 +342,13 @@ async function carregarSkus(usuarios, mes) {
       totalUnidades
     };
     resumoUsuarios[usuario.uid].skusDetalhes = resumo;
-  }));
+  }
   renderSkusCard(resumoGeral);
 }
 
 async function carregarSaques(usuarios, mes) {
   dadosSaquesExport = [];
-  await Promise.all(usuarios.map(async usuario => {
+  for (const usuario of usuarios) {
     let total = 0;
     let totalComissao = 0;
     const detalhes = [];
@@ -378,41 +378,39 @@ async function carregarSaques(usuarios, mes) {
     dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
     resumoUsuarios[usuario.uid].saques = { total, comissao: totalComissao };
     resumoUsuarios[usuario.uid].saquesDetalhes = detalhes;
-  }));
+  }
 }
 
 async function carregarFaturamentoMeta(usuarios, mes) {
   dadosFaturamentoExport = [];
-  await Promise.all(usuarios.map(async usuario => {
+  for (const usuario of usuarios) {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
-    const dias = await Promise.all(
-      snap.docs
-        .filter(docSnap => !mes || docSnap.id.includes(mes))
-        .map(async docSnap => {
-          const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
-          let totalDia = 0;
-          let totalDiaBruto = 0;
-          await Promise.all(lojasSnap.docs.map(async lojaDoc => {
-            let dados = lojaDoc.data();
-            if (dados.encrypted) {
-              const pass = getPassphrase() || `chave-${usuario.uid}`;
-              let txt;
-              try {
-                txt = await decryptString(dados.encrypted, pass);
-              } catch (e) {
-                try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
-              }
-              if (txt) dados = JSON.parse(txt);
-            }
-            totalDia += Number(dados.valorLiquido) || 0;
-            totalDiaBruto += Number(dados.valorBruto) || 0;
-          }));
-          return { dia: docSnap.id, totalDia, totalDiaBruto };
-        })
-    );
+    const dias = [];
+    for (const docSnap of snap.docs) {
+      if (mes && !docSnap.id.includes(mes)) continue;
+      const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
+      let totalDia = 0;
+      let totalDiaBruto = 0;
+      for (const lojaDoc of lojasSnap.docs) {
+        let dados = lojaDoc.data();
+        if (dados.encrypted) {
+          const pass = getPassphrase() || `chave-${usuario.uid}`;
+          let txt;
+          try {
+            txt = await decryptString(dados.encrypted, pass);
+          } catch (e) {
+            try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
+          }
+          if (txt) dados = JSON.parse(txt);
+        }
+        totalDia += Number(dados.valorLiquido) || 0;
+        totalDiaBruto += Number(dados.valorBruto) || 0;
+      }
+      dias.push({ dia: docSnap.id, totalDia, totalDiaBruto });
+    }
     dias.forEach(({ dia, totalDia, totalDiaBruto }) => {
       total += totalDia;
       totalBruto += totalDiaBruto;
@@ -447,11 +445,11 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       diferenca
     };
     resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
-  }));
+  }
 }
 
 async function carregarDevolucoes(usuarios, mes) {
-  await Promise.all(usuarios.map(async usuario => {
+  for (const usuario of usuarios) {
     const snap = await getDocs(collection(db, `uid/${usuario.uid}/devolucoes`));
     let total = 0;
     snap.forEach(docSnap => {
@@ -460,7 +458,7 @@ async function carregarDevolucoes(usuarios, mes) {
       total += Number(dados.quantidade || dados.total || 1);
     });
     resumoUsuarios[usuario.uid].devolucoes = total;
-  }));
+  }
 }
 
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
@@ -897,7 +895,8 @@ async function renderVendasDiaAnterior(lista) {
   const dia = new Date();
   dia.setDate(dia.getDate() - 1);
   const diaStr = dia.toISOString().slice(0,10);
-  const cards = await Promise.all(lista.map(async u => {
+  const cards = [];
+  for (const u of lista) {
     const { liquido, bruto } = await calcularFaturamentoDiaDetalhadoGestor(currentUser.uid, u.uid, diaStr);
     const vendas = await calcularVendasDiaGestor(currentUser.uid, u.uid, diaStr);
     const card = document.createElement('div');
@@ -907,8 +906,8 @@ async function renderVendasDiaAnterior(lista) {
       <div>Bruto dia: R$ ${bruto.toLocaleString('pt-BR')}</div>
       <div>Líquido dia: R$ ${liquido.toLocaleString('pt-BR')}</div>
       <div>Qtd dia: ${vendas}</div>`;
-    return card;
-  }));
+    cards.push(card);
+  }
   cards.forEach(card => container.appendChild(card));
 }
 
@@ -917,7 +916,8 @@ async function renderPedidosTinyHoje(lista) {
   if (!container) return;
   container.innerHTML = '';
   const hoje = new Date();
-  const cards = await Promise.all(lista.map(async u => {
+  const cards = [];
+  for (const u of lista) {
     const pass = getPassphrase() || `chave-${u.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${u.uid}/pedidostiny`));
     let bruto = 0;
@@ -944,8 +944,8 @@ async function renderPedidosTinyHoje(lista) {
       <div>Valor Bruto: ${formatCurrency(bruto)}</div>
       <div>Valor Líquido: ${formatCurrency(liquido)}</div>
       <div>Pedidos: ${pedidos}</div>`;
-    return card;
-  }));
+    cards.push(card);
+  }
   cards.forEach(c => container.appendChild(c));
 }
 
