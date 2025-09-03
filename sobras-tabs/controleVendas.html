@@ -13,9 +13,14 @@
             <input type="month" id="filtroMesVendas" class="border border-gray-300 rounded px-2 py-2"
               onchange="carregarControleVendas()" />
           </div>
-          <button onclick="exportarVendasMes()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">
+          <div class="flex items-center gap-2">
+            <button onclick="exportarVendasMes()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">
             <i class="fas fa-file-excel"></i> Exportar Mês
           </button>
+          <button id="btnAtualizarRespFinVendas" onclick="atualizarResponsavelFinanceiro(this)" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
+            <i class="fas fa-user-check"></i> Atualizar Responsável
+          </button>
+          </div>
         </div>
         <div id="cardsProjecao" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>
         <div id="resumoMensalVendas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4"></div>

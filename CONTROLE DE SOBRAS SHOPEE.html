@@ -3247,16 +3247,51 @@ async function atualizarResponsavelFinanceiro(btn) {
             console.error('Erro ao descriptografar faturamento', e);
             continue;
           }
-        }
-        const encLoja = await encryptString(JSON.stringify(dadosLoja), respEmail);
-        await baseResp
-          .collection('faturamento')
-          .doc(dia)
-          .collection('lojas')
-          .doc(loja)
-          .set({ encrypted: encLoja, uid: usuarioLogado.uid });
+      }
+      const encLoja = await encryptString(JSON.stringify(dadosLoja), respEmail);
+      await baseResp
+        .collection('faturamento')
+        .doc(dia)
+        .collection('lojas')
+        .doc(loja)
+        .set({ encrypted: encLoja, uid: usuarioLogado.uid });
       }
     }
+
+    // Copiar SKUs vendidos para o responsável financeiro
+    const skusSnap = await db.collection('uid').doc(usuarioLogado.uid).collection('skusVendidos').get();
+    for (const doc of skusSnap.docs) {
+      const dia = doc.id;
+      if (filtroMes) {
+        const [anoFiltro, mesFiltro] = filtroMes.split('-');
+        const [ano, mes] = dia.split('-');
+        if (ano !== anoFiltro || mes !== mesFiltro) continue;
+      }
+      const listaSnap = await db.collection(`uid/${usuarioLogado.uid}/skusVendidos/${dia}/lista`).get();
+      if (listaSnap.empty) continue;
+      await baseResp.collection('skusVendidos').doc(dia).set({ data: dia, uid: usuarioLogado.uid }, { merge: true });
+      for (const skuDoc of listaSnap.docs) {
+        const dadosSku = skuDoc.data();
+        const payload = {
+          sku: dadosSku.sku || skuDoc.id,
+          total: dadosSku.total || 0,
+          valorLiquido: dadosSku.valorLiquido || 0,
+          data: dia,
+          loja: dadosSku.loja || null,
+          uid: usuarioLogado.uid
+        };
+        const dadoSalvar = respEmail
+          ? { encrypted: await encryptString(JSON.stringify(payload), respEmail), uid: usuarioLogado.uid }
+          : payload;
+        await baseResp
+          .collection('skusVendidos')
+          .doc(dia)
+          .collection('lista')
+          .doc(skuDoc.id)
+          .set(dadoSalvar);
+      }
+    }
+
     alert('Dados enviados ao responsável financeiro.');
   } catch (e) {
     console.error('Erro ao atualizar responsável financeiro', e);
