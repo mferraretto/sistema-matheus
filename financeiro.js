@@ -374,23 +374,25 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
-    const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
+    const snap = await getDocs(collection(db, `uid/${currentUser.uid}/uid/${usuario.uid}/faturamento`));
     const dias = await Promise.all(
       snap.docs
         .filter(docSnap => !mes || docSnap.id.includes(mes))
         .map(async docSnap => {
-          const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
+          const lojasSnap = await getDocs(collection(db, `uid/${currentUser.uid}/uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
           let totalDia = 0;
           let totalDiaBruto = 0;
           await Promise.all(lojasSnap.docs.map(async lojaDoc => {
             let dados = lojaDoc.data();
             if (dados.encrypted) {
-              const pass = getPassphrase() || `chave-${usuario.uid}`;
               let txt;
-              try {
-                txt = await decryptString(dados.encrypted, pass);
-              } catch (e) {
-                try { txt = await decryptString(dados.encrypted, usuario.uid); } catch (_) {}
+              const candidates = [getPassphrase(), currentUser?.email, `chave-${usuario.uid}`, usuario.uid];
+              for (const p of candidates) {
+                if (!p) continue;
+                try {
+                  txt = await decryptString(dados.encrypted, p);
+                  if (txt) break;
+                } catch (_) {}
               }
               if (txt) dados = JSON.parse(txt);
             }
