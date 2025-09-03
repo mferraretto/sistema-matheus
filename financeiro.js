@@ -20,15 +20,6 @@ let vendasChart;
 let resumoUnsub = null;
 let currentUser = null;
 
-function userCollection(uid, ...segments) {
-  return collection(db, "uid", currentUser.uid, "uid", uid, ...segments);
-}
-
-function userDoc(uid, ...segments) {
-  return doc(db, "uid", currentUser.uid, "uid", uid, ...segments);
-}
-
-
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -125,7 +116,7 @@ function setupFiltros(usuarios) {
     metaSection.classList.remove('hidden');
     if (!metaInput) return;
     try {
-      const metaDoc = await getDoc(userDoc(userSel.value, 'metasFaturamento', mesSel.value));
+      const metaDoc = await getDoc(doc(db, `uid/${userSel.value}/metasFaturamento`, mesSel.value));
       metaInput.value = metaDoc.exists() ? metaDoc.data().valor || '' : '';
     } catch (_) {
       metaInput.value = '';
@@ -154,7 +145,7 @@ async function salvarMeta() {
     return;
   }
   try {
-    await setDoc(userDoc(uid, 'metasFaturamento', mes), { valor });
+    await setDoc(doc(db, `uid/${uid}/metasFaturamento`, mes), { valor });
     alert('Meta salva com sucesso!');
     await carregar();
   } catch (err) {
@@ -396,12 +387,12 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let total = 0;
     let totalBruto = 0;
     const diario = {};
-    const snap = await getDocs(userCollection(usuario.uid, 'faturamento'));
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento`));
     const dias = await Promise.all(
       snap.docs
         .filter(docSnap => !mes || docSnap.id.includes(mes))
         .map(async docSnap => {
-          const lojasSnap = await getDocs(userCollection(usuario.uid, 'faturamento', docSnap.id, 'lojas'));
+          const lojasSnap = await getDocs(collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`));
           let totalDia = 0;
           let totalDiaBruto = 0;
           await Promise.all(lojasSnap.docs.map(async lojaDoc => {
@@ -432,7 +423,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let diferenca = 0;
     let metaDiaria = 0;
     try {
-      const metaDoc = await getDoc(userDoc(usuario.uid, 'metasFaturamento', mes));
+      const metaDoc = await getDoc(doc(db, `uid/${usuario.uid}/metasFaturamento`, mes));
       if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
     } catch (err) {
       console.error('Erro ao buscar meta de faturamento:', err);
@@ -461,7 +452,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
 
 async function carregarDevolucoes(usuarios, mes) {
   await Promise.all(usuarios.map(async usuario => {
-    const snap = await getDocs(userCollection(usuario.uid, 'devolucoes'));
+    const snap = await getDocs(collection(db, `uid/${usuario.uid}/devolucoes`));
     let total = 0;
     snap.forEach(docSnap => {
       if (mes && !docSnap.id.startsWith(mes)) return;
@@ -473,7 +464,7 @@ async function carregarDevolucoes(usuarios, mes) {
 }
 
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
-  const lojasSnap = await getDocs(userCollection(uid, 'faturamento', dia, 'lojas'));
+  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
   let liquido = 0;
   let bruto = 0;
   for (const lojaDoc of lojasSnap.docs) {
@@ -495,7 +486,7 @@ async function calcularFaturamentoDiaDetalhado(uid, dia) {
 }
 
 async function getFaturamentoRegistrosDia(uid, dia) {
-  const lojasSnap = await getDocs(userCollection(uid, 'faturamento', dia, 'lojas'));
+  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
   const registros = [];
   for (const lojaDoc of lojasSnap.docs) {
     let dados = lojaDoc.data();
@@ -529,7 +520,7 @@ function initFaturamentoFeed(usuarios) {
   if (!card || !feed) return;
   feed.innerHTML = '';
   usuarios.forEach(u => {
-    const ref = userCollection(u.uid, 'faturamento');
+    const ref = collection(db, `uid/${u.uid}/faturamento`);
     let initialized = false;
     onSnapshot(ref, snapshot => {
       if (!initialized) { initialized = true; return; }
@@ -619,10 +610,10 @@ async function subscribeKPIs() {
       for (const u of usuariosCache) {
         let metaValor = 0;
         try {
-          const metaDoc = await getDoc(userDoc(u.uid, 'metasFaturamento', mes));
+          const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mes));
           if (metaDoc.exists()) metaValor = Number(metaDoc.data().valor) || 0;
         } catch (_) {}
-        const fatSnap = await getDocs(userCollection(u.uid, 'faturamento'));
+        const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
         let totalMes = 0;
         for (const d of fatSnap.docs) {
           if (mes && !d.id.startsWith(mes)) continue;
@@ -647,7 +638,7 @@ async function subscribeKPIs() {
     // Monta gráfico agregando faturamento de todos os usuários
     const agregados = {};
     for (const u of usuariosCache) {
-      const fatSnap = await getDocs(userCollection(u.uid, 'faturamento'));
+      const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
       for (const d of fatSnap.docs) {
         if (mes && !d.id.startsWith(mes)) continue;
         const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
@@ -670,13 +661,13 @@ async function subscribeKPIs() {
   ontem.setDate(ontem.getDate() - 1);
   const diaAnterior = ontem.toISOString().slice(0,10);
   let metaValor = 0;
-  const metaRef = userDoc(uid, 'metasFaturamento', mes);
+  const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
   const unsubMeta = onSnapshot(metaRef, snap => {
     metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
   });
   kpiUnsubs.push(unsubMeta);
 
-  const faturamentoRef = userCollection(uid, 'faturamento');
+  const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
   const unsubFat = onSnapshot(faturamentoRef, async snap => {
     let totalMes = 0;
     let vendasLiquido = 0;
@@ -725,7 +716,7 @@ async function subscribeKPIs() {
   });
   kpiUnsubs.push(unsubFat);
 
-  const skusRef = userCollection(uid, 'skusVendidos', diaAnterior, 'lista');
+  const skusRef = collection(db, `uid/${uid}/skusVendidos/${diaAnterior}/lista`);
   const unsubSkus = onSnapshot(skusRef, snap => {
     let totalSkus = 0;
     snap.forEach(item => {
@@ -736,7 +727,7 @@ async function subscribeKPIs() {
   });
   kpiUnsubs.push(unsubSkus);
 
-  const devolucoesRef = userCollection(uid, 'devolucoes');
+  const devolucoesRef = collection(db, `uid/${uid}/devolucoes`);
   const unsubDev = onSnapshot(devolucoesRef, snap => {
     const hoje = new Date().toISOString().slice(0,10);
     let qtd = 0;
