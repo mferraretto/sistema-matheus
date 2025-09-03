@@ -302,28 +302,45 @@ async function carregarSkus(usuarios, mes) {
   const mesData = mes ? parseMes(mes) : null;
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
-    const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
-    const resumo = {};
-    for (const docSnap of snap.docs) {
+    const baseCol = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
+    let q = baseCol;
+    if (mesData) {
+      const inicio = new Date(mesData.getFullYear(), mesData.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
+      const fim = new Date(mesData.getFullYear(), mesData.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0];
+      q = query(baseCol, orderBy('data'), startAt(inicio), endAt(fim));
+    }
+    const snap = await getDocs(q);
+    const promessas = snap.docs.map(async docSnap => {
       let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
       if (!pedido) {
         const raw = docSnap.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
       }
-      if (!pedido) continue;
+      if (!pedido) return {};
       const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
       const data = parseDate(dataStr);
-      if (mesData && !sameMonth(data, mesData)) continue;
+      if (mesData && !sameMonth(data, mesData)) return {};
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
+      const resumoLocal = {};
       itens.forEach(item => {
         const sku = item.sku || pedido.sku || 'sem-sku';
         const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
-        if (!resumo[sku]) resumo[sku] = 0;
-        resumo[sku] += qtd;
-        if (!resumoGeral[sku]) resumoGeral[sku] = 0;
-        resumoGeral[sku] += qtd;
+        resumoLocal[sku] = (resumoLocal[sku] || 0) + qtd;
       });
-    }
+      return resumoLocal;
+    });
+    const resultados = await Promise.all(promessas);
+    const resumo = {};
+    resultados.forEach(res => {
+      Object.entries(res).forEach(([sku, qtd]) => {
+        resumo[sku] = (resumo[sku] || 0) + qtd;
+        resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
+      });
+    });
     let totalUnidades = 0;
     let topSku = '-';
     let topQtd = 0;
