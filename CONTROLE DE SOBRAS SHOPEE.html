@@ -3179,8 +3179,8 @@ function atualizarTipoFiltroGestor() {
   else mesEl?.classList.remove('hidden');
 }
 
-async function atualizarResponsavelFinanceiro() {
-  const botao = document.getElementById('btnAtualizarRespFin');
+async function atualizarResponsavelFinanceiro(btn) {
+  const botao = btn || document.getElementById('btnAtualizarRespFin');
   if (botao) toggleLoading(botao, 'Atualizar Responsável');
   try {
     const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
@@ -3198,7 +3198,7 @@ async function atualizarResponsavelFinanceiro() {
     const responsavelUid = respSnap.docs[0].id;
     const baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
     const pass = getPassphrase() || usuarioLogado.uid;
-    const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value;
+    const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value || document.getElementById('filtroMesRegistro')?.value;
     const { decryptString, encryptString } = await import('./crypto.js');
     const snap = await db.collection('uid').doc(usuarioLogado.uid).collection('faturamento').get();
     for (const doc of snap.docs) {
