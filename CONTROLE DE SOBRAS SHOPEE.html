@@ -368,7 +368,9 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
         if (!respEmail) return;
         const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
         if (respSnap.empty) return;
-        const responsavelUid = respSnap.docs[0].id;
+        const respDoc = respSnap.docs[0];
+        const respData = respDoc.data() || {};
+        const responsavelUid = respData.uid || respDoc.id;
         const descricao = `Faturamento de ${dataRef} da loja ${loja} atualizado. Bruto: R$ ${bruto.toFixed(2)}, Líquido: R$ ${liquido.toFixed(2)}, Vendas: ${qtdVendas}`;
         await db.collection('financeiroAtualizacoes').add({
           descricao,
@@ -1469,7 +1471,9 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
           if (respEmail) {
             const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
             if (!respSnap.empty) {
-              const responsavelUid = respSnap.docs[0].id;
+              const respDoc = respSnap.docs[0];
+              const respData = respDoc.data() || {};
+              const responsavelUid = respData.uid || respDoc.id;
               baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
             }
           }
@@ -3195,7 +3199,9 @@ async function atualizarResponsavelFinanceiro(btn) {
       alert('Responsável financeiro não encontrado.');
       return;
     }
-    const responsavelUid = respSnap.docs[0].id;
+    const respDoc = respSnap.docs[0];
+    const respData = respDoc.data() || {};
+    const responsavelUid = respData.uid || respDoc.id;
     const baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
     const pass = getPassphrase() || usuarioLogado.uid;
     const filtroMes = document.getElementById('filtroMesAcompanhamento')?.value || document.getElementById('filtroMesRegistro')?.value;
