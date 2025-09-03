@@ -1462,6 +1462,17 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
           const workbook = XLSX.read(data, { type: "array" });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(sheet);
+          const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
+          const dadosUsuario = usuarioDoc.data() || {};
+          const respEmail = dadosUsuario.responsavelFinanceiroEmail || null;
+          let baseResp = null;
+          if (respEmail) {
+            const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+            if (!respSnap.empty) {
+              const responsavelUid = respSnap.docs[0].id;
+              baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
+            }
+          }
 
 const dataInput = document.getElementById("dataFaturamento");
           const lojaInput = document.getElementById("lojaFaturamento");
@@ -1567,7 +1578,14 @@ const dataInput = document.getElementById("dataFaturamento");
             .collection('skusVendidos')
             .doc(dataReferencia);
           await refSku.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true }); // garante doc pai e marca usuário
+          if (baseResp) {
+            await baseResp
+              .collection('skusVendidos')
+              .doc(dataReferencia)
+              .set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+          }
 
+          const { encryptString } = await import('./crypto.js');
           for (const [sku, dadosSku] of Object.entries(skusVendidos)) {
             const skuId = String(sku).replace(/[.#$\/\[\]]/g, "_");
  const docRef = db
@@ -1595,9 +1613,25 @@ const dataInput = document.getElementById("dataFaturamento");
               loja: loja,
               uid: usuarioLogado.uid
             });
+            if (baseResp && respEmail) {
+              const skuPayload = {
+                sku: sku,
+                total: totalFinal,
+                valorLiquido: valorLiquidoFinal,
+                data: dataReferencia,
+                loja: loja,
+                uid: usuarioLogado.uid
+              };
+              const encSku = await encryptString(JSON.stringify(skuPayload), respEmail);
+              await baseResp
+                .collection('skusVendidos')
+                .doc(dataReferencia)
+                .collection('lista')
+                .doc(skuId)
+                .set({ encrypted: encSku, uid: usuarioLogado.uid });
+            }
           }
 
- const { encryptString } = await import('./crypto.js');
           const pass = getPassphrase() || usuarioLogado.uid;
 
           const lojaPayload = {
@@ -1611,6 +1645,15 @@ const dataInput = document.getElementById("dataFaturamento");
          };
           const encLoja = await encryptString(JSON.stringify(lojaPayload), pass);
           await ref.set({ encrypted: encLoja, uid: usuarioLogado.uid });
+          if (baseResp && respEmail) {
+            const encLojaResp = await encryptString(JSON.stringify(lojaPayload), respEmail);
+            await baseResp
+              .collection('faturamento')
+              .doc(dataReferencia)
+              .collection('lojas')
+              .doc(loja)
+              .set({ encrypted: encLojaResp, uid: usuarioLogado.uid });
+          }
 
           const resumoPayload = {
             valorBruto: bruto,
@@ -1627,6 +1670,13 @@ await db
             .collection('faturamento')
             .doc(dataReferencia)
             .set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
+          if (baseResp && respEmail) {
+            const encResumoResp = await encryptString(JSON.stringify(resumoPayload), respEmail);
+            await baseResp
+              .collection('faturamento')
+              .doc(dataReferencia)
+              .set({ encrypted: encResumoResp, uid: usuarioLogado.uid }, { merge: true });
+          }
           document.getElementById("resultadoFaturamento").innerHTML = `
             <div class="alert alert-success">
               <i class="fas fa-check-circle"></i>
