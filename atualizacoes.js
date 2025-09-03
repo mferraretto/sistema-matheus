@@ -97,8 +97,8 @@ async function carregarUsuarios() {
   }
 }
 
-async function calcularFaturamentoDiaDetalhado(uid, dia) {
-  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
+  const lojasSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia, 'lojas'));
   let liquido = 0;
   let bruto = 0;
   for (const lojaDoc of lojasSnap.docs) {
@@ -119,8 +119,8 @@ async function calcularFaturamentoDiaDetalhado(uid, dia) {
   return { liquido, bruto };
 }
 
-async function calcularVendasDia(uid, dia) {
-  const skusSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos/${dia}/lista`));
+async function calcularVendasDia(responsavelUid, uid, dia) {
+  const skusSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'skusVendidos', dia, 'lista'));
   let total = 0;
   skusSnap.forEach(doc => {
     const dados = doc.data();
@@ -153,12 +153,12 @@ async function carregarHistoricoFaturamento() {
   for (const u of usuariosResponsaveis) {
     let metaMensal = 0;
     try {
-      const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mesAtual));
+      const metaDoc = await getDoc(doc(db, 'uid', currentUser.uid, 'uid', u.uid, 'metasFaturamento', mesAtual));
       if (metaDoc.exists()) metaMensal = Number(metaDoc.data().valor) || 0;
     } catch (_) {}
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
 
-    const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+    const fatSnap = await getDocs(collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'));
     const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
 
     const col = document.createElement('div');
@@ -170,8 +170,8 @@ async function carregarHistoricoFaturamento() {
     col.appendChild(header);
 
     for (const dia of dias) {
-      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(u.uid, dia);
-      const vendas = await calcularVendasDia(u.uid, dia);
+      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, dia);
+      const vendas = await calcularVendasDia(currentUser.uid, u.uid, dia);
       const diff = metaDiaria - liquido;
       const atingido = diff <= 0;
       const day = document.createElement('div');
