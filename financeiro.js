@@ -185,7 +185,7 @@ async function carregar() {
   }
   await Promise.all([
     renderVendasDiaAnterior(listaUsuarios),
-    renderPedidosTinyHoje(listaUsuarios)
+    renderPedidosTiny7Dias(listaUsuarios)
   ]);
 }
 
@@ -846,18 +846,27 @@ async function renderVendasDiaAnterior(lista) {
   cards.forEach(card => container.appendChild(card));
 }
 
-async function renderPedidosTinyHoje(lista) {
+async function renderPedidosTiny7Dias(lista) {
   const container = document.getElementById('financeiroUsuarios');
   if (!container) return;
   container.innerHTML = '';
   const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const inicioAtual = new Date(hoje);
+  inicioAtual.setDate(hoje.getDate() - 6);
+  const inicioAnterior = new Date(hoje);
+  inicioAnterior.setDate(hoje.getDate() - 13);
+  const fimAnterior = new Date(hoje);
+  fimAnterior.setDate(hoje.getDate() - 7);
   const cards = [];
+  const agregados = {};
   for (const u of lista) {
     const pass = getPassphrase() || `chave-${u.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${u.uid}/pedidostiny`));
-    let bruto = 0;
-    let liquido = 0;
-    let pedidos = 0;
+    let brutoAtual = 0;
+    let liquidoAtual = 0;
+    let brutoAnt = 0;
+    let liquidoAnt = 0;
     for (const d of snap.docs) {
       let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
       if (!pedido) {
@@ -867,24 +876,45 @@ async function renderPedidosTinyHoje(lista) {
       if (!pedido) continue;
       const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
       const data = parseDate(dataStr);
-      if (!sameDay(data, hoje)) continue;
-      bruto += toNumber(pedido.valor || pedido.total || 0);
-      liquido += calcularLiquido(pedido);
-      pedidos++;
+      if (isNaN(data)) continue;
+      const dia = new Date(data);
+      dia.setHours(0,0,0,0);
+      const bruto = toNumber(pedido.valor || pedido.total || 0);
+      const liquido = calcularLiquido(pedido);
+      if (dia >= inicioAtual && dia <= hoje) {
+        brutoAtual += bruto;
+        liquidoAtual += liquido;
+        const chave = dia.toISOString().slice(0,10);
+        agregados[chave] = (agregados[chave] || 0) + liquido;
+      } else if (dia >= inicioAnterior && dia <= fimAnterior) {
+        brutoAnt += bruto;
+        liquidoAnt += liquido;
+      }
     }
+    const evoBruto = brutoAnt ? ((brutoAtual - brutoAnt) / brutoAnt) * 100 : 0;
+    const evoLiquido = liquidoAnt ? ((liquidoAtual - liquidoAnt) / liquidoAnt) * 100 : 0;
     const card = document.createElement('div');
     card.className = 'card p-4 text-sm';
     card.innerHTML = `
       <h4 class="font-bold mb-2">${u.nome}</h4>
-      <div>Valor Bruto: ${formatCurrency(bruto)}</div>
-      <div>Valor Líquido: ${formatCurrency(liquido)}</div>
-      <div>Pedidos: ${pedidos}</div>`;
-    cards.push({ card, bruto });
+      <div>Bruto: ${formatCurrency(brutoAtual)} <span class="${evoBruto>=0?'text-green-600':'text-red-600'}">${evoBruto>=0?'+':''}${evoBruto.toFixed(1)}%</span></div>
+      <div>Líquido: ${formatCurrency(liquidoAtual)} <span class="${evoLiquido>=0?'text-green-600':'text-red-600'}">${evoLiquido>=0?'+':''}${evoLiquido.toFixed(1)}%</span></div>`;
+    cards.push({ card, bruto: brutoAtual });
   }
   cards
     .sort((a, b) => b.bruto - a.bruto)
-    .slice(0, 10)
     .forEach(c => container.appendChild(c.card));
+
+  const labels = [];
+  const data = [];
+  const cursor = new Date(inicioAtual);
+  while (cursor <= hoje) {
+    const chave = cursor.toISOString().slice(0,10);
+    labels.push(chave);
+    data.push(agregados[chave] || 0);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  updateSalesChart(labels.map(formatarData), data);
 }
 
 function renderTabelaSaques() {
