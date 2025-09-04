@@ -643,19 +643,7 @@ async function subscribeKPIs() {
         metaMulti.appendChild(item);
       }
     }
-    // Monta gráfico agregando faturamento de todos os usuários
-    const agregados = {};
-    for (const u of usuariosCache) {
-      const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
-      for (const d of fatSnap.docs) {
-        if (mes && !d.id.startsWith(mes)) continue;
-        const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
-        agregados[d.id] = (agregados[d.id] || 0) + totalDia;
-      }
-    }
-    const labels = Object.keys(agregados).sort();
-    const data = labels.map(l => agregados[l]);
-    updateSalesChart(labels.map(formatarData), data);
+    await carregarGraficoPedidosTiny('todos', mes);
     return;
   }
   if (metaEl && metaProjEl && metaWrap && metaMulti) {
@@ -680,7 +668,6 @@ async function subscribeKPIs() {
     let totalMes = 0;
     let vendasLiquido = 0;
     let vendasBruto = 0;
-    const diarios = [];
     for (const d of snap.docs) {
       const { liquido: totalDia, bruto: brutoDia } = await calcularFaturamentoDiaDetalhado(uid, d.id);
       if (d.id === diaAnterior) {
@@ -689,7 +676,6 @@ async function subscribeKPIs() {
       }
       if (mes && !d.id.startsWith(mes)) continue;
       totalMes += totalDia;
-      diarios.push({ data: d.id, valor: totalDia });
     }
     brutoEl.textContent = `R$ ${vendasBruto.toLocaleString('pt-BR')}`;
     liquidoEl.textContent = `R$ ${vendasLiquido.toLocaleString('pt-BR')}`;
@@ -719,8 +705,6 @@ async function subscribeKPIs() {
         metaEl.classList.add('text-red-600');
       }
     }
-    diarios.sort((a,b) => a.data.localeCompare(b.data));
-    updateSalesChart(diarios.map(d => formatarData(d.data)), diarios.map(d => d.valor));
   });
   kpiUnsubs.push(unsubFat);
 
@@ -748,6 +732,7 @@ async function subscribeKPIs() {
     devEl.textContent = qtd;
   });
   kpiUnsubs.push(unsubDev);
+  await carregarGraficoPedidosTiny(uid, mes);
 }
 
 function updateSalesChart(labels, data) {
@@ -896,6 +881,40 @@ async function renderPedidosTiny7Dias(lista) {
     .sort((a, b) => b.bruto - a.bruto)
     .slice(0, 10)
     .forEach(c => container.appendChild(c.card));
+}
+
+async function carregarGraficoPedidosTiny(uid, mes) {
+  const usuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
+  const agregados = {};
+  const [ano, mesNum] = mes.split('-').map(Number);
+  const inicio = new Date(ano, mesNum - 1, 1);
+  const fim = new Date(ano, mesNum, 0);
+  const inicioStr = inicio.toISOString().slice(0, 10);
+  const fimStr = fim.toISOString().slice(0, 10);
+  for (const u of usuarios) {
+    const pass = getPassphrase() || `chave-${u.uid}`;
+    try {
+      const baseCol = collection(db, `usuarios/${u.uid}/pedidostiny`);
+      const q = query(baseCol, orderBy('data'), startAt(inicioStr), endAt(fimStr));
+      const snap = await getDocs(q);
+      for (const d of snap.docs) {
+        let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
+        if (!pedido) {
+          const raw = d.data();
+          if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+        }
+        if (!pedido) continue;
+        const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
+        const data = parseDate(dataStr);
+        if (isNaN(data)) continue;
+        const dia = data.toISOString().slice(0, 10);
+        agregados[dia] = (agregados[dia] || 0) + calcularLiquido(pedido);
+      }
+    } catch (_) {}
+  }
+  const labels = Object.keys(agregados).sort();
+  const data = labels.map(l => agregados[l]);
+  updateSalesChart(labels.map(formatarData), data);
 }
 
 function renderTabelaSaques() {
