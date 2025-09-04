@@ -17,7 +17,21 @@
   <main class="main-content p-4 space-y-6">
     <div class="card">
       <div class="card-header"><h2 class="text-xl font-bold">Resultados do Mentorado</h2></div>
-      <div id="resultadoMentorado" class="card-body space-y-4"></div>
+      <div class="card-body space-y-4">
+        <div id="resumoMentorado"></div>
+        <div class="flex flex-wrap items-end gap-2">
+          <div>
+            <label for="dataInicio" class="text-sm">De:</label>
+            <input type="date" id="dataInicio" class="border rounded p-1">
+          </div>
+          <div>
+            <label for="dataFim" class="text-sm">Até:</label>
+            <input type="date" id="dataFim" class="border rounded p-1">
+          </div>
+          <button id="filtrarSkus" class="bg-blue-500 text-white px-4 py-2 rounded">Filtrar</button>
+        </div>
+        <div id="listaSkus"></div>
+      </div>
     </div>
   </main>
   <script>
