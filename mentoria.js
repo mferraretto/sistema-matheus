@@ -1,42 +1,43 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, onSnapshot, doc, getDoc, getDocs, orderBy, startAt, endAt } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, doc, getDoc, getDocs, orderBy, startAt, endAt } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
+import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-function carregarUsuariosFinanceiros(user) {
-  const container = document.getElementById('mentoradosList');
-  const mesAtual = new Date().toISOString().slice(0, 7);
-  const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
-  onSnapshot(q, async snap => {
+  async function carregarUsuariosFinanceiros(user) {
+    const container = document.getElementById('mentoradosList');
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
     container.innerHTML = '';
-    if (snap.empty) {
+    if (!lista.length) {
       container.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhum usuário encontrado.</p>';
       return;
     }
-    for (const docSnap of snap.docs) {
-      const dados = docSnap.data();
-      const email = dados.email || '';
+    for (const u of lista) {
+      const docSnap = await getDoc(doc(db, 'usuarios', u.uid));
+      const dados = docSnap.exists() ? docSnap.data() : {};
+      const email = dados.email || u.email || '';
       let perfilData = {};
-      let nome = dados.nome;
+      let nome = dados.nome || u.nome;
       try {
-        const perfil = await getDoc(doc(db, 'perfilMentorado', docSnap.id));
+        const perfil = await getDoc(doc(db, 'perfilMentorado', u.uid));
         if (perfil.exists()) {
           perfilData = perfil.data();
           if (!nome) nome = perfilData.nome;
         }
       } catch (_) {}
-      nome = nome || docSnap.id;
+      nome = nome || u.uid;
       const status = dados.status || '-';
       const inicio = dados.dataInicio?.toDate ? dados.dataInicio.toDate().toLocaleDateString('pt-BR') :
         dados.createdAt?.toDate ? dados.createdAt.toDate().toLocaleDateString('pt-BR') : '-';
       let meta = '-';
       try {
-        const metaDoc = await getDoc(doc(db, `uid/${docSnap.id}/metasFaturamento`, mesAtual));
+        const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mesAtual));
         if (metaDoc.exists()) {
           const valor = Number(metaDoc.data().valor) || 0;
           meta = `R$ ${valor.toLocaleString('pt-BR')}`;
@@ -50,16 +51,15 @@ function carregarUsuariosFinanceiros(user) {
         <p><span class="font-medium">Início:</span> ${inicio}</p>
         <p><span class="font-medium">Status:</span> ${status}</p>
         <p><span class="font-medium">Meta:</span> ${meta}</p>
-        <a href="perfil-mentorado.html?uid=${docSnap.id}" class="text-blue-500 hover:underline" onclick="event.stopPropagation()">Editar</a>
+        <a href="perfil-mentorado.html?uid=${u.uid}" class="text-blue-500 hover:underline" onclick="event.stopPropagation()">Editar</a>
       `;
       card.addEventListener('click', e => {
         if (e.target.tagName === 'A') return;
-        window.open(`perfil-mentorado.html?uid=${docSnap.id}`, '_blank');
+        window.open(`perfil-mentorado.html?uid=${u.uid}`, '_blank');
       });
       container.appendChild(card);
     }
-  });
-}
+  }
 
 async function calcularResumo(uid) {
   const mesAtual = new Date().toISOString().slice(0, 7);

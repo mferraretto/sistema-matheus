@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
+import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -49,52 +50,31 @@ async function carregarUsuarios() {
   if (select) select.innerHTML = '';
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
-  try {
-    const [snapUsuarios, snapUid] = await Promise.all([
-      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', currentUser.email))),
-      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', currentUser.email)))
-    ]);
-
-    if (snapUsuarios.empty && snapUid.empty) {
-      card?.classList.add('hidden');
-      return;
+    try {
+      const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(db, currentUser.email);
+      if (!listaUsuarios.length) {
+        card?.classList.add('hidden');
+        return;
+      }
+      card?.classList.remove('hidden');
+      listaUsuarios.forEach(u => {
+        usuariosResponsaveis.push({ uid: u.uid, nome: u.nome });
+        if (select) {
+          const opt = document.createElement('option');
+          opt.value = u.uid;
+          opt.textContent = u.nome;
+          select.appendChild(opt);
+        }
+        if (lista) {
+          const li = document.createElement('li');
+          li.textContent = `${u.nome} - ${u.email || ''}`;
+          lista.appendChild(li);
+        }
+      });
+      carregarHistoricoFaturamento();
+    } catch (err) {
+      console.error('Erro ao carregar usuários:', err);
     }
-    card?.classList.remove('hidden');
-
-    const processado = new Set();
-    const adicionarUsuario = async d => {
-      if (processado.has(d.id)) return;
-      processado.add(d.id);
-      const dados = d.data();
-      let nome = dados.nome;
-      if (!nome) {
-        try {
-          const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
-          if (perfil.exists()) nome = perfil.data().nome;
-        } catch (_) {}
-      }
-      nome = nome || dados.email || d.id;
-      usuariosResponsaveis.push({ uid: d.id, nome });
-      if (select) {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = nome;
-        select.appendChild(opt);
-      }
-      if (lista) {
-        const li = document.createElement('li');
-        li.textContent = `${nome} - ${dados.email || ''}`;
-        lista.appendChild(li);
-      }
-    };
-
-    for (const d of snapUsuarios.docs) await adicionarUsuario(d);
-    for (const d of snapUid.docs) await adicionarUsuario(d);
-
-    carregarHistoricoFaturamento();
-  } catch (err) {
-    console.error('Erro ao carregar usuários:', err);
-  }
 }
 
 async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
