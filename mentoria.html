@@ -59,6 +59,14 @@
     </div>
   </main>
 
+  <!-- Modal de detalhes do mentorado -->
+  <div id="mentorDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded p-4 max-w-lg w-full max-h-[80vh] overflow-y-auto relative">
+      <button id="mentorDetailClose" class="absolute top-2 right-2 text-gray-600">&times;</button>
+      <div id="mentorDetailContent" class="space-y-2"></div>
+    </div>
+  </div>
+
   <!-- Caminhos dos parciais (use os mesmos em todas as páginas) -->
   <script>
     window.CUSTOM_SIDEBAR_PATH = '/VendedorPro/partials/sidebar.html';
