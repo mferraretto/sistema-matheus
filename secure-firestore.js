@@ -65,8 +65,23 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
 
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
-export async function saveUserDoc(db, uid, collection, id, data, passphrase) {
-  return saveSecureDoc(db, `uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
+export async function setDocWithCopy(ref, data, uid, responsavelUid) {
+  await setDoc(ref, data);
+  const respUid = responsavelUid || (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
+  if (respUid && respUid !== uid) {
+    const segments = ref.path.split('/');
+    const relative = segments.slice(2).join('/');
+    const copyRef = doc(ref.firestore, `uid/${respUid}/uid/${uid}/${relative}`);
+    await setDoc(copyRef, data);
+  }
+}
+
+export async function saveUserDoc(db, uid, collection, id, data, passphrase, responsavelUid) {
+  await saveSecureDoc(db, `uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
+  const respUid = responsavelUid || (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
+  if (respUid && respUid !== uid) {
+    await saveSecureDoc(db, `uid/${respUid}/uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
+  }
 }
 
 export async function loadUserDoc(db, uid, collection, id, passphrase) {

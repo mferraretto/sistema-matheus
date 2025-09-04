@@ -1,9 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt, startAfter, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, query, where, onSnapshot, orderBy, startAt, endAt, startAfter, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
-import { loadSecureDoc } from './secure-firestore.js';
+import { loadSecureDoc, setDocWithCopy } from './secure-firestore.js';
 import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
@@ -122,7 +122,8 @@ async function salvarMeta() {
     return;
   }
   try {
-    await setDoc(doc(db, `uid/${uid}/metasFaturamento`, mes), { valor });
+    const ref = doc(db, `uid/${uid}/metasFaturamento`, mes);
+    await setDocWithCopy(ref, { valor }, uid);
     alert('Meta salva com sucesso!');
     await carregar();
   } catch (err) {
@@ -438,7 +439,7 @@ async function carregarTotaisPedidosTiny(usuarios) {
       totalBruto += extraBruto;
       totalLiquido += extraLiquido;
       ultimoDoc = last.id;
-      await setDoc(resumoRef, { totalBruto, totalLiquido, ultimoDoc });
+      await setDocWithCopy(resumoRef, { totalBruto, totalLiquido, ultimoDoc }, usuario.uid);
     }
     const existente = resumoUsuarios[usuario.uid].faturamento || {};
     resumoUsuarios[usuario.uid].faturamento = {
@@ -835,13 +836,13 @@ async function renderPedidosTiny7Dias(lista) {
       }
       try {
         const resumoRef = doc(db, `uid/${u.uid}/resumoVendas`, 'ultimos7');
-        await setDoc(resumoRef, {
+        await setDocWithCopy(resumoRef, {
           atualizado: fimAtualStr,
           bruto7d: bruto,
           liquido7d: liquido,
           brutoAnterior7d: brutoAnt,
           liquidoAnterior7d: liquidoAnt
-        });
+        }, u.uid);
       } catch (_) {}
     }
     const variacao = liquidoAnt ? ((liquido - liquidoAnt) / liquidoAnt) * 100 : (liquido ? 100 : 0);
