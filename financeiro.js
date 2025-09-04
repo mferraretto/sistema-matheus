@@ -183,10 +183,7 @@ async function carregar() {
     if (texto) texto.textContent = '';
     if (resumo) resumo.textContent = '';
   }
-  await Promise.all([
-    renderVendasDiaAnterior(listaUsuarios),
-    renderPedidosTinyHoje(listaUsuarios)
-  ]);
+  await renderPedidosTinyHoje(listaUsuarios);
 }
 
 function atualizarContexto() {
@@ -772,78 +769,6 @@ function createResumoCard(u) {
     <div class="text-sm">Comissão: R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
     <div class="progress ${statusColor}"><div class="progress-bar" style="width:${progresso.toFixed(0)}%"></div></div>`;
   return card;
-}
-
-function calcularFaturamentoDiaDetalhadoGestor(responsavelUid, uid, dia) {
-  const lojasSnap = await getDocs(collection(db, `uid/${responsavelUid}/uid/${uid}/faturamento/${dia}/lojas`));
-  let liquido = 0;
-  let bruto = 0;
-  for (const lojaDoc of lojasSnap.docs) {
-    let dados = lojaDoc.data();
-    if (dados.encrypted) {
-      let txt;
-      const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
-      for (const p of candidates) {
-        if (!p) continue;
-        try {
-          txt = await decryptString(dados.encrypted, p);
-          if (txt) break;
-        } catch (_) {}
-      }
-      if (txt) dados = JSON.parse(txt);
-    }
-    liquido += Number(dados.valorLiquido) || 0;
-    bruto += Number(dados.valorBruto) || 0;
-  }
-  return { liquido, bruto };
-}
-
-async function calcularVendasDiaGestor(responsavelUid, uid, dia) {
-  try {
-    const resumoDoc = await getDoc(doc(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia));
-    if (resumoDoc.exists()) {
-      let dados = resumoDoc.data();
-      if (dados.encrypted) {
-        let txt;
-        const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
-        for (const p of candidates) {
-          if (!p) continue;
-          try {
-            txt = await decryptString(dados.encrypted, p);
-            if (txt) break;
-          } catch (_) {}
-        }
-        if (txt) dados = JSON.parse(txt);
-      }
-      return Number(dados.vendas || dados.qtdVendas || dados.quantidade) || 0;
-    }
-  } catch (e) {
-    console.error('Erro ao calcular vendas do dia:', e);
-  }
-  return 0;
-}
-
-async function renderVendasDiaAnterior(lista) {
-  const container = document.getElementById('vendasDiaAnterior');
-  if (!container) return;
-  container.innerHTML = '';
-  const dia = new Date();
-  dia.setDate(dia.getDate() - 1);
-  const diaStr = dia.toISOString().slice(0,10);
-  const cards = [];
-  for (const u of lista) {
-    const { liquido, bruto } = await calcularFaturamentoDiaDetalhadoGestor(currentUser.uid, u.uid, diaStr);
-    const vendas = await calcularVendasDiaGestor(currentUser.uid, u.uid, diaStr);
-    const card = document.createElement('div');
-    card.className = 'card p-4';
-    card.innerHTML = `
-      <h4 class="font-bold mb-2">${u.nome}</h4>
-      <div>Bruto dia: R$ ${bruto.toLocaleString('pt-BR')}</div>
-      <div>Líquido dia: R$ ${liquido.toLocaleString('pt-BR')}</div>
-      <div>Qtd dia: ${vendas}</div>`;
-    cards.push(card);
-  }
-  cards.forEach(card => container.appendChild(card));
 }
 
 async function renderPedidosTinyHoje(lista) {
