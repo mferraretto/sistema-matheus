@@ -34,6 +34,19 @@ let updNotifUnsub = null;
 let selectedRole = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
+let responsavelCache = { uid: null, exp: 0, data: null };
+
+async function getResponsavelFinanceiroCached(db, uid) {
+  if (responsavelCache.uid === uid && responsavelCache.exp > Date.now()) {
+    return responsavelCache.data;
+  }
+  const snap = await getDoc(doc(db, 'usuarios', uid));
+  if (snap.exists()) {
+    responsavelCache = { uid, exp: Date.now() + 5 * 60 * 1000, data: snap.data() };
+    return responsavelCache.data;
+  }
+  return null;
+}
 
 // Ping a local file to test online status without CORS issues.
 async function pingOnline(timeout = 3000) {
@@ -292,17 +305,15 @@ async function showUserArea(user) {
 
     // 3) localiza responsável financeiro do usuário, se houver
     try {
-      let respEmail = snap.data()?.responsavelFinanceiroEmail;
-      if (!respEmail) {
+      let respUid = snap.data()?.responsavelFinanceiroUid;
+      if (!respUid) {
         const altDoc = await getDoc(doc(db, 'uid', user.uid));
-        if (altDoc.exists()) respEmail = altDoc.data().responsavelFinanceiroEmail;
+        if (altDoc.exists()) respUid = altDoc.data().responsavelFinanceiroUid;
       }
-      if (respEmail) {
-        const respQuery = query(collection(db, 'usuarios'), where('email', '==', respEmail));
-        const respDocs = await getDocs(respQuery);
-        if (!respDocs.empty) {
-          const d = respDocs.docs[0];
-          window.responsavelFinanceiro = { uid: d.id, ...d.data() };
+      if (respUid) {
+        const respData = await getResponsavelFinanceiroCached(db, respUid);
+        if (respData) {
+          window.responsavelFinanceiro = { uid: respUid, ...respData };
         }
       }
     } catch (e) {
@@ -311,7 +322,7 @@ async function showUserArea(user) {
 
     // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
-      const respUsuarios = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+      const respUsuarios = await fetchResponsavelFinanceiroUsuarios(db, user.uid);
       window.isFinanceiroResponsavel = respUsuarios.length > 0;
       ensureFinanceiroMenu();
     } catch (e) {

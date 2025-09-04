@@ -1,26 +1,16 @@
-import { collection, query, where, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
-export async function fetchResponsavelFinanceiroUsuarios(db, email) {
-  const [snapUsuarios, snapUid] = await Promise.all([
-    getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', email))),
-    getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', email)))
-  ]);
-  const vistos = new Set();
+export async function fetchResponsavelFinanceiroUsuarios(db, responsavelUid) {
+  const snap = await getDocs(collection(db, 'responsaveis', responsavelUid, 'geridos'));
   const usuarios = [];
-  const docs = [...snapUsuarios.docs, ...snapUid.docs];
-  for (const d of docs) {
-    if (vistos.has(d.id)) continue;
-    vistos.add(d.id);
-    const dados = d.data();
-    let nome = dados.nome;
-    if (!nome) {
-      try {
-        const perfilDoc = await getDoc(doc(db, 'perfilMentorado', d.id));
-        if (perfilDoc.exists()) nome = perfilDoc.data().nome;
-      } catch (_) {}
-    }
-    const emailUser = dados.email || '';
-    usuarios.push({ uid: d.id, nome: nome || emailUser || d.id, email: emailUser });
+  for (const d of snap.docs) {
+    try {
+      const userDoc = await getDoc(doc(db, 'usuarios', d.id));
+      if (userDoc.exists()) {
+        const dados = userDoc.data();
+        usuarios.push({ uid: d.id, nome: dados.nome || dados.email || d.id, email: dados.email || '' });
+      }
+    } catch (_) {}
   }
   return usuarios;
 }
@@ -28,7 +18,7 @@ export async function fetchResponsavelFinanceiroUsuarios(db, email) {
 export async function carregarUsuariosFinanceiros(db, user) {
   const docSnap = await getDoc(doc(db, 'usuarios', user.uid));
   const perfil = docSnap.exists() ? String(docSnap.data().perfil || '').toLowerCase().trim() : '';
-  const extras = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+  const extras = await fetchResponsavelFinanceiroUsuarios(db, user.uid);
   const isResponsavelFinanceiro = extras.length > 0 || ['responsavel', 'gestor financeiro'].includes(perfil);
   const isGestor = perfil === 'gestor';
   const usuarios = [{ uid: user.uid, nome: user.displayName || user.email, email: user.email }, ...extras];
