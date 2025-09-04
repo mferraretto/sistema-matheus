@@ -55,7 +55,7 @@ const auth = getAuth(app);
       `;
       card.addEventListener('click', e => {
         if (e.target.tagName === 'A') return;
-        window.open(`perfil-mentorado.html?uid=${u.uid}`, '_blank');
+        window.open(`resultados-mentorado.html?uid=${u.uid}`, '_blank');
       });
       container.appendChild(card);
     }
