@@ -216,7 +216,7 @@ export function aplicarFiltros() {
     } else if (tipo === 'personalizado' && inicio && fim) {
       const i = parseDate(inicio);
       const f = parseDate(fim);
-      if (data < i || data > f) return false;
+      if (isNaN(data) || data < i || data > f) return false;
     }
 
     const lojaPedido = (p.loja || p.store || '').toLowerCase();
