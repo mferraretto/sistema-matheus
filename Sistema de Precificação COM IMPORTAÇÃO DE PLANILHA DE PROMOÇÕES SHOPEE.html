@@ -1996,26 +1996,28 @@ function applyPriceUpdate(type) {
       
       // Filtros
 document.getElementById('filterHistoryType')?.addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryUser').addEventListener('change', loadHistory);
-      document.getElementById('filterHistoryDate').addEventListener('change', loadHistory);
-      document.getElementById('filtroPlataforma').addEventListener('change', atualizarLista);
+        document.getElementById('filterHistoryUser')?.addEventListener('change', loadHistory);
+        document.getElementById('filterHistoryDate')?.addEventListener('change', loadHistory);
+        document.getElementById('filtroPlataforma')?.addEventListener('change', atualizarLista);
       
       // Configurações
-      document.getElementById('autoBackup').addEventListener('change', function() {
-        sistema.config.backupAuto = this.checked;
-        saveSystem();
-      });
-      
-      document.getElementById('backupFrequency').addEventListener('change', function() {
-        sistema.config.backupFrequency = this.value;
-        saveSystem();
-      });
+        document.getElementById('autoBackup')?.addEventListener('change', function() {
+          sistema.config.backupAuto = this.checked;
+          saveSystem();
+        });
+
+        document.getElementById('backupFrequency')?.addEventListener('change', function() {
+          sistema.config.backupFrequency = this.value;
+          saveSystem();
+        });
     }
 
     function updateUI() {
       // Atualiza checkbox de backup automático
-      document.getElementById('autoBackup').checked = sistema.config.backupAuto;
-      document.getElementById('backupFrequency').value = sistema.config.backupFrequency || 'daily';
+        const autoBackupEl = document.getElementById('autoBackup');
+        if (autoBackupEl) autoBackupEl.checked = sistema.config.backupAuto;
+        const backupFrequencyEl = document.getElementById('backupFrequency');
+        if (backupFrequencyEl) backupFrequencyEl.value = sistema.config.backupFrequency || 'daily';
       
       // Atualiza status de conexão
       updateApiStatusUI();
@@ -2042,10 +2044,14 @@ document.getElementById('filterHistoryType')?.addEventListener('change', loadHis
       const activeConnections = Object.values(sistema.config.apiConfig)
         .filter(api => api.connected).length;
       
-      document.getElementById('totalProducts').textContent = totalProducts;
-      document.getElementById('avgMargin').textContent = `${avgMargin}%`;
-      document.getElementById('activeConnections').textContent = `${activeConnections}/4`;
-      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        const totalProductsEl = document.getElementById('totalProducts');
+        if (totalProductsEl) totalProductsEl.textContent = totalProducts;
+        const avgMarginEl = document.getElementById('avgMargin');
+        if (avgMarginEl) avgMarginEl.textContent = `${avgMargin}%`;
+        const activeConnectionsEl = document.getElementById('activeConnections');
+        if (activeConnectionsEl) activeConnectionsEl.textContent = `${activeConnections}/4`;
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl) lastUpdateEl.textContent = new Date().toLocaleTimeString();
     }
     
     function showToast(message, type) {
