@@ -240,8 +240,8 @@ export function aplicarFiltros(resetPage = false) {
   filtradosAtuais = filtrados;
   const totalPaginas = Math.ceil(filtradosAtuais.length / pedidosPorPagina) || 1;
   if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
-  const inicio = (paginaAtual - 1) * pedidosPorPagina;
-  const paginaPedidos = filtradosAtuais.slice(inicio, inicio + pedidosPorPagina);
+  const inicioPaginacao = (paginaAtual - 1) * pedidosPorPagina;
+  const paginaPedidos = filtradosAtuais.slice(inicioPaginacao, inicioPaginacao + pedidosPorPagina);
 
   tbody.innerHTML = '';
   paginaPedidos.forEach(p => {
