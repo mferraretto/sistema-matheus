@@ -11,14 +11,13 @@ const auth = getAuth(app);
 const urlParams = new URLSearchParams(window.location.search);
 const uid = urlParams.get('uid');
 
-async function calcularResumo(uid) {
-  const mesAtual = new Date().toISOString().slice(0, 7);
+async function calcularResumo(uid, inicio, fim) {
   let bruto = 0;
   let liquido = 0;
   let vendas = 0;
   try {
     const colFat = collection(db, `uid/${uid}/faturamento`);
-    const q = query(colFat, orderBy('__name__'), startAt(`${mesAtual}-01`), endAt(`${mesAtual}-31`));
+    const q = query(colFat, orderBy('__name__'), startAt(inicio), endAt(fim));
     const snap = await getDocs(q);
     for (const docSnap of snap.docs) {
       const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`));
@@ -42,11 +41,15 @@ async function calcularResumo(uid) {
 
   let skusVendidos = 0;
   try {
-    const skusRef = collection(db, `uid/${uid}/skusVendidos`);
-    const skusSnap = await getDocs(skusRef);
+    const qSkus = query(
+      collection(db, `uid/${uid}/skusVendidos`),
+      orderBy('__name__'),
+      startAt(inicio),
+      endAt(fim)
+    );
+    const skusSnap = await getDocs(qSkus);
     const setSkus = new Set();
     for (const docSnap of skusSnap.docs) {
-      if (!docSnap.id.includes(mesAtual)) continue;
       const listaSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`));
       listaSnap.forEach(item => {
         const d = item.data();
@@ -61,15 +64,15 @@ async function calcularResumo(uid) {
   return { bruto, liquido, vendas, skusVendidos };
 }
 
-async function carregarResultados() {
+async function carregarResultados(inicio, fim) {
   if (!uid) return;
   const container = document.getElementById('resumoMentorado');
   container.innerHTML = '<p class="text-sm text-gray-500">Carregando...</p>';
-  const { bruto, liquido, vendas, skusVendidos } = await calcularResumo(uid);
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const { bruto, liquido, vendas, skusVendidos } = await calcularResumo(uid, inicio, fim);
+  const mesMeta = inicio.slice(0, 7);
   let meta = 0;
   try {
-    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
+    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesMeta));
     if (metaDoc.exists()) {
       meta = Number(metaDoc.data().valor) || 0;
     }
@@ -79,7 +82,7 @@ async function carregarResultados() {
     <p><span class="font-medium">Faturamento bruto:</span> R$ ${bruto.toLocaleString('pt-BR')}</p>
     <p><span class="font-medium">Faturamento líquido:</span> R$ ${liquido.toLocaleString('pt-BR')}</p>
     <p><span class="font-medium">Quantidade de vendas:</span> ${vendas}</p>
-    <p><span class="font-medium">SKUs vendidos no mês:</span> ${skusVendidos}</p>
+    <p><span class="font-medium">SKUs vendidos no período:</span> ${skusVendidos}</p>
     <p><span class="font-medium">Meta do mês:</span> R$ ${meta.toLocaleString('pt-BR')}</p>
     <p><span class="font-medium">Progresso:</span> ${progresso.toFixed(2)}%</p>
   `;
@@ -140,7 +143,6 @@ async function carregarListaSkus(inicio, fim) {
 function initResultadosMentorado() {
   onAuthStateChanged(auth, user => {
     if (user) {
-      carregarResultados();
       const hoje = new Date();
       const dataFim = document.getElementById('dataFim');
       const dataInicio = document.getElementById('dataInicio');
@@ -150,10 +152,12 @@ function initResultadosMentorado() {
       const hojeStr = hoje.toISOString().slice(0, 10);
       dataInicio.value = primeiroDia;
       dataFim.value = hojeStr;
+      carregarResultados(primeiroDia, hojeStr);
       carregarListaSkus(primeiroDia, hojeStr);
       document
         .getElementById('filtrarSkus')
         .addEventListener('click', () => {
+          carregarResultados(dataInicio.value, dataFim.value);
           carregarListaSkus(dataInicio.value, dataFim.value);
         });
     }
