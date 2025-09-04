@@ -20,64 +20,65 @@
     <div id="sidebar-container"></div>
     <div id="navbar-container"></div>
     <div class="main-content p-6">
-      <h1 class="text-2xl font-bold mb-6"><i class="fas fa-tags mr-2"></i> Promoções Shopee</h1>
-   
-     <div class="card mb-6">
-  <div class="flex flex-wrap gap-4 items-end">
-    <div class="flex-1">
-      <label class="block text-sm font-medium mb-2">
-        Importar Planilha de Promoções:
-      </label>
-      <input type="file"
-             id="promoFileInput"
-             accept=".xlsx,.xls"
-             class="border p-2 rounded-lg w-full">
+      <div class="max-w-5xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6"><i class="fas fa-tags mr-2"></i> Promoções Shopee</h1>
+
+       <div class="card mb-6">
+    <div class="flex flex-wrap gap-4 items-end">
+      <div class="flex-1">
+        <label class="block text-sm font-medium mb-2">
+          Importar Planilha de Promoções:
+        </label>
+        <input type="file"
+               id="promoFileInput"
+               accept=".xlsx,.xls"
+               class="border p-2 rounded-lg w-full">
+      </div>
+      <!-- chama corretamente a função agora -->
+      <button onclick="importShopeePromoFile()" class="btn-primary">
+        <i class="fas fa-upload mr-2"></i> Importar Promoções
+      </button>
     </div>
-    <!-- chama corretamente a função agora -->
-    <button onclick="importShopeePromoFile()" class="btn-primary">
-      <i class="fas fa-upload mr-2"></i> Importar Promoções
-    </button>
   </div>
-</div>
 
-      <div id="importedShopeeProducts" style="display:none;" class="mt-6">
-        <div class="overflow-x-auto">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID Produto</th>
-                <th>Parent SKU</th>
-                <th>SKU</th>
-                <th>Preço Original</th>
-                <th>Preço Desconto</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="importedProductsTableBody"></tbody>
-          </table>
+        <div id="importedShopeeProducts" style="display:none;" class="mt-6">
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID Produto</th>
+                  <th>Parent SKU</th>
+                  <th>SKU</th>
+                  <th>Preço Original</th>
+                  <th>Preço Desconto</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="importedProductsTableBody"></tbody>
+            </table>
+          </div>
+          <p id="modifiedCount" class="mt-2 font-bold"></p>
         </div>
-        <p id="modifiedCount" class="mt-2 font-bold"></p>
-      </div>
 
-      <div id="promoImportedProducts" style="display:none;" class="mt-6">
-        <div class="overflow-x-auto">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID Produto</th>
-                <th>Parent SKU</th>
-                <th>SKU</th>
-                <th>Preço Original</th>
-                <th>Preço Desconto</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="promoProductsTableBody"></tbody>
-          </table>
+        <div id="promoImportedProducts" style="display:none;" class="mt-6">
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID Produto</th>
+                  <th>Parent SKU</th>
+                  <th>SKU</th>
+                  <th>Preço Original</th>
+                  <th>Preço Desconto</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="promoProductsTableBody"></tbody>
+            </table>
+          </div>
+          <p id="promoChangesCount" class="mt-2 font-bold"></p>
         </div>
-        <p id="promoChangesCount" class="mt-2 font-bold"></p>
-      </div>
-      <!-- Botões de ação -->
+        <!-- Botões de ação -->
 <div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
   <button onclick="applyPromoPriceUpdate('promo')" class="btn-danger">
     <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
@@ -96,9 +97,10 @@
     <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
   </button>
 </div>
+      </div>
     </div>
   </div>
-  <script>
+    <script>
 let db;
 document.addEventListener('DOMContentLoaded', () => {
 if (!firebase.apps.length) {
