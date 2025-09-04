@@ -113,8 +113,17 @@ function openChat(userInfo) {
 async function loadTeam(user, perfil, data) {
   let members = [];
   if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
-    members = snap.docs.map(d => ({ id: d.id, email: d.data().email || '', nome: d.data().nome || d.data().email || d.id }));
+    const [snap1, snap2] = await Promise.all([
+      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
+      getDocs(query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email)))
+    ]);
+    const docs = [...snap1.docs, ...snap2.docs];
+    const vistos = new Set();
+    members = docs.filter(d => {
+      if (vistos.has(d.id)) return false;
+      vistos.add(d.id);
+      return true;
+    }).map(d => ({ id: d.id, email: d.data().email || '', nome: d.data().nome || d.data().email || d.id }));
   } else {
     const emails = [];
     if (data.responsavelFinanceiroEmail) emails.push(data.responsavelFinanceiroEmail);

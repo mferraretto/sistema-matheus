@@ -11,14 +11,16 @@ const auth = getAuth(app);
 function carregarUsuariosFinanceiros(user) {
   const container = document.getElementById('mentoradosList');
   const mesAtual = new Date().toISOString().slice(0, 7);
-  const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
-  onSnapshot(q, async snap => {
+  const q1 = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
+  const q2 = query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email));
+  const mergeSnaps = async snap => {
     container.innerHTML = '';
-    if (snap.empty) {
+    const docs = [...snap.docs];
+    if (!docs.length) {
       container.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhum usuário encontrado.</p>';
       return;
     }
-    for (const docSnap of snap.docs) {
+    for (const docSnap of docs) {
       const dados = docSnap.data();
       const email = dados.email || '';
       let perfilData = {};
@@ -58,7 +60,9 @@ function carregarUsuariosFinanceiros(user) {
       });
       container.appendChild(card);
     }
-  });
+  };
+  onSnapshot(q1, mergeSnaps);
+  onSnapshot(q2, mergeSnaps);
 }
 
 async function calcularResumo(uid) {
