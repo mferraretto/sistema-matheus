@@ -952,7 +952,7 @@ function showModal(titulo, corpo) {
   modal.querySelector('#detalhesCorpo').innerHTML = corpo;
   modal.style.display = 'flex';
 }
-}
+
 
 function exportarSaques() {
   if (!dadosSaquesExport.length) {
