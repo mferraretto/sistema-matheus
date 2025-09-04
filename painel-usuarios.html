@@ -26,6 +26,7 @@
           <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
           <input type="email" id="email" placeholder="E-mail do Usuário" class="w-full p-2 border rounded">
           <input type="text" id="emailExpedicao" placeholder="E-mails Responsável Expedição (separados por vírgula)" class="w-full p-2 border rounded">
+          <input type="text" id="emailFinanceiro" placeholder="E-mails Responsável Financeiro (separados por vírgula)" class="w-full p-2 border rounded">
       <select id="perfil" class="w-full p-2 border rounded">
         <option value="Cliente">Cliente</option>
         <option value="ADM">ADM</option>
@@ -81,8 +82,10 @@ if (!firebase.apps.length) {
       const uid = document.getElementById("uid").value.trim();
       const nome = document.getElementById("nome").value.trim();
       const email = document.getElementById("email").value.trim();
- const emailExpedicaoRaw = document.getElementById("emailExpedicao").value.trim();
+      const emailExpedicaoRaw = document.getElementById("emailExpedicao").value.trim();
       const gestoresEmails = emailExpedicaoRaw.split(',').map(e => e.trim()).filter(e => e);
+      const emailFinanceiroRaw = document.getElementById("emailFinanceiro").value.trim();
+      const gestoresFinEmails = emailFinanceiroRaw.split(',').map(e => e.trim()).filter(e => e);
       const perfil = document.getElementById("perfil").value;
 
       if (uid && nome && email) {
@@ -91,11 +94,18 @@ const { encryptString } = await import('./crypto.js');
         await db.collection('uid').doc(uid).set({
           uid,
           email,
- responsavelExpedicaoEmail: gestoresEmails[0] || null,
+          responsavelExpedicaoEmail: gestoresEmails[0] || null,
           gestoresExpedicaoEmails: gestoresEmails,
+          responsavelFinanceiroEmail: gestoresFinEmails[0] || null,
+          gestoresFinanceirosEmails: gestoresFinEmails,
           encrypted: await encryptString(JSON.stringify({ nome, perfil }), pass)
         });
-        await db.collection('usuarios').doc(uid).set({ perfil, email }, { merge: true });
+        await db.collection('usuarios').doc(uid).set({
+          perfil,
+          email,
+          responsavelFinanceiroEmail: gestoresFinEmails[0] || null,
+          gestoresFinanceirosEmails: gestoresFinEmails
+        }, { merge: true });
         alert("Usuário salvo com sucesso!");
         carregarUsuarios();
       }
@@ -111,12 +121,14 @@ const { encryptString } = await import('./crypto.js');
         const pass = getPassphrase() || `chave-${doc.id}`;
         const data = JSON.parse(await decryptString(enc, pass));
         const info = doc.data();
-const respArr = info.gestoresExpedicaoEmails || [];
+        const respArr = info.gestoresExpedicaoEmails || [];
         const resp = respArr.length ? respArr.join(', ') : (info.responsavelExpedicaoEmail || 'N/A');
-         const email = info.email || 'N/A';
+        const finArr = info.gestoresFinanceirosEmails || [];
+        const fin = finArr.length ? finArr.join(', ') : (info.responsavelFinanceiroEmail || 'N/A');
+        const email = info.email || 'N/A';
         const item = document.createElement("li");
         item.className = "p-2 bg-gray-50 border rounded";
-        item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+        item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Resp Fin: ${fin} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
         lista.appendChild(item);
     }
     }

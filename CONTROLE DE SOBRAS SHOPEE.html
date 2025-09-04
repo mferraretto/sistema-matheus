@@ -364,25 +364,26 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
         const dadosUsuario = usuarioDoc.data() || {};
         const autorNome = dadosUsuario.nome || firebase.auth().currentUser?.email || '';
         const autorEmail = firebase.auth().currentUser?.email || '';
-        const respEmail = dadosUsuario.responsavelFinanceiroEmail;
-        if (!respEmail) return;
-        const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
-        if (respSnap.empty) return;
-        const respDoc = respSnap.docs[0];
-        const respData = respDoc.data() || {};
-        const responsavelUid = respData.uid || respDoc.id;
-        const descricao = `Faturamento de ${dataRef} da loja ${loja} atualizado. Bruto: R$ ${bruto.toFixed(2)}, Líquido: R$ ${liquido.toFixed(2)}, Vendas: ${qtdVendas}`;
-        await db.collection('financeiroAtualizacoes').add({
-          descricao,
-          autorUid: usuarioLogado.uid,
-          autorNome,
-          autorEmail,
-          dataFaturamento: dataRef,
-          destinatarios: [responsavelUid, usuarioLogado.uid],
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          anexos: [],
-          tipo: 'faturamento'
-        });
+        const respEmails = dadosUsuario.gestoresFinanceirosEmails || (dadosUsuario.responsavelFinanceiroEmail ? [dadosUsuario.responsavelFinanceiroEmail] : []);
+        for (const respEmail of respEmails) {
+          const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+          if (respSnap.empty) continue;
+          const respDoc = respSnap.docs[0];
+          const respData = respDoc.data() || {};
+          const responsavelUid = respData.uid || respDoc.id;
+          const descricao = `Faturamento de ${dataRef} da loja ${loja} atualizado. Bruto: R$ ${bruto.toFixed(2)}, Líquido: R$ ${liquido.toFixed(2)}, Vendas: ${qtdVendas}`;
+          await db.collection('financeiroAtualizacoes').add({
+            descricao,
+            autorUid: usuarioLogado.uid,
+            autorNome,
+            autorEmail,
+            dataFaturamento: dataRef,
+            destinatarios: [responsavelUid, usuarioLogado.uid],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            anexos: [],
+            tipo: 'faturamento'
+          });
+        }
       } catch (e) {
         console.error('Erro ao notificar responsável financeiro:', e);
       }
@@ -1466,7 +1467,8 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
           const rows = XLSX.utils.sheet_to_json(sheet);
           const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
           const dadosUsuario = usuarioDoc.data() || {};
-          const respEmail = dadosUsuario.responsavelFinanceiroEmail || null;
+          const finEmails = dadosUsuario.gestoresFinanceirosEmails || [];
+          const respEmail = finEmails[0] || dadosUsuario.responsavelFinanceiroEmail || null;
           let baseResp = null;
           if (respEmail) {
             const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
@@ -2120,8 +2122,13 @@ const ownerUid = ["adm","admin"].includes(usuarioLogado.perfil.toLowerCase())
         };
         const snap = await db.collection('uid').doc(usuarioLogado.uid).collection('pedidosErrados').get();
         addPedidos(snap, usuarioLogado.email || usuarioLogado.uid);
-        const respSnap = await db.collection('usuarios').where('responsavelFinanceiroEmail', '==', usuarioLogado.email).get();
-        for (const docSnap of respSnap.docs) {
+        const respSnap1 = await db.collection('usuarios').where('responsavelFinanceiroEmail', '==', usuarioLogado.email).get();
+        const respSnap2 = await db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', usuarioLogado.email).get();
+        const processados = new Set();
+        const todos = [...respSnap1.docs, ...respSnap2.docs];
+        for (const docSnap of todos) {
+          if (processados.has(docSnap.id)) continue;
+          processados.add(docSnap.id);
           const nome = docSnap.data().nome || docSnap.data().email || docSnap.id;
           const errSnap = await db.collection('uid').doc(docSnap.id).collection('pedidosErrados').get();
           addPedidos(errSnap, nome);
@@ -3080,11 +3087,11 @@ function filtrarPorSKU() {
 
 async function verificarGestorFinanceiro() {
   try {
-    const snap = await db.collection('usuarios')
-      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
-      .limit(1)
-      .get();
-    if (!snap.empty) {
+    const [snap1, snap2] = await Promise.all([
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', usuarioLogado.email).limit(1).get(),
+      db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', usuarioLogado.email).limit(1).get()
+    ]);
+    if (!snap1.empty || !snap2.empty) {
       const btn = document.getElementById('btnAcompanhamentoGestor');
       if (btn) btn.classList.remove('hidden');
     }
@@ -3098,11 +3105,12 @@ async function carregarAcompanhamentoGestor() {
   if (pedidosBody) pedidosBody.innerHTML = '';
 
   try {
-    const usuariosSnap = await db.collection('usuarios')
-      .where('responsavelFinanceiroEmail', '==', usuarioLogado.email)
-      .get();
+    const snap1 = await db.collection('usuarios').where('responsavelFinanceiroEmail', '==', usuarioLogado.email).get();
+    const snap2 = await db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', usuarioLogado.email).get();
+    const processados = new Set();
     const usuarios = [];
-    usuariosSnap.forEach(doc => usuarios.push({ uid: doc.id, ...doc.data() }));
+    snap1.forEach(doc => { if (!processados.has(doc.id)) { processados.add(doc.id); usuarios.push({ uid: doc.id, ...doc.data() }); } });
+    snap2.forEach(doc => { if (!processados.has(doc.id)) { processados.add(doc.id); usuarios.push({ uid: doc.id, ...doc.data() }); } });
 
     const selectUsuario = document.getElementById('filtroUsuarioGestor');
     if (selectUsuario && selectUsuario.options.length <= 1) {
@@ -3189,7 +3197,8 @@ async function atualizarResponsavelFinanceiro(btn) {
   try {
     const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
     const dadosUsuario = usuarioDoc.data() || {};
-    const respEmail = (dadosUsuario.responsavelFinanceiroEmail || '').trim();
+    const finEmails = dadosUsuario.gestoresFinanceirosEmails || [];
+    const respEmail = (finEmails[0] || dadosUsuario.responsavelFinanceiroEmail || '').trim();
     if (!respEmail) {
       alert('Nenhum responsável financeiro configurado.');
       return;

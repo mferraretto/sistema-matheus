@@ -18,7 +18,7 @@
     <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
       <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
-      <input type="email" id="emailFinanceiro" placeholder="financeiro@empresa.com" class="w-full p-2 border rounded">
+      <input type="text" id="emailFinanceiro" placeholder="financeiro@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
     <p id="status" class="mt-4 text-green-600 hidden"></p>
@@ -65,7 +65,8 @@
         const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         input.value = Array.isArray(emails) ? emails.join(', ') : emails;
-        financeInput.value = data.responsavelFinanceiroEmail || '';
+        const finEmails = data.gestoresFinanceirosEmails || data.responsavelFinanceiroEmail || '';
+        financeInput.value = Array.isArray(finEmails) ? finEmails.join(', ') : finEmails;
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -80,20 +81,34 @@
         });
       });
 
-      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
+      const renderFinanceUsers = usuarios => {
         financialUsersList.innerHTML = '';
-        if (snap.empty) {
+        if (!usuarios.length) {
           financialUsersTitle.classList.add('hidden');
           return;
         }
         financialUsersTitle.classList.remove('hidden');
-        snap.forEach(doc => {
-          const dados = doc.data();
+        usuarios.forEach(dados => {
           const li = document.createElement('li');
-          const nome = dados.nome || dados.email || doc.id;
+          const nome = dados.nome || dados.email || dados.id;
           li.textContent = `${nome} - ${dados.email || ''}`;
           financialUsersList.appendChild(li);
         });
+      };
+
+      let finDocs1 = [], finDocs2 = [];
+      const mergeAndRender = () => {
+        const map = new Map();
+        [...finDocs1, ...finDocs2].forEach(d => map.set(d.id, d));
+        renderFinanceUsers(Array.from(map.values()));
+      };
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
+        finDocs1 = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        mergeAndRender();
+      });
+      db.collection('usuarios').where('gestoresFinanceirosEmails', 'array-contains', user.email).onSnapshot(snap => {
+        finDocs2 = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        mergeAndRender();
       });
     });
 
@@ -102,17 +117,20 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
-      const emailFinanceiro = financeInput.value.trim();
+      const financeRaw = financeInput.value.trim();
+      const finEmails = financeRaw.split(',').map(e => e.trim()).filter(e => e);
       try {
         await db.collection('uid').doc(currentUser.uid).set({
           responsavelExpedicaoEmail: emails[0] || null,
           gestoresExpedicaoEmails: emails,
-          responsavelFinanceiroEmail: emailFinanceiro || null,
+          responsavelFinanceiroEmail: finEmails[0] || null,
+          gestoresFinanceirosEmails: finEmails,
           uid: currentUser.uid,
           email: currentUser.email
         }, { merge: true });
         await db.collection('usuarios').doc(currentUser.uid).set({
-          responsavelFinanceiroEmail: emailFinanceiro || null,
+          responsavelFinanceiroEmail: finEmails[0] || null,
+          gestoresFinanceirosEmails: finEmails,
           gestoresExpedicaoEmails: emails,
           email: currentUser.email
         }, { merge: true });

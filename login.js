@@ -291,28 +291,43 @@ async function showUserArea(user) {
 
     // 3) localiza responsável financeiro do usuário, se houver
     try {
-      let respEmail = snap.data()?.responsavelFinanceiroEmail;
-      if (!respEmail) {
-        const altDoc = await getDoc(doc(db, 'uid', user.uid));
-        if (altDoc.exists()) respEmail = altDoc.data().responsavelFinanceiroEmail;
+      let respEmails = snap.data()?.gestoresFinanceirosEmails || [];
+      if (!respEmails.length && snap.data()?.responsavelFinanceiroEmail) {
+        respEmails = [snap.data().responsavelFinanceiroEmail];
       }
-      if (respEmail) {
-        const respQuery = query(collection(db, 'usuarios'), where('email', '==', respEmail));
+      if (!respEmails.length) {
+        const altDoc = await getDoc(doc(db, 'uid', user.uid));
+        if (altDoc.exists()) {
+          const altData = altDoc.data();
+          if (Array.isArray(altData.gestoresFinanceirosEmails)) {
+            respEmails = altData.gestoresFinanceirosEmails.filter(e => e);
+          }
+          if (!respEmails.length && altData.responsavelFinanceiroEmail) {
+            respEmails = [altData.responsavelFinanceiroEmail];
+          }
+        }
+      }
+      window.responsaveisFinanceiros = [];
+      for (const email of respEmails) {
+        const respQuery = query(collection(db, 'usuarios'), where('email', '==', email));
         const respDocs = await getDocs(respQuery);
         if (!respDocs.empty) {
           const d = respDocs.docs[0];
-          window.responsavelFinanceiro = { uid: d.id, ...d.data() };
+          window.responsaveisFinanceiros.push({ uid: d.id, ...d.data() });
         }
       }
+      window.responsavelFinanceiro = window.responsaveisFinanceiros[0];
     } catch (e) {
       console.error('Erro ao localizar responsável financeiro do usuário:', e);
     }
 
     // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
-      const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
-      const respSnap = await getDocs(q);
-      window.isFinanceiroResponsavel = !respSnap.empty;
+      const [respSnap1, respSnap2] = await Promise.all([
+        getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
+        getDocs(query(collection(db, 'usuarios'), where('gestoresFinanceirosEmails', 'array-contains', user.email)))
+      ]);
+      window.isFinanceiroResponsavel = !respSnap1.empty || !respSnap2.empty;
       ensureFinanceiroMenu();
     } catch (e) {
       console.error('Erro ao verificar responsável financeiro:', e);
