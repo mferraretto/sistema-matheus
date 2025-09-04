@@ -1886,3 +1886,11 @@ body.dark .sidebar-link.active {
   height: 100% !important;
 }
 
+
+/* Mobile adjustments for histórico de faturamento cards */
+@media (max-width: 640px) {
+  .faturamento-header,
+  .faturamento-dia {
+    width: 130px;
+  }
+}
