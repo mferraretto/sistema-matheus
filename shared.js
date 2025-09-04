@@ -81,7 +81,7 @@
 // Load sidebar HTML into placeholder
   window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
-    sidebarPath = sidebarPath || '/VendedorPro/partials/sidebar.html';
+    sidebarPath = sidebarPath || '/partials/sidebar.html';
 
     var paths = [];
     if (/^https?:\/\//.test(sidebarPath) || sidebarPath.startsWith('/')) {
@@ -90,10 +90,9 @@
       paths = [
         ROOT_PATH + sidebarPath,
         BASE_PATH + sidebarPath,
-        '/VendedorPro/' + sidebarPath,
         ROOT_PATH + 'partials/sidebar.html',
         BASE_PATH + 'partials/sidebar.html',
-        '/VendedorPro/partials/sidebar.html'
+        '/partials/sidebar.html'
       ];
     }
 
@@ -113,7 +112,7 @@
 // Load navbar HTML into placeholder
   window.loadNavbar = function(containerId, navbarPath) {
     containerId = containerId || 'navbar-container';
-    navbarPath = navbarPath || '/VendedorPro/partials/navbar.html';
+    navbarPath = navbarPath || '/partials/navbar.html';
 
     var paths = [];
     if (/^https?:\/\//.test(navbarPath) || navbarPath.startsWith('/')) {
@@ -122,10 +121,9 @@
       paths = [
         ROOT_PATH + navbarPath,
         BASE_PATH + navbarPath,
-        '/VendedorPro/' + navbarPath,
         ROOT_PATH + 'partials/navbar.html',
         BASE_PATH + 'partials/navbar.html',
-        '/VendedorPro/partials/navbar.html'
+        '/partials/navbar.html'
       ];
     }
 
@@ -146,7 +144,7 @@
     var paths = [
       ROOT_PATH + 'partials/auth-modals.html',
       BASE_PATH + 'partials/auth-modals.html',
-      '/VendedorPro/partials/auth-modals.html'
+      '/partials/auth-modals.html'
     ];
     return fetchWithFallback(paths)
       .then(function(html) {
@@ -267,8 +265,8 @@ document.addEventListener('sidebarLoaded', function () {
 })();
 
 /** === LAYOUT PERSISTENTE DO SIDEBAR/NAV === **/
-window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || '/VendedorPro/partials/sidebar.html';
-window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || '/VendedorPro/partials/navbar.html';
+window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || '/partials/sidebar.html';
+window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || '/partials/navbar.html';
 const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar(){
