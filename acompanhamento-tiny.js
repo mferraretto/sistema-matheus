@@ -108,13 +108,19 @@ function preencherFiltroLoja(pedidos) {
 
 function parseDate(str) {
   if (!str) return new Date('');
+  if (str.includes('T') || str.includes(' ')) {
+    const d = new Date(str);
+    if (!isNaN(d)) return d;
+  }
   const parts = str.split(/[\/\-]/);
   if (parts.length === 3) {
+    let y, m, d;
     if (str.includes('-') && parts[0].length === 4) {
-      return new Date(str);
+      [y, m, d] = parts;
+    } else {
+      [d, m, y] = parts;
     }
-    const [d, m, y] = parts;
-    return new Date(`${y}-${m}-${d}`);
+    return new Date(Number(y), Number(m) - 1, Number(d));
   }
   return new Date(str);
 }
