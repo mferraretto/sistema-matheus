@@ -297,6 +297,36 @@ function exportarExcelLista() {
   XLSX.writeFile(wb, 'lista_precos.xlsx');
 }
 
+function exportarPlanilhaPrecificacao() {
+  if (!produtos.length) return;
+  const headers = [
+    'Produto', 'SKU', 'Plataforma', 'Custo (R$)',
+    'Taxas da Plataforma (%)', 'Custo Fixo Plataforma (R$)',
+    'Frete (R$)', 'Taxa de Transação (%)', 'Taxa de Transferência (%)',
+    'Taxa de Antecipação (%)', 'Custos Variáveis (R$)', 'Imposto (%)',
+    'Comissão do Vendedor (%)'
+  ];
+  const data = produtos.map(p => ({
+    'Produto': p.produto,
+    'SKU': p.sku || '',
+    'Plataforma': p.plataforma,
+    'Custo (R$)': parseFloat(p.custo || 0),
+    'Taxas da Plataforma (%)': parseFloat(p.taxas?.['Taxas da Plataforma (%)'] || 0),
+    'Custo Fixo Plataforma (R$)': parseFloat(p.taxas?.['Custo Fixo Plataforma (R$)'] || 0),
+    'Frete (R$)': parseFloat(p.taxas?.['Frete (R$)'] || 0),
+    'Taxa de Transação (%)': parseFloat(p.taxas?.['Taxa de Transação (%)'] || 0),
+    'Taxa de Transferência (%)': parseFloat(p.taxas?.['Taxa de Transferência (%)'] || 0),
+    'Taxa de Antecipação (%)': parseFloat(p.taxas?.['Taxa de Antecipação (%)'] || 0),
+    'Custos Variáveis (R$)': parseFloat(p.taxas?.['Custos Variáveis (R$)'] || 0),
+    'Imposto (%)': parseFloat(p.taxas?.['Imposto (%)'] || 0),
+    'Comissão do Vendedor (%)': parseFloat(p.taxas?.['Comissão do Vendedor (%)'] || 0)
+  }));
+  const ws = XLSX.utils.json_to_sheet(data, { header: headers });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Precificacao');
+  XLSX.writeFile(wb, 'precificacao_produtos.xlsx');
+}
+
 function exportarPDFLista() {
   if (!produtos.length) return;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
