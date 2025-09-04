@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
@@ -170,6 +170,7 @@ async function carregar() {
     carregarFaturamentoMeta(listaUsuarios, mes),
     carregarDevolucoes(listaUsuarios, mes)
   ]);
+  await carregarTotaisPedidosTiny(listaUsuarios);
   renderResumoUsuarios(Object.values(resumoUsuarios));
   renderTabelaSaques();
   if (uid !== 'todos') {
@@ -423,6 +424,50 @@ async function carregarDevolucoes(usuarios, mes) {
       total += Number(dados.quantidade || dados.total || 1);
     });
     resumoUsuarios[usuario.uid].devolucoes = total;
+  }
+}
+
+async function carregarTotaisPedidosTiny(usuarios) {
+  for (const usuario of usuarios) {
+    const resumoRef = doc(db, `uid/${usuario.uid}/pedidosTinyResumo`, 'total');
+    let totalBruto = 0;
+    let totalLiquido = 0;
+    let ultimoDoc = null;
+    try {
+      const resumoSnap = await getDoc(resumoRef);
+      if (resumoSnap.exists()) {
+        const dados = resumoSnap.data();
+        totalBruto = Number(dados.totalBruto) || 0;
+        totalLiquido = Number(dados.totalLiquido) || 0;
+        ultimoDoc = dados.ultimoDoc || null;
+      }
+    } catch (_) {}
+
+    let col = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
+    if (ultimoDoc) {
+      col = query(col, orderBy('__name__'), startAfter(ultimoDoc));
+    }
+    const snap = await getDocs(col);
+    let extraBruto = 0;
+    let extraLiquido = 0;
+    snap.docs.forEach(d => {
+      const pedido = d.data();
+      extraBruto += toNumber(pedido.valor || pedido.total || 0);
+      extraLiquido += calcularLiquido(pedido);
+    });
+    if (snap.docs.length) {
+      const last = snap.docs[snap.docs.length - 1];
+      totalBruto += extraBruto;
+      totalLiquido += extraLiquido;
+      ultimoDoc = last.id;
+      await setDoc(resumoRef, { totalBruto, totalLiquido, ultimoDoc });
+    }
+    const existente = resumoUsuarios[usuario.uid].faturamento || {};
+    resumoUsuarios[usuario.uid].faturamento = {
+      ...existente,
+      faturado: totalLiquido,
+      bruto: totalBruto
+    };
   }
 }
 
