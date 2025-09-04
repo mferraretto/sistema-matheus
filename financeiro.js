@@ -11,7 +11,6 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let usuariosCache = [];
-let dadosSkusExport = [];
 let dadosSaquesExport = [];
 let dadosFaturamentoExport = [];
 let resumoUsuarios = {};
@@ -167,7 +166,6 @@ async function carregar() {
   resumoUsuarios = {};
   listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { uid: u.uid, nome: u.nome });
   await Promise.all([
-    carregarSkus(listaUsuarios, mes),
     carregarSaques(listaUsuarios, mes),
     carregarFaturamentoMeta(listaUsuarios, mes),
     carregarDevolucoes(listaUsuarios, mes)
@@ -294,73 +292,6 @@ function calcularLiquido(p) {
     }
   }
   return total - taxa;
-}
-
-async function carregarSkus(usuarios, mes) {
-  dadosSkusExport = [];
-  const resumoGeral = {};
-  const mesData = mes ? parseMes(mes) : null;
-  for (const usuario of usuarios) {
-    const pass = getPassphrase() || `chave-${usuario.uid}`;
-    const baseCol = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
-    let q = baseCol;
-    if (mesData) {
-      const inicio = new Date(mesData.getFullYear(), mesData.getMonth(), 1)
-        .toISOString()
-        .split('T')[0];
-      const fim = new Date(mesData.getFullYear(), mesData.getMonth() + 1, 0)
-        .toISOString()
-        .split('T')[0];
-      q = query(baseCol, orderBy('data'), startAt(inicio), endAt(fim));
-    }
-    const snap = await getDocs(q);
-    const promessas = snap.docs.map(async docSnap => {
-      let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
-      if (!pedido) {
-        const raw = docSnap.data();
-        if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-      }
-      if (!pedido) return {};
-      const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
-      const data = parseDate(dataStr);
-      if (mesData && !sameMonth(data, mesData)) return {};
-      const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
-      const resumoLocal = {};
-      itens.forEach(item => {
-        const sku = item.sku || pedido.sku || 'sem-sku';
-        const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
-        resumoLocal[sku] = (resumoLocal[sku] || 0) + qtd;
-      });
-      return resumoLocal;
-    });
-    const resultados = await Promise.all(promessas);
-    const resumo = {};
-    resultados.forEach(res => {
-      Object.entries(res).forEach(([sku, qtd]) => {
-        resumo[sku] = (resumo[sku] || 0) + qtd;
-        resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
-      });
-    });
-    let totalUnidades = 0;
-    let topSku = '-';
-    let topQtd = 0;
-    Object.entries(resumo).forEach(([sku, qtd]) => {
-      totalUnidades += qtd;
-      if (qtd > topQtd) {
-        topSku = sku;
-        topQtd = qtd;
-      }
-      dadosSkusExport.push({ usuario: usuario.nome, sku, quantidade: qtd, sobraEsperada: 0, sobraReal: 0 });
-    });
-    resumoUsuarios[usuario.uid].skus = {
-      topSku,
-      topSkuQtd: topQtd,
-      totalSkus: Object.keys(resumo).length,
-      totalUnidades
-    };
-    resumoUsuarios[usuario.uid].skusDetalhes = resumo;
-  }
-  renderSkusCard(resumoGeral);
 }
 
 async function carregarSaques(usuarios, mes) {
@@ -837,46 +768,13 @@ function createResumoCard(u) {
   card.innerHTML = `
     <h3 class="font-bold">${u.nome} – ${progresso.toFixed(0)}% da meta</h3>
     <div class="text-sm">Faturado: R$ ${(u.faturamento?.faturado || 0).toLocaleString('pt-BR')}</div>
-    <div class="text-sm">Top SKU: ${u.skus?.topSku || '-'} – ${u.skus?.topSkuQtd || 0}u</div>
     <div class="text-sm">Saques: R$ ${(u.saques?.total || 0).toLocaleString('pt-BR')}</div>
     <div class="text-sm">Comissão: R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
     <div class="progress ${statusColor}"><div class="progress-bar" style="width:${progresso.toFixed(0)}%"></div></div>`;
   return card;
 }
 
-function renderSkusCard(resumo) {
-  const card = document.getElementById('skusMesCard');
-  const topCard = document.getElementById('topSkusCard');
-  if (!card || !topCard) return;
-  const entries = Object.entries(resumo).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) {
-    card.classList.add('hidden');
-    topCard.classList.add('hidden');
-    card.innerHTML = '';
-    topCard.innerHTML = '';
-    return;
-  }
-  card.classList.remove('hidden');
-  topCard.classList.remove('hidden');
-
-  let html = '<h4 class="text-sm text-gray-500 mb-2">SKUs vendidos no mês</h4>';
-  html += '<ul class="text-sm space-y-1">';
-  entries.forEach(([sku, qtd]) => {
-    html += `<li>${sku}: ${qtd}</li>`;
-  });
-  html += '</ul>';
-  card.innerHTML = html;
-
-  let topHtml = '<h4 class="text-sm text-gray-500 mb-2">Top 5 SKUs</h4>';
-  topHtml += '<ul class="text-sm space-y-1">';
-  entries.slice(0, 5).forEach(([sku, qtd]) => {
-    topHtml += `<li>${sku}: ${qtd}</li>`;
-  });
-  topHtml += '</ul>';
-  topCard.innerHTML = topHtml;
-}
-
-async function calcularFaturamentoDiaDetalhadoGestor(responsavelUid, uid, dia) {
+function calcularFaturamentoDiaDetalhadoGestor(responsavelUid, uid, dia) {
   const lojasSnap = await getDocs(collection(db, `uid/${responsavelUid}/uid/${uid}/faturamento/${dia}/lojas`));
   let liquido = 0;
   let bruto = 0;
@@ -1129,13 +1027,6 @@ function showModal(titulo, corpo) {
   modal.querySelector('#detalhesCorpo').innerHTML = corpo;
   modal.style.display = 'flex';
 }
-
-function exportarSkus() {
-  if (!dadosSkusExport.length) {
-    alert('Sem dados para exportar');
-    return;
-  }
-  exportarCSV(dadosSkusExport, ['usuario','sku','quantidade','sobraEsperada','sobraReal'], 'skus_vendidos');
 }
 
 function exportarSaques() {
