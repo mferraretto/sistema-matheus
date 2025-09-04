@@ -65,13 +65,7 @@
         const data = doc.data() || {};
         const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
         input.value = Array.isArray(emails) ? emails.join(', ') : emails;
-        const respUid = data.responsavelFinanceiroUid;
-        if (respUid) {
-          const respDoc = await db.collection('usuarios').doc(respUid).get();
-          financeInput.value = respDoc.exists ? (respDoc.data().email || '') : '';
-        } else {
-          financeInput.value = '';
-        }
+        financeInput.value = data.responsavelFinanceiroEmail || '';
       } catch (e) {
         console.error('Erro ao carregar e-mail:', e);
       }
@@ -86,21 +80,20 @@
         });
       });
 
-      db.collection('responsaveis').doc(user.uid).collection('geridos').onSnapshot(async snap => {
+      db.collection('usuarios').where('responsavelFinanceiroEmail', '==', user.email).onSnapshot(snap => {
         financialUsersList.innerHTML = '';
         if (snap.empty) {
           financialUsersTitle.classList.add('hidden');
           return;
         }
         financialUsersTitle.classList.remove('hidden');
-        for (const docu of snap.docs) {
-          const dadosSnap = await db.collection('usuarios').doc(docu.id).get();
-          const dados = dadosSnap.data() || {};
+        snap.forEach(doc => {
+          const dados = doc.data();
           const li = document.createElement('li');
-          const nome = dados.nome || dados.email || docu.id;
+          const nome = dados.nome || dados.email || doc.id;
           li.textContent = `${nome} - ${dados.email || ''}`;
           financialUsersList.appendChild(li);
-        }
+        });
       });
     });
 
@@ -109,23 +102,16 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
-      const emailFinanceiro = financeInput.value.trim().toLowerCase();
-      let respUid = null;
-      if (emailFinanceiro) {
-        const idx = await db.collection('email_index').doc(emailFinanceiro).get();
-        respUid = idx.exists ? idx.data().uid : null;
-      }
+      const emailFinanceiro = financeInput.value.trim();
       try {
         await db.collection('uid').doc(currentUser.uid).set({
           responsavelExpedicaoEmail: emails[0] || null,
           gestoresExpedicaoEmails: emails,
-          responsavelFinanceiroUid: respUid || null,
           responsavelFinanceiroEmail: emailFinanceiro || null,
           uid: currentUser.uid,
           email: currentUser.email
         }, { merge: true });
         await db.collection('usuarios').doc(currentUser.uid).set({
-          responsavelFinanceiroUid: respUid || null,
           responsavelFinanceiroEmail: emailFinanceiro || null,
           gestoresExpedicaoEmails: emails,
           email: currentUser.email

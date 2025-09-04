@@ -12,7 +12,7 @@ const auth = getAuth(app);
   async function carregarUsuariosFinanceiros(user) {
     const container = document.getElementById('mentoradosList');
     const mesAtual = new Date().toISOString().slice(0, 7);
-    const lista = await fetchResponsavelFinanceiroUsuarios(db, user.uid);
+    const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
     container.innerHTML = '';
     if (!lista.length) {
       container.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhum usuário encontrado.</p>';

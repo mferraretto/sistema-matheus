@@ -1,7 +1,6 @@
 // index.js (Firebase Functions) - Versão de Produção
 
 import * as https from "firebase-functions/v2/https";
-import * as firestore from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth"; // Importar o serviço de autenticação
@@ -165,45 +164,5 @@ export const syncTinyOrders = https.onRequest({ cors: true }, async (req, res) =
     console.error("Erro em syncTinyOrders:", error);
     const status = error.code === 'unauthenticated' ? 401 : 500;
     res.status(status).json({ ok: false, error: error.message });
-  }
-});
-
-// --- Índice de e-mails e relação de responsáveis ---
-
-export const onUserWrite = firestore.onDocumentWritten('usuarios/{uid}', async event => {
-  const uid = event.params.uid;
-  const before = event.data?.before?.data() || {};
-  const after = event.data?.after?.data() || {};
-
-  // Documento removido: limpa índices e relações
-  if (!event.data?.after.exists) {
-    if (before.emailLower) {
-      await db.doc(`email_index/${before.emailLower}`).delete().catch(() => {});
-    }
-    if (before.responsavelFinanceiroUid) {
-      await db.doc(`responsaveis/${before.responsavelFinanceiroUid}/geridos/${uid}`).delete().catch(() => {});
-    }
-    return;
-  }
-
-  // Normaliza e grava emailLower
-  const email = (after.email || '').toLowerCase().trim();
-  if (email && after.emailLower !== email) {
-    await event.data.after.ref.set({ emailLower: email }, { merge: true });
-  }
-  if (email) {
-    await db.doc(`email_index/${email}`).set({ uid });
-  }
-
-  // Atualiza relação de responsáveis
-  const oldResp = before.responsavelFinanceiroUid;
-  const newResp = after.responsavelFinanceiroUid;
-  if (oldResp !== newResp) {
-    if (oldResp) {
-      await db.doc(`responsaveis/${oldResp}/geridos/${uid}`).delete().catch(() => {});
-    }
-    if (newResp) {
-      await db.doc(`responsaveis/${newResp}/geridos/${uid}`).set({ uid });
-    }
   }
 });

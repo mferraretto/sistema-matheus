@@ -114,18 +114,15 @@ function openChat(userInfo) {
   async function loadTeam(user, perfil, data) {
     let members = [];
     if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
-      const lista = await fetchResponsavelFinanceiroUsuarios(db, user.uid);
+      const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
       members = lista.map(u => ({ id: u.uid, email: u.email || '', nome: u.nome || u.email || u.uid }));
     } else {
-      const uids = [];
-      if (data.responsavelFinanceiroUid) uids.push(data.responsavelFinanceiroUid);
-      if (Array.isArray(data.gestoresFinanceirosUids)) uids.push(...data.gestoresFinanceirosUids);
-      for (const uid of uids) {
-        const snap = await getDoc(doc(db, 'usuarios', uid));
-        if (snap.exists()) {
-          const d = snap.data();
-          members.push({ id: uid, email: d.email || '', nome: d.nome || d.email || uid });
-        }
+      const emails = [];
+      if (data.responsavelFinanceiroEmail) emails.push(data.responsavelFinanceiroEmail);
+      if (Array.isArray(data.gestoresFinanceirosEmails)) emails.push(...data.gestoresFinanceirosEmails);
+      for (const email of emails) {
+        const snap = await getDocs(query(collection(db, 'usuarios'), where('email', '==', email)));
+        snap.forEach(d => members.push({ id: d.id, email: email, nome: d.data().nome || email }));
       }
     }
     members.forEach(addUserOption);
