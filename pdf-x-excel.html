@@ -17,7 +17,7 @@
     :root{--bg:#0b1020;--card:#111834;--muted:#9fb1ff;--ink:#e9edff;--accent:#6ea8ff}
     *{box-sizing:border-box} body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#0b1020,#0d1430 30%,#0b1020 100%);color:var(--ink);min-height:100vh;margin:0}
     .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
-    .card{background:rgba(17,24,52,.7);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,.06);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    .glass-card{background:rgba(17,24,52,.7);backdrop-filter: blur(8px);border:1px solid rgba(255,255,255,.06);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
     .pad{padding:20px}
     h1{font-size:28px;margin:0 0 8px} .sub{color:#bcd0ff;margin:0 0 16px}
     .row{display:flex;gap:14px;flex-wrap:wrap}
@@ -46,7 +46,7 @@
   <div id="navbar-container"></div>
   <div class="main-content">
   <div class="wrap">
-    <div class="card pad">
+    <div class="card glass-card pad">
       <h1>PDF → Excel (layout fiel) — v1</h1>
       <p class="sub">Lê PDFs <span class="pill">Rech Orçamento (SIGER)</span> e <span class="pill">TOTVS Posicao dos Clientes</span> e exporta Excel com layout, cabeçalho, bordas, mesclagens e formatos.
       </p>
@@ -62,11 +62,11 @@
     </div>
 
     <div class="grid" style="margin-top:16px">
-      <div class="card pad">
+      <div class="card glass-card pad">
         <h3 style="margin:0 0 10px">Prévia interpretada</h3>
         <div id="preview" class="mono" style="font-size:12px"></div>
       </div>
-      <div class="card pad">
+      <div class="card glass-card pad">
         <h3 style="margin:0 0 10px">Tabela (amostra)</h3>
         <div style="overflow:auto;max-height:480px">
           <table id="tbl" class="table"></table>
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <div class="card pad" style="margin-top:16px">
+    <div class="card glass-card pad" style="margin-top:16px">
       <div class="hstack">
         <div class="kbd">Dica</div>
         <div class="muted">Este protótipo está calibrado para os exemplos enviados. Se o seu layout variar, ajuste as regras de parsing dentro do código (seções <span class="mono">parseRechOrcamento</span> e <span class="mono">parseTotvsPosicaoClientes</span>).</div>
@@ -82,7 +82,7 @@
       <div id="log" class="log" style="margin-top:10px"></div>
     </div>
 
-    <div class="card pad tests" style="margin-top:16px">
+    <div class="card glass-card pad tests" style="margin-top:16px">
       <strong>Testes automatizados</strong>
       <div>Use o botão <em>🧪 Rodar testes</em> para validar o detector/parsers localmente. Resultados aparecem no log.</div>
     </div>

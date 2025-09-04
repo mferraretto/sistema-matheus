@@ -245,7 +245,7 @@ function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaix
   const kpis = document.getElementById('kpis');
   if (!kpis) return;
   const card = (titulo, valor, subt = '') => `
-    <div class="card">
+    <div class="dashboard-card">
       <div class="text-slate-600 text-sm font-medium tracking-wide uppercase">${titulo}</div>
       <div class="mt-2 flex items-end gap-2">
         <div class="text-2xl md:text-3xl font-semibold text-slate-900">${valor}</div>
@@ -872,9 +872,9 @@ async function exportarFechamentoMes() {
       const pess = base * 0.85;
       const otm = base * 1.15;
       cardsPrev.innerHTML = `
-        <div class="card" style="background:#fee2e2;color:#991b1b;"><div>Pessimista</div><strong>${pess.toFixed(0)}</strong></div>
-        <div class="card" style="background:#dbeafe;color:#1e3a8a;"><div>Base</div><strong>${base.toFixed(0)}</strong></div>
-        <div class="card" style="background:#d1fae5;color:#065f46;"><div>Otimista</div><strong>${otm.toFixed(0)}</strong></div>
+        <div class="dashboard-card" style="background:#fee2e2;color:#991b1b;"><div>Pessimista</div><strong>${pess.toFixed(0)}</strong></div>
+        <div class="dashboard-card" style="background:#dbeafe;color:#1e3a8a;"><div>Base</div><strong>${base.toFixed(0)}</strong></div>
+        <div class="dashboard-card" style="background:#d1fae5;color:#065f46;"><div>Otimista</div><strong>${otm.toFixed(0)}</strong></div>
       `;
     }
     renderPrevisaoChart(container.querySelector('#previsaoChart'), prev.dados);
@@ -947,7 +947,7 @@ function gerarHTMLFechamento() {
           color: var(--primary-color);
         }
         .header .responsavel { text-align: right; font-size: 12px; }
-        .section-title {
+        .dashboard-section-title {
           font-size: 18px;
           font-weight: 600;
           color: var(--primary-color);
@@ -962,7 +962,7 @@ function gerarHTMLFechamento() {
           gap: 15px;
           margin-bottom: 20px;
         }
-        .card {
+        .dashboard-card {
           background-color: var(--card-bg);
           border: 1px solid #e5e7eb;
           border-radius: 12px;
@@ -970,13 +970,13 @@ function gerarHTMLFechamento() {
           text-align: center;
           box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .card .icon {
+        .dashboard-card .icon {
           font-size: 28px;
           margin-bottom: 8px;
           color: var(--secondary-color);
         }
-        .card .label { font-size: 12px; color: #6b7280; margin-top: 4px; }
-        .card .value {
+        .dashboard-card .label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .dashboard-card .value {
           font-size: 24px;
           font-weight: 600;
           color: var(--text-color);
@@ -1036,26 +1036,26 @@ function gerarHTMLFechamento() {
           <div class="title">Fechamento de ${mesTitle}</div>
           <div class="responsavel">${d.responsavel ? `Responsável: ${d.responsavel}` : ''}</div>
         </div>
-        <h2 class="section-title">1. Resumo Executivo</h2>
+        <h2 class="dashboard-section-title">1. Resumo Executivo</h2>
         <p>Desempenho financeiro consolidado do período com comparação à meta estabelecida.</p>
-        <h3 class="section-title">Indicadores Chave do Mês</h3>
+        <h3 class="dashboard-section-title">Indicadores Chave do Mês</h3>
         <div class="cards">
-          <div class="card">
+          <div class="dashboard-card">
             <div class="icon"><i class='bx bx-money'></i></div>
             <div class="label">Faturamento Bruto</div>
             <div class="value">R$ ${d.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
           </div>
-          <div class="card">
+          <div class="dashboard-card">
             <div class="icon"><i class='bx bx-wallet'></i></div>
             <div class="label">Faturamento Líquido</div>
             <div class="value">R$ ${d.totalLiquido.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} <i class='bx ${iconLiquido} ${classeLiquido}'></i></div>
           </div>
-          <div class="card">
+          <div class="dashboard-card">
             <div class="icon"><i class='bx bx-package'></i></div>
             <div class="label">Pedidos Totais</div>
             <div class="value">${d.totalUnidades}</div>
           </div>
-          <div class="card">
+          <div class="dashboard-card">
             <div class="icon"><i class='bx bx-stats'></i></div>
             <div class="label">Ticket Médio</div>
             <div class="value">R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
@@ -1070,28 +1070,28 @@ function gerarHTMLFechamento() {
           <span>${d.diasAcima} dias acima da meta</span>
           <span>${d.diasAbaixo} dias abaixo da meta</span>
         </div>
-        <h3 class="section-title">Desempenho Faturamento</h3>
+        <h3 class="dashboard-section-title">Desempenho Faturamento</h3>
         <div class="chart-container"><canvas id="diarioChart"></canvas></div>
         <div class="chart-container"><canvas id="tendenciaChart"></canvas></div>
       </div>
       <div class="page">
-        <h2 class="section-title">2. Análise Detalhada</h2>
-        <h3 class="section-title">Desempenho por Produto (SKU)</h3>
+        <h2 class="dashboard-section-title">2. Análise Detalhada</h2>
+        <h3 class="dashboard-section-title">Desempenho por Produto (SKU)</h3>
         <div class="chart-container"><canvas id="topSkusMargemChart"></canvas></div>
         <div class="tables-container">
           <div class="table-box">
-            <h4 class="section-title" style="font-size:14px;">Top 5 SKUs do mês</h4>
+            <h4 class="dashboard-section-title" style="font-size:14px;">Top 5 SKUs do mês</h4>
             <ol id="topSkusList" class="list-items"></ol>
           </div>
           <div class="table-box">
-            <h4 class="section-title" style="font-size:14px;">Top 5 mais rentáveis</h4>
+            <h4 class="dashboard-section-title" style="font-size:14px;">Top 5 mais rentáveis</h4>
             <ol id="topRentaveis" class="list-items"></ol>
           </div>
         </div>
       </div>
       <div class="page">
-        <h2 class="section-title">3. Projeções e Previsões</h2>
-        <h3 class="section-title">Projeção de Vendas</h3>
+        <h2 class="dashboard-section-title">3. Projeções e Previsões</h2>
+        <h3 class="dashboard-section-title">Projeção de Vendas</h3>
         <div class="chart-container"><canvas id="previsaoChart"></canvas></div>
         <div id="topSkusPrevisao"></div>
       </div>
