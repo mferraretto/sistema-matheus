@@ -11,6 +11,9 @@ const auth = getAuth(app);
 let todosPedidos = [];
 let custosProdutos = {};
 let usuariosCache = [];
+let filtradosAtuais = [];
+let paginaAtual = 1;
+const pedidosPorPagina = 20;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -71,7 +74,7 @@ export async function carregarPedidosTiny() {
       })
     );
     preencherFiltroLoja(todosPedidos);
-    aplicarFiltros();
+    aplicarFiltros(true);
   } catch (err) {
     console.error('Erro ao carregar pedidos', err);
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
@@ -90,7 +93,7 @@ function setupUsuariosFiltro(usuarios) {
     select.appendChild(opt);
   });
   grupo?.classList.toggle('hidden', usuarios.length <= 1);
-  select.addEventListener('change', aplicarFiltros);
+  select.addEventListener('change', () => aplicarFiltros(true));
 }
 
 function preencherFiltroLoja(pedidos) {
@@ -194,9 +197,10 @@ function atualizarResumo(pedidos) {
   `;
 }
 
-export function aplicarFiltros() {
+export function aplicarFiltros(resetPage = false) {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
+  if (resetPage) paginaAtual = 1;
   let filtrados = [...todosPedidos];
   const usuarioSel = document.getElementById('usuarioFiltro')?.value;
   if (usuarioSel && usuarioSel !== 'todos') {
@@ -233,8 +237,14 @@ export function aplicarFiltros() {
     return true;
   });
 
+  filtradosAtuais = filtrados;
+  const totalPaginas = Math.ceil(filtradosAtuais.length / pedidosPorPagina) || 1;
+  if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+  const inicio = (paginaAtual - 1) * pedidosPorPagina;
+  const paginaPedidos = filtradosAtuais.slice(inicio, inicio + pedidosPorPagina);
+
   tbody.innerHTML = '';
-  filtrados.forEach(p => {
+  paginaPedidos.forEach(p => {
     const tr = document.createElement('tr');
     const data = p.data || p.dataPedido || p.date || '';
     const lojaPedido = p.loja || p.store || '';
@@ -271,7 +281,44 @@ export function aplicarFiltros() {
   if (!tbody.children.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
   }
-  atualizarResumo(filtrados);
+  atualizarResumo(filtradosAtuais);
+  atualizarPaginacao(totalPaginas);
+}
+
+function atualizarPaginacao(totalPaginas) {
+  const container = document.getElementById('paginacaoTiny');
+  if (!container) return;
+  container.innerHTML = '';
+  if (totalPaginas <= 1) return;
+
+  const btnPrev = document.createElement('button');
+  btnPrev.textContent = 'Anterior';
+  btnPrev.className = 'btn btn-secondary px-2 py-1';
+  btnPrev.disabled = paginaAtual === 1;
+  btnPrev.addEventListener('click', () => {
+    if (paginaAtual > 1) {
+      paginaAtual--;
+      aplicarFiltros();
+    }
+  });
+
+  const info = document.createElement('span');
+  info.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+
+  const btnNext = document.createElement('button');
+  btnNext.textContent = 'Próxima';
+  btnNext.className = 'btn btn-secondary px-2 py-1';
+  btnNext.disabled = paginaAtual >= totalPaginas;
+  btnNext.addEventListener('click', () => {
+    if (paginaAtual < totalPaginas) {
+      paginaAtual++;
+      aplicarFiltros();
+    }
+  });
+
+  container.appendChild(btnPrev);
+  container.appendChild(info);
+  container.appendChild(btnNext);
 }
 
 function atualizarTipoData() {
@@ -285,12 +332,12 @@ function atualizarTipoData() {
 
 document.getElementById('aplicarFiltros')?.addEventListener('click', e => {
   e.preventDefault();
-  aplicarFiltros();
+  aplicarFiltros(true);
 });
 ['tipoData', 'dataDia', 'dataMes', 'dataInicio', 'dataFim', 'filtroLoja'].forEach(id => {
-  document.getElementById(id)?.addEventListener('change', aplicarFiltros);
+  document.getElementById(id)?.addEventListener('change', () => aplicarFiltros(true));
 });
-document.getElementById('filtroSku')?.addEventListener('input', aplicarFiltros);
+document.getElementById('filtroSku')?.addEventListener('input', () => aplicarFiltros(true));
 document.getElementById('tipoData')?.addEventListener('change', atualizarTipoData);
 
 atualizarTipoData();
