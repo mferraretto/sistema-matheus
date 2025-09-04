@@ -63,7 +63,7 @@ async function calcularResumo(uid) {
 
 async function carregarResultados() {
   if (!uid) return;
-  const container = document.getElementById('resultadoMentorado');
+  const container = document.getElementById('resumoMentorado');
   container.innerHTML = '<p class="text-sm text-gray-500">Carregando...</p>';
   const { bruto, liquido, vendas, skusVendidos } = await calcularResumo(uid);
   const mesAtual = new Date().toISOString().slice(0, 7);
@@ -85,10 +85,77 @@ async function carregarResultados() {
   `;
 }
 
+async function carregarListaSkus(inicio, fim) {
+  if (!uid) return;
+  const container = document.getElementById('listaSkus');
+  container.innerHTML = '<p class="text-sm text-gray-500">Carregando...</p>';
+  try {
+    const q = query(
+      collection(db, `uid/${uid}/skusVendidos`),
+      orderBy('__name__'),
+      startAt(inicio),
+      endAt(fim)
+    );
+    const snap = await getDocs(q);
+    const mapa = {};
+    for (const docSnap of snap.docs) {
+      const listaSnap = await getDocs(
+        collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`)
+      );
+      listaSnap.forEach(item => {
+        const d = item.data();
+        const sku = d.sku || item.id;
+        const qtd = Number(d.total || d.quantidade || 0);
+        if (!mapa[sku]) mapa[sku] = 0;
+        mapa[sku] += qtd;
+      });
+    }
+    const linhas = Object.entries(mapa)
+      .map(([sku, qtd]) => ({ sku, qtd }))
+      .sort((a, b) => b.qtd - a.qtd);
+    if (linhas.length === 0) {
+      container.innerHTML = '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
+      return;
+    }
+    container.innerHTML = `
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr><th class="p-2 text-left">SKU</th><th class="p-2 text-right">Quantidade</th></tr>
+        </thead>
+        <tbody>
+          ${linhas
+            .map(
+              l => `<tr><td class="p-2">${l.sku}</td><td class="p-2 text-right">${l.qtd}</td></tr>`
+            )
+            .join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    console.error('Erro ao carregar SKUs vendidos', err);
+    container.innerHTML = '<p class="text-sm text-red-500">Erro ao carregar SKUs.</p>';
+  }
+}
+
 function initResultadosMentorado() {
   onAuthStateChanged(auth, user => {
     if (user) {
       carregarResultados();
+      const hoje = new Date();
+      const dataFim = document.getElementById('dataFim');
+      const dataInicio = document.getElementById('dataInicio');
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+      const hojeStr = hoje.toISOString().slice(0, 10);
+      dataInicio.value = primeiroDia;
+      dataFim.value = hojeStr;
+      carregarListaSkus(primeiroDia, hojeStr);
+      document
+        .getElementById('filtrarSkus')
+        .addEventListener('click', () => {
+          carregarListaSkus(dataInicio.value, dataFim.value);
+        });
     }
   });
 }
