@@ -51,6 +51,7 @@ export async function carregarPedidosTiny() {
   try {
     todosPedidos = [];
     custosProdutos = {};
+    filtradosAtuais = [];
     await Promise.all(
       usuariosCache.map(async u => {
         const pass = getPassphrase() || `chave-${u.uid}`;
@@ -237,7 +238,8 @@ export function aplicarFiltros(resetPage = false) {
     return true;
   });
 
-  filtradosAtuais = filtrados;
+  filtradosAtuais = [];
+  filtradosAtuais.push(...filtrados);
   const totalPaginas = Math.ceil(filtradosAtuais.length / pedidosPorPagina) || 1;
   if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
   const inicioPaginacao = (paginaAtual - 1) * pedidosPorPagina;
