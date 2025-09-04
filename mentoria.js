@@ -8,13 +8,13 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 function carregarUsuariosFinanceiros(user) {
-  const tbody = document.getElementById('mentoradosList');
+  const container = document.getElementById('mentoradosList');
   const mesAtual = new Date().toISOString().slice(0, 7);
   const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
   onSnapshot(q, async snap => {
-    tbody.innerHTML = '';
+    container.innerHTML = '';
     if (snap.empty) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-sm text-gray-500">Nenhum usuário encontrado.</td></tr>';
+      container.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhum usuário encontrado.</p>';
       return;
     }
     for (const docSnap of snap.docs) {
@@ -39,16 +39,17 @@ function carregarUsuariosFinanceiros(user) {
           meta = `R$ ${valor.toLocaleString('pt-BR')}`;
         }
       } catch (_) {}
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="p-2 border-b">${email}</td>
-        <td class="p-2 border-b">${inicio}</td>
-        <td class="p-2 border-b capitalize">${status}</td>
-        <td class="p-2 border-b">${meta}</td>
-        <td class="p-2 border-b">${nome}</td>
-        <td class="p-2 border-b"><a href="perfil-mentorado.html?uid=${docSnap.id}" class="text-blue-500 hover:underline">Editar</a></td>
+      const card = document.createElement('div');
+      card.className = 'card p-4 space-y-1';
+      card.innerHTML = `
+        <h3 class="text-lg font-semibold">${nome}</h3>
+        <p><span class="font-medium">Email:</span> ${email}</p>
+        <p><span class="font-medium">Início:</span> ${inicio}</p>
+        <p><span class="font-medium">Status:</span> ${status}</p>
+        <p><span class="font-medium">Meta:</span> ${meta}</p>
+        <a href="perfil-mentorado.html?uid=${docSnap.id}" class="text-blue-500 hover:underline">Editar</a>
       `;
-      tbody.appendChild(tr);
+      container.appendChild(card);
     }
   });
 }
