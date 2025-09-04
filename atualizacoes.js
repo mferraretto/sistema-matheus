@@ -51,7 +51,7 @@ async function carregarUsuarios() {
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
     try {
-      const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(db, currentUser.uid);
+      const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(db, currentUser.email);
       if (!listaUsuarios.length) {
         card?.classList.add('hidden');
         return;
