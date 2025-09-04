@@ -483,6 +483,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-saques',
     'menu-acompanhamento-gestor',
     'menu-acompanhamento-tiny',
+    'menu-acompanhamento-vendas',
     'menu-mentoria',
     'menu-perfil-mentorado',
     'menu-equipes',
