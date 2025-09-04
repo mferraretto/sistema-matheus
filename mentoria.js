@@ -54,7 +54,7 @@ function carregarUsuariosFinanceiros(user) {
       `;
       card.addEventListener('click', e => {
         if (e.target.tagName === 'A') return;
-        mostrarDetalhes(docSnap.id, dados, perfilData);
+        window.open(`perfil-mentorado.html?uid=${docSnap.id}`, '_blank');
       });
       container.appendChild(card);
     }
