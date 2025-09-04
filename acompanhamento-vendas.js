@@ -17,14 +17,24 @@ onAuthStateChanged(auth, async user => {
   }
   let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
+    const [snap, docSnap] = await Promise.all([
+      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
+      getDoc(doc(db, 'usuarios', user.uid))
+    ]);
+    const perfil = docSnap.exists() ? String(docSnap.data().perfil || '').toLowerCase().trim() : '';
+    const isResponsavelFinanceiro = !snap.empty || ['responsavel', 'gestor financeiro'].includes(perfil);
+    const isGestor = perfil === 'gestor';
+    if (!isGestor && !isResponsavelFinanceiro) {
+      window.location.href = 'index.html';
+      return;
+    }
     if (!snap.empty) {
       const extras = await Promise.all(snap.docs.map(async d => {
         let nome = d.data().nome;
         if (!nome) {
           try {
-            const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
-            if (perfil.exists()) nome = perfil.data().nome;
+            const perfilDoc = await getDoc(doc(db, 'perfilMentorado', d.id));
+            if (perfilDoc.exists()) nome = perfilDoc.data().nome;
           } catch (_) {}
         }
         return { uid: d.id, nome: nome || d.data().email || d.id };
