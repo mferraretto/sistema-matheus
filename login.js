@@ -271,7 +271,11 @@ async function showUserArea(user) {
 
     if (perfil === 'gestor') {
       const path = window.location.pathname.toLowerCase();
-      if (!path.endsWith('/financeiro.html')) {
+      if (
+        path.endsWith('/index.html') ||
+        path.endsWith('/login.html') ||
+        path.endsWith('/')
+      ) {
         window.location.href = 'financeiro.html';
         return;
       }
