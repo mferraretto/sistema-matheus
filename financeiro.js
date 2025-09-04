@@ -1,10 +1,11 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt, startAfter } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, doc, getDoc, query, where, setDoc, onSnapshot, orderBy, startAt, endAt, startAfter, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
+import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -25,39 +26,16 @@ onAuthStateChanged(auth, async user => {
     return;
   }
   currentUser = user;
-  let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const [snapUsuarios, snapUid] = await Promise.all([
-      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
-      getDocs(query(collection(db, 'uid'), where('responsavelFinanceiroEmail', '==', user.email)))
-    ]);
-    const docs = [...snapUsuarios.docs, ...snapUid.docs];
-    if (docs.length) {
-      const vistos = new Set();
-      usuarios = await Promise.all(
-        docs.filter(d => {
-          if (vistos.has(d.id)) return false;
-          vistos.add(d.id);
-          return true;
-        }).map(async d => {
-          let nome = d.data().nome;
-          if (!nome) {
-            try {
-              const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
-              if (perfil.exists()) nome = perfil.data().nome;
-            } catch (_) {}
-          }
-          return { uid: d.id, nome: nome || d.data().email || d.id };
-        })
-      );
-    }
+    const { usuarios } = await carregarUsuariosFinanceiros(db, user);
+    usuariosCache = usuarios;
   } catch (err) {
     console.error('Erro ao verificar acesso financeiro:', err);
+    usuariosCache = [{ uid: user.uid, nome: user.displayName || user.email }];
   }
-  usuariosCache = usuarios;
-  setupFiltros(usuarios);
+  setupFiltros(usuariosCache);
   await carregar();
-  initFaturamentoFeed(usuarios);
+  initFaturamentoFeed(usuariosCache);
   initKpiRealtime();
   initKpiVendasDetalhes();
 });

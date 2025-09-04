@@ -14,11 +14,12 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
-  onSnapshot,
-  orderBy
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+    onSnapshot,
+    orderBy
+  } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
 import { encryptString, decryptString } from './crypto.js';
+import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -310,9 +311,8 @@ async function showUserArea(user) {
 
     // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
-      const q = query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email));
-      const respSnap = await getDocs(q);
-      window.isFinanceiroResponsavel = !respSnap.empty;
+      const respUsuarios = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+      window.isFinanceiroResponsavel = respUsuarios.length > 0;
       ensureFinanceiroMenu();
     } catch (e) {
       console.error('Erro ao verificar responsável financeiro:', e);

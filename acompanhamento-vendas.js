@@ -1,8 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where, orderBy, startAt, endAt, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, orderBy, startAt, endAt, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
+import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -15,37 +16,18 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const [snap, docSnap] = await Promise.all([
-      getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email))),
-      getDoc(doc(db, 'usuarios', user.uid))
-    ]);
-    const perfil = docSnap.exists() ? String(docSnap.data().perfil || '').toLowerCase().trim() : '';
-    const isResponsavelFinanceiro = !snap.empty || ['responsavel', 'gestor financeiro'].includes(perfil);
-    const isGestor = perfil === 'gestor';
+    const { usuarios, isGestor, isResponsavelFinanceiro } = await carregarUsuariosFinanceiros(db, user);
     if (!isGestor && !isResponsavelFinanceiro) {
       window.location.href = 'index.html';
       return;
     }
-    if (!snap.empty) {
-      const extras = await Promise.all(snap.docs.map(async d => {
-        let nome = d.data().nome;
-        if (!nome) {
-          try {
-            const perfilDoc = await getDoc(doc(db, 'perfilMentorado', d.id));
-            if (perfilDoc.exists()) nome = perfilDoc.data().nome;
-          } catch (_) {}
-        }
-        return { uid: d.id, nome: nome || d.data().email || d.id };
-      }));
-      usuarios = usuarios.concat(extras);
-    }
+    usuariosCache = usuarios;
   } catch (err) {
     console.error('Erro ao verificar acesso financeiro:', err);
+    usuariosCache = [{ uid: user.uid, nome: user.displayName || user.email }];
   }
-  usuariosCache = usuarios;
-  setupFiltros(usuarios);
+  setupFiltros(usuariosCache);
   await carregar();
 });
 

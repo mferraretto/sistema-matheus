@@ -1,8 +1,9 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
+import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -17,27 +18,14 @@ onAuthStateChanged(auth, async user => {
     window.location.href = 'index.html?login=1';
     return;
   }
-  let usuarios = [{ uid: user.uid, nome: user.displayName || user.email }];
   try {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
-    if (!snap.empty) {
-      const extras = await Promise.all(snap.docs.map(async d => {
-        let nome = d.data().nome;
-        if (!nome) {
-          try {
-            const perfil = await getDoc(doc(db, 'perfilMentorado', d.id));
-            if (perfil.exists()) nome = perfil.data().nome;
-          } catch (_) {}
-        }
-        return { uid: d.id, nome: nome || d.data().email || d.id };
-      }));
-      usuarios = usuarios.concat(extras);
-    }
+    const { usuarios } = await carregarUsuariosFinanceiros(db, user);
+    usuariosCache = usuarios;
   } catch (err) {
     console.error('Erro ao verificar acesso financeiro:', err);
+    usuariosCache = [{ uid: user.uid, nome: user.displayName || user.email }];
   }
-  usuariosCache = usuarios;
-  setupUsuariosFiltro(usuarios);
+  setupUsuariosFiltro(usuariosCache);
   const uidSel = document.getElementById('usuarioFiltro')?.value || user.uid;
   await carregarPedidosTiny(uidSel);
 });

@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore, collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
+import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -110,22 +111,22 @@ function openChat(userInfo) {
   }
 }
 
-async function loadTeam(user, perfil, data) {
-  let members = [];
-  if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
-    const snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelFinanceiroEmail', '==', user.email)));
-    members = snap.docs.map(d => ({ id: d.id, email: d.data().email || '', nome: d.data().nome || d.data().email || d.id }));
-  } else {
-    const emails = [];
-    if (data.responsavelFinanceiroEmail) emails.push(data.responsavelFinanceiroEmail);
-    if (Array.isArray(data.gestoresFinanceirosEmails)) emails.push(...data.gestoresFinanceirosEmails);
-    for (const email of emails) {
-      const snap = await getDocs(query(collection(db, 'usuarios'), where('email', '==', email)));
-      snap.forEach(d => members.push({ id: d.id, email: email, nome: d.data().nome || email }));
+  async function loadTeam(user, perfil, data) {
+    let members = [];
+    if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
+      const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+      members = lista.map(u => ({ id: u.uid, email: u.email || '', nome: u.nome || u.email || u.uid }));
+    } else {
+      const emails = [];
+      if (data.responsavelFinanceiroEmail) emails.push(data.responsavelFinanceiroEmail);
+      if (Array.isArray(data.gestoresFinanceirosEmails)) emails.push(...data.gestoresFinanceirosEmails);
+      for (const email of emails) {
+        const snap = await getDocs(query(collection(db, 'usuarios'), where('email', '==', email)));
+        snap.forEach(d => members.push({ id: d.id, email: email, nome: d.data().nome || email }));
+      }
     }
+    members.forEach(addUserOption);
   }
-  members.forEach(addUserOption);
-}
 
 async function loadComms(uid) {
   const snap = await getDocs(collection(db, 'comunicacao'));
