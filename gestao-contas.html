@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/components.css">
   <style>
     body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:24px;max-width:920px}
-    .card{border:1px solid var(--border);border-radius:14px;padding:16px;margin:12px 0}
+    .account-card{margin:12px 0}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     label{font-weight:600}
     input,button,select{padding:10px;border:1px solid #d1d5db;border-radius:10px}
@@ -33,7 +33,7 @@
     <h1>Leitor de Boletos</h1>
     <p class="muted">Aponte a câmera para o código de barras OU cole a linha digitável abaixo.</p>
 
-    <div class="card">
+    <div class="card account-card">
       <div class="row">
         <button id="btnStart">Iniciar câmera</button>
         <button id="btnStop" disabled>Parar</button>
@@ -43,7 +43,7 @@
       <div class="muted">Formato suportado: ITF/Code128 (a maioria dos boletos). Iluminação ajuda muito.</div>
     </div>
 
-    <div class="card">
+    <div class="card account-card">
       <label for="linha">Linha digitável (47/48 dígitos)</label>
       <div class="row">
         <input id="linha" placeholder="Ex.: 34191.79001 01043.510047 91020.150008 9 12345678901234" style="flex:1" />
@@ -52,13 +52,13 @@
       <div id="status"></div>
     </div>
 
-    <div class="card">
+    <div class="card account-card">
       <h3>Resultado</h3>
       <div id="resultado" class="grid"></div>
     </div>
 
     <h2>Financeiro - Fechamentos</h2>
-    <div class="card">
+    <div class="card account-card">
       <input type="file" id="inputPdfFechamento" accept="application/pdf" multiple />
       <div class="row" style="margin-top:8px">
         <button id="btnProcessarPdf">Processar PDF</button>

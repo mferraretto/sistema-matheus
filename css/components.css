@@ -22,14 +22,6 @@
 .btn-primary:active { background-color: #3730a3; }
 .btn-primary:disabled { opacity: .5; }
 
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-@media (min-width:768px) {
-  .section-title { font-size: 1.25rem; }
-}
 
 .dropdown {
   position: relative;
