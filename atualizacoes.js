@@ -226,12 +226,15 @@ async function carregarTotais() {
   if (!usuariosResponsaveis.length) return;
   let totalBruto = 0, totalLiquido = 0, totalPedidos = 0, totalMeta = 0;
   const hoje = new Date();
-  const diaStr = hoje.toISOString().split('T')[0];
   const mesAtual = hoje.toISOString().slice(0,7);
   const totalDiasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
   for (const u of usuariosResponsaveis) {
-    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, diaStr);
-    const pedidos = await calcularVendasDia(currentUser.uid, u.uid, diaStr);
+    const fatSnap = await getDocs(collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'));
+    const dias = fatSnap.docs.map(d => d.id).sort().slice(-1);
+    if (!dias.length) continue;
+    const dia = dias[0];
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, dia);
+    const pedidos = await calcularVendasDia(currentUser.uid, u.uid, dia);
     totalBruto += bruto;
     totalLiquido += liquido;
     totalPedidos += pedidos;
