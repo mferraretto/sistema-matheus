@@ -61,10 +61,11 @@
                 <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             <p id="progress-status" class="text-center text-sm text-gray-600 mt-2"></p>
+            <p id="estimated-time" class="text-center text-sm text-gray-600 mt-1"></p>
         </div>
-        
-        <div id="error-message" class="text-red-500 font-bold text-center mt-4"></div> 
-    </div> 
+        <div id="success-message" class="text-green-600 font-bold text-center mt-4"></div>
+        <div id="error-message" class="text-red-500 font-bold text-center mt-2"></div>
+    </div>
 
     <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;"> 
         <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2> 
@@ -175,13 +176,17 @@
         const progressContainer = document.getElementById('progress-container');
         const progressBar = document.getElementById('progress-bar');
         const progressStatus = document.getElementById('progress-status');
+        const estimatedTimeEl = document.getElementById('estimated-time');
         const errorDiv = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
         const resultsCard = document.getElementById('results-card');
         const pdfLinksDiv = document.getElementById('pdf-links');
         const previewImage = document.getElementById('preview-image');
 
         const GEMINI_DELAY_MS = 5000;
         let lastGeminiCall = 0;
+        const AVERAGE_SECONDS_PER_LABEL = 5;
+        let timerInterval = null;
         const GEMINI_API_KEYS = [
             "AIzaSyAKFps1dbK5gRjUiL5r1nplFMj6DH4VIWU",
             "AIzaSyBv6hDqN-gnTOOJZLDfxHeUXgqxG21sAXI",
@@ -204,25 +209,35 @@
             return fetch(url, options);
         }
 
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
         // Initial state of the user interface
         converterButton.disabled = true; 
 
-        fileInput.addEventListener('change', () => { 
-            converterButton.disabled = !fileInput.files.length; 
-            errorDiv.textContent = ''; 
-            pdfLinksDiv.innerHTML = ''; 
-            resultsCard.style.display = 'none'; 
-            previewImage.src = ''; 
-        }); 
+        fileInput.addEventListener('change', () => {
+            converterButton.disabled = !fileInput.files.length;
+            errorDiv.textContent = '';
+            successMessage.textContent = '';
+            estimatedTimeEl.textContent = '';
+            pdfLinksDiv.innerHTML = '';
+            resultsCard.style.display = 'none';
+            previewImage.src = '';
+        });
 
         converterButton.addEventListener('click', processZPL); 
 
-        async function processZPL() { 
-            const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null; 
-            errorDiv.textContent = ''; 
-            pdfLinksDiv.innerHTML = ''; 
-            resultsCard.style.display = 'none'; 
-            previewImage.src = ''; 
+        async function processZPL() {
+            const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null;
+            errorDiv.textContent = '';
+            successMessage.textContent = '';
+            estimatedTimeEl.textContent = '';
+            pdfLinksDiv.innerHTML = '';
+            resultsCard.style.display = 'none';
+            previewImage.src = '';
 
             if (!file) { 
                 errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.'; 
@@ -233,7 +248,8 @@
             progressContainer.classList.remove('hidden');
             progressBar.style.width = '0%';
             progressStatus.textContent = 'A preparar...';
-            converterButton.disabled = true; 
+            estimatedTimeEl.textContent = '';
+            converterButton.disabled = true;
 
             try { 
                 const zplCode = await readFileAsync(file); 
@@ -250,6 +266,18 @@
                 const { PDFDocument } = PDFLib;
                 const pdfDoc = await PDFDocument.create();
                 const totalLabels = blocks.length / 2;
+                let remainingTime = Math.ceil(totalLabels * AVERAGE_SECONDS_PER_LABEL);
+                estimatedTimeEl.textContent = `⏳ Tempo estimado: ${formatTime(remainingTime)}`;
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    remainingTime--;
+                    if (remainingTime >= 0) {
+                        estimatedTimeEl.textContent = `⏳ Tempo restante: ${formatTime(remainingTime)}`;
+                    }
+                    if (remainingTime <= 0) {
+                        clearInterval(timerInterval);
+                    }
+                }, 1000);
 
                 // Recupera o próximo número de etiqueta a partir do Firestore
                 let startLabelNumber = 1;
@@ -342,17 +370,20 @@
                 previewImage.src = firstLabelImageUrl;
                 previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); };
                 resultsCard.style.display = 'block';
+                successMessage.textContent = 'Etiqueta processada e enviada à expedição.';
 
-            } catch (error) { 
-                errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`; 
-                console.error('Erro na conversão:', error); 
-            } finally { 
+            } catch (error) {
+                errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`;
+                console.error('Erro na conversão:', error);
+            } finally {
                 // Hide progress bar and re-enable button
+                clearInterval(timerInterval);
+                estimatedTimeEl.textContent = '';
                 progressContainer.classList.add('hidden');
-                converterButton.disabled = false; 
+                converterButton.disabled = false;
                 progressBar.style.width = '0%';
-            } 
-        } 
+            }
+        }
         
         function calculateNewTotalHeight(originalHeightIn, numberOfItems, dpmm) { 
             const fontH = 22; 
