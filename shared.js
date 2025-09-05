@@ -486,6 +486,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-perfil-mentorado',
     'menu-equipes',
     'menu-produtos',
+    'menu-sku-associado',
     'menu-produtos-vendidos',
     'menu-desempenho',
   ];
@@ -532,6 +533,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const mentoria = getLi('menu-mentoria');
     const perfilMentorado = getLi('menu-perfil-mentorado');
     const produtos = getLi('menu-produtos');
+    const skuAssociado = getLi('menu-sku-associado');
     const comunicacao = getLi('menu-comunicacao');
     const equipes = getLi('menu-equipes');
     const desempenho = getLi('menu-desempenho');
@@ -564,7 +566,7 @@ document.addEventListener('sidebarLoaded', async () => {
     }
 
     const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques, tiny]);
-    const gestaoGroup = createGroup(gestao, 'menuGestao', [acompGestor, acompVendas, produtosVendidos, mentoria, perfilMentorado, produtos]);
+    const gestaoGroup = createGroup(gestao, 'menuGestao', [acompGestor, acompVendas, produtosVendidos, mentoria, perfilMentorado, produtos, skuAssociado]);
     const comunicacaoGroup = createGroup(comunicacao, 'menuComunicacao', [equipes]);
 
     menu.innerHTML = '';
@@ -587,6 +589,9 @@ document.addEventListener('sidebarLoaded', async () => {
 
       if (isADM || isGestor) {
         showOnly(ADMIN_GESTOR_MENU_IDS);
+        if (isGestor && !["gestor","responsavel financeiro"].includes(perfil)) {
+          hideIds(["menu-sku-associado"]);
+        }
         buildGestorSidebarLayout();
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
