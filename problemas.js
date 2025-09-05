@@ -70,7 +70,12 @@ async function carregarPecas() {
       <td class="p-2">${d.numero || ''}</td>
       <td class="p-2">${d.loja || ''}</td>
       <td class="p-2">${d.peca || ''}</td>
-      <td class="p-2 text-right">R$ ${(Number(d.valorGasto) || 0).toFixed(2)}</td>
+      <td class="p-2 text-right">
+        <div class="flex items-center justify-end">
+          <span class="mr-1">R$</span>
+          <input type="number" step="0.01" class="valor-input border rounded p-1 w-24 text-right" data-id="${d.id}" value="${(Number(d.valorGasto) || 0).toFixed(2)}">
+        </div>
+      </td>
       <td class="p-2">
         <select class="status-select border rounded p-1" data-id="${d.id}">
           <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
@@ -84,6 +89,15 @@ async function carregarPecas() {
       const { id, ...rest } = d;
       await setDocWithCopy(doc(colRef, id), { ...rest, status: newStatus }, uidAtual);
       d.status = newStatus;
+    });
+
+    const valorInput = tr.querySelector('.valor-input');
+    valorInput.addEventListener('change', async (ev) => {
+      const newValor = parseFloat(ev.target.value) || 0;
+      const { id, ...rest } = d;
+      await setDocWithCopy(doc(colRef, id), { ...rest, valorGasto: newValor }, uidAtual);
+      d.valorGasto = newValor;
+      ev.target.value = newValor.toFixed(2);
     });
     tbody.appendChild(tr);
   });
