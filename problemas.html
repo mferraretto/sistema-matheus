@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Problemas</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4 space-y-6">
+    <div class="flex gap-2">
+      <button class="tab-btn active px-4 py-2 rounded bg-orange-500 text-white" data-tab="tab-reembolsos">Reembolsos</button>
+      <button class="tab-btn px-4 py-2 rounded bg-gray-200" data-tab="tab-pecas">Peças Faltando</button>
+    </div>
+    <div id="tab-reembolsos" class="tab-panel">
+      <p class="text-sm text-gray-600">Em breve.</p>
+    </div>
+    <div id="tab-pecas" class="tab-panel hidden space-y-4">
+      <form id="pecasForm" class="card p-4 grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div class="flex flex-col">
+          <label for="data" class="text-sm font-medium">Data</label>
+          <input type="date" id="data" class="border rounded p-2" required>
+        </div>
+        <div class="flex flex-col">
+          <label for="nomeCliente" class="text-sm font-medium">Nome do Cliente</label>
+          <input type="text" id="nomeCliente" class="border rounded p-2" required>
+        </div>
+        <div class="flex flex-col">
+          <label for="numero" class="text-sm font-medium">Número</label>
+          <input type="text" id="numero" class="border rounded p-2" required>
+        </div>
+        <div class="flex flex-col">
+          <label for="apelido" class="text-sm font-medium">Apelido</label>
+          <input type="text" id="apelido" class="border rounded p-2">
+        </div>
+        <div class="flex flex-col">
+          <label for="nf" class="text-sm font-medium">NF</label>
+          <input type="text" id="nf" class="border rounded p-2">
+        </div>
+        <div class="flex flex-col">
+          <label for="loja" class="text-sm font-medium">Loja</label>
+          <input type="text" id="loja" class="border rounded p-2">
+        </div>
+        <div class="flex flex-col">
+          <label for="peca" class="text-sm font-medium">Peça Faltante</label>
+          <input type="text" id="peca" class="border rounded p-2" required>
+        </div>
+        <div class="md:col-span-7">
+          <button type="submit" class="btn btn-primary w-full md:w-auto">Salvar</button>
+        </div>
+      </form>
+      <div class="card p-4 overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left">
+              <th class="p-2">Data</th>
+              <th class="p-2">Nome do Cliente</th>
+              <th class="p-2">Apelido</th>
+              <th class="p-2">Número</th>
+              <th class="p-2">Loja</th>
+              <th class="p-2">Peça Faltante</th>
+              <th class="p-2 text-right">Valor Gasto</th>
+              <th class="p-2">Status</th>
+            </tr>
+          </thead>
+          <tbody id="pecasTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="problemas.js"></script>
+  <script>window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';</script>
+  <script src="shared.js"></script>
+</body>
+</html>
