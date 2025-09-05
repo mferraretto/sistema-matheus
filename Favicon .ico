@@ -1,0 +1,8 @@
+from PIL import Image, ImageDraw
+
+# Criar favicon simples
+img = Image.new("RGBA", (64, 64), "white")
+draw = ImageDraw.Draw(img)
+draw.ellipse((8, 8, 56, 56), fill="#0ea5e9")
+
+img.save("favicon.ico", format="ICO", sizes=[(16,16),(32,32),(48,48),(64,64)])
