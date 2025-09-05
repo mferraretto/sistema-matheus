@@ -40,7 +40,9 @@ async function salvarPeca(ev) {
     alert('Preencha os campos obrigatórios.');
     return;
   }
-  const colRef = collection(db, `uid/${uidAtual}/problemas/pecasfaltando/itens`);
+  // Estrutura correta de coleção -> documento -> subcoleção
+  const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'pecasfaltando');
+  const colRef = collection(baseDoc, 'itens');
   const ref = doc(colRef);
   await setDocWithCopy(ref, registro, uidAtual);
   form.reset();
@@ -53,7 +55,8 @@ async function carregarPecas() {
   const tbody = document.getElementById('pecasTableBody');
   if (!tbody || !uidAtual) return;
   tbody.innerHTML = '';
-  const colRef = collection(db, `uid/${uidAtual}/problemas/pecasfaltando/itens`);
+  const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'pecasfaltando');
+  const colRef = collection(baseDoc, 'itens');
   const snap = await getDocs(colRef);
   const dados = snap.docs.map(d => d.data()).sort((a,b) => (a.data||'').localeCompare(b.data||''));
   dados.forEach(d => {
