@@ -137,22 +137,11 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-             if (responsavelExpedicaoUid) {
-                const respDocRef = await db.collection('pdfDocs').add({
-                    ownerUid: responsavelExpedicaoUid,
-                    ownerEmail: responsavelExpedicaoEmail || '',
-                    gestoresExpedicaoEmails: gestoresEmails,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    name: name
-                });
-                const respFileRef = storage.ref().child(`pdfs/${responsavelExpedicaoUid}/${respDocRef.id}.pdf`);
-                await respFileRef.put(blob);
-                const respUrl = await respFileRef.getDownloadURL();
-                await respDocRef.update({ url: respUrl, storagePath: respFileRef.fullPath });
+            if (responsavelExpedicaoUid) {
                 const respRecord = {
                     name: name,
-                    url: respUrl,
-                    path: respFileRef.fullPath,
+                    url: url,
+                    path: fileRef.fullPath,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
