@@ -490,21 +490,10 @@ completoCtx.drawImage(
         };
         await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
         if (responsavelExpedicaoUid) {
-          const respDocRef = await db.collection('pdfDocs').add({
-            ownerUid: responsavelExpedicaoUid,
-            ownerEmail: '',
-            gestoresExpedicaoEmails: gestoresEmails,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            name: fileName
-          });
-          const respFileRef = storage.ref().child(`pdfs/${responsavelExpedicaoUid}/${respDocRef.id}.pdf`);
-          await respFileRef.put(pdfFile);
-          const respUrl = await respFileRef.getDownloadURL();
-          await respDocRef.update({ url: respUrl, storagePath: respFileRef.fullPath });
           const respRecord = {
             name: fileName,
-            url: respUrl,
-            path: respFileRef.fullPath,
+            url: url,
+            path: fileRef.fullPath,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
           await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
