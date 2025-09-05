@@ -97,15 +97,17 @@ async function carregarPecas() {
         <select class="status-select border rounded p-1" data-id="${d.id}">
           <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
           <option value="ENVIADO" ${d.status === 'ENVIADO' ? 'selected' : ''}>ENVIADO</option>
-          <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
-        </select>
-      </td>`;
+      <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
+      </select>
+    </td>`;
+    aplicarCorLinha(tr, d.status);
     const select = tr.querySelector('.status-select');
     select.addEventListener('change', async (ev) => {
       const newStatus = ev.target.value;
       const { id, ...rest } = d;
       await setDocWithCopy(doc(colRef, id), { ...rest, status: newStatus }, uidAtual);
       d.status = newStatus;
+      aplicarCorLinha(tr, newStatus);
     });
 
     const valorInput = tr.querySelector('.valor-input');
@@ -118,6 +120,17 @@ async function carregarPecas() {
     });
     tbody.appendChild(tr);
   });
+}
+
+function aplicarCorLinha(tr, status) {
+  tr.classList.remove('bg-white','bg-yellow-100','bg-green-100');
+  if (status === 'FEITO') {
+    tr.classList.add('bg-yellow-100');
+  } else if (status === 'ENVIADO') {
+    tr.classList.add('bg-green-100');
+  } else {
+    tr.classList.add('bg-white');
+  }
 }
 
 function formatarData(str) {
