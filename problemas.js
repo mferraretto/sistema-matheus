@@ -19,6 +19,16 @@ onAuthStateChanged(auth, user => {
   const dataInput = document.getElementById('data');
   if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
   document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
+  document.getElementById('filtroData')?.addEventListener('change', carregarPecas);
+  document.getElementById('filtroStatus')?.addEventListener('change', carregarPecas);
+  document.getElementById('limparFiltros')?.addEventListener('click', ev => {
+    ev.preventDefault();
+    const fd = document.getElementById('filtroData');
+    const fs = document.getElementById('filtroStatus');
+    if (fd) fd.value = '';
+    if (fs) fs.value = '';
+    carregarPecas();
+  });
   carregarPecas();
 });
 
@@ -61,7 +71,14 @@ async function carregarPecas() {
   const dados = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
-  dados.forEach(d => {
+  const filtroData = document.getElementById('filtroData')?.value;
+  const filtroStatus = document.getElementById('filtroStatus')?.value;
+  const filtrados = dados.filter(d => {
+    const dataOk = filtroData ? d.data === filtroData : true;
+    const statusOk = filtroStatus ? d.status === filtroStatus : true;
+    return dataOk && statusOk;
+  });
+  filtrados.forEach(d => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
