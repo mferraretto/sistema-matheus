@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, orderBy, startAt, endAt, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
@@ -49,13 +49,33 @@ async function carregar() {
   await carregarSkus(usuariosCache, inicio, fim);
 }
 
+function parseDate(str) {
+  if (!str) return new Date('');
+  if (str.includes('T') || str.includes(' ')) {
+    const d = new Date(str);
+    if (!isNaN(d)) return d;
+  }
+  const parts = str.split(/[\/\-]/);
+  if (parts.length === 3) {
+    let y, m, d;
+    if (str.includes('-') && parts[0].length === 4) {
+      [y, m, d] = parts;
+    } else {
+      [d, m, y] = parts;
+    }
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  }
+  return new Date(str);
+}
+
 async function carregarSkus(usuarios, inicio, fim) {
   const resumoGeral = {};
+  const inicioDate = parseDate(inicio);
+  const fimDate = parseDate(fim);
+
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
-    const baseCol = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
-    const q = query(baseCol, orderBy('data'), startAt(inicio), endAt(fim));
-    const snap = await getDocs(q);
+    const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
     const promessas = snap.docs.map(async docSnap => {
       let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
       if (!pedido) {
@@ -63,6 +83,10 @@ async function carregarSkus(usuarios, inicio, fim) {
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
       }
       if (!pedido) return {};
+
+      const dataPedido = parseDate(pedido.data || pedido.dataPedido || pedido.date);
+      if (isNaN(dataPedido) || dataPedido < inicioDate || dataPedido > fimDate) return {};
+
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
       const resumoLocal = {};
       itens.forEach(item => {
@@ -72,6 +96,7 @@ async function carregarSkus(usuarios, inicio, fim) {
       });
       return resumoLocal;
     });
+
     const resultados = await Promise.all(promessas);
     resultados.forEach(res => {
       Object.entries(res).forEach(([sku, qtd]) => {
@@ -79,6 +104,7 @@ async function carregarSkus(usuarios, inicio, fim) {
       });
     });
   }
+
   renderLista(resumoGeral);
 }
 
