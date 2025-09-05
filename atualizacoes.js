@@ -161,14 +161,15 @@ async function carregarHistoricoFaturamento() {
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
 
     const fatSnap = await getDocs(collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'));
-    const dias = fatSnap.docs.map(d => d.id).sort().slice(-3);
+    const dias = fatSnap.docs.map(d => d.id).sort().slice(-1);
 
     const col = document.createElement('div');
     col.className = 'faturamento-col';
 
     const header = document.createElement('div');
-    header.className = 'faturamento-header';
+    header.className = 'faturamento-header cursor-pointer';
     header.innerHTML = `<div>${u.nome}</div><div>META R$ ${metaMensal.toLocaleString('pt-BR')}</div>`;
+    header.addEventListener('click', () => toggleFaturamentoMensal(col, currentUser.uid, u.uid));
     col.appendChild(header);
 
     for (const dia of dias) {
@@ -186,10 +187,36 @@ async function carregarHistoricoFaturamento() {
         <div class="resultado ${atingido ? 'positivo' : 'negativo'}">${atingido ? 'POSITIVO' : 'NEGATIVO'}${diff ? ` R$ ${Math.abs(diff).toLocaleString('pt-BR')}` : ''}</div>
       `;
       col.appendChild(day);
-    }
-
-    container.appendChild(col);
   }
+
+  container.appendChild(col);
+}
+}
+
+async function toggleFaturamentoMensal(container, responsavelUid, uid) {
+  let tabela = container.querySelector('table');
+  if (tabela) {
+    tabela.remove();
+    return;
+  }
+  const mesAtual = new Date().toISOString().slice(0,7);
+  const fatSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento'));
+  const dias = fatSnap.docs.map(d => d.id).filter(id => id.startsWith(mesAtual)).sort();
+  tabela = document.createElement('table');
+  tabela.className = 'mt-2 w-full text-sm border-collapse';
+  const thead = document.createElement('thead');
+  thead.innerHTML = `<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th></tr>`;
+  tabela.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  for (const dia of dias) {
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia);
+    const vendas = await calcularVendasDia(responsavelUid, uid, dia);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="border px-2 py-1">${dia}</td><td class="border px-2 py-1">R$ ${bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">R$ ${liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">${vendas}</td>`;
+    tbody.appendChild(tr);
+  }
+  tabela.appendChild(tbody);
+  container.appendChild(tabela);
 }
 
 async function carregarTotais() {
