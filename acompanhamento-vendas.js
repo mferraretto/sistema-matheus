@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, orderBy, startAt, endAt, doc, getDoc, getDocs, addDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, orderBy, startAt, endAt, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
@@ -10,16 +10,12 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let usuariosCache = [];
-let currentUser = null;
-let responsavelUid = null;
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
-  currentUser = user;
-  await buscarResponsavelFinanceiro();
   try {
     const { usuarios, isGestor, isResponsavelFinanceiro } = await carregarUsuariosFinanceiros(db, user);
     if (!isGestor && !isResponsavelFinanceiro) {
@@ -33,8 +29,6 @@ onAuthStateChanged(auth, async user => {
   }
   setupFiltros(usuariosCache);
   await carregar();
-  initTabs();
-  setupPecas();
 });
 
 function setupFiltros(usuarios) {
@@ -154,95 +148,4 @@ function formatMes(date) {
 
 function sameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
-}
-
-async function buscarResponsavelFinanceiro() {
-  try {
-    const snap = await getDoc(doc(db, 'uid', currentUser.uid));
-    const email = snap.exists() ? snap.data().responsavelFinanceiroEmail : null;
-    if (!email) return;
-    const q = query(collection(db, 'usuarios'), where('email', '==', email));
-    const res = await getDocs(q);
-    if (!res.empty) responsavelUid = res.docs[0].id;
-  } catch (err) {
-    console.error('Erro ao buscar responsável financeiro:', err);
-  }
-}
-
-function initTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('bg-blue-500','text-white');
-        b.classList.add('bg-gray-200','text-gray-700');
-      });
-      btn.classList.remove('bg-gray-200','text-gray-700');
-      btn.classList.add('bg-blue-500','text-white');
-      document.querySelectorAll('[id^="tab-"]').forEach(div => div.classList.add('hidden'));
-      document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
-    });
-  });
-  document.querySelectorAll('.subtab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.subtab;
-      document.querySelectorAll('.subtab-btn').forEach(b => {
-        b.classList.remove('bg-blue-500','text-white');
-        b.classList.add('bg-gray-200','text-gray-700');
-      });
-      btn.classList.remove('bg-gray-200','text-gray-700');
-      btn.classList.add('bg-blue-500','text-white');
-      document.querySelectorAll('[id^="subtab-"]').forEach(div => div.classList.add('hidden'));
-      document.getElementById(`subtab-${tab}`)?.classList.remove('hidden');
-    });
-  });
-}
-
-function setupPecas() {
-  const form = document.getElementById('pecaForm');
-  if (form) form.addEventListener('submit', salvarPecaFaltante);
-  carregarPecasFaltando();
-}
-
-async function salvarPecaFaltante(ev) {
-  ev.preventDefault();
-  if (!currentUser) return;
-  const registro = {
-    data: document.getElementById('pfData')?.value || '',
-    nomeCliente: document.getElementById('pfNome')?.value || '',
-    numero: document.getElementById('pfNumero')?.value || '',
-    apelido: document.getElementById('pfApelido')?.value || '',
-    nf: document.getElementById('pfNf')?.value || '',
-    loja: document.getElementById('pfLoja')?.value || '',
-    pecaFaltante: document.getElementById('pfPeca')?.value || '',
-    createdAt: new Date().toISOString()
-  };
-  try {
-    await addDoc(collection(db, `uid/${currentUser.uid}/problemas/pecasfaltando`), registro);
-    if (responsavelUid) {
-      await addDoc(collection(db, `uid/${responsavelUid}/${currentUser.uid}/problemas/pecasfaltando`), registro);
-    }
-    ev.target.reset();
-    await carregarPecasFaltando();
-  } catch (err) {
-    console.error('Erro ao salvar peça faltante:', err);
-  }
-}
-
-async function carregarPecasFaltando() {
-  if (!currentUser) return;
-  const tbody = document.querySelector('#pecasTable tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  try {
-    const snap = await getDocs(collection(db, `uid/${currentUser.uid}/problemas/pecasfaltando`));
-    snap.forEach(d => {
-      const r = d.data();
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.data || ''}</td><td>${r.nomeCliente || ''}</td><td>${r.numero || ''}</td><td>${r.apelido || ''}</td><td>${r.nf || ''}</td><td>${r.loja || ''}</td><td>${r.pecaFaltante || ''}</td>`;
-      tbody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error('Erro ao carregar peças faltantes:', err);
-  }
 }
