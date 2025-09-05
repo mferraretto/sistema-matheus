@@ -219,8 +219,23 @@
                 const { PDFDocument } = PDFLib;
                 const pdfDoc = await PDFDocument.create();
                 const totalLabels = blocks.length / 2;
+
+                // Recupera o próximo número de etiqueta a partir do Firestore
+                let startLabelNumber = 1;
+                try {
+                    const counterDocRef = db.collection('uid').doc(currentUser.uid);
+                    await db.runTransaction(async tx => {
+                        const doc = await tx.get(counterDocRef);
+                        const current = doc.exists && doc.data().zplLastNumber ? doc.data().zplLastNumber : 0;
+                        startLabelNumber = current + 1;
+                        tx.set(counterDocRef, { zplLastNumber: current + totalLabels }, { merge: true });
+                    });
+                } catch (e) {
+                    console.error('Erro ao atualizar o contador de etiquetas:', e);
+                }
+
                 const allExtractedItems = [];
-                let labelCounter = 1;
+                let labelCounter = startLabelNumber;
 
                 // Loop to process each pair of ZPL blocks
                 for (let i = 0; i < blocks.length; i += 2) {
@@ -284,7 +299,7 @@
                 // 8. Display the preview of the first label
                 const firstChecklistData = await extractDataFromChecklist(blocks[1], dpmm, originalWidthIn, originalHeightIn);
                 const firstLabelImageBlob = await generateImageFromZpl(
-                    generateCombinedZPL(blocks[0], firstChecklistData, 1),
+                    generateCombinedZPL(blocks[0], firstChecklistData, startLabelNumber),
                     dpmm,
                     originalWidthIn,
                     calculateNewTotalHeight(originalHeightIn, firstChecklistData.length, dpmm)
