@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produtos Vendidos</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20240826" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4 space-y-4">
+    <div class="card p-4 flex flex-wrap items-center gap-4">
+      <div class="flex flex-col">
+        <label for="inicioFiltro" class="text-xs font-medium">Início</label>
+        <input type="date" id="inicioFiltro" class="border rounded p-2 text-sm" />
+      </div>
+      <div class="flex flex-col">
+        <label for="fimFiltro" class="text-xs font-medium">Fim</label>
+        <input type="date" id="fimFiltro" class="border rounded p-2 text-sm" />
+      </div>
+      <button id="btnAplicar" class="btn btn-primary mt-4 md:mt-0">Aplicar</button>
+    </div>
+    <div class="card p-4">
+      <div id="listaSkus" class="text-sm"></div>
+    </div>
+  </div>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="produtos-vendidos.js"></script>
+  <script>window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';</script>
+  <script src="shared.js"></script>
+</body>
+</html>
