@@ -73,6 +73,18 @@ async function carregarSkus(usuarios, inicio, fim) {
   const inicioDate = parseDate(inicio);
   const fimDate = parseDate(fim);
 
+  // Carrega associações de SKU para agrupar os itens
+  const mapaAssociados = {};
+  const assocSnap = await getDocs(collection(db, 'skuAssociado'));
+  assocSnap.forEach(docSnap => {
+    const data = docSnap.data();
+    const principal = data.skuPrincipal || docSnap.id;
+    mapaAssociados[principal] = principal;
+    (data.associados || []).forEach(sku => {
+      mapaAssociados[sku] = principal;
+    });
+  });
+
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
@@ -85,7 +97,8 @@ async function carregarSkus(usuarios, inicio, fim) {
 
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
       itens.forEach(item => {
-        const sku = item.sku || pedido.sku || 'sem-sku';
+        const skuOriginal = item.sku || pedido.sku || 'sem-sku';
+        const sku = mapaAssociados[skuOriginal] || skuOriginal;
         const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
         resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
       });
