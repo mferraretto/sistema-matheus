@@ -32,6 +32,7 @@
       <label for="manualPdfInput" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white cursor-pointer"><i class="fas fa-file-upload"></i><span>Escolher Arquivo</span></label>
       <input type="file" id="manualPdfInput" accept="application/pdf" class="hidden" />
       <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
+      <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white"><i class="fas fa-users"></i><span>Equipe</span></button>
     </div>
     <div id="sobrasFields" class="mb-4 hidden flex flex-wrap items-center gap-2">
       <input type="number" id="sobrasQuantidade" class="form-control w-40" placeholder="Qtd não expedida" />
@@ -92,6 +93,18 @@
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
     uploadManualBtn.addEventListener('click', uploadManualLabel);
+    const gestorUsersBtn = document.getElementById('gestorUsersBtn');
+    if (gestorUsersBtn) {
+      gestorUsersBtn.addEventListener('click', () => {
+        const card = document.getElementById('gestorUsersCard');
+        if (card.classList.contains('hidden')) {
+          carregarEquipeGestor();
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
     const enviarSobrasBtn = document.getElementById('enviarSobrasBtn');
     if (enviarSobrasBtn) enviarSobrasBtn.addEventListener('click', enviarSobras);
 
@@ -228,11 +241,6 @@
             opt.textContent = nome;
             selectEl.appendChild(opt);
           }
-        }
-        if (usuarios.size) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
         }
       } catch (e) {
         console.error('Erro ao carregar equipe de expedição:', e);
