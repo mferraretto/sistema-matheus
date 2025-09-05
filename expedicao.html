@@ -33,14 +33,7 @@
       <input type="file" id="manualPdfInput" accept="application/pdf" class="hidden" />
       <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
       <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white"><i class="fas fa-users"></i><span>Equipe</span></button>
-    </div>
-    <div id="sobrasFields" class="mb-4 hidden flex flex-wrap items-center gap-2">
-      <input type="number" id="sobrasQuantidade" class="form-control w-40" placeholder="Qtd não expedida" />
-      <input type="text" id="sobrasMotivo" class="form-control w-64" placeholder="Motivo" />
-      <select id="sobrasResponsavel" class="form-control w-48">
-        <option value="">Selecione responsável</option>
-      </select>
-      <button id="enviarSobrasBtn" class="btn btn-primary">Enviar</button>
+      <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 text-white"><i class="fas fa-box-open"></i><span>Sobras</span></button>
     </div>
     <div id="statusFilters" class="flex flex-wrap gap-2 mb-4">
       <button class="filter-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
@@ -80,6 +73,20 @@
     </div>
   </div>
 
+  <div id="sobrasModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white w-full max-w-md p-4 rounded shadow-lg relative">
+      <button id="closeSobrasModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
+      <div id="sobrasFields" class="flex flex-col gap-2">
+        <input type="number" id="sobrasQuantidade" class="form-control" placeholder="Qtd não expedida" />
+        <input type="text" id="sobrasMotivo" class="form-control" placeholder="Motivo" />
+        <select id="sobrasResponsavel" class="form-control">
+          <option value="">Selecione responsável</option>
+        </select>
+        <button id="enviarSobrasBtn" class="btn btn-primary">Enviar</button>
+      </div>
+    </div>
+  </div>
+
  <script type="module">
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
     import { decryptString } from './crypto.js';
@@ -110,7 +117,9 @@
     const closeBtn = document.getElementById('closeDayBtn');
     startBtn.addEventListener('click', iniciarDia);
     closeBtn.addEventListener('click', fecharDia);
-    const sobrasDiv = document.getElementById('sobrasFields');
+    const sobrasBtn = document.getElementById('sobrasBtn');
+    const sobrasModal = document.getElementById('sobrasModal');
+    const closeSobrasModal = document.getElementById('closeSobrasModal');
     const sobrasQtdInput = document.getElementById('sobrasQuantidade');
     const sobrasMotivoInput = document.getElementById('sobrasMotivo');
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
@@ -127,6 +136,17 @@
         } else {
           card.classList.add('hidden');
         }
+      });
+    }
+    if (sobrasBtn && sobrasModal) {
+      sobrasBtn.addEventListener('click', () => {
+        sobrasModal.classList.remove('hidden');
+      });
+    }
+    if (closeSobrasModal && sobrasModal) {
+      closeSobrasModal.addEventListener('click', () => sobrasModal.classList.add('hidden'));
+      sobrasModal.addEventListener('click', e => {
+        if (e.target === sobrasModal) sobrasModal.classList.add('hidden');
       });
     }
     const enviarSobrasBtn = document.getElementById('enviarSobrasBtn');
@@ -381,15 +401,17 @@
       if (doc.exists && doc.data().fim) {
         startBtn.classList.remove('hidden');
         closeBtn.classList.add('hidden');
-        sobrasDiv.classList.add('hidden');
+        sobrasBtn.classList.add('hidden');
+        sobrasModal.classList.add('hidden');
       } else if (doc.exists) {
         startBtn.classList.add('hidden');
         closeBtn.classList.remove('hidden');
-        sobrasDiv.classList.remove('hidden');
+        sobrasBtn.classList.remove('hidden');
       } else {
         startBtn.classList.remove('hidden');
         closeBtn.classList.add('hidden');
-        sobrasDiv.classList.add('hidden');
+        sobrasBtn.classList.add('hidden');
+        sobrasModal.classList.add('hidden');
       }
     }
 
@@ -401,7 +423,7 @@
       await diaDocRef.set({ inicio: firebase.firestore.FieldValue.serverTimestamp() });
       startBtn.classList.add('hidden');
       closeBtn.classList.remove('hidden');
-      sobrasDiv.classList.remove('hidden');
+      sobrasBtn.classList.remove('hidden');
       showToast('Dia iniciado');
     }
 
@@ -425,7 +447,8 @@
       await gerarRelatorioDia(inicio, fim, dados);
       await gerarRelatorioDiaPorUsuario(inicio, fim, dados);
       closeBtn.classList.add('hidden');
-      sobrasDiv.classList.add('hidden');
+      sobrasBtn.classList.add('hidden');
+      sobrasModal.classList.add('hidden');
       sobrasQtdInput.value = '';
       sobrasMotivoInput.value = '';
       if (sobrasResponsavelSelect) sobrasResponsavelSelect.value = '';
@@ -446,6 +469,7 @@
       sobrasMotivoInput.value = '';
       if (sobrasResponsavelSelect) sobrasResponsavelSelect.value = '';
       showToast('Atualização enviada');
+      if (sobrasModal) sobrasModal.classList.add('hidden');
     }
 
     async function notificarUsuariosSobras(qtd, motivo, responsavelUid) {
