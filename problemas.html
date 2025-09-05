@@ -55,6 +55,24 @@
           <button type="submit" class="btn btn-primary w-full md:w-auto">Salvar</button>
         </div>
       </form>
+      <div class="card p-4 flex flex-col md:flex-row gap-4">
+        <div class="flex flex-col">
+          <label for="filtroData" class="text-sm font-medium">Data</label>
+          <input type="date" id="filtroData" class="border rounded p-2">
+        </div>
+        <div class="flex flex-col">
+          <label for="filtroStatus" class="text-sm font-medium">Status</label>
+          <select id="filtroStatus" class="border rounded p-2">
+            <option value="">Todos</option>
+            <option value="NÃO FEITO">NÃO FEITO</option>
+            <option value="ENVIADO">ENVIADO</option>
+            <option value="FEITO">FEITO</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button id="limparFiltros" class="px-4 py-2 bg-gray-200 rounded">Limpar</button>
+        </div>
+      </div>
       <div class="card p-4 overflow-x-auto">
         <table class="min-w-full text-sm">
           <thead>
