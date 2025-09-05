@@ -98,15 +98,36 @@ async function carregarSkus(usuarios, inicio, fim) {
 function renderLista(resumo) {
   const lista = document.getElementById('listaSkus');
   if (!lista) return;
-  const entries = Object.entries(resumo).sort((a, b) => b[1] - a[1]);
+
+  const entries = Object.entries(resumo);
   if (!entries.length) {
     lista.innerHTML = '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
     return;
   }
-  let html = '<table class="min-w-full text-sm"><thead><tr><th class="text-left">SKU</th><th class="text-left">Quantidade</th></tr></thead><tbody>';
-  entries.forEach(([sku, qtd]) => {
-    html += `<tr><td class="pr-4">${sku}</td><td>${qtd}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  lista.innerHTML = html;
+
+  const renderTabela = sortBy => {
+    const items = [...entries];
+    if (sortBy === 'sku') {
+      items.sort((a, b) => a[0].localeCompare(b[0]));
+    } else {
+      items.sort((a, b) => b[1] - a[1]);
+    }
+
+    let html = '<table class="min-w-full text-sm"><thead><tr>' +
+      '<th id="thSku" class="text-left cursor-pointer">SKU</th>' +
+      '<th id="thQtd" class="text-left cursor-pointer">Quantidade</th>' +
+      '</tr></thead><tbody>';
+
+    items.forEach(([sku, qtd]) => {
+      html += `<tr><td class="pr-4">${sku}</td><td>${qtd}</td></tr>`;
+    });
+
+    html += '</tbody></table>';
+    lista.innerHTML = html;
+
+    document.getElementById('thSku')?.addEventListener('click', () => renderTabela('sku'));
+    document.getElementById('thQtd')?.addEventListener('click', () => renderTabela('qtd'));
+  };
+
+  renderTabela('qtd');
 }
