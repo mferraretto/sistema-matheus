@@ -1,7 +1,9 @@
 const CACHE_VERSION = '20240826';
-const CACHE_PREFIX  = 'financeiro-cache-v';
+const CACHE_PREFIX  = 'app-cache-v';
 const CACHE_NAME    = `${CACHE_PREFIX}${CACHE_VERSION}`;
 const URLS_TO_CACHE = [
+  'index.html',
+  'index.js',
   'financeiro.html',
   'financeiro.js',
   `css/styles.css?v=${CACHE_VERSION}`,
