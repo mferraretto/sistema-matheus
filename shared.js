@@ -473,23 +473,23 @@ document.addEventListener('sidebarLoaded', async () => {
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const GESTOR_RESP_MENU_IDS = [
-    'menu-atualizacoes',
-    'menu-financeiro',
-    'menu-saques',
-    'menu-acompanhamento-tiny',
+  const ADMIN_GESTOR_MENU_IDS = [
     'menu-gestao',
+    'menu-financeiro',
+    'menu-atualizacoes',
+    'menu-comunicacao',
+    'menu-saques',
     'menu-acompanhamento-gestor',
+    'menu-acompanhamento-tiny',
     'menu-acompanhamento-vendas',
     'menu-mentoria',
     'menu-perfil-mentorado',
-    'menu-produtos',
-    'menu-comunicacao',
     'menu-equipes',
+    'menu-produtos',
     'menu-desempenho',
   ];
 
-  const CLIENTE_HIDDEN_MENU_IDS = GESTOR_RESP_MENU_IDS.filter(id => id !== 'menu-comunicacao');
+  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(id => id !== 'menu-comunicacao');
 
   function showOnly(ids) {
     document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
@@ -517,11 +517,11 @@ document.addEventListener('sidebarLoaded', async () => {
       const perfil = (snap.exists() && String(snap.data().perfil || '') || '').trim().toLowerCase();
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
-      const isGestor = ['gestor', 'mentor', 'responsavel', 'responsável', 'responsavel financeiro', 'gestor financeiro'].includes(perfil);
+      const isGestor = ['gestor', 'mentor'].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
-      if (isGestor) {
-        showOnly(GESTOR_RESP_MENU_IDS);
+      if (isADM || isGestor) {
+        showOnly(ADMIN_GESTOR_MENU_IDS);
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
         document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
