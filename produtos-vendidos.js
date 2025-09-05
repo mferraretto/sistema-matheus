@@ -10,6 +10,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let usuariosCache = [];
+let ultimoResumo = {};
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -92,6 +93,7 @@ async function carregarSkus(usuarios, inicio, fim) {
     }
   }
 
+  ultimoResumo = resumoGeral;
   renderLista(resumoGeral);
 }
 
@@ -151,7 +153,23 @@ function fecharModalSoma() {
   if (modal) modal.style.display = 'none';
 }
 
+function exportarExcel() {
+  if (!ultimoResumo || Object.keys(ultimoResumo).length === 0) {
+    alert('Nenhum dado para exportar.');
+    return;
+  }
+  const dados = Object.entries(ultimoResumo).map(([sku, qtd]) => ({ SKU: sku, Quantidade: qtd }));
+  const ws = XLSX.utils.json_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+  const inicio = document.getElementById('inicioFiltro')?.value || '';
+  const fim = document.getElementById('fimFiltro')?.value || '';
+  const nome = `produtos_vendidos_${inicio}_${fim}.xlsx`;
+  XLSX.writeFile(wb, nome);
+}
+
 document.getElementById('btnVerSoma')?.addEventListener('click', mostrarSomaSelecionada);
 document.getElementById('modalFechar')?.addEventListener('click', fecharModalSoma);
 document.getElementById('modalSoma')?.addEventListener('click', e => { if (e.target === e.currentTarget) fecharModalSoma(); });
+document.getElementById('btnExportarExcel')?.addEventListener('click', exportarExcel);
 
