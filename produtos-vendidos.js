@@ -17,8 +17,8 @@ onAuthStateChanged(auth, async user => {
     return;
   }
   try {
-    const { usuarios, isGestor, isResponsavelFinanceiro } = await carregarUsuariosFinanceiros(db, user);
-    if (!isGestor && !isResponsavelFinanceiro) {
+    const { usuarios, isGestor, isResponsavelFinanceiro, perfil } = await carregarUsuariosFinanceiros(db, user);
+    if (!isGestor && !isResponsavelFinanceiro && perfil !== 'mentor') {
       window.location.href = 'index.html';
       return;
     }
