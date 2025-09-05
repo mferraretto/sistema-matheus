@@ -251,12 +251,16 @@
         .collection('pdfDocs')
         .orderBy('createdAt', 'desc')
         .get();
+      const seen = new Set();
       for (const doc of snap.docs) {
         const data = doc.data();
         const allowed =
           data.ownerEmail === currentUser.email ||
           (data.gestoresExpedicaoEmails || []).includes(currentUser.email);
-        if (!allowed) continue;
+        if (!allowed || !data.url) continue;
+        const key = data.storagePath || data.url;
+        if (seen.has(key)) continue;
+        seen.add(key);
         const status = data.status || 'nao_impresso';
         if (filter !== 'all' && status !== filter) continue;
         const ownerName = data.ownerName || await getOwnerName(data.ownerUid, data.ownerEmail);
