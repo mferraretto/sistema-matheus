@@ -531,3 +531,9 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
     metaText.textContent = `${percent.toFixed(0)}% da meta alcançada`;
   }
 }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker
+    .register('service-worker.js')
+    .catch(err => console.error('SW registration failed', err));
+}
