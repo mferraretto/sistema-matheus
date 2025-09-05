@@ -476,6 +476,7 @@ document.addEventListener('sidebarLoaded', async () => {
   const GESTOR_RESP_MENU_IDS = [
     'menu-atualizacoes',
     'menu-financeiro',
+    'menu-financeiro-inicio',
     'menu-saques',
     'menu-acompanhamento-tiny',
     'menu-gestao',
