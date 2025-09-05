@@ -26,9 +26,12 @@
   </div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Expedição</h1>
-    <div class="mb-4">
-      <button id="startDayBtn" class="btn btn-primary mr-2">Iniciar Dia</button>
-      <button id="closeDayBtn" class="btn btn-secondary hidden">Fechar Dia</button>
+    <div id="actionBar" class="sticky top-0 z-10 bg-white border-b shadow-sm mb-4 flex flex-wrap items-center gap-2 p-2">
+      <button id="startDayBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white"><i class="fas fa-play"></i><span>Iniciar Dia</span></button>
+      <button id="closeDayBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hidden"><i class="fas fa-check"></i><span>Concluir</span></button>
+      <label for="manualPdfInput" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white cursor-pointer"><i class="fas fa-file-upload"></i><span>Escolher Arquivo</span></label>
+      <input type="file" id="manualPdfInput" accept="application/pdf" class="hidden" />
+      <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
     </div>
     <div id="sobrasFields" class="mb-4 hidden flex flex-wrap items-center gap-2">
       <input type="number" id="sobrasQuantidade" class="form-control w-40" placeholder="Qtd não expedida" />
@@ -48,11 +51,7 @@
       <button class="view-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-view="cards" title="Exibição em cartões"><i class="fas fa-th"></i></button>
       <button class="view-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition" data-view="list" title="Exibição em lista"><i class="fas fa-list"></i></button>
     </div>
-    <div id="manualUpload" class="mb-4 flex flex-wrap items-center gap-2">
-      <input type="file" id="manualPdfInput" accept="application/pdf" class="form-control" />
-      <button id="uploadManualBtn" class="btn btn-primary">Adicionar etiqueta</button>
-    </div>
-    <div id="labelsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="labelsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
   </div>
 
   <div id="pdfModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
@@ -244,7 +243,7 @@
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
       list.className = viewMode === 'cards'
-        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
         : 'flex flex-col gap-4';
       const filter = currentFilter;
       const snap = await db
@@ -567,51 +566,48 @@
       const data = doc.data();
       const status = data.status || 'nao_impresso';
       const attention = data.attention || false;
-      const observacao = data.observacao || '';
       const name = data.name || 'PDF';
       const url = data.url;
       const owner = ownerName || 'Desconhecido';
       const createdAt = data.createdAt && data.createdAt.toDate
         ? data.createdAt.toDate().toLocaleString('pt-BR')
         : 'Data desconhecida';
-      const statusClass = status === 'impresso'
-        ? 'bg-green-100'
-        : status === 'nao_impresso'
-          ? 'bg-yellow-100'
-          : 'bg-white';
+      const statusBadge = status === 'impresso'
+        ? '<span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">Impresso</span>'
+        : status === 'concluido'
+          ? '<span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">Concluído</span>'
+          : '<span class="text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full">Não impresso</span>';
       const div = document.createElement('div');
-      div.className = `pdf-card p-5 rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-1 transition ${statusClass}` + (attention ? ' border-2 border-red-500' : '');
+      div.className = 'pdf-card border rounded-lg p-4 bg-white shadow relative' + (attention ? ' border-red-500 border-2' : '');
       div.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
-            <p class="font-semibold text-gray-800">${name}</p>
-            <p class="text-sm text-gray-500">Criado por: ${owner} em ${createdAt}</p>
+            <p class="font-semibold text-gray-800 text-sm">${name}</p>
+            <p class="text-xs text-gray-500">${owner} - ${createdAt}</p>
           </div>
-          <div class="flex gap-2">
-            ${status === 'impresso' ? `<span class="flex items-center text-xs bg-green-500 text-white px-2 py-1 rounded-full"><i class="fas fa-check mr-1"></i>Impresso</span>` : ''}
-            ${attention ? `<span class="flex items-center text-xs bg-red-500 text-white px-2 py-1 rounded-full"><i class="fas fa-exclamation-triangle mr-1"></i>Problema</span>` : ''}
+          <div class="flex items-start gap-2">
+            ${statusBadge}
+            <div class="relative">
+              <button class="text-gray-600 hover:text-gray-800" onclick="toggleMenu(this)"><i class="fas fa-ellipsis-v"></i></button>
+              <div class="hidden absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-10">
+                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="visualizar('${url}')"><i class="fas fa-eye text-indigo-600"></i><span>Ver</span></button>
+                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="imprimir('${url}')"><i class="fas fa-print text-indigo-600"></i><span>Imprimir</span></button>
+                <a class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" href="${url}" download="${name}"><i class="fas fa-download text-indigo-600"></i><span>Baixar</span></a>
+                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left text-red-600" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))"><i class="fas fa-trash"></i><span>Excluir</span></button>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button class="flex items-center gap-1 px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition" onclick="visualizar('${url}')" title="Visualizar"><i class="fas fa-eye"></i><span>Ver</span></button>
-          <button class="flex items-center gap-1 px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition" onclick="imprimir('${url}')" title="Imprimir"><i class="fas fa-print"></i><span>Imprimir</span></button>
-          <a class="flex items-center gap-1 px-3 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition" href="${url}" download="${name}" title="Baixar"><i class="fas fa-download"></i><span>Baixar</span></a>
-          <button class="flex items-center gap-1 px-3 py-2 rounded-md bg-red-600 text-white text-sm hover:bg-red-700 transition" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))" title="Excluir"><i class="fas fa-trash"></i><span>Excluir</span></button>
-        </div>
-        <div class="mt-3 space-y-2">
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer sr-only" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this, this.closest('.pdf-card'))">
-            <span class="px-2 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-600 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:text-white flex items-center gap-1"><i class="fas fa-check"></i><span>Impresso</span></span>
+        <div class="mt-2 flex items-center gap-2">
+          <label class="flex items-center gap-1 text-xs">
+            <input type="checkbox" class="mr-1" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this, this.closest('.pdf-card'))">
+            <span>Impresso</span>
           </label>
-          <label class="cursor-pointer">
-            <input type="checkbox" class="peer sr-only" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this, this.closest('.pdf-card'))">
-            <span class="px-2 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-600 peer-checked:bg-red-500 peer-checked:border-red-500 peer-checked:text-white flex items-center gap-1"><i class="fas fa-exclamation-triangle"></i><span>Atenção</span></span>
+          <label class="flex items-center gap-1 text-xs">
+            <input type="checkbox" class="mr-1" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this, this.closest('.pdf-card'))">
+            <span>Atenção</span>
           </label>
-          <div class="relative">
-            <i class="fas fa-pen absolute left-3 top-3 text-gray-400"></i>
-            <textarea class="border rounded-md p-2 pl-8 w-full h-10 focus:h-24 transition-all text-sm" placeholder="Observação" onblur="salvarObservacao('${doc.id}', this.value)">${observacao}</textarea>
-          </div>
-      <button class="w-full bg-green-600 text-white px-3 py-2 rounded-md text-sm hover:bg-green-700 transition" onclick="marcarConcluido('${doc.id}', this.closest('.pdf-card'))">Concluir</button>
+          <button class="ml-auto bg-green-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1 hover:bg-green-700" onclick="marcarConcluido('${doc.id}', this.closest('.pdf-card'))"><i class="fas fa-check"></i><span>Concluir</span></button>
         </div>`;
       return div;
     }
@@ -690,6 +686,12 @@
       win.onload = () => win.document.getElementById('printFrame').contentWindow.print();
     }
     window.imprimir = imprimir;
+
+    function toggleMenu(btn) {
+      const menu = btn.nextElementSibling;
+      if (menu) menu.classList.toggle('hidden');
+    }
+    window.toggleMenu = toggleMenu;
 
     async function toggleImpresso(id, checkbox, card) {
       const checked = checkbox.checked;
