@@ -52,6 +52,24 @@
       <button class="view-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-view="cards" title="Exibição em cartões"><i class="fas fa-th"></i></button>
       <button class="view-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition" data-view="list" title="Exibição em lista"><i class="fas fa-list"></i></button>
     </div>
+    <div id="searchBar" class="flex flex-wrap gap-2 mb-4">
+      <input id="searchInput" type="text" class="form-control w-64" placeholder="Buscar por nome, ID, e-mail, data" />
+      <select id="sortSelect" class="form-control">
+        <option value="createdAt">Ordenar por data</option>
+        <option value="owner">Ordenar por responsável</option>
+        <option value="status">Ordenar por status</option>
+      </select>
+      <button id="advancedToggle" class="btn px-3 py-2 bg-gray-200 text-gray-700 rounded">Filtros avançados</button>
+    </div>
+    <div id="advancedFilters" class="flex flex-wrap gap-2 mb-4 hidden">
+      <input type="date" id="startDate" class="form-control" />
+      <input type="date" id="endDate" class="form-control" />
+      <input type="text" id="responsavelFilter" class="form-control w-48" placeholder="Responsável" />
+      <label class="flex items-center gap-1 text-sm">
+        <input type="checkbox" id="attentionOnly" class="mr-1" />
+        <span>Somente Atenção</span>
+      </label>
+    </div>
     <div id="labelsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
   </div>
 
@@ -81,6 +99,12 @@
     let gestoresEmails = [];
     let currentUserName = '';
     let responsavelExpedicaoUid = null;
+    let searchTerm = '';
+    let sortOption = 'createdAt';
+    let startDateFilter = '';
+    let endDateFilter = '';
+    let responsavelFiltro = '';
+    let attentionOnly = false;
 
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
@@ -107,6 +131,44 @@
     }
     const enviarSobrasBtn = document.getElementById('enviarSobrasBtn');
     if (enviarSobrasBtn) enviarSobrasBtn.addEventListener('click', enviarSobras);
+
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.addEventListener('input', () => {
+      searchTerm = searchInput.value.toLowerCase();
+      carregarEtiquetas();
+    });
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) sortSelect.addEventListener('change', () => {
+      sortOption = sortSelect.value;
+      carregarEtiquetas();
+    });
+    const advancedToggle = document.getElementById('advancedToggle');
+    const advancedFiltersDiv = document.getElementById('advancedFilters');
+    if (advancedToggle && advancedFiltersDiv) {
+      advancedToggle.addEventListener('click', () => {
+        advancedFiltersDiv.classList.toggle('hidden');
+      });
+    }
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const responsavelInput = document.getElementById('responsavelFilter');
+    const attentionOnlyInput = document.getElementById('attentionOnly');
+    if (startDateInput) startDateInput.addEventListener('change', () => {
+      startDateFilter = startDateInput.value;
+      carregarEtiquetas();
+    });
+    if (endDateInput) endDateInput.addEventListener('change', () => {
+      endDateFilter = endDateInput.value;
+      carregarEtiquetas();
+    });
+    if (responsavelInput) responsavelInput.addEventListener('input', () => {
+      responsavelFiltro = responsavelInput.value.toLowerCase();
+      carregarEtiquetas();
+    });
+    if (attentionOnlyInput) attentionOnlyInput.addEventListener('change', () => {
+      attentionOnly = attentionOnlyInput.checked;
+      carregarEtiquetas();
+    });
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -259,6 +321,7 @@
         .orderBy('createdAt', 'desc')
         .get();
       const seen = new Set();
+      const results = [];
       for (const doc of snap.docs) {
         const data = doc.data();
         const allowed =
@@ -275,7 +338,34 @@
           continue;
         }
         const ownerName = data.ownerName || await getOwnerName(data.ownerUid, data.ownerEmail);
-        const item = viewMode === 'cards' ? createPdfCard(doc, ownerName) : createPdfListItem(doc, ownerName);
+        const createdAt = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : null;
+        const name = (data.name || '').toLowerCase();
+        const ownerEmail = (data.ownerEmail || '').toLowerCase();
+        const docId = doc.id.toLowerCase();
+        const dateStr = createdAt ? createdAt.toISOString().split('T')[0] : '';
+        const searchMatch = !searchTerm ||
+          name.includes(searchTerm) ||
+          docId.includes(searchTerm) ||
+          ownerEmail.includes(searchTerm) ||
+          dateStr.includes(searchTerm);
+        if (!searchMatch) continue;
+        const startOk = !startDateFilter || (createdAt && createdAt >= new Date(startDateFilter));
+        const endOk = !endDateFilter || (createdAt && createdAt <= new Date(endDateFilter + 'T23:59:59'));
+        if (!startOk || !endOk) continue;
+        const respMatch = !responsavelFiltro ||
+          ownerName.toLowerCase().includes(responsavelFiltro) ||
+          ownerEmail.includes(responsavelFiltro);
+        if (!respMatch) continue;
+        if (attentionOnly && !data.attention) continue;
+        results.push({ doc, data, ownerName, createdAt });
+      }
+      results.sort((a,b) => {
+        if (sortOption === 'owner') return (a.ownerName || '').localeCompare(b.ownerName || '');
+        if (sortOption === 'status') return (a.data.status || '').localeCompare(b.data.status || '');
+        return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
+      });
+      for (const r of results) {
+        const item = viewMode === 'cards' ? createPdfCard(r.doc, r.ownerName) : createPdfListItem(r.doc, r.ownerName);
         list.appendChild(item);
       }
       if (!list.hasChildNodes()) {
