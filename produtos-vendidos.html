@@ -27,6 +27,16 @@
     </div>
     <div class="card p-4">
       <div id="listaSkus" class="text-sm"></div>
+      <button id="btnVerSoma" class="btn btn-secondary mt-4">Ver soma</button>
+    </div>
+    <div id="modalSoma" class="modal">
+      <div class="modal-content">
+        <h2 class="text-lg font-semibold mb-4">Soma dos SKUs Selecionados</h2>
+        <p id="modalSomaTexto" class="mb-4"></p>
+        <div class="flex justify-end">
+          <button id="modalFechar" class="btn btn-primary">Fechar</button>
+        </div>
+      </div>
     </div>
   </div>
   <script type="module" src="firebase-config.js"></script>
