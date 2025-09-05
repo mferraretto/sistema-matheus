@@ -261,7 +261,11 @@
         if (seen.has(key)) continue;
         seen.add(key);
         const status = data.status || 'nao_impresso';
-        if (filter !== 'all' && status !== filter) continue;
+        if (filter === 'all') {
+          if (status === 'concluido') continue;
+        } else if (status !== filter) {
+          continue;
+        }
         const ownerName = data.ownerName || await getOwnerName(data.ownerUid, data.ownerEmail);
         const item = viewMode === 'cards' ? createPdfCard(doc, ownerName) : createPdfListItem(doc, ownerName);
         list.appendChild(item);
@@ -718,6 +722,12 @@
         const docRef = db.collection('pdfDocs').doc(id);
         const snap = await docRef.get();
         const data = snap.data() || {};
+
+        if (data.status !== 'impresso') {
+          const items = (data.skus || data.skuList || []).map(s => ({ sku: s, quantidade: 1 }));
+          if (items.length) await savePrintedSkuQuantities(items, data.loja || '');
+          await docRef.update({ status: 'impresso' });
+        }
 
         if (data.url) {
           const link = document.createElement('a');
