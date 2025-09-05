@@ -114,12 +114,13 @@ function renderLista(resumo) {
     }
 
     let html = '<table class="min-w-full text-sm"><thead><tr>' +
+      '<th></th>' +
       '<th id="thSku" class="text-left cursor-pointer">SKU</th>' +
       '<th id="thQtd" class="text-left cursor-pointer">Quantidade</th>' +
       '</tr></thead><tbody>';
 
     items.forEach(([sku, qtd]) => {
-      html += `<tr><td class="pr-4">${sku}</td><td>${qtd}</td></tr>`;
+      html += `<tr><td class="pr-2"><input type="checkbox" class="sku-checkbox" data-qtd="${qtd}"></td><td class="pr-4">${sku}</td><td>${qtd}</td></tr>`;
     });
 
     html += '</tbody></table>';
@@ -131,3 +132,26 @@ function renderLista(resumo) {
 
   renderTabela('qtd');
 }
+
+function mostrarSomaSelecionada() {
+  const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
+  let soma = 0;
+  checkboxes.forEach(cb => {
+    soma += Number(cb.getAttribute('data-qtd')) || 0;
+  });
+
+  const texto = document.getElementById('modalSomaTexto');
+  if (texto) texto.textContent = `Soma das quantidades: ${soma}`;
+  const modal = document.getElementById('modalSoma');
+  if (modal) modal.style.display = 'flex';
+}
+
+function fecharModalSoma() {
+  const modal = document.getElementById('modalSoma');
+  if (modal) modal.style.display = 'none';
+}
+
+document.getElementById('btnVerSoma')?.addEventListener('click', mostrarSomaSelecionada);
+document.getElementById('modalFechar')?.addEventListener('click', fecharModalSoma);
+document.getElementById('modalSoma')?.addEventListener('click', e => { if (e.target === e.currentTarget) fecharModalSoma(); });
+
