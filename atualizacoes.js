@@ -67,11 +67,14 @@ async function carregarUsuarios() {
         }
         if (lista) {
           const li = document.createElement('li');
-          li.textContent = `${u.nome} - ${u.email || ''}`;
+          li.className = 'flex items-center gap-2';
+          const avatar = `<div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-medium">${(u.nome || '?').charAt(0).toUpperCase()}</div>`;
+          li.innerHTML = `${avatar}<span>${u.nome}</span>`;
           lista.appendChild(li);
         }
       });
       carregarHistoricoFaturamento();
+      carregarTotais();
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
     }
@@ -185,6 +188,44 @@ async function carregarHistoricoFaturamento() {
 
     container.appendChild(col);
   }
+}
+
+async function carregarTotais() {
+  const container = document.getElementById('resumoTotais');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!usuariosResponsaveis.length) return;
+  let totalBruto = 0, totalLiquido = 0, totalPedidos = 0, totalMeta = 0;
+  const hoje = new Date();
+  const diaStr = hoje.toISOString().split('T')[0];
+  const mesAtual = hoje.toISOString().slice(0,7);
+  const totalDiasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  for (const u of usuariosResponsaveis) {
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, diaStr);
+    const pedidos = await calcularVendasDia(currentUser.uid, u.uid, diaStr);
+    totalBruto += bruto;
+    totalLiquido += liquido;
+    totalPedidos += pedidos;
+    try {
+      const metaDoc = await getDoc(doc(db, 'uid', currentUser.uid, 'uid', u.uid, 'metasFaturamento', mesAtual));
+      if (metaDoc.exists()) {
+        const metaMensal = Number(metaDoc.data().valor) || 0;
+        totalMeta += totalDiasMes ? metaMensal / totalDiasMes : 0;
+      }
+    } catch (_) {}
+  }
+  const cards = [
+    { label: 'Bruto', valor: `R$ ${totalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    { label: 'Líquido', valor: `R$ ${totalLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    { label: 'Pedidos', valor: totalPedidos.toLocaleString('pt-BR') },
+    { label: 'Meta', valor: `R$ ${totalMeta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+  ];
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'card text-center';
+    div.innerHTML = `<div class="text-sm text-gray-500">${c.label}</div><div class="text-lg font-semibold">${c.valor}</div>`;
+    container.appendChild(div);
+  });
 }
 
 async function carregarExpedicao() {
