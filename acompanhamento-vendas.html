@@ -14,72 +14,29 @@
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <div class="main-content p-4 space-y-4">
-    <div class="flex gap-2 mb-4">
-      <button class="tab-btn bg-blue-500 text-white px-4 py-2 rounded" data-tab="resumo">Resumo</button>
-      <button class="tab-btn bg-gray-200 text-gray-700 px-4 py-2 rounded" data-tab="problemas">Problemas</button>
-    </div>
-
-    <div id="tab-resumo" class="space-y-4">
-      <div class="card p-4 flex flex-wrap items-center gap-4">
-        <div class="flex items-center gap-2">
-          <button type="button" id="usuarioIcon" class="text-blue-500 focus:outline-none">
-            <i class="fa fa-user"></i>
-          </button>
-          <div class="flex flex-col">
-            <label for="usuarioFiltro" class="text-xs font-medium">Usuário</label>
-            <select id="usuarioFiltro" class="border rounded p-2 text-sm"></select>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button type="button" id="mesIcon" class="text-blue-500 focus:outline-none">
-            <i class="fa fa-calendar"></i>
-          </button>
-          <div class="flex flex-col">
-            <label for="mesFiltro" class="text-xs font-medium">Mês</label>
-            <input type="month" id="mesFiltro" class="border rounded p-2 text-sm" />
-          </div>
+    <div class="card p-4 flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-2">
+        <button type="button" id="usuarioIcon" class="text-blue-500 focus:outline-none">
+          <i class="fa fa-user"></i>
+        </button>
+        <div class="flex flex-col">
+          <label for="usuarioFiltro" class="text-xs font-medium">Usuário</label>
+          <select id="usuarioFiltro" class="border rounded p-2 text-sm"></select>
         </div>
       </div>
-      <div id="skusCardsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div id="skusMesCard" class="card p-4 hidden"></div>
-        <div id="topSkusCard" class="card p-4 hidden"></div>
+      <div class="flex items-center gap-2">
+        <button type="button" id="mesIcon" class="text-blue-500 focus:outline-none">
+          <i class="fa fa-calendar"></i>
+        </button>
+        <div class="flex flex-col">
+          <label for="mesFiltro" class="text-xs font-medium">Mês</label>
+          <input type="month" id="mesFiltro" class="border rounded p-2 text-sm" />
+        </div>
       </div>
     </div>
-
-    <div id="tab-problemas" class="hidden space-y-4">
-      <div class="flex gap-2">
-        <button class="subtab-btn bg-blue-500 text-white px-3 py-1 rounded" data-subtab="reembolsos">Reembolsos</button>
-        <button class="subtab-btn bg-gray-200 text-gray-700 px-3 py-1 rounded" data-subtab="pecas">Peças Faltando</button>
-      </div>
-      <div id="subtab-reembolsos" class="mt-2 text-sm text-gray-600">Em breve</div>
-      <div id="subtab-pecas" class="hidden space-y-4">
-        <form id="pecaForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="date" id="pfData" class="border p-2" required>
-          <input type="text" id="pfNome" placeholder="Nome do Cliente" class="border p-2" required>
-          <input type="text" id="pfNumero" placeholder="Número" class="border p-2" required>
-          <input type="text" id="pfApelido" placeholder="Apelido" class="border p-2">
-          <input type="text" id="pfNf" placeholder="NF" class="border p-2">
-          <input type="text" id="pfLoja" placeholder="Loja" class="border p-2">
-          <input type="text" id="pfPeca" placeholder="Peça Faltante" class="border p-2" required>
-          <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded md:col-span-2">Salvar</button>
-        </form>
-        <div class="overflow-x-auto">
-          <table id="pecasTable" class="data-table w-full">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Nome do Cliente</th>
-                <th>Número</th>
-                <th>Apelido</th>
-                <th>NF</th>
-                <th>Loja</th>
-                <th>Peça Faltante</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+    <div id="skusCardsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div id="skusMesCard" class="card p-4 hidden"></div>
+      <div id="topSkusCard" class="card p-4 hidden"></div>
     </div>
   </div>
   <script type="module" src="firebase-config.js"></script>
