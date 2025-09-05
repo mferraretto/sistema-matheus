@@ -10,6 +10,8 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let usuariosCache = [];
+let resumoGlobal = {};
+let currentSort = 'quantidade';
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
@@ -92,21 +94,33 @@ async function carregarSkus(usuarios, inicio, fim) {
     }
   }
 
-  renderLista(resumoGeral);
+  resumoGlobal = resumoGeral;
+  renderLista();
 }
 
-function renderLista(resumo) {
+function renderLista(sortBy = currentSort) {
+  currentSort = sortBy;
   const lista = document.getElementById('listaSkus');
   if (!lista) return;
-  const entries = Object.entries(resumo).sort((a, b) => b[1] - a[1]);
+  let entries = Object.entries(resumoGlobal);
+  if (sortBy === 'sku') {
+    entries.sort((a, b) => a[0].localeCompare(b[0]));
+  } else {
+    entries.sort((a, b) => b[1] - a[1]);
+  }
   if (!entries.length) {
     lista.innerHTML = '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
     return;
   }
-  let html = '<table class="min-w-full text-sm"><thead><tr><th class="text-left">SKU</th><th class="text-left">Quantidade</th></tr></thead><tbody>';
+  let html = '<table class="min-w-full text-sm"><thead><tr>' +
+    '<th id="thSku" class="text-left cursor-pointer">SKU</th>' +
+    '<th id="thQtd" class="text-left cursor-pointer">Quantidade</th>' +
+    '</tr></thead><tbody>';
   entries.forEach(([sku, qtd]) => {
     html += `<tr><td class="pr-4">${sku}</td><td>${qtd}</td></tr>`;
   });
   html += '</tbody></table>';
   lista.innerHTML = html;
+  document.getElementById('thSku')?.addEventListener('click', () => renderLista('sku'));
+  document.getElementById('thQtd')?.addEventListener('click', () => renderLista('quantidade'));
 }
