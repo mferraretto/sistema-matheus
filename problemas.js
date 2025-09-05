@@ -58,7 +58,9 @@ async function carregarPecas() {
   const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'pecasfaltando');
   const colRef = collection(baseDoc, 'itens');
   const snap = await getDocs(colRef);
-  const dados = snap.docs.map(d => d.data()).sort((a,b) => (a.data||'').localeCompare(b.data||''));
+  const dados = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   dados.forEach(d => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -68,8 +70,21 @@ async function carregarPecas() {
       <td class="p-2">${d.numero || ''}</td>
       <td class="p-2">${d.loja || ''}</td>
       <td class="p-2">${d.peca || ''}</td>
-      <td class="p-2 text-right">R$ ${(Number(d.valorGasto)||0).toFixed(2)}</td>
-      <td class="p-2">${d.status || ''}</td>`;
+      <td class="p-2 text-right">R$ ${(Number(d.valorGasto) || 0).toFixed(2)}</td>
+      <td class="p-2">
+        <select class="status-select border rounded p-1" data-id="${d.id}">
+          <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
+          <option value="ENVIADO" ${d.status === 'ENVIADO' ? 'selected' : ''}>ENVIADO</option>
+          <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
+        </select>
+      </td>`;
+    const select = tr.querySelector('.status-select');
+    select.addEventListener('change', async (ev) => {
+      const newStatus = ev.target.value;
+      const { id, ...rest } = d;
+      await setDocWithCopy(doc(colRef, id), { ...rest, status: newStatus }, uidAtual);
+      d.status = newStatus;
+    });
     tbody.appendChild(tr);
   });
 }
