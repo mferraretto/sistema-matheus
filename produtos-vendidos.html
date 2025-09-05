@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css?v=20240826" />
   <link rel="stylesheet" href="css/components.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <div id="sidebar-container"></div>
@@ -27,7 +28,10 @@
     </div>
     <div class="card p-4">
       <div id="listaSkus" class="text-sm"></div>
-      <button id="btnVerSoma" class="btn btn-secondary mt-4">Ver soma</button>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <button id="btnVerSoma" class="btn btn-secondary">Ver soma</button>
+        <button id="btnExportarExcel" class="btn btn-secondary">Exportar Excel</button>
+      </div>
     </div>
     <div id="modalSoma" class="modal">
       <div class="modal-content">
