@@ -106,9 +106,10 @@ async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
 
 async function calcularVendasDia(responsavelUid, uid, dia) {
   try {
-    const resumoDoc = await getDoc(doc(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia));
-    if (resumoDoc.exists()) {
-      let dados = resumoDoc.data();
+    const lojasSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia, 'lojas'));
+    let total = 0;
+    for (const lojaDoc of lojasSnap.docs) {
+      let dados = lojaDoc.data();
       if (dados.encrypted) {
         let txt;
         const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
@@ -121,12 +122,13 @@ async function calcularVendasDia(responsavelUid, uid, dia) {
         }
         if (txt) dados = JSON.parse(txt);
       }
-      return Number(dados.vendas || dados.qtdVendas || dados.quantidade) || 0;
+      total += Number(dados.qtdVendas || dados.quantidade) || 0;
     }
+    return total;
   } catch (e) {
     console.error('Erro ao calcular vendas do dia:', e);
+    return 0;
   }
-  return 0;
 }
 
 function formatarData(str) {
