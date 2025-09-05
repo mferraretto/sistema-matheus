@@ -511,17 +511,81 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildGestorSidebarLayout() {
+    const menu = document.querySelector('#sidebar .sidebar-menu');
+    if (!menu) return;
+
+    const getLi = id => {
+      const el = document.getElementById(id);
+      return el ? el.closest('li') : null;
+    };
+
+    const atualizacoes = getLi('menu-atualizacoes');
+    const financeiro = getLi('menu-financeiro');
+    const saques = getLi('menu-saques');
+    const tiny = getLi('menu-acompanhamento-tiny');
+    const gestao = getLi('menu-gestao');
+    const acompGestor = getLi('menu-acompanhamento-gestor');
+    const acompVendas = getLi('menu-acompanhamento-vendas');
+    const mentoria = getLi('menu-mentoria');
+    const perfilMentorado = getLi('menu-perfil-mentorado');
+    const produtos = getLi('menu-produtos');
+    const comunicacao = getLi('menu-comunicacao');
+    const equipes = getLi('menu-equipes');
+    const desempenho = getLi('menu-desempenho');
+
+    function createGroup(mainLi, submenuId, items) {
+      if (!mainLi) return null;
+      const a = mainLi.querySelector('a.sidebar-link');
+      if (!a) return null;
+
+      const div = document.createElement('div');
+      div.className = 'sidebar-item flex items-center justify-between';
+      div.appendChild(a);
+
+      const btn = document.createElement('button');
+      btn.className = 'submenu-toggle p-2';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>';
+      btn.addEventListener('click', () => toggleMenu(submenuId, btn));
+      div.appendChild(btn);
+
+      const ul = document.createElement('ul');
+      ul.id = submenuId;
+      ul.className = 'submenu space-y-1 overflow-hidden transition-all duration-300';
+      ul.style.maxHeight = '0';
+      items.forEach(item => { if (item) ul.appendChild(item); });
+
+      mainLi.innerHTML = '';
+      mainLi.appendChild(div);
+      mainLi.appendChild(ul);
+      return mainLi;
+    }
+
+    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques, tiny]);
+    const gestaoGroup = createGroup(gestao, 'menuGestao', [acompGestor, acompVendas, mentoria, perfilMentorado, produtos]);
+    const comunicacaoGroup = createGroup(comunicacao, 'menuComunicacao', [equipes]);
+
+    menu.innerHTML = '';
+    [atualizacoes, financeiroGroup, gestaoGroup, comunicacaoGroup, desempenho].forEach(li => {
+      if (li) {
+        li.style.display = '';
+        menu.appendChild(li);
+      }
+    });
+  }
+
   async function applySidebarPermissions(uid) {
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
       const perfil = (snap.exists() && String(snap.data().perfil || '') || '').trim().toLowerCase();
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
-      const isGestor = ['gestor', 'mentor'].includes(perfil);
+      const isGestor = ['gestor', 'mentor', 'responsavel', 'gestor financeiro', 'responsavel financeiro'].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
       if (isADM || isGestor) {
         showOnly(ADMIN_GESTOR_MENU_IDS);
+        buildGestorSidebarLayout();
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
         document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
