@@ -699,8 +699,11 @@
       const name = data.name || 'PDF';
       const url = data.url;
       const owner = ownerName || 'Desconhecido';
-      const createdAt = data.createdAt && data.createdAt.toDate
-        ? data.createdAt.toDate().toLocaleString('pt-BR')
+      const createdDate = data.createdAt && data.createdAt.toDate
+        ? data.createdAt.toDate()
+        : null;
+      const createdDateStr = createdDate
+        ? createdDate.toLocaleDateString('pt-BR')
         : 'Data desconhecida';
       const statusBadge = status === 'impresso'
         ? '<span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">Impresso</span>'
@@ -712,8 +715,9 @@
       div.innerHTML = `
         <div class="flex justify-between items-start">
           <div>
-            <p class="font-semibold text-gray-800 text-sm">${name}</p>
-            <p class="text-xs text-gray-500">${owner} - ${createdAt}</p>
+            <p class="text-xl font-bold text-gray-800">${createdDateStr}</p>
+            <p class="text-lg font-semibold text-gray-800">${owner}</p>
+            <p class="text-xs text-gray-500 break-words">${name}</p>
           </div>
           <div class="flex items-start gap-2">
             ${statusBadge}
