@@ -63,6 +63,46 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
 }
 
+export async function loadSecureDocFromSnap(docSnap, passphrase) {
+ if (!docSnap?.exists?.()) return null;
+
+  const { encrypted, encryptedData, uid, ...rest } = docSnap.data();
+  const payload = encrypted || encryptedData;
+
+  if (!payload) {
+    return Object.keys(rest).length ? { ...rest, ...(uid && { uid }) } : null;
+  }
+
+  try {
+    let jsonStr;
+
+    if (typeof payload === 'string') {
+      jsonStr = payload.trim();
+
+      if (jsonStr.startsWith('"') && jsonStr.endsWith('"')) {
+        jsonStr = JSON.parse(jsonStr);
+      }
+    } else {
+      jsonStr = JSON.stringify(payload);
+    }
+
+    console.log('📄 Documento:', docSnap.id);
+    console.log('🧪 JSON para descriptografar:', jsonStr);
+
+    const plaintext = await decryptString(jsonStr, passphrase);
+    const data = JSON.parse(plaintext);
+
+    if (uid && !data.uid) data.uid = uid;
+    return data;
+  } catch (err) {
+    console.warn('🔐 Erro ao descriptografar documento:', docSnap.id, err.message);
+    if (Object.keys(rest).length) {
+      return { ...rest, ...(uid && { uid }) };
+    }
+    return null;
+  }
+}
+
 
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
 export async function setDocWithCopy(ref, data, uid, responsavelUid) {

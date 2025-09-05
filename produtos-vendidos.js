@@ -2,7 +2,7 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
-import { loadSecureDoc } from './secure-firestore.js';
+import { loadSecureDocFromSnap } from './secure-firestore.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -76,33 +76,20 @@ async function carregarSkus(usuarios, inicio, fim) {
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
     const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
-    const promessas = snap.docs.map(async docSnap => {
-      let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
-      if (!pedido) {
-        const raw = docSnap.data();
-        if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-      }
-      if (!pedido) return {};
+    for (const docSnap of snap.docs) {
+      const pedido = await loadSecureDocFromSnap(docSnap, pass);
+      if (!pedido) continue;
 
       const dataPedido = parseDate(pedido.data || pedido.dataPedido || pedido.date);
-      if (isNaN(dataPedido) || dataPedido < inicioDate || dataPedido > fimDate) return {};
+      if (isNaN(dataPedido) || dataPedido < inicioDate || dataPedido > fimDate) continue;
 
       const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
-      const resumoLocal = {};
       itens.forEach(item => {
         const sku = item.sku || pedido.sku || 'sem-sku';
         const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
-        resumoLocal[sku] = (resumoLocal[sku] || 0) + qtd;
-      });
-      return resumoLocal;
-    });
-
-    const resultados = await Promise.all(promessas);
-    resultados.forEach(res => {
-      Object.entries(res).forEach(([sku, qtd]) => {
         resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
       });
-    });
+    }
   }
 
   renderLista(resumoGeral);
