@@ -486,6 +486,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-perfil-mentorado',
     'menu-equipes',
     'menu-produtos',
+    'menu-produtos-vendidos',
     'menu-desempenho',
   ];
 
@@ -527,6 +528,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const gestao = getLi('menu-gestao');
     const acompGestor = getLi('menu-acompanhamento-gestor');
     const acompVendas = getLi('menu-acompanhamento-vendas');
+    const produtosVendidos = getLi('menu-produtos-vendidos');
     const mentoria = getLi('menu-mentoria');
     const perfilMentorado = getLi('menu-perfil-mentorado');
     const produtos = getLi('menu-produtos');
@@ -562,7 +564,7 @@ document.addEventListener('sidebarLoaded', async () => {
     }
 
     const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques, tiny]);
-    const gestaoGroup = createGroup(gestao, 'menuGestao', [acompGestor, acompVendas, mentoria, perfilMentorado, produtos]);
+    const gestaoGroup = createGroup(gestao, 'menuGestao', [acompGestor, acompVendas, produtosVendidos, mentoria, perfilMentorado, produtos]);
     const comunicacaoGroup = createGroup(comunicacao, 'menuComunicacao', [equipes]);
 
     menu.innerHTML = '';
