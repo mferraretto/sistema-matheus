@@ -36,6 +36,11 @@
         <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-users"></i><span>Equipe</span></button>
         <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-box-open"></i><span>Sobras</span></button>
       </div>
+      <div id="horarioForm" class="flex flex-wrap items-center gap-2 hidden">
+        <input type="time" id="horarioInicio" class="form-control" />
+        <input type="time" id="horarioFim" class="form-control" />
+        <button id="salvarHorarioBtn" class="btn btn-primary">Salvar horário</button>
+      </div>
       <div id="statusFilters" class="flex flex-wrap gap-2">
         <button class="filter-btn px-4 py-2 rounded-full border border-indigo-600 bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
         <button class="filter-btn px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 text-sm font-medium" data-status="nao_impresso">Não impresso (0)</button>
@@ -119,6 +124,8 @@
     let gestoresEmails = [];
     let currentUserName = '';
     let responsavelExpedicaoUid = null;
+    let horarioInicioEtiquetas = null;
+    let horarioFimEtiquetas = null;
     let searchTerm = '';
     let sortOption = 'createdAt';
     let startDateFilter = '';
@@ -176,6 +183,10 @@
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
+    const horarioForm = document.getElementById('horarioForm');
+    const horarioInicioInput = document.getElementById('horarioInicio');
+    const horarioFimInput = document.getElementById('horarioFim');
+    const salvarHorarioBtn = document.getElementById('salvarHorarioBtn');
     if (uploadManualBtn) {
       uploadManualBtn.addEventListener('click', () => {
         if (manualPdfInput && manualPdfInput.files && manualPdfInput.files.length) {
@@ -192,6 +203,7 @@
         }
       });
     }
+    if (salvarHorarioBtn) salvarHorarioBtn.addEventListener('click', salvarHorario);
     const gestorUsersBtn = document.getElementById('gestorUsersBtn');
     if (gestorUsersBtn) {
       gestorUsersBtn.addEventListener('click', () => {
@@ -287,6 +299,7 @@
         currentUser = user;
         await carregarDadosUsuario();
         await verificarResponsavel();
+        await carregarHorarios();
         carregarEtiquetas();
         if (isResponsavel) {
           verificarDia();
@@ -359,6 +372,52 @@
         gestoresEmails = [];
         currentUserName = currentUser.email;
       }
+    }
+
+    async function carregarHorarios() {
+      if (!responsavelExpedicaoUid) return;
+      try {
+        const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
+        const data = doc.data() || {};
+        horarioInicioEtiquetas = data.horarioInicioEtiquetas || null;
+        horarioFimEtiquetas = data.horarioFimEtiquetas || null;
+        if (isResponsavel && horarioForm) {
+          if (horarioInicioEtiquetas) horarioInicioInput.value = horarioInicioEtiquetas;
+          if (horarioFimEtiquetas) horarioFimInput.value = horarioFimEtiquetas;
+          horarioForm.classList.remove('hidden');
+        }
+      } catch (e) {
+        console.error('Erro ao carregar horários:', e);
+      }
+    }
+
+    async function salvarHorario(e) {
+      e.preventDefault();
+      if (!responsavelExpedicaoUid) return;
+      try {
+        await db.collection('uid').doc(responsavelExpedicaoUid).update({
+          horarioInicioEtiquetas: horarioInicioInput.value,
+          horarioFimEtiquetas: horarioFimInput.value
+        });
+        horarioInicioEtiquetas = horarioInicioInput.value;
+        horarioFimEtiquetas = horarioFimInput.value;
+        showToast('Horário salvo');
+      } catch (e) {
+        console.error('Erro ao salvar horário:', e);
+        alert('Erro ao salvar horário');
+      }
+    }
+
+    function foraDoHorario() {
+      if (!horarioInicioEtiquetas || !horarioFimEtiquetas) return false;
+      const now = new Date();
+      const [ih, im] = horarioInicioEtiquetas.split(':').map(Number);
+      const [fh, fm] = horarioFimEtiquetas.split(':').map(Number);
+      const start = new Date(now);
+      start.setHours(ih, im, 0, 0);
+      const end = new Date(now);
+      end.setHours(fh, fm, 0, 0);
+      return now < start || now > end;
     }
 
     async function carregarEquipeGestor() {
@@ -702,7 +761,8 @@
           gestoresExpedicaoEmails: selecionado,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           name: file.name,
-          status: 'nao_impresso'
+          status: 'nao_impresso',
+          foraHorario: foraDoHorario()
         });
         const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
         await fileRef.put(file);
@@ -802,6 +862,7 @@
       const data = doc.data();
       const status = data.status || 'nao_impresso';
       const attention = data.attention || false;
+      const foraHorario = data.foraHorario || false;
       const name = data.name || 'PDF';
       const url = data.url;
       const owner = ownerName || 'Desconhecido';
@@ -825,7 +886,10 @@
             <p class="font-semibold text-gray-800">${owner}</p>
             <p class="text-xs text-gray-500 break-words">${name}</p>
           </div>
-          <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
+          <div class="flex flex-col items-end gap-1">
+            <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
+            ${foraHorario ? '<span class="text-xs text-white px-2 py-0.5 rounded-full bg-red-600">Fora do horário</span>' : ''}
+          </div>
         </div>
         <div class="mt-auto flex items-center justify-between pt-2">
           <select class="border rounded px-2 py-1 text-xs" onchange="updateStatus('${doc.id}', this, this.closest('.pdf-card'))">
@@ -846,6 +910,7 @@
       const status = data.status || 'nao_impresso';
       const attention = data.attention || false;
       const observacao = data.observacao || '';
+      const foraHorario = data.foraHorario || false;
       const name = data.name || 'PDF';
       const url = data.url;
       const owner = ownerName || 'Desconhecido';
@@ -863,6 +928,7 @@
         <div class="flex-1">
           <p class="font-semibold text-gray-800">${name}</p>
           <p class="text-sm text-gray-500">Criado por: ${owner} em ${createdAt}</p>
+          ${foraHorario ? '<p class="text-xs text-red-600 font-semibold">Fora do horário</p>' : ''}
           <div class="mt-2 flex flex-wrap gap-2">
             <button class="text-indigo-600 hover:text-indigo-800" onclick="visualizar('${url}')" title="Visualizar"><i class="fas fa-eye"></i></button>
             <button class="text-indigo-600 hover:text-indigo-800" onclick="imprimir('${url}')" title="Imprimir"><i class="fas fa-print"></i></button>

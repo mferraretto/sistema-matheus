@@ -87,8 +87,10 @@
         const db = firebase.firestore();
         const storage = firebase.storage();
         let currentUser = null;
- let responsavelExpedicaoUid = null;
-         let responsavelExpedicaoEmail = null;
+        let responsavelExpedicaoUid = null;
+        let responsavelExpedicaoEmail = null;
+        let horarioInicioEtiquetas = null;
+        let horarioFimEtiquetas = null;
 
         function escolherGestorEmail(emails) {
             return new Promise(resolve => {
@@ -139,9 +141,10 @@
                     ? data.gestoresExpedicaoEmails[0]
                     : data.responsavelExpedicaoEmail;
                 if (respEmail) {
-              responsavelExpedicaoEmail = respEmail;
+                    responsavelExpedicaoEmail = respEmail;
                     const snap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
                     if (!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+                    await carregarHorarios();
                 }
             } catch (e) {
                 console.error('Erro ao carregar gestor de expedição:', e);
@@ -166,7 +169,8 @@
                 ownerEmail: currentUser.email,
                 gestoresExpedicaoEmails: selecionado,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                name: name
+                name: name,
+                foraHorario: foraDoHorario()
             });
             const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
             await fileRef.put(blob);
@@ -210,6 +214,30 @@
                 }
             });
             await batch.commit();
+        }
+
+        async function carregarHorarios() {
+            if (!responsavelExpedicaoUid) return;
+            try {
+                const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
+                const data = doc.data() || {};
+                horarioInicioEtiquetas = data.horarioInicioEtiquetas || null;
+                horarioFimEtiquetas = data.horarioFimEtiquetas || null;
+            } catch (e) {
+                console.error('Erro ao carregar horários:', e);
+            }
+        }
+
+        function foraDoHorario() {
+            if (!horarioInicioEtiquetas || !horarioFimEtiquetas) return false;
+            const now = new Date();
+            const [ih, im] = horarioInicioEtiquetas.split(':').map(Number);
+            const [fh, fm] = horarioFimEtiquetas.split(':').map(Number);
+            const start = new Date(now);
+            start.setHours(ih, im, 0, 0);
+            const end = new Date(now);
+            end.setHours(fh, fm, 0, 0);
+            return now < start || now > end;
         }
 
         const fileInput = document.getElementById('zplFile');
