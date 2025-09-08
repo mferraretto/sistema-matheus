@@ -234,49 +234,50 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       { titulo: 'saques', valor: totalSaques, anterior: totalSaquesPrev, moeda: true, icon: 'fa-wallet' },
       { titulo: 'comissão aberta', valor: totalComissaoAberto, anterior: totalComissaoAbertoPrev, moeda: true, icon: 'fa-hand-holding-dollar' }
     ];
-    kpiEl.innerHTML = kpis.map(k => {
-      const variacao = calcVar(k.valor, k.anterior);
-      const chipClass = variacao >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-      const variacaoFmt = `${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}%`;
-      return `
-        <div class="bg-white rounded-xl shadow p-4">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 text-gray-500 text-xs">
-              <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
-                <i class="fas ${k.icon}"></i>
+      kpiEl.innerHTML = kpis.map(k => {
+        const variacao = calcVar(k.valor, k.anterior);
+        const chipClass = variacao >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+        const arrow = variacao >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        const variacaoFmt = `${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}%`;
+        return `
+          <div class="bg-white rounded-xl shadow p-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-gray-500 text-xs">
+                <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
+                  <i class="fas ${k.icon}"></i>
+                </div>
+                <span>${k.titulo}</span>
               </div>
-              <span>${k.titulo}</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${chipClass}"><i class="fas ${arrow}"></i>${variacaoFmt}</span>
             </div>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${chipClass}">${variacaoFmt}</span>
-          </div>
-          <div class="mt-2 text-3xl font-bold text-gray-900">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
-        </div>`;
-    }).join('');
+            <div class="mt-2 text-3xl font-bold text-gray-900">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
+          </div>`;
+      }).join('');
   }
-  el.innerHTML = `
-      <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
-        <div class="card-header">
-          <div class="card-header-icon"><span class="text-2xl">💰</span></div>
-          <div>
-            <h2 class="text-xl font-extrabold text-gray-800">Faturamento do Mês</h2>
-            <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
+    el.innerHTML = `
+        <div id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard" class="cursor-pointer" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento';">
+          <div class="flex items-center mb-4">
+            <div class="card-header-icon"><span class="text-2xl">💰</span></div>
+            <div>
+              <h2 class="text-xl font-extrabold text-gray-800">Faturamento do Mês</h2>
+              <p class="text-gray-600 text-sm">${pedidos} pedidos</p>
+            </div>
+            <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard" onclick="event.preventDefault();event.stopPropagation();">
+              <i class="fas fa-eye-slash"></i>
+            </button>
           </div>
-          <button type="button" class="ml-auto toggle-blur" data-card="resumoFaturamentoCard" onclick="event.preventDefault();event.stopPropagation();">
-            <i class="fas fa-eye-slash"></i>
-          </button>
-        </div>
-        <div class="card-body space-y-4">
-          <div>
-            <div class="text-sm text-gray-500">Líquido</div>
-            <div class="text-4xl font-extrabold" style="color: var(--primary)">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+          <div class="card-body space-y-4">
+            <div>
+              <div class="text-sm text-gray-500">Líquido</div>
+              <div class="text-4xl font-extrabold" style="color: var(--primary)">R$ ${totalLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+            </div>
+            <div>
+              <div class="text-sm text-gray-500">Bruto</div>
+              <div class="text-2xl font-bold" style="color: var(--secondary)">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+            </div>
+            <canvas id="miniChartFaturamento" height="80"></canvas>
           </div>
-          <div>
-            <div class="text-sm text-gray-500">Bruto</div>
-            <div class="text-2xl font-bold" style="color: var(--secondary)">R$ ${totalBruto.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-          </div>
-          <canvas id="miniChartFaturamento" height="80"></canvas>
-        </div>
-      </a>`;
+        </div>`;
   const ctxMini = document.getElementById('miniChartFaturamento')?.getContext('2d');
   if (ctxMini && typeof Chart !== 'undefined') {
     const { primary } = getPalette();
