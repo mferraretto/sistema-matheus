@@ -65,7 +65,7 @@
       <button class="view-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-view="cards" title="Exibição em cartões"><i class="fas fa-th"></i></button>
       <button class="view-btn px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition" data-view="list" title="Exibição em lista"><i class="fas fa-list"></i></button>
     </div>
-    <div id="labelsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+    <div id="labelsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
   </div>
 
   <div id="pdfModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
@@ -344,7 +344,7 @@
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
       list.className = viewMode === 'cards'
-        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
         : 'flex flex-col gap-4';
       const filter = currentFilter;
       const snap = await db
@@ -719,43 +719,29 @@
       const createdDateStr = createdDate
         ? createdDate.toLocaleDateString('pt-BR')
         : 'Data desconhecida';
-      const statusBadge = status === 'impresso'
-        ? '<span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">Impresso</span>'
-        : status === 'concluido'
-          ? '<span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full">Concluído</span>'
-          : '<span class="text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full">Não impresso</span>';
+      const statusInfo = {
+        nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
+        impresso: { text: 'Impresso', color: 'bg-green-500' },
+        concluido: { text: 'Concluído', color: 'bg-blue-500' }
+      };
       const div = document.createElement('div');
-      div.className = 'pdf-card border rounded-lg p-4 bg-white shadow relative' + (attention ? ' border-red-500 border-2' : '');
+      div.className = 'pdf-card bg-white border rounded-lg p-4 shadow flex flex-col h-full' + (attention ? ' border-red-500 border-2' : '');
       div.innerHTML = `
-        <div class="flex justify-between items-start">
+        <div class="flex justify-between items-start mb-2">
           <div>
-            <p class="text-xl font-bold text-gray-800">${createdDateStr}</p>
-            <p class="text-lg font-semibold text-gray-800">${owner}</p>
+            <p class="text-sm text-gray-500">${createdDateStr}</p>
+            <p class="font-semibold text-gray-800">${owner}</p>
             <p class="text-xs text-gray-500 break-words">${name}</p>
           </div>
-          <div class="flex items-start gap-2">
-            ${statusBadge}
-            <div class="relative">
-              <button class="text-gray-600 hover:text-gray-800" onclick="toggleCardMenu(this)"><i class="fas fa-ellipsis-v"></i></button>
-              <div class="hidden absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-10">
-                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="visualizar('${url}')"><i class="fas fa-eye text-indigo-600"></i><span>Ver</span></button>
-                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="imprimir('${url}')"><i class="fas fa-print text-indigo-600"></i><span>Imprimir</span></button>
-                <a class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" href="${url}" download="${name}"><i class="fas fa-download text-indigo-600"></i><span>Baixar</span></a>
-                <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left text-red-600" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))"><i class="fas fa-trash"></i><span>Excluir</span></button>
-              </div>
-            </div>
-          </div>
+          <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
         </div>
-        <div class="mt-2 flex items-center gap-2">
-          <label class="flex items-center gap-1 text-xs">
-            <input type="checkbox" class="mr-1" ${status === 'impresso' ? 'checked' : ''} onchange="toggleImpresso('${doc.id}', this, this.closest('.pdf-card'))">
-            <span>Impresso</span>
-          </label>
-          <label class="flex items-center gap-1 text-xs">
-            <input type="checkbox" class="mr-1" ${attention ? 'checked' : ''} onchange="toggleAtencao('${doc.id}', this, this.closest('.pdf-card'))">
-            <span>Atenção</span>
-          </label>
-          <button class="ml-auto bg-green-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1 hover:bg-green-700" onclick="marcarConcluido('${doc.id}', this.closest('.pdf-card'))"><i class="fas fa-check"></i><span>Concluir</span></button>
+        <div class="mt-auto flex items-center justify-between pt-2">
+          <select class="border rounded px-2 py-1 text-xs" onchange="updateStatus('${doc.id}', this, this.closest('.pdf-card'))">
+            <option value="nao_impresso" ${status === 'nao_impresso' ? 'selected' : ''}>Não impresso</option>
+            <option value="impresso" ${status === 'impresso' ? 'selected' : ''}>Impresso</option>
+            <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
+          </select>
+          <button class="ml-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
         </div>`;
       return div;
     }
@@ -835,11 +821,6 @@
     }
     window.imprimir = imprimir;
 
-    function toggleCardMenu(btn) {
-      const menu = btn.nextElementSibling;
-      if (menu) menu.classList.toggle('hidden');
-    }
-    window.toggleCardMenu = toggleCardMenu;
 
     async function toggleImpresso(id, checkbox, card) {
       const checked = checkbox.checked;
@@ -856,6 +837,27 @@
       showToast('Status atualizado');
     }
     window.toggleImpresso = toggleImpresso;
+
+    async function updateStatus(id, select, card) {
+      const newStatus = select.value;
+      await db.collection('pdfDocs').doc(id).update({ status: newStatus });
+      const badge = card.querySelector('.status-badge');
+      const statusInfo = {
+        nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
+        impresso: { text: 'Impresso', color: 'bg-green-500' },
+        concluido: { text: 'Concluído', color: 'bg-blue-500' }
+      };
+      if (badge) {
+        badge.textContent = statusInfo[newStatus].text;
+        badge.className = `status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[newStatus].color}`;
+      }
+      if (newStatus === 'concluido' && currentFilter === 'all') {
+        card.remove();
+      }
+      showToast('Status atualizado');
+      carregarEtiquetas();
+    }
+    window.updateStatus = updateStatus;
 
     async function marcarConcluido(id, card) {
       try {
