@@ -741,7 +741,7 @@
         await processManualLabel(file);
         manualPdfInput.value = '';
         showToast('Etiqueta salva');
-        setTimeout(() => location.reload(), 1000);
+        await carregarEtiquetas();
       } catch (e) {
         console.error('Erro ao enviar etiqueta:', e);
         alert('Erro ao enviar etiqueta');
