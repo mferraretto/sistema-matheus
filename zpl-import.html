@@ -67,15 +67,6 @@
         <div id="error-message" class="text-red-500 font-bold text-center mt-2"></div>
     </div>
 
-    <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;"> 
-        <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2> 
-        <div id="preview-image-container" class="flex justify-center mb-4 p-4 border border-gray-300 rounded-lg"> 
-            <img id="preview-image" src="" alt="Pré-visualização da etiqueta" class="max-w-full h-auto"> 
-        </div> 
-        <div id="pdf-links" class="flex flex-col items-center gap-2"> 
-            <!-- O link para o PDF será inserido aqui --> 
-        </div> 
-    </div> 
 </div>
 </div>
 
@@ -179,14 +170,11 @@
         const estimatedTimeEl = document.getElementById('estimated-time');
         const errorDiv = document.getElementById('error-message');
         const successMessage = document.getElementById('success-message');
-        const resultsCard = document.getElementById('results-card');
-        const pdfLinksDiv = document.getElementById('pdf-links');
-        const previewImage = document.getElementById('preview-image');
 
         const GEMINI_DELAY_MS = 5000;
         let lastGeminiCall = 0;
-        const AVERAGE_SECONDS_PER_LABEL = 5;
         let timerInterval = null;
+        let elapsedTime = 0;
         const GEMINI_API_KEYS = [
             "AIzaSyAKFps1dbK5gRjUiL5r1nplFMj6DH4VIWU",
             "AIzaSyBv6hDqN-gnTOOJZLDfxHeUXgqxG21sAXI",
@@ -223,9 +211,6 @@
             errorDiv.textContent = '';
             successMessage.textContent = '';
             estimatedTimeEl.textContent = '';
-            pdfLinksDiv.innerHTML = '';
-            resultsCard.style.display = 'none';
-            previewImage.src = '';
         });
 
         converterButton.addEventListener('click', processZPL); 
@@ -235,14 +220,11 @@
             errorDiv.textContent = '';
             successMessage.textContent = '';
             estimatedTimeEl.textContent = '';
-            pdfLinksDiv.innerHTML = '';
-            resultsCard.style.display = 'none';
-            previewImage.src = '';
 
-            if (!file) { 
-                errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.'; 
-                return; 
-            } 
+            if (!file) {
+                errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.';
+                return;
+            }
 
             // Show progress bar and disable button
             progressContainer.classList.remove('hidden');
@@ -266,17 +248,12 @@
                 const { PDFDocument } = PDFLib;
                 const pdfDoc = await PDFDocument.create();
                 const totalLabels = blocks.length / 2;
-                let remainingTime = Math.ceil(totalLabels * AVERAGE_SECONDS_PER_LABEL);
-                estimatedTimeEl.textContent = `⏳ Tempo estimado: ${formatTime(remainingTime)}`;
+                elapsedTime = 0;
+                estimatedTimeEl.textContent = `⏳ Tempo decorrido: ${formatTime(elapsedTime)}`;
                 clearInterval(timerInterval);
                 timerInterval = setInterval(() => {
-                    remainingTime--;
-                    if (remainingTime >= 0) {
-                        estimatedTimeEl.textContent = `⏳ Tempo restante: ${formatTime(remainingTime)}`;
-                    }
-                    if (remainingTime <= 0) {
-                        clearInterval(timerInterval);
-                    }
+                    elapsedTime++;
+                    estimatedTimeEl.textContent = `⏳ Tempo decorrido: ${formatTime(elapsedTime)}`;
                 }, 1000);
 
                 // Recupera o próximo número de etiqueta a partir do Firestore
@@ -341,36 +318,13 @@
                 // 7. Save the final PDF
                 const pdfBytes = await pdfDoc.save();
                 const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const pdfUrl = URL.createObjectURL(pdfBlob);
 
                 const fileName = `etiquetas-combinadas-${Date.now()}.pdf`;
 
-                // Add the download link
-                const link = document.createElement('a');
-                link.href = pdfUrl;
-                link.download = fileName;
-                link.textContent = 'Transferir PDF Combinado';
-                link.classList.add('px-6', 'py-3', 'bg-green-600', 'text-white', 'font-bold', 'rounded-full', 'shadow-lg', 'hover:bg-green-500', 'transition-all', 'duration-300');
-                pdfLinksDiv.appendChild(link);
-
                 await savePdf(pdfBlob, fileName);
                 await savePrintedSkuQuantities(allExtractedItems);
-                
-                // 8. Display the preview of the first label
-                const firstChecklistData = await extractDataFromImage(
-                    await blobToBase64(await generateImageFromZpl(blocks[1], dpmm, originalWidthIn, originalHeightIn))
-                );
-                const firstLabelImageBlob = await generateImageFromZpl(
-                    generateCombinedZPL(blocks[0], firstChecklistData, startLabelNumber),
-                    dpmm,
-                    originalWidthIn,
-                    calculateNewTotalHeight(originalHeightIn, firstChecklistData.length, dpmm)
-                );
-                const firstLabelImageUrl = URL.createObjectURL(firstLabelImageBlob);
-                previewImage.src = firstLabelImageUrl;
-                previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); };
-                resultsCard.style.display = 'block';
-                successMessage.textContent = 'Etiqueta processada e enviada à expedição.';
+
+                successMessage.textContent = 'Processo concluído e salvo.';
 
             } catch (error) {
                 errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`;
