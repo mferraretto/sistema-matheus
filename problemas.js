@@ -28,6 +28,20 @@ onAuthStateChanged(auth, user => {
   document.getElementById('filtroData')?.addEventListener('change', renderPecas);
   document.getElementById('filtroStatus')?.addEventListener('change', renderPecas);
   document.getElementById('searchPecas')?.addEventListener('input', renderPecas);
+  document.getElementById('limparReembolsos')?.addEventListener('click', ev => {
+    ev.preventDefault();
+    const form = document.getElementById('reembolsosForm');
+    form?.reset();
+    const di = document.getElementById('dataR');
+    if (di) di.value = new Date().toISOString().split('T')[0];
+  });
+  document.getElementById('limparPecas')?.addEventListener('click', ev => {
+    ev.preventDefault();
+    const form = document.getElementById('pecasForm');
+    form?.reset();
+    const di = document.getElementById('data');
+    if (di) di.value = new Date().toISOString().split('T')[0];
+  });
   document.getElementById('limparFiltros')?.addEventListener('click', ev => {
     ev.preventDefault();
     const fd = document.getElementById('filtroData');
@@ -97,9 +111,10 @@ function renderPecas() {
   });
   pecasFiltradas.forEach(d => {
     const tr = document.createElement('tr');
+    tr.className = 'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
-      <td class="p-2"><input type="text" class="nome-input border rounded p-1 w-full" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
+      <td class="p-2"><input type="text" class="nome-input w-full rounded-xl border-slate-300 p-1 focus:border-violet-500 focus:ring-violet-500" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
       <td class="p-2">${d.apelido || ''}</td>
       <td class="p-2">${d.numero || ''}</td>
       <td class="p-2">${d.loja || ''}</td>
@@ -108,14 +123,14 @@ function renderPecas() {
       <td class="p-2 text-right">
         <div class="flex items-center justify-end">
           <span class="mr-1">R$</span>
-          <input type="number" step="0.01" class="valor-input border rounded p-1 w-24 text-right" data-id="${d.id}" value="${(Number(d.valorGasto) || 0).toFixed(2)}">
+          <input type="number" step="0.01" class="valor-input w-24 rounded-xl border-slate-300 p-1 text-right focus:border-violet-500 focus:ring-violet-500" data-id="${d.id}" value="${(Number(d.valorGasto) || 0).toFixed(2)}">
         </div>
       </td>
       <td class="p-2">
-        <select class="status-select text-xs font-medium rounded-full px-2 py-1" data-id="${d.id}">
-          <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
-          <option value="ENVIADO" ${d.status === 'ENVIADO' ? 'selected' : ''}>ENVIADO</option>
-          <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
+        <select class="status-select text-xs font-medium rounded-full px-2 py-1 border" data-id="${d.id}">
+          <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>Não feito</option>
+          <option value="EM ANDAMENTO" ${d.status === 'EM ANDAMENTO' ? 'selected' : ''}>Em andamento</option>
+          <option value="RESOLVIDO" ${d.status === 'RESOLVIDO' ? 'selected' : ''}>Resolvido</option>
         </select>
       </td>`;
     const select = tr.querySelector('.status-select');
@@ -210,6 +225,7 @@ async function carregarReembolsos() {
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   dados.forEach(d => {
     const tr = document.createElement('tr');
+    tr.className = 'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
       <td class="p-2">${d.numero || ''}</td>
@@ -224,13 +240,13 @@ async function carregarReembolsos() {
 }
 
 function aplicarCorStatus(el, status) {
-  el.classList.remove('bg-gray-200','text-gray-800','bg-green-100','text-green-800','bg-yellow-100','text-yellow-800');
-  if (status === 'FEITO') {
-    el.classList.add('bg-yellow-100','text-yellow-800');
-  } else if (status === 'ENVIADO') {
-    el.classList.add('bg-green-100','text-green-800');
+  el.classList.remove('bg-amber-50','text-amber-700','border-amber-200','bg-blue-50','text-blue-700','border-blue-200','bg-emerald-50','text-emerald-700','border-emerald-200');
+  if (status === 'RESOLVIDO') {
+    el.classList.add('bg-emerald-50','text-emerald-700','border','border-emerald-200');
+  } else if (status === 'EM ANDAMENTO') {
+    el.classList.add('bg-blue-50','text-blue-700','border','border-blue-200');
   } else {
-    el.classList.add('bg-gray-200','text-gray-800');
+    el.classList.add('bg-amber-50','text-amber-700','border','border-amber-200');
   }
 }
 
@@ -243,11 +259,13 @@ function formatarData(str) {
 // Tabs
 for (const btn of document.querySelectorAll('.tab-btn')) {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-orange-500','text-white','active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('bg-gray-200'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('border-violet-600','text-violet-600');
+      b.classList.add('border-transparent','text-slate-500');
+    });
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    btn.classList.add('bg-orange-500','text-white','active');
-    btn.classList.remove('bg-gray-200');
+    btn.classList.add('border-violet-600','text-violet-600');
+    btn.classList.remove('border-transparent','text-slate-500');
     document.getElementById(btn.dataset.tab).classList.remove('hidden');
   });
 }
