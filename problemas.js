@@ -37,7 +37,7 @@ async function salvarPeca(ev) {
   const form = ev.target;
   const registro = {
     data: form.data.value,
-    nomeCliente: form.nomeCliente.value.trim(),
+    nomeCliente: '',
     numero: form.numero.value.trim(),
     apelido: form.apelido.value.trim(),
     nf: form.nf.value.trim(),
@@ -46,7 +46,7 @@ async function salvarPeca(ev) {
     valorGasto: 0,
     status: 'NÃO FEITO'
   };
-  if (!registro.data || !registro.nomeCliente || !registro.numero || !registro.peca) {
+  if (!registro.data || !registro.numero || !registro.peca) {
     alert('Preencha os campos obrigatórios.');
     return;
   }
@@ -82,7 +82,7 @@ async function carregarPecas() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
-      <td class="p-2">${d.nomeCliente || ''}</td>
+      <td class="p-2"><input type="text" class="nome-input border rounded p-1 w-full" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
       <td class="p-2">${d.apelido || ''}</td>
       <td class="p-2">${d.numero || ''}</td>
       <td class="p-2">${d.loja || ''}</td>
@@ -108,6 +108,14 @@ async function carregarPecas() {
       await setDocWithCopy(doc(colRef, id), { ...rest, status: newStatus }, uidAtual);
       d.status = newStatus;
       aplicarCorLinha(tr, newStatus);
+    });
+
+    const nomeInput = tr.querySelector('.nome-input');
+    nomeInput.addEventListener('change', async (ev) => {
+      const newNome = ev.target.value.trim();
+      const { id, ...rest } = d;
+      await setDocWithCopy(doc(colRef, id), { ...rest, nomeCliente: newNome }, uidAtual);
+      d.nomeCliente = newNome;
     });
 
     const valorInput = tr.querySelector('.valor-input');
