@@ -683,8 +683,8 @@
         await docRef.update({ url: url, storagePath: fileRef.fullPath });
         await processManualLabel(file);
         manualPdfInput.value = '';
-        showToast('Etiqueta adicionada');
-        carregarEtiquetas();
+        showToast('Etiqueta salva');
+        setTimeout(() => location.reload(), 1000);
       } catch (e) {
         console.error('Erro ao enviar etiqueta:', e);
         alert('Erro ao enviar etiqueta');
