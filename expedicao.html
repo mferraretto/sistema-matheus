@@ -134,7 +134,22 @@
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
-    uploadManualBtn.addEventListener('click', uploadManualLabel);
+    if (uploadManualBtn) {
+      uploadManualBtn.addEventListener('click', () => {
+        if (manualPdfInput && manualPdfInput.files && manualPdfInput.files.length) {
+          uploadManualLabel();
+        } else if (manualPdfInput) {
+          manualPdfInput.click();
+        }
+      });
+    }
+    if (manualPdfInput) {
+      manualPdfInput.addEventListener('change', () => {
+        if (manualPdfInput.files && manualPdfInput.files.length) {
+          uploadManualLabel();
+        }
+      });
+    }
     const gestorUsersBtn = document.getElementById('gestorUsersBtn');
     if (gestorUsersBtn) {
       gestorUsersBtn.addEventListener('click', () => {
