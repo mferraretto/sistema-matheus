@@ -9,6 +9,9 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let uidAtual = null;
+let pecasCache = [];
+let pecasFiltradas = [];
+let pecasColRef = null;
 
 onAuthStateChanged(auth, user => {
   if (!user) {
@@ -22,16 +25,20 @@ onAuthStateChanged(auth, user => {
   if (dataRInput) dataRInput.value = new Date().toISOString().split('T')[0];
   document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
   document.getElementById('reembolsosForm')?.addEventListener('submit', salvarReembolso);
-  document.getElementById('filtroData')?.addEventListener('change', carregarPecas);
-  document.getElementById('filtroStatus')?.addEventListener('change', carregarPecas);
+  document.getElementById('filtroData')?.addEventListener('change', renderPecas);
+  document.getElementById('filtroStatus')?.addEventListener('change', renderPecas);
+  document.getElementById('searchPecas')?.addEventListener('input', renderPecas);
   document.getElementById('limparFiltros')?.addEventListener('click', ev => {
     ev.preventDefault();
     const fd = document.getElementById('filtroData');
     const fs = document.getElementById('filtroStatus');
+    const search = document.getElementById('searchPecas');
     if (fd) fd.value = '';
     if (fs) fs.value = '';
-    carregarPecas();
+    if (search) search.value = '';
+    renderPecas();
   });
+  document.getElementById('exportCsv')?.addEventListener('click', exportarCsv);
   carregarPecas();
   carregarReembolsos();
 });
@@ -54,7 +61,6 @@ async function salvarPeca(ev) {
     alert('Preencha os campos obrigatórios.');
     return;
   }
-  // Estrutura correta de coleção -> documento -> subcoleção
   const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'pecasfaltando');
   const colRef = collection(baseDoc, 'itens');
   const ref = doc(colRef);
@@ -66,23 +72,30 @@ async function salvarPeca(ev) {
 }
 
 async function carregarPecas() {
-  const tbody = document.getElementById('pecasTableBody');
-  if (!tbody || !uidAtual) return;
-  tbody.innerHTML = '';
+  if (!uidAtual) return;
   const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'pecasfaltando');
-  const colRef = collection(baseDoc, 'itens');
-  const snap = await getDocs(colRef);
-  const dados = snap.docs
+  pecasColRef = collection(baseDoc, 'itens');
+  const snap = await getDocs(pecasColRef);
+  pecasCache = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  renderPecas();
+}
+
+function renderPecas() {
+  const tbody = document.getElementById('pecasTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
   const filtroData = document.getElementById('filtroData')?.value;
   const filtroStatus = document.getElementById('filtroStatus')?.value;
-  const filtrados = dados.filter(d => {
+  const busca = document.getElementById('searchPecas')?.value.toLowerCase() || '';
+  pecasFiltradas = pecasCache.filter(d => {
     const dataOk = filtroData ? d.data === filtroData : true;
     const statusOk = filtroStatus ? d.status === filtroStatus : true;
-    return dataOk && statusOk;
+    const searchOk = busca ? Object.values(d).some(v => String(v).toLowerCase().includes(busca)) : true;
+    return dataOk && statusOk && searchOk;
   });
-  filtrados.forEach(d => {
+  pecasFiltradas.forEach(d => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
@@ -99,27 +112,27 @@ async function carregarPecas() {
         </div>
       </td>
       <td class="p-2">
-        <select class="status-select border rounded p-1" data-id="${d.id}">
+        <select class="status-select text-xs font-medium rounded-full px-2 py-1" data-id="${d.id}">
           <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
           <option value="ENVIADO" ${d.status === 'ENVIADO' ? 'selected' : ''}>ENVIADO</option>
-      <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
-      </select>
-    </td>`;
-    aplicarCorLinha(tr, d.status);
+          <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
+        </select>
+      </td>`;
     const select = tr.querySelector('.status-select');
+    aplicarCorStatus(select, d.status);
     select.addEventListener('change', async (ev) => {
       const newStatus = ev.target.value;
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(colRef, id), { ...rest, status: newStatus }, uidAtual);
+      await setDocWithCopy(doc(pecasColRef, id), { ...rest, status: newStatus }, uidAtual);
       d.status = newStatus;
-      aplicarCorLinha(tr, newStatus);
+      aplicarCorStatus(select, newStatus);
     });
 
     const nomeInput = tr.querySelector('.nome-input');
     nomeInput.addEventListener('change', async (ev) => {
       const newNome = ev.target.value.trim();
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(colRef, id), { ...rest, nomeCliente: newNome }, uidAtual);
+      await setDocWithCopy(doc(pecasColRef, id), { ...rest, nomeCliente: newNome }, uidAtual);
       d.nomeCliente = newNome;
     });
 
@@ -127,12 +140,36 @@ async function carregarPecas() {
     valorInput.addEventListener('change', async (ev) => {
       const newValor = parseFloat(ev.target.value) || 0;
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(colRef, id), { ...rest, valorGasto: newValor }, uidAtual);
+      await setDocWithCopy(doc(pecasColRef, id), { ...rest, valorGasto: newValor }, uidAtual);
       d.valorGasto = newValor;
       ev.target.value = newValor.toFixed(2);
     });
     tbody.appendChild(tr);
   });
+}
+
+function exportarCsv() {
+  if (!pecasFiltradas.length) return;
+  const header = ['Data','Nome do Comprador','Apelido','Número','Loja','Peça Faltante','NF','Valor Gasto','Status'];
+  const rows = pecasFiltradas.map(d => [
+    formatarData(d.data),
+    d.nomeCliente || '',
+    d.apelido || '',
+    d.numero || '',
+    d.loja || '',
+    d.peca || '',
+    d.nf || '',
+    (Number(d.valorGasto) || 0).toFixed(2).replace('.', ','),
+    d.status || ''
+  ]);
+  const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pecas-faltando.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 async function salvarReembolso(ev) {
@@ -186,14 +223,14 @@ async function carregarReembolsos() {
   });
 }
 
-function aplicarCorLinha(tr, status) {
-  tr.classList.remove('bg-white','bg-yellow-100','bg-green-100');
+function aplicarCorStatus(el, status) {
+  el.classList.remove('bg-gray-200','text-gray-800','bg-green-100','text-green-800','bg-yellow-100','text-yellow-800');
   if (status === 'FEITO') {
-    tr.classList.add('bg-yellow-100');
+    el.classList.add('bg-yellow-100','text-yellow-800');
   } else if (status === 'ENVIADO') {
-    tr.classList.add('bg-green-100');
+    el.classList.add('bg-green-100','text-green-800');
   } else {
-    tr.classList.add('bg-white');
+    el.classList.add('bg-gray-200','text-gray-800');
   }
 }
 
