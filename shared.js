@@ -81,11 +81,18 @@
 // Load sidebar HTML into placeholder
   window.loadSidebar = function(containerId, sidebarPath) {
     containerId = containerId || 'sidebar-container';
-    sidebarPath = sidebarPath || '/partials/sidebar.html';
+    sidebarPath = sidebarPath || 'partials/sidebar.html';
 
     var paths = [];
-    if (/^https?:\/\//.test(sidebarPath) || sidebarPath.startsWith('/')) {
+    if (/^https?:\/\//.test(sidebarPath)) {
       paths = [sidebarPath];
+    } else if (sidebarPath.startsWith('/')) {
+      var rel = sidebarPath.replace(/^\//, '');
+      paths = [
+        ROOT_PATH + rel,
+        BASE_PATH + rel,
+        sidebarPath
+      ];
     } else {
       paths = [
         ROOT_PATH + sidebarPath,
@@ -112,11 +119,18 @@
 // Load navbar HTML into placeholder
   window.loadNavbar = function(containerId, navbarPath) {
     containerId = containerId || 'navbar-container';
-    navbarPath = navbarPath || '/partials/navbar.html';
+    navbarPath = navbarPath || 'partials/navbar.html';
 
     var paths = [];
-    if (/^https?:\/\//.test(navbarPath) || navbarPath.startsWith('/')) {
+    if (/^https?:\/\//.test(navbarPath)) {
       paths = [navbarPath];
+    } else if (navbarPath.startsWith('/')) {
+      var rel = navbarPath.replace(/^\//, '');
+      paths = [
+        ROOT_PATH + rel,
+        BASE_PATH + rel,
+        navbarPath
+      ];
     } else {
       paths = [
         ROOT_PATH + navbarPath,
@@ -265,8 +279,8 @@ document.addEventListener('sidebarLoaded', function () {
 })();
 
 /** === LAYOUT PERSISTENTE DO SIDEBAR/NAV === **/
-window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || '/partials/sidebar.html';
-window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || '/partials/navbar.html';
+window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
+window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
 const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar(){
@@ -316,7 +330,12 @@ async function loadPartial(selector, path){
 
   // sempre força rede p/ evitar cache velho do SW
   const base = window.ROOT_PATH || `${location.origin}/`;
-  let url = new URL(path, base).toString();
+  let url;
+  if (/^https?:\/\//.test(path)) {
+    url = path;
+  } else {
+    url = new URL(path.replace(/^\//, ''), base).toString();
+  }
   url += (url.includes('?') ? '&' : '?') + 'v=' + PARTIALS_VERSION;
 
   try {
