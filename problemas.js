@@ -55,7 +55,7 @@ async function salvarPeca(ev) {
     loja: form.loja.value.trim(),
     peca: form.peca.value.trim(),
     valorGasto: 0,
-    status: 'NÃO FEITO'
+    status: 'Não feito'
   };
   if (!registro.data || !registro.numero || !registro.peca) {
     alert('Preencha os campos obrigatórios.');
@@ -97,25 +97,26 @@ function renderPecas() {
   });
   pecasFiltradas.forEach(d => {
     const tr = document.createElement('tr');
+    tr.className = 'border-t border-slate-100 hover:bg-slate-50 even:bg-slate-50';
     tr.innerHTML = `
-      <td class="p-2">${formatarData(d.data)}</td>
-      <td class="p-2"><input type="text" class="nome-input border rounded p-1 w-full" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
-      <td class="p-2">${d.apelido || ''}</td>
-      <td class="p-2">${d.numero || ''}</td>
-      <td class="p-2">${d.loja || ''}</td>
-      <td class="p-2">${d.peca || ''}</td>
-      <td class="p-2">${d.nf || ''}</td>
-      <td class="p-2 text-right">
+      <td class="py-3 px-6">${formatarData(d.data)}</td>
+      <td class="py-3 px-6"><input type="text" class="nome-input mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
+      <td class="py-3 px-6">${d.apelido || ''}</td>
+      <td class="py-3 px-6">${d.numero || ''}</td>
+      <td class="py-3 px-6">${d.loja || ''}</td>
+      <td class="py-3 px-6">${d.peca || ''}</td>
+      <td class="py-3 px-6">${d.nf || ''}</td>
+      <td class="py-3 px-6 text-right">
         <div class="flex items-center justify-end">
-          <span class="mr-1">R$</span>
-          <input type="number" step="0.01" class="valor-input border rounded p-1 w-24 text-right" data-id="${d.id}" value="${(Number(d.valorGasto) || 0).toFixed(2)}">
+          <span class="mr-1 text-slate-500">R$</span>
+          <input type="number" step="0.01" class="valor-input w-24 rounded-xl border-slate-300 text-right focus:border-violet-500 focus:ring-violet-500" data-id="${d.id}" value="${(Number(d.valorGasto) || 0).toFixed(2)}">
         </div>
       </td>
-      <td class="p-2">
-        <select class="status-select text-xs font-medium rounded-full px-2 py-1" data-id="${d.id}">
-          <option value="NÃO FEITO" ${d.status === 'NÃO FEITO' ? 'selected' : ''}>NÃO FEITO</option>
-          <option value="ENVIADO" ${d.status === 'ENVIADO' ? 'selected' : ''}>ENVIADO</option>
-          <option value="FEITO" ${d.status === 'FEITO' ? 'selected' : ''}>FEITO</option>
+      <td class="py-3 px-6">
+        <select class="status-select text-xs font-medium rounded-full px-2 py-1 border" data-id="${d.id}">
+          <option value="Não feito" ${d.status === 'Não feito' ? 'selected' : ''}>Não feito</option>
+          <option value="Em andamento" ${d.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+          <option value="Resolvido" ${d.status === 'Resolvido' ? 'selected' : ''}>Resolvido</option>
         </select>
       </td>`;
     const select = tr.querySelector('.status-select');
@@ -210,27 +211,32 @@ async function carregarReembolsos() {
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   dados.forEach(d => {
     const tr = document.createElement('tr');
+    tr.className = 'border-t border-slate-100 hover:bg-slate-50 even:bg-slate-50';
     tr.innerHTML = `
-      <td class="p-2">${formatarData(d.data)}</td>
-      <td class="p-2">${d.numero || ''}</td>
-      <td class="p-2">${d.apelido || ''}</td>
-      <td class="p-2">${d.nf || ''}</td>
-      <td class="p-2">${d.loja || ''}</td>
-      <td class="p-2">${d.problema || ''}</td>
-      <td class="p-2 text-right">R$ ${(Number(d.valor) || 0).toFixed(2)}</td>
+      <td class="py-3 px-6">${formatarData(d.data)}</td>
+      <td class="py-3 px-6">${d.numero || ''}</td>
+      <td class="py-3 px-6">${d.apelido || ''}</td>
+      <td class="py-3 px-6">${d.nf || ''}</td>
+      <td class="py-3 px-6">${d.loja || ''}</td>
+      <td class="py-3 px-6">${d.problema || ''}</td>
+      <td class="py-3 px-6 text-right">R$ ${(Number(d.valor) || 0).toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
 function aplicarCorStatus(el, status) {
-  el.classList.remove('bg-gray-200','text-gray-800','bg-green-100','text-green-800','bg-yellow-100','text-yellow-800');
-  if (status === 'FEITO') {
-    el.classList.add('bg-yellow-100','text-yellow-800');
-  } else if (status === 'ENVIADO') {
-    el.classList.add('bg-green-100','text-green-800');
+  el.classList.remove(
+    'bg-amber-50','text-amber-700','border-amber-200',
+    'bg-blue-50','text-blue-700','border-blue-200',
+    'bg-emerald-50','text-emerald-700','border-emerald-200'
+  );
+  if (status === 'Resolvido') {
+    el.classList.add('bg-emerald-50','text-emerald-700','border-emerald-200');
+  } else if (status === 'Em andamento') {
+    el.classList.add('bg-blue-50','text-blue-700','border-blue-200');
   } else {
-    el.classList.add('bg-gray-200','text-gray-800');
+    el.classList.add('bg-amber-50','text-amber-700','border-amber-200');
   }
 }
 
@@ -243,11 +249,13 @@ function formatarData(str) {
 // Tabs
 for (const btn of document.querySelectorAll('.tab-btn')) {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-orange-500','text-white','active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('bg-gray-200'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('border-violet-700','text-violet-700');
+      b.classList.add('border-transparent','text-slate-600');
+    });
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    btn.classList.add('bg-orange-500','text-white','active');
-    btn.classList.remove('bg-gray-200');
+    btn.classList.add('border-violet-700','text-violet-700');
+    btn.classList.remove('border-transparent','text-slate-600');
     document.getElementById(btn.dataset.tab).classList.remove('hidden');
   });
 }
