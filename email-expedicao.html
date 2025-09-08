@@ -17,7 +17,7 @@
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">E-mails do Responsável pela Expedição</h1>
     <form id="emailForm" class="space-y-4 max-w-lg">
-      <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com" class="w-full p-2 border rounded">
+      <input type="text" id="emailExpedicao" placeholder="email@empresa.com, outro@empresa.com (máximo 2)" class="w-full p-2 border rounded">
       <input type="email" id="emailFinanceiro" placeholder="financeiro@empresa.com" class="w-full p-2 border rounded">
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
     </form>
@@ -102,6 +102,13 @@
       statusEl.classList.add('hidden');
       const emailsRaw = input.value.trim();
       const emails = emailsRaw.split(',').map(e => e.trim()).filter(e => e);
+      if (emails.length > 2) {
+        statusEl.textContent = 'Informe no máximo 2 e-mails de gestores de expedição.';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
+        return;
+      }
       const emailFinanceiro = financeInput.value.trim();
       try {
         await db.collection('uid').doc(currentUser.uid).set({

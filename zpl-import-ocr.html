@@ -87,6 +87,13 @@
         let currentUser = null;
  let responsavelExpedicaoUid = null;
          let responsavelExpedicaoEmail = null;
+
+        function escolherGestorEmail(emails) {
+            if (!emails || !emails.length) return [];
+            if (emails.length === 1) return [emails[0]];
+            const escolha = prompt('Enviar arquivo para qual gestor?', emails[0]) || emails[0];
+            return emails.includes(escolha) ? [escolha] : [emails[0]];
+        }
         firebase.auth().onAuthStateChanged(async u => {
             currentUser = u;
             if (!u) return;
@@ -111,10 +118,11 @@
             if (!currentUser) return;
             const gestoresRaw = document.getElementById('gestoresEmails').value || '';
             const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+            const selecionado = escolherGestorEmail(gestoresEmails);
             const docRef = await db.collection('pdfDocs').add({
                 ownerUid: currentUser.uid,
                 ownerEmail: currentUser.email,
-                gestoresExpedicaoEmails: gestoresEmails,
+                gestoresExpedicaoEmails: selecionado,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 name: name
             });

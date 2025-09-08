@@ -115,6 +115,13 @@
     let responsavelFiltro = '';
     let attentionOnly = false;
 
+    function escolherGestorEmail(emails) {
+      if (!emails || !emails.length) return [];
+      if (emails.length === 1) return [emails[0]];
+      const escolha = prompt('Enviar arquivo para qual gestor?', emails[0]) || emails[0];
+      return emails.includes(escolha) ? [escolha] : [emails[0]];
+    }
+
     const startBtn = document.getElementById('startDayBtn');
     const closeBtn = document.getElementById('closeDayBtn');
     startBtn.addEventListener('click', iniciarDia);
@@ -603,11 +610,12 @@
         return;
       }
       try {
+        const selecionado = escolherGestorEmail(gestoresEmails);
         const docRef = await db.collection('pdfDocs').add({
           ownerUid: currentUser.uid,
           ownerEmail: currentUser.email,
           ownerName: currentUserName,
-          gestoresExpedicaoEmails: gestoresEmails,
+          gestoresExpedicaoEmails: selecionado,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           name: file.name,
           status: 'nao_impresso'
