@@ -76,21 +76,21 @@
       </div>
     </div>
     <div id="tab-pecas" class="tab-panel hidden space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form id="pecasForm" class="card p-4 space-y-4 lg:col-span-2">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <form id="pecasForm" class="card p-4 space-y-4 w-full max-w-lg mx-auto">
           <h2 class="text-lg font-semibold">Registrar Peça Faltante</h2>
-          <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex flex-col">
               <label for="data" class="text-sm font-medium">Data</label>
               <input type="date" id="data" class="border rounded p-2" required>
             </div>
             <div class="flex flex-col">
-              <label for="numero" class="text-sm font-medium">Número</label>
-              <input type="text" id="numero" class="border rounded p-2" required>
-            </div>
-            <div class="flex flex-col">
               <label for="apelido" class="text-sm font-medium">Apelido</label>
               <input type="text" id="apelido" class="border rounded p-2">
+            </div>
+            <div class="flex flex-col">
+              <label for="numero" class="text-sm font-medium">Número</label>
+              <input type="text" id="numero" class="border rounded p-2" required>
             </div>
             <div class="flex flex-col">
               <label for="nf" class="text-sm font-medium">NF</label>
@@ -105,11 +105,12 @@
               <input type="text" id="peca" class="border rounded p-2" required>
             </div>
           </div>
-          <div>
-            <button type="submit" class="btn btn-primary w-full md:w-auto">Salvar</button>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="limparForm" class="btn btn-secondary">Limpar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
           </div>
         </form>
-        <div class="card p-4 space-y-4 lg:col-span-1">
+        <div class="card p-4 space-y-4">
           <h2 class="text-lg font-semibold">Filtros</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="flex flex-col">

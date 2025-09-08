@@ -20,8 +20,16 @@ onAuthStateChanged(auth, user => {
   if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
   const dataRInput = document.getElementById('dataR');
   if (dataRInput) dataRInput.value = new Date().toISOString().split('T')[0];
-  document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
-  document.getElementById('reembolsosForm')?.addEventListener('submit', salvarReembolso);
+    document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
+    document.getElementById('limparForm')?.addEventListener('click', () => {
+      const form = document.getElementById('pecasForm');
+      if (form) {
+        form.reset();
+        const dataInput = document.getElementById('data');
+        if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
+      }
+    });
+    document.getElementById('reembolsosForm')?.addEventListener('submit', salvarReembolso);
   document.getElementById('filtroData')?.addEventListener('change', carregarPecas);
   document.getElementById('filtroStatus')?.addEventListener('change', carregarPecas);
   document.getElementById('limparFiltros')?.addEventListener('click', ev => {
