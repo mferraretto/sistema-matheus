@@ -99,17 +99,24 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   el.innerHTML = 'Carregando...';
   if (kpiEl) kpiEl.innerHTML = 'Carregando...';
   const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7); // YYYY-MM
+  const mesAtual = hoje.toISOString().slice(0,7);
+  const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1).toISOString().slice(0,7);
+
   let totalLiquido = 0;
   let totalBruto = 0;
   let pedidos = 0;
+  let totalLiquidoPrev = 0;
+  let totalBrutoPrev = 0;
+  let pedidosPrev = 0;
   const dias = {};
+
   const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'faturamento'))
     : await getDocs(collection(db, `uid/${uid}/faturamento`));
   for (const docSnap of snap.docs) {
     const [ano, mes, dia] = docSnap.id.split('-');
-    if (`${ano}-${mes}` !== mesAtual) continue;
+    const ym = `${ano}-${mes}`;
+    if (ym !== mesAtual && ym !== mesAnterior) continue;
     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
     const subRef = collection(db, `uid/${ownerUid}/faturamento/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
@@ -131,19 +138,25 @@ async function carregarResumoFaturamento(uid, isAdmin) {
             }
           }
         }
-        if (!txt) continue; // não soma dados se a descriptografia falhar
+        if (!txt) continue;
         try {
           d = JSON.parse(txt);
         } catch (_) {
           continue;
         }
       }
-      totalLiquido += d.valorLiquido || 0;
-      totalBruto += d.valorBruto || 0;
-      pedidos += d.qtdVendas || 0;
-      liquidoDia += d.valorLiquido || 0;
+      if (ym === mesAtual) {
+        totalLiquido += d.valorLiquido || 0;
+        totalBruto += d.valorBruto || 0;
+        pedidos += d.qtdVendas || 0;
+        liquidoDia += d.valorLiquido || 0;
+      } else {
+        totalLiquidoPrev += d.valorLiquido || 0;
+        totalBrutoPrev += d.valorBruto || 0;
+        pedidosPrev += d.qtdVendas || 0;
+      }
     }
-    dias[dia] = (dias[dia] || 0) + liquidoDia;
+    if (ym === mesAtual) dias[dia] = (dias[dia] || 0) + liquidoDia;
   }
   const labels = Object.keys(dias).sort((a,b)=>a.localeCompare(b));
   const valores = labels.map(d=>dias[d]);
@@ -151,18 +164,27 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   let totalSaques = 0;
   let totalComissaoPago = 0;
   let totalComissaoAberto = 0;
+  let totalSaquesPrev = 0;
+  let totalComissaoPagoPrev = 0;
+  let totalComissaoAbertoPrev = 0;
   const snapSaques = isAdmin
     ? await getDocs(collectionGroup(db, 'saques'))
     : await getDocs(collection(db, `uid/${uid}/saques`));
   for (const docSnap of snapSaques.docs) {
     const [anoS, mesS] = docSnap.id.split('-');
-    if (`${anoS}-${mesS}` !== mesAtual) continue;
+    const ym = `${anoS}-${mesS}`;
+    if (ym !== mesAtual && ym !== mesAnterior) continue;
     const ownerUid = isAdmin ? docSnap.ref.parent.parent.id : uid;
     const passFn = typeof window !== 'undefined' ? window.getPassphrase : null;
     const pass = passFn ? await passFn() : null;
     const dados = await loadSecureDoc(db, `uid/${ownerUid}/saques`, docSnap.id, pass || ownerUid);
     const pago = dados?.pago || false;
-    if (dados) totalSaques += dados.valorTotal || 0;
+    const valorTotal = dados?.valorTotal || 0;
+    if (ym === mesAtual) {
+      totalSaques += valorTotal;
+    } else {
+      totalSaquesPrev += valorTotal;
+    }
     const subRef = collection(db, `uid/${ownerUid}/saques/${docSnap.id}/lojas`);
     const subSnap = await getDocs(subRef);
     for (const s of subSnap.docs) {
@@ -184,10 +206,18 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       try {
         const obj = JSON.parse(txt);
         const valorComissao = obj.comissao ? (obj.valor * obj.comissao / 100) : 0;
-        if (pago) {
-          totalComissaoPago += valorComissao;
+        if (ym === mesAtual) {
+          if (pago) {
+            totalComissaoPago += valorComissao;
+          } else {
+            totalComissaoAberto += valorComissao;
+          }
         } else {
-          totalComissaoAberto += valorComissao;
+          if (pago) {
+            totalComissaoPagoPrev += valorComissao;
+          } else {
+            totalComissaoAbertoPrev += valorComissao;
+          }
         }
       } catch (_) {
         // ignore JSON errors
@@ -196,31 +226,32 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   }
 
   if (kpiEl) {
-    const cardSaques = `
-      <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
-        <div class="text-sm text-gray-500">Saques</div>
-        <div class="text-2xl font-bold">R$ ${totalSaques.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        <div class="mt-2">
-          <div class="text-sm text-gray-500">Comissão Paga</div>
-          <div class="text-xl font-bold text-green-600">R$ ${totalComissaoPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-        <div class="mt-2">
-          <div class="text-sm text-gray-500">Comissão em Aberto</div>
-          <div class="text-xl font-bold text-yellow-600">R$ ${totalComissaoAberto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-      </div>
-    `;
+    const calcVar = (a,b) => b ? ((a-b)/b*100) : 0;
     const kpis = [
-      { titulo: 'Receita Bruta', valor: totalBruto, moeda: true },
-      { titulo: 'Receita Líquida', valor: totalLiquido, moeda: true },
-      { titulo: 'Pedidos', valor: pedidos, moeda: false }
+      { titulo: 'receita bruta', valor: totalBruto, anterior: totalBrutoPrev, moeda: true, icon: 'fa-coins' },
+      { titulo: 'receita líquida', valor: totalLiquido, anterior: totalLiquidoPrev, moeda: true, icon: 'fa-sack-dollar' },
+      { titulo: 'pedidos', valor: pedidos, anterior: pedidosPrev, moeda: false, icon: 'fa-shopping-cart' },
+      { titulo: 'saques', valor: totalSaques, anterior: totalSaquesPrev, moeda: true, icon: 'fa-wallet' },
+      { titulo: 'comissão aberta', valor: totalComissaoAberto, anterior: totalComissaoAbertoPrev, moeda: true, icon: 'fa-hand-holding-dollar' }
     ];
-    kpiEl.innerHTML = [cardSaques, ...kpis.map(k => `
-      <div class="bg-white rounded-2xl shadow-lg p-4 text-center">
-        <div class="text-sm text-gray-500">${k.titulo}</div>
-        <div class="text-2xl font-bold">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
-      </div>
-    `)].join('');
+    kpiEl.innerHTML = kpis.map(k => {
+      const variacao = calcVar(k.valor, k.anterior);
+      const chipClass = variacao >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+      const variacaoFmt = `${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}%`;
+      return `
+        <div class="bg-white rounded-xl shadow p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-gray-500 text-xs">
+              <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
+                <i class="fas ${k.icon}"></i>
+              </div>
+              <span>${k.titulo}</span>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${chipClass}">${variacaoFmt}</span>
+          </div>
+          <div class="mt-2 text-3xl font-bold text-gray-900">${k.moeda ? 'R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : k.valor}</div>
+        </div>`;
+    }).join('');
   }
   el.innerHTML = `
       <a href="/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento" class="card block" id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard">
