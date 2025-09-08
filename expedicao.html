@@ -740,7 +740,7 @@
         ? data.createdAt.toDate()
         : null;
       const createdDateStr = createdDate
-        ? createdDate.toLocaleDateString('pt-BR')
+        ? createdDate.toLocaleString('pt-BR')
         : 'Data desconhecida';
       const statusInfo = {
         nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
@@ -764,7 +764,10 @@
             <option value="impresso" ${status === 'impresso' ? 'selected' : ''}>Impresso</option>
             <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
           </select>
-          <button class="ml-2 bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
+          <div class="flex items-center space-x-2">
+            <button class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
+            <button class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
+          </div>
         </div>`;
       return div;
     }
