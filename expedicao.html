@@ -407,9 +407,6 @@
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
-      list.className = viewMode === 'cards'
-        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-        : 'flex flex-col gap-4';
       const filter = currentFilter;
       const snap = await db
         .collection('pdfDocs')
@@ -462,9 +459,39 @@
         if (sortOption === 'status') return (a.data.status || '').localeCompare(b.data.status || '');
         return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
       });
-      for (const r of results) {
-        const item = viewMode === 'cards' ? createPdfCard(r.doc, r.ownerName) : createPdfListItem(r.doc, r.ownerName);
-        list.appendChild(item);
+
+      if (isResponsavel && viewMode === 'cards') {
+        const grouped = {};
+        for (const r of results) {
+          const owner = r.ownerName || 'Desconhecido';
+          if (!grouped[owner]) grouped[owner] = [];
+          grouped[owner].push(r);
+        }
+        list.className = 'flex flex-col gap-6';
+        const owners = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+        owners.forEach(owner => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'flex flex-col gap-2';
+          const title = document.createElement('h2');
+          title.className = 'font-semibold text-gray-700';
+          title.textContent = owner;
+          const row = document.createElement('div');
+          row.className = 'flex flex-row flex-nowrap gap-4 overflow-x-auto';
+          grouped[owner].forEach(r => {
+            row.appendChild(createPdfCard(r.doc, r.ownerName));
+          });
+          wrapper.appendChild(title);
+          wrapper.appendChild(row);
+          list.appendChild(wrapper);
+        });
+      } else {
+        list.className = viewMode === 'cards'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+          : 'flex flex-col gap-4';
+        for (const r of results) {
+          const item = viewMode === 'cards' ? createPdfCard(r.doc, r.ownerName) : createPdfListItem(r.doc, r.ownerName);
+          list.appendChild(item);
+        }
       }
       if (!list.hasChildNodes()) {
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
