@@ -70,6 +70,17 @@
 </div>
 </div>
 
+<div id="gestorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div class="bg-white w-full max-w-md p-4 rounded shadow-lg">
+    <h2 class="text-lg font-semibold mb-2">Enviar arquivo para qual gestor?</h2>
+    <select id="gestorSelect" class="form-control mb-4"></select>
+    <div class="flex justify-end gap-2">
+      <button id="gestorCancel" class="btn btn-secondary">Cancelar</button>
+      <button id="gestorConfirm" class="btn btn-primary">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -80,10 +91,41 @@
          let responsavelExpedicaoEmail = null;
 
         function escolherGestorEmail(emails) {
-            if (!emails || !emails.length) return [];
-            if (emails.length === 1) return [emails[0]];
-            const escolha = prompt('Enviar arquivo para qual gestor?', emails[0]) || emails[0];
-            return emails.includes(escolha) ? [escolha] : [emails[0]];
+            return new Promise(resolve => {
+                if (!emails || !emails.length) return resolve([]);
+                if (emails.length === 1) return resolve([emails[0]]);
+
+                const modal = document.getElementById('gestorModal');
+                const select = document.getElementById('gestorSelect');
+                const confirmBtn = document.getElementById('gestorConfirm');
+                const cancelBtn = document.getElementById('gestorCancel');
+
+                select.innerHTML = '';
+                emails.forEach(email => {
+                    const opt = document.createElement('option');
+                    opt.value = email;
+                    opt.textContent = email;
+                    select.appendChild(opt);
+                });
+
+                function close(value) {
+                    modal.classList.add('hidden');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    modal.removeEventListener('click', onBackdrop);
+                    resolve([value]);
+                }
+
+                function onConfirm() { close(select.value || emails[0]); }
+                function onCancel() { close(emails[0]); }
+                function onBackdrop(e) { if (e.target === modal) close(emails[0]); }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onBackdrop);
+
+                modal.classList.remove('hidden');
+            });
         }
         firebase.auth().onAuthStateChanged(async u => {
             currentUser = u;
@@ -118,7 +160,7 @@
             if (!currentUser) return;
             const gestoresRaw = document.getElementById('gestoresEmails').value || '';
             const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-            const selecionado = escolherGestorEmail(gestoresEmails);
+            const selecionado = await escolherGestorEmail(gestoresEmails);
             const docRef = await db.collection('pdfDocs').add({
                 ownerUid: currentUser.uid,
                 ownerEmail: currentUser.email,
