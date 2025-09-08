@@ -1,8 +1,8 @@
 
 .card {
   border-radius: 1rem;
-  border: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  border: 1px solid var(--border);
+  background-color: var(--secondary);
   padding: 1.25rem;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
@@ -12,20 +12,20 @@
   align-items: center;
   gap: 0.5rem;
   border-radius: 0.75rem;
-  background-color: #4f46e5;
+  background-color: var(--highlight);
   padding: 0.5rem 1rem;
   color: #ffffff;
   font-weight: 500;
   transition: background-color .2s;
 }
-.btn-primary:hover { background-color: #4338ca; }
-.btn-primary:active { background-color: #3730a3; }
+.btn-primary:hover { background-color: var(--highlight-hover); }
+.btn-primary:active { background-color: #D95449; }
 .btn-primary:disabled { opacity: .5; }
 
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text);
 }
 @media (min-width:768px) {
   .section-title { font-size: 1.25rem; }
@@ -39,7 +39,7 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: #fff;
+  background: var(--secondary);
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   min-width: 150px;
@@ -54,7 +54,7 @@
   cursor: pointer;
 }
 .dropdown-item:hover {
-  background: #f3f4f6;
+  background: var(--bg-light);
 }
 
 .action-link {
@@ -73,7 +73,7 @@
 }
 
 .data-table th {
-  background-color: #f8f9fa;
+  background-color: var(--bg-light);
   padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
@@ -89,7 +89,7 @@
 }
 
 .data-table tr:nth-child(even) {
-  background-color: #f9fafb;
+  background-color: var(--secondary);
 }
 .modal {
     display: none;
@@ -102,7 +102,7 @@
   backdrop-filter: blur(4px);
 }
 .modal-content {
-  background-color: #fff;
+  background-color: var(--secondary);
   border-radius: 0.75rem;
   padding: 1.5rem; /* p-6 */
   max-width: 32rem; /* max-w-lg */

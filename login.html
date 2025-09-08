@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - VendedorPro</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/components.css">
   <link rel="icon" href="icons/icon-192.png">
 </head>
-<body class="flex items-center justify-center h-screen bg-gray-50">
-  <div class="w-full max-w-sm p-6 bg-white rounded shadow">
-    <h1 class="mb-4 text-2xl font-bold text-center">Login</h1>
+<body class="flex items-center justify-center h-screen" style="background-color: var(--background);">
+  <div class="w-full max-w-sm p-6 rounded shadow" style="background-color: var(--secondary);">
+    <h1 class="mb-4 text-2xl font-bold text-center" style="color: var(--text);">Login</h1>
     <div id="offlineNotice" class="hidden mb-4 text-center text-red-600">Sem conexão com o servidor.</div>
       <form onsubmit="login(); return false;">
         <input id="loginEmail" type="email" placeholder="E-mail" class="w-full p-2 mb-3 border rounded">
@@ -27,7 +29,7 @@
           </label>
         </div>
 
-        <button id="loginButton" type="submit" class="w-full py-2 font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded" style="background-color:#FF7043">Entrar</button>
+        <button id="loginButton" type="submit" class="w-full btn-primary justify-center">Entrar</button>
       </form>
       <div id="toastContainer" class="mt-4"></div>
     </div>
