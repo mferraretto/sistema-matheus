@@ -4,63 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Problemas</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="css/components.css">
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="min-h-screen bg-gradient-to-b from-slate-50 to-white text-slate-700">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
-  <div class="main-content p-4 space-y-6">
-    <h1 class="text-2xl font-semibold">Registrar Peça Faltante</h1>
-    <div class="flex gap-2">
-      <button class="tab-btn active px-4 py-2 rounded bg-orange-500 text-white" data-tab="tab-reembolsos">Reembolsos</button>
-      <button class="tab-btn px-4 py-2 rounded bg-gray-200" data-tab="tab-pecas">Peças Faltando</button>
+  <div class="main-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <header>
+      <h1 class="text-2xl font-semibold text-slate-700">Problemas</h1>
+      <p class="mt-1 text-sm text-slate-500">Registre e acompanhe reembolsos e peças faltantes</p>
+    </header>
+    <div class="border-b border-slate-200 flex space-x-6 text-sm font-medium">
+      <button class="tab-btn pb-2 -mb-px border-b-2 border-violet-600 text-violet-600" data-tab="tab-reembolsos">Reembolsos</button>
+      <button class="tab-btn pb-2 -mb-px border-b-2 border-transparent text-slate-500" data-tab="tab-pecas">Peças Faltando</button>
     </div>
-    <div id="tab-reembolsos" class="tab-panel space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <form id="reembolsosForm" class="card p-4 space-y-4">
-          <h2 class="text-lg font-semibold">Novo Reembolso</h2>
-          <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+    <div id="tab-reembolsos" class="tab-panel space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form id="reembolsosForm" class="card space-y-6">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-700">Novo Reembolso</h2>
+            <p class="text-xs text-slate-500">Preencha as informações para registrar</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex flex-col">
-              <label for="dataR" class="text-sm font-medium">Data</label>
-              <input type="date" id="dataR" name="data" class="border rounded p-2" required>
+              <label for="dataR" class="block text-sm font-medium text-slate-600">Data</label>
+              <input type="date" id="dataR" name="data" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
             <div class="flex flex-col">
-              <label for="numeroR" class="text-sm font-medium">Número</label>
-              <input type="text" id="numeroR" name="numero" class="border rounded p-2" required>
+              <label for="numeroR" class="block text-sm font-medium text-slate-600">Número</label>
+              <input type="text" id="numeroR" name="numero" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
             <div class="flex flex-col">
-              <label for="apelidoR" class="text-sm font-medium">Apelido</label>
-              <input type="text" id="apelidoR" name="apelido" class="border rounded p-2">
+              <label for="apelidoR" class="block text-sm font-medium text-slate-600">Apelido</label>
+              <input type="text" id="apelidoR" name="apelido" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="nfR" class="text-sm font-medium">NF</label>
-              <input type="text" id="nfR" name="nf" class="border rounded p-2">
+              <label for="nfR" class="block text-sm font-medium text-slate-600">NF</label>
+              <input type="text" id="nfR" name="nf" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="lojaR" class="text-sm font-medium">Loja</label>
-              <input type="text" id="lojaR" name="loja" class="border rounded p-2">
+              <label for="lojaR" class="block text-sm font-medium text-slate-600">Loja</label>
+              <input type="text" id="lojaR" name="loja" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="problemaR" class="text-sm font-medium">Problema</label>
-              <input type="text" id="problemaR" name="problema" class="border rounded p-2" required>
+              <label for="problemaR" class="block text-sm font-medium text-slate-600">Problema</label>
+              <input type="text" id="problemaR" name="problema" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
             <div class="flex flex-col">
-              <label for="valorR" class="text-sm font-medium">Valor</label>
-              <input type="number" step="0.01" id="valorR" name="valor" class="border rounded p-2" required>
+              <label for="valorR" class="block text-sm font-medium text-slate-600">Valor</label>
+              <div class="relative mt-1">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">R$</span>
+                <input type="number" step="0.01" id="valorR" name="valor" class="w-full rounded-xl border-slate-300 pl-8 text-right focus:border-violet-500 focus:ring-violet-500" required>
+              </div>
             </div>
           </div>
-          <div>
-            <button type="submit" class="btn btn-primary w-full md:w-auto">Salvar</button>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="limparReembolsos" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700">Limpar</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700">Salvar</button>
           </div>
         </form>
-        <div class="card p-4 overflow-x-auto">
-          <h2 class="text-lg font-semibold mb-4">Reembolsos Registrados</h2>
+        <div class="card overflow-x-auto">
+          <h2 class="text-lg font-semibold text-slate-700 mb-4">Reembolsos Registrados</h2>
           <table class="min-w-full text-sm">
-            <thead>
+            <thead class="bg-slate-50 sticky top-0 z-10">
               <tr class="text-left">
                 <th class="p-2">Data</th>
                 <th class="p-2">Número</th>
@@ -71,74 +81,78 @@
                 <th class="p-2 text-right">Valor</th>
               </tr>
             </thead>
-            <tbody id="reembolsosTableBody"></tbody>
+            <tbody id="reembolsosTableBody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
       </div>
     </div>
-    <div id="tab-pecas" class="tab-panel hidden space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <form id="pecasForm" class="card p-4 space-y-4 lg:col-span-2">
-          <h2 class="text-lg font-semibold">Registrar Peça Faltante</h2>
-          <div class="grid grid-cols-1 md:grid-cols-7 gap-4">
+    <div id="tab-pecas" class="tab-panel hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <form id="pecasForm" class="card space-y-6 lg:col-span-2">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-700">Registrar Peça Faltante</h2>
+            <p class="text-xs text-slate-500">Informe os dados da peça</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex flex-col">
-              <label for="data" class="text-sm font-medium">Data</label>
-              <input type="date" id="data" class="border rounded p-2" required>
+              <label for="data" class="block text-sm font-medium text-slate-600">Data</label>
+              <input type="date" id="data" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
             <div class="flex flex-col">
-              <label for="numero" class="text-sm font-medium">Número</label>
-              <input type="text" id="numero" class="border rounded p-2" required>
+              <label for="numero" class="block text-sm font-medium text-slate-600">Número</label>
+              <input type="text" id="numero" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
             <div class="flex flex-col">
-              <label for="apelido" class="text-sm font-medium">Apelido</label>
-              <input type="text" id="apelido" class="border rounded p-2">
+              <label for="apelido" class="block text-sm font-medium text-slate-600">Apelido</label>
+              <input type="text" id="apelido" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="nf" class="text-sm font-medium">NF</label>
-              <input type="text" id="nf" class="border rounded p-2">
+              <label for="nf" class="block text-sm font-medium text-slate-600">NF</label>
+              <input type="text" id="nf" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="loja" class="text-sm font-medium">Loja</label>
-              <input type="text" id="loja" class="border rounded p-2">
+              <label for="loja" class="block text-sm font-medium text-slate-600">Loja</label>
+              <input type="text" id="loja" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="peca" class="text-sm font-medium">Peça Faltante</label>
-              <input type="text" id="peca" class="border rounded p-2" required>
+              <label for="peca" class="block text-sm font-medium text-slate-600">Peça Faltante</label>
+              <input type="text" id="peca" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500" required>
             </div>
           </div>
-          <div>
-            <button type="submit" class="btn btn-primary w-full md:w-auto">Salvar</button>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="limparPecas" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700">Limpar</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-violet-600 text-white hover:bg-violet-700">Salvar</button>
           </div>
         </form>
-        <div class="card p-4 space-y-4 lg:col-span-1">
-          <h2 class="text-lg font-semibold">Filtros</h2>
+        <div class="card space-y-4 lg:col-span-1 lg:sticky lg:top-4">
+          <h2 class="text-lg font-semibold text-slate-700">Filtros</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="flex flex-col">
-              <label for="filtroData" class="text-sm font-medium">Data</label>
-              <input type="date" id="filtroData" class="border rounded p-2">
+              <label for="filtroData" class="block text-sm font-medium text-slate-600">Data</label>
+              <input type="date" id="filtroData" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
             </div>
             <div class="flex flex-col">
-              <label for="filtroStatus" class="text-sm font-medium">Status</label>
-              <select id="filtroStatus" class="border rounded p-2">
+              <label for="filtroStatus" class="block text-sm font-medium text-slate-600">Status</label>
+              <select id="filtroStatus" class="mt-1 w-full rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
                 <option value="">Todos</option>
-                <option value="NÃO FEITO">NÃO FEITO</option>
-                <option value="ENVIADO">ENVIADO</option>
-                <option value="FEITO">FEITO</option>
+                <option value="NÃO FEITO">Não feito</option>
+                <option value="EM ANDAMENTO">Em andamento</option>
+                <option value="RESOLVIDO">Resolvido</option>
               </select>
             </div>
           </div>
           <div class="flex justify-end">
-            <button id="limparFiltros" class="px-4 py-2 bg-gray-200 rounded w-full sm:w-auto">Limpar</button>
+            <button id="limparFiltros" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 w-full sm:w-auto">Limpar</button>
           </div>
         </div>
       </div>
-      <div class="card p-4 overflow-x-auto space-y-4">
+      <div class="card overflow-x-auto space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <input type="text" id="searchPecas" placeholder="Pesquisar..." class="border rounded p-2 w-full sm:w-64">
-          <button id="exportCsv" class="px-4 py-2 bg-gray-200 rounded w-full sm:w-auto">Exportar CSV</button>
+          <input type="text" id="searchPecas" placeholder="Pesquisar..." class="w-full sm:w-64 rounded-xl border-slate-300 focus:border-violet-500 focus:ring-violet-500">
+          <button id="exportCsv" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 w-full sm:w-auto">Exportar CSV</button>
         </div>
         <table class="min-w-full text-sm data-table">
-          <thead>
+          <thead class="bg-slate-50 sticky top-0 z-10">
             <tr class="text-left">
               <th class="p-2">Data</th>
               <th class="p-2">Nome do Comprador</th>
@@ -151,7 +165,7 @@
               <th class="p-2">Status</th>
             </tr>
           </thead>
-          <tbody id="pecasTableBody"></tbody>
+          <tbody id="pecasTableBody" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
     </div>
