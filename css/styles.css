@@ -1191,6 +1191,12 @@ body.dark-mode .navbar {
   color: var(--text);
   box-shadow: 0 2px 4px rgba(0,0,0,.2);
 }
+body.dark-mode .navbar .menu-item {
+  color: var(--text);
+}
+body.dark-mode .navbar .menu-item:hover {
+  color: #fff;
+}
 body.dark-mode .form-control {
   background: #4a5568;
   border-color: #4a5568;
@@ -1276,6 +1282,7 @@ body.dark-mode .data-table th {
 .navbar {
   height: var(--navbar-height);
   background: var(--card);
+  color: var(--text-dark);
   box-shadow: 0 2px 10px rgba(0,0,0,.05);
   position: fixed;
   top: 0;
@@ -1285,7 +1292,7 @@ body.dark-mode .data-table th {
   display: flex;
   align-items: center;
   padding: 0 25px;
- justify-content: space-between
+  justify-content: space-between;
 }
 .navbar .hamburger {
   display: none;
@@ -1294,6 +1301,13 @@ body.dark-mode .data-table th {
   display: flex;
   align-items: center;
   gap: 20px
+}
+.navbar .menu-item {
+  color: var(--text-light);
+  transition: color 0.2s ease;
+}
+.navbar .menu-item:hover {
+  color: var(--text-dark);
 }
 .user-dropdown {
   display: flex;
@@ -1712,6 +1726,7 @@ input:checked + .toggle-slider:before {
       height: var(--navbar-height);
       padding: 0 10px;
       background-color: rgba(0,0,0,0.8);
+      color: #fff;
     }
     .navbar .menu-item {
       display: none;
