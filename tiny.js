@@ -15,7 +15,7 @@ if (typeof window !== 'undefined' && window.loadAuthModals) {
 function showLoginModal() {
   const modal = document.getElementById('loginModal');
   if (modal) {
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
   } else {
     // Re-tenta após um pequeno atraso caso os modais ainda não tenham sido carregados
     setTimeout(showLoginModal, 500);

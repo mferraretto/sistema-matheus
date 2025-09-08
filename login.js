@@ -144,7 +144,7 @@ window.openModal = (id) => {
       document.getElementById('loginForm')?.classList.add('hidden');
       selectedRole = null;
     }
-    el.style.display = 'block';
+    el.style.display = 'flex';
   }
 };
 
