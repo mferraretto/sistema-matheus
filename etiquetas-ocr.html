@@ -147,6 +147,8 @@
     const storage = firebase.storage();
     let currentUser = null;
     let responsavelExpedicaoUid = null;
+    let horarioInicioEtiquetas = null;
+    let horarioFimEtiquetas = null;
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -197,6 +199,7 @@ firebase.auth().onAuthStateChanged(async u => {
         if (respEmail) {
           const snap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
           if (!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+          await carregarHorarios();
         }
       } catch (err) {
         console.error('Erro ao carregar gestor de expedição:', err);
@@ -208,6 +211,30 @@ firebase.auth().onAuthStateChanged(async u => {
       const messageText = document.getElementById("messageText");
       messageText.textContent = text;
       messageBox.style.display = "block";
+    }
+
+    async function carregarHorarios() {
+      if (!responsavelExpedicaoUid) return;
+      try {
+        const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
+        const data = doc.data() || {};
+        horarioInicioEtiquetas = data.horarioInicioEtiquetas || null;
+        horarioFimEtiquetas = data.horarioFimEtiquetas || null;
+      } catch (e) {
+        console.error('Erro ao carregar horários:', e);
+      }
+    }
+
+    function foraDoHorario() {
+      if (!horarioInicioEtiquetas || !horarioFimEtiquetas) return false;
+      const now = new Date();
+      const [ih, im] = horarioInicioEtiquetas.split(':').map(Number);
+      const [fh, fm] = horarioFimEtiquetas.split(':').map(Number);
+      const start = new Date(now);
+      start.setHours(ih, im, 0, 0);
+      const end = new Date(now);
+      end.setHours(fh, fm, 0, 0);
+      return now < start || now > end;
     }
 
     async function extractSkuQuantitiesFromCanvas(canvas) {
@@ -446,7 +473,8 @@ completoCtx.drawImage(
       ownerEmail: currentUser.email,
       gestoresExpedicaoEmails: selecionado,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      name: fileName
+      name: fileName,
+      foraHorario: foraDoHorario()
     });
     const fileRef = storage
       .ref()
@@ -528,7 +556,8 @@ completoCtx.drawImage(
           ownerEmail: currentUser.email,
           gestoresExpedicaoEmails: selecionado,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          name: fileName
+          name: fileName,
+          foraHorario: foraDoHorario()
         });
         const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
         await fileRef.put(pdfFile);
