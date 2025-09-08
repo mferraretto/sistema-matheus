@@ -147,8 +147,7 @@
     const storage = firebase.storage();
     let currentUser = null;
     let responsavelExpedicaoUid = null;
-    let horarioInicioEtiquetas = null;
-    let horarioFimEtiquetas = null;
+    let horariosEtiquetas = [];
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -218,23 +217,25 @@ firebase.auth().onAuthStateChanged(async u => {
       try {
         const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
         const data = doc.data() || {};
-        horarioInicioEtiquetas = data.horarioInicioEtiquetas || null;
-        horarioFimEtiquetas = data.horarioFimEtiquetas || null;
+        horariosEtiquetas = data.horariosEtiquetas || [];
       } catch (e) {
         console.error('Erro ao carregar horários:', e);
       }
     }
 
     function foraDoHorario() {
-      if (!horarioInicioEtiquetas || !horarioFimEtiquetas) return false;
+      if (!horariosEtiquetas.length) return false;
       const now = new Date();
-      const [ih, im] = horarioInicioEtiquetas.split(':').map(Number);
-      const [fh, fm] = horarioFimEtiquetas.split(':').map(Number);
-      const start = new Date(now);
-      start.setHours(ih, im, 0, 0);
-      const end = new Date(now);
-      end.setHours(fh, fm, 0, 0);
-      return now < start || now > end;
+      return !horariosEtiquetas.some(h => {
+        if (!h.inicio || !h.fim) return false;
+        const [ih, im] = h.inicio.split(':').map(Number);
+        const [fh, fm] = h.fim.split(':').map(Number);
+        const start = new Date(now);
+        start.setHours(ih, im, 0, 0);
+        const end = new Date(now);
+        end.setHours(fh, fm, 0, 0);
+        return now >= start && now <= end;
+      });
     }
 
     async function extractSkuQuantitiesFromCanvas(canvas) {
