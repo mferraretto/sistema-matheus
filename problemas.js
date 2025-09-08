@@ -18,7 +18,10 @@ onAuthStateChanged(auth, user => {
   uidAtual = user.uid;
   const dataInput = document.getElementById('data');
   if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
+  const dataRInput = document.getElementById('dataR');
+  if (dataRInput) dataRInput.value = new Date().toISOString().split('T')[0];
   document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
+  document.getElementById('reembolsosForm')?.addEventListener('submit', salvarReembolso);
   document.getElementById('filtroData')?.addEventListener('change', carregarPecas);
   document.getElementById('filtroStatus')?.addEventListener('change', carregarPecas);
   document.getElementById('limparFiltros')?.addEventListener('click', ev => {
@@ -30,6 +33,7 @@ onAuthStateChanged(auth, user => {
     carregarPecas();
   });
   carregarPecas();
+  carregarReembolsos();
 });
 
 async function salvarPeca(ev) {
@@ -127,6 +131,57 @@ async function carregarPecas() {
       d.valorGasto = newValor;
       ev.target.value = newValor.toFixed(2);
     });
+    tbody.appendChild(tr);
+  });
+}
+
+async function salvarReembolso(ev) {
+  ev.preventDefault();
+  const form = ev.target;
+  const registro = {
+    data: form.data.value,
+    numero: form.numero.value.trim(),
+    apelido: form.apelido.value.trim(),
+    nf: form.nf.value.trim(),
+    loja: form.loja.value.trim(),
+    problema: form.problema.value.trim(),
+    valor: parseFloat(form.valor.value) || 0
+  };
+  if (!registro.data || !registro.numero || !registro.problema) {
+    alert('Preencha os campos obrigatórios.');
+    return;
+  }
+  const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'reembolsos');
+  const colRef = collection(baseDoc, 'itens');
+  const ref = doc(colRef);
+  await setDocWithCopy(ref, registro, uidAtual);
+  form.reset();
+  const dataRInput = document.getElementById('dataR');
+  if (dataRInput) dataRInput.value = new Date().toISOString().split('T')[0];
+  carregarReembolsos();
+}
+
+async function carregarReembolsos() {
+  const tbody = document.getElementById('reembolsosTableBody');
+  if (!tbody || !uidAtual) return;
+  tbody.innerHTML = '';
+  const baseDoc = doc(db, 'uid', uidAtual, 'problemas', 'reembolsos');
+  const colRef = collection(baseDoc, 'itens');
+  const snap = await getDocs(colRef);
+  const dados = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  dados.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2">${formatarData(d.data)}</td>
+      <td class="p-2">${d.numero || ''}</td>
+      <td class="p-2">${d.apelido || ''}</td>
+      <td class="p-2">${d.nf || ''}</td>
+      <td class="p-2">${d.loja || ''}</td>
+      <td class="p-2">${d.problema || ''}</td>
+      <td class="p-2 text-right">R$ ${(Number(d.valor) || 0).toFixed(2)}</td>
+    `;
     tbody.appendChild(tr);
   });
 }
