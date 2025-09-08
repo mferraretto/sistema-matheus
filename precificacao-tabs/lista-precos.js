@@ -162,7 +162,7 @@ function verDetalhes(id) {
   if (typeof openModal === 'function') {
     openModal('detalhesModal');
   } else {
-    document.getElementById('detalhesModal').style.display = 'block';
+    document.getElementById('detalhesModal').style.display = 'flex';
   }
 }
 
@@ -187,7 +187,7 @@ function editarProduto(id) {
   if (typeof openModal === 'function') {
     openModal('detalhesModal');
   } else {
-    document.getElementById('detalhesModal').style.display = 'block';
+    document.getElementById('detalhesModal').style.display = 'flex';
   }
 }
 

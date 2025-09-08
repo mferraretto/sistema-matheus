@@ -40,7 +40,7 @@ function showLoginModal() {
   const modal = document.getElementById('loginModal');
   if (modal) {
     console.log('Modal encontrado, exibindo...');
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
     return;
   }
   
@@ -52,7 +52,7 @@ function showLoginModal() {
     const modalRetry = document.getElementById('loginModal');
     if (modalRetry) {
       console.log('Modal encontrado na segunda tentativa, exibindo...');
-      modalRetry.style.display = 'block';
+      modalRetry.style.display = 'flex';
     } else {
       console.log('Modal ainda não disponível, aguardando...');
       // Continua aguardando em vez de redirecionar
