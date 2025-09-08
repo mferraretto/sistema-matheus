@@ -42,14 +42,17 @@
       </div>
       
       <!-- Hero Section -->
-      <div class="max-w-6xl w-full text-center mb-6">
-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-  <span class="text-orange-600 font-extrabold">Sistemas de Gestão</span> para sua Loja
-</h1>
-        <p class="text-gray-600 max-w-2xl mx-auto mb-8">
-          Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
-        </p>
-      </div>
+        <div class="max-w-6xl w-full flex flex-col items-center mb-6">
+        <div class="flex items-center space-x-4 mb-4">
+          <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+    <span class="text-orange-600 font-extrabold">Sistemas de Gestão</span> para sua Loja
+  </h1>
+          <input type="month" id="filtroMes" class="border rounded p-1 text-sm" />
+        </div>
+          <p class="text-gray-600 max-w-2xl mx-auto mb-8 text-center">
+            Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
+          </p>
+        </div>
       
       <!-- Painel Inicial -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -72,9 +75,6 @@
                 </div>
                 <div>
                   <h2 class="text-xl font-extrabold text-gray-800">Faturamento x Meta</h2>
-                </div>
-                <div class="ml-auto">
-                  <input type="month" id="filtroMesFaturamento" class="border rounded p-1 text-sm" />
                 </div>
               </div>
               <div class="card-body space-y-4">
