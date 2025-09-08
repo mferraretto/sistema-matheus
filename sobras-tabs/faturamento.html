@@ -17,16 +17,17 @@ exporte <strong>um único dia</strong> por vez. Em seguida selecione
 
 <div class="grid gap-6 md:grid-cols-3">
   <div class="md:col-span-2 space-y-6">
-    <div class="card">
-      <div class="card-header mb-4">
-        <h3 class="text-lg font-semibold">Importar Planilha de Vendas</h3>
-      </div>
-      <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-      <label for="inputFaturamento" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-        <p class="text-sm text-gray-500">Arrastar e soltar ou clicar para fazer upload</p>
-        <input id="inputFaturamento" type="file" accept=".xlsx, .xls, .csv" class="hidden" />
-      </label>
+      <div class="card">
+        <div class="card-header mb-4">
+          <h3 class="text-lg font-semibold">Importar Planilha de Vendas</h3>
+        </div>
+        <input type="date" id="dataFaturamento" class="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        <label for="inputFaturamento" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+          <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+          <p class="text-sm text-gray-500">Arrastar e soltar ou clicar para fazer upload</p>
+          <input id="inputFaturamento" type="file" accept=".xlsx, .xls, .csv" class="hidden" />
+        </label>
       <div class="flex items-center justify-between mt-4">
         <button onclick="importarFaturamento()" class="btn-primary flex items-center gap-2">
           <i class="fas fa-upload"></i> Importar &amp; Processar
