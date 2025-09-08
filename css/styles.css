@@ -1,29 +1,31 @@
 
 :root {
-  /* Modern orange & purple palette */
-  --primary: #FF7043;
-  --primary-hover: #FF8A65;
-  --primary-dark: #E64A19;
-  --primary-light: #FFE0B2;
-  --brand: #FF7043;
-  --hover: #FF8A65;
+  /* VendedorPro brand color palette */
+  --primary: #5E60CE;
+  --primary-hover: #7678ED;
+  --primary-dark: #4B4DAA;
+  --primary-light: #B8B9F2;
+  --brand: #5E60CE;
+  --hover: #7678ED;
   --dark: #1C2B36;
-  --secondary: #7E57C2;
-  --nav-bg: #7E57C2;
+  --secondary: #F5F5F5;
+  --nav-bg: var(--primary);
   --success: #4CAF50;
   --error: #F44336;
   --danger: #F44336;
-  --bg-light: #F5F7FA;
-  --background: #FAFAFA;
-  --bg: #FAFAFA;
+  --bg-light: #F5F5F5;
+  --background: #FFFFFF;
+  --bg: #FFFFFF;
   --border: #e5e7eb;
-  --card: #FFFFFF;
-  --card-bg: #FFFFFF;
+  --card: #F5F5F5;
+  --card-bg: #F5F5F5;
   --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
   --gray: #6B7280;
-  --text: #616161;
-  --text-dark: #424242;
+  --text: #212121;
+  --text-dark: #212121;
   --text-light: #9E9E9E;
+  --highlight: #FF6F61;
+  --highlight-hover: #E65B54;
   --transition: all 0.3s ease;
   --navbar-height: 70px;
   --sidebar-width: 16rem;
@@ -141,7 +143,7 @@ body.has-sidebar .content-wrapper {
   width: 16px;
   left: 4px;
   bottom: 4px;
-  background-color: #fff;
+  background-color: var(--secondary);
   transition: .4s;
   border-radius: 50%
 }
@@ -155,7 +157,7 @@ input:checked + .dark-mode-slider:before {
 .introjs-tooltip {
   border-radius: 1rem;
   padding: 1.5rem;
-  background: #fff;
+  background: var(--secondary);
   box-shadow: 0 4px 24px rgba(0,0,0,0.15);
   font-family: 'Inter', sans-serif;
   color: #333;
@@ -253,13 +255,13 @@ input:checked + .dark-mode-slider:before {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  background-color: #fff;
+  background-color: var(--secondary);
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
   transition: background-color .2s, box-shadow .2s, transform .2s;
 }
 
 #tarefasCard .task-item:hover {
-  background-color: #f3f4f6;
+  background-color: var(--bg-light);
   box-shadow: 0 6px 8px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
@@ -344,7 +346,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 h1 {
-  color: var(--secondary);
+  color: var(--text);
   margin-bottom: 25px;
   font-size: 2.2rem;
   padding-bottom: 15px;
@@ -352,7 +354,7 @@ h1 {
 }
 
 h2 {
-  color: var(--secondary);
+  color: var(--text);
   margin-top: 30px;
   padding-bottom: 10px;
   border-bottom: 2px solid var(--border);
@@ -360,14 +362,14 @@ h2 {
 }
 
 h3 {
-  color: var(--secondary);
+  color: var(--text);
   margin-top: 25px;
   margin-bottom: 15px;
   font-size: 1.3rem;
 }
 
 h4 {
-  color: var(--secondary);
+  color: var(--text);
   margin-top: 0;
   margin-bottom: 10px;
   font-size: 1.1rem;
@@ -381,7 +383,7 @@ h4 {
   border-left: 4px solid var(--primary)
 }
 .result strong {
-  color: var(--secondary)
+  color: var(--primary)
 }
 .summary-box {
   background: #f8f9fa;
@@ -394,7 +396,7 @@ h4 {
   padding: 25px;
   border: 1px solid var(--border);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--secondary);
   box-shadow: 0 5px 15px rgba(0,0,0,.05);
   margin-top: 20px
 }
@@ -417,7 +419,7 @@ h4 {
 .resumo-card h4 {
   margin-bottom: .25rem;
   font-size: .9rem;
-  color: var(--secondary);
+  color: var(--text);
 }
 
 .resumo-card p {
@@ -588,7 +590,7 @@ h4 {
 .action-btn {
   background: 0 0;
   border: none;
-  color: var(--secondary);
+  color: var(--primary);
   cursor: pointer;
   position: relative;
   font-size: 1.1rem
@@ -623,7 +625,7 @@ h4 {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--secondary);
   transition: transform .3s
 }
 .dark-mode-toggle.active .toggle-switch {
@@ -632,7 +634,7 @@ h4 {
 .page-title {
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
-  color: var(--secondary);
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -652,9 +654,9 @@ h4 {
 .tab-btn {
   padding: .8rem 1.5rem;
   cursor: pointer;
-  background: #fff;
+  background: var(--secondary);
   border: none;
-  color: var(--secondary);
+  color: var(--primary);
   border-radius: 0.5rem;
   font-weight: 600;
   transition: var(--transition);
@@ -674,7 +676,7 @@ h4 {
   font-size: 1.1rem
 }
 .tab-content {
-  background-color: #fff;
+  background-color: var(--secondary);
   border-radius: 1rem;
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0,0,0,.05);
@@ -694,7 +696,7 @@ h4 {
   gap: 12px
 }
 .card-metric-novo {
-  background: #fff;
+  background: var(--secondary);
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 10px 25px rgba(0,0,0,.06);
@@ -713,7 +715,7 @@ h4 {
   font-size: 1.2rem;
   font-weight: 700;
   margin-bottom: .3rem;
-  color: var(--secondary);
+  color: var(--text);
   font-family: Inter,sans-serif
 }
 .card-metric-novo .valor-principal {
@@ -887,14 +889,14 @@ h4 {
 }
 .badge-info {
   background: rgba(28,43,54,.15);
-  color: var(--secondary)
+  color: var(--primary)
 }
 .badge-secondary {
   background: rgba(158,158,158,.15);
   color: var(--gray)
 }
 .chart-container {
-  background: #fff;
+  background: var(--secondary);
   border-radius: 1rem;
   padding: 1.5rem;
   margin: 2rem 0;
@@ -909,13 +911,13 @@ h4 {
 .chart-title {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--secondary);
+  color: var(--primary);
   font-family: Inter,sans-serif
 }
 .history-item {
   padding: 1rem;
   border-bottom: 1px solid #edf2f7;
-  background: #fff;
+  background: var(--secondary);
   border-radius: 0.625rem;
   margin-bottom: .5rem;
   transition: var(--transition)
@@ -1146,7 +1148,7 @@ h4 {
   display: none;
   background: 0 0;
   border: none;
-  color: var(--secondary);
+  color: var(--primary);
   font-size: 1.5rem;
   cursor: pointer
 }
@@ -1164,9 +1166,9 @@ h4 {
 }
 body.dark-mode {
   --background: #1a202c;
-  --primary: #ff8a65;
-  --primary-hover: #ff7043;
-  --secondary: #b39ddb;
+  --primary: #5E60CE;
+  --primary-hover: #7678ED;
+  --secondary: #2D3748;
   --bg: #1E293B;
   --card: #1F2937;
   --card-bg: #1F2937;
@@ -1684,7 +1686,7 @@ body.dark-mode .table tr:nth-child(2n) {
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: #fff;
+  background-color: var(--secondary);
   transition: .4s;
   border-radius: 50%
 }
@@ -1809,7 +1811,7 @@ input:checked + .toggle-slider:before {
 .sidebar {
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: #6b21a8;
+  background-color: var(--primary);
   color: #fff;
   width: var(--sidebar-width);
   min-height: 100vh;
@@ -1830,7 +1832,7 @@ input:checked + .toggle-slider:before {
 
 .sidebar-link:hover,
 .sidebar-link.active {
-  background-color: #5b21b6;
+  background-color: var(--primary-dark);
   color: #fff;
 }
 
@@ -1849,7 +1851,7 @@ input:checked + .toggle-slider:before {
 }
 
 body.dark .sidebar {
-  background-color: #4c1d95;
+  background-color: var(--primary-dark);
 }
 
 body.dark .sidebar-link {
@@ -1858,7 +1860,7 @@ body.dark .sidebar-link {
 
 body.dark .sidebar-link:hover,
 body.dark .sidebar-link.active {
-  background-color: #3b0c70;
+  background-color: var(--primary);
 }
 
 /* Base layout spacing */
