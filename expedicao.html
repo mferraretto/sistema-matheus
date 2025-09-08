@@ -811,6 +811,10 @@
       const createdDateStr = createdDate
         ? createdDate.toLocaleString('pt-BR')
         : 'Data desconhecida';
+      const impressoDate = data.impressoEm && data.impressoEm.toDate ? data.impressoEm.toDate() : null;
+      const concluidoDate = data.concluidoEm && data.concluidoEm.toDate ? data.concluidoEm.toDate() : null;
+      const impressoStr = impressoDate ? impressoDate.toLocaleString('pt-BR') : '';
+      const concluidoStr = concluidoDate ? concluidoDate.toLocaleString('pt-BR') : '';
       const statusInfo = {
         nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
         impresso: { text: 'Impresso', color: 'bg-green-500' },
@@ -824,6 +828,8 @@
             <p class="text-sm text-gray-500">${createdDateStr}</p>
             <p class="font-semibold text-gray-800">${owner}</p>
             <p class="text-xs text-gray-500 break-words">${name}</p>
+            ${impressoStr ? `<p class="text-xs text-gray-500">Impresso em: ${impressoStr}</p>` : ''}
+            ${concluidoStr ? `<p class="text-xs text-gray-500">Concluído em: ${concluidoStr}</p>` : ''}
           </div>
           <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
         </div>
@@ -852,6 +858,8 @@
       const createdAt = data.createdAt && data.createdAt.toDate
         ? data.createdAt.toDate().toLocaleString('pt-BR')
         : 'Data desconhecida';
+      const impressoAt = data.impressoEm && data.impressoEm.toDate ? data.impressoEm.toDate().toLocaleString('pt-BR') : '';
+      const concluidoAt = data.concluidoEm && data.concluidoEm.toDate ? data.concluidoEm.toDate().toLocaleString('pt-BR') : '';
       const statusClass = status === 'impresso'
         ? 'bg-green-100'
         : status === 'nao_impresso'
@@ -863,6 +871,8 @@
         <div class="flex-1">
           <p class="font-semibold text-gray-800">${name}</p>
           <p class="text-sm text-gray-500">Criado por: ${owner} em ${createdAt}</p>
+          ${impressoAt ? `<p class="text-sm text-gray-500">Impresso em: ${impressoAt}</p>` : ''}
+          ${concluidoAt ? `<p class="text-sm text-gray-500">Concluído em: ${concluidoAt}</p>` : ''}
           <div class="mt-2 flex flex-wrap gap-2">
             <button class="text-indigo-600 hover:text-indigo-800" onclick="visualizar('${url}')" title="Visualizar"><i class="fas fa-eye"></i></button>
             <button class="text-indigo-600 hover:text-indigo-800" onclick="imprimir('${url}')" title="Imprimir"><i class="fas fa-print"></i></button>
@@ -924,18 +934,34 @@
         checkbox.checked = !checked;
         return;
       }
-      await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
+      const updateData = {
+        status: checked ? 'impresso' : 'nao_impresso',
+        impressoEm: checked ? firebase.firestore.FieldValue.serverTimestamp() : null
+      };
+      if (!checked) updateData.concluidoEm = null;
+      await db.collection('pdfDocs').doc(id).update(updateData);
       if (card) {
         card.classList.remove('bg-yellow-100','bg-green-100','bg-white');
         card.classList.add(checked ? 'bg-green-100' : 'bg-yellow-100');
       }
       showToast('Status atualizado');
+      carregarEtiquetas();
     }
     window.toggleImpresso = toggleImpresso;
 
     async function updateStatus(id, select, card) {
       const newStatus = select.value;
-      await db.collection('pdfDocs').doc(id).update({ status: newStatus });
+      const updateData = { status: newStatus };
+      if (newStatus === 'impresso') {
+        updateData.impressoEm = firebase.firestore.FieldValue.serverTimestamp();
+        updateData.concluidoEm = null;
+      } else if (newStatus === 'concluido') {
+        updateData.concluidoEm = firebase.firestore.FieldValue.serverTimestamp();
+      } else {
+        updateData.impressoEm = null;
+        updateData.concluidoEm = null;
+      }
+      await db.collection('pdfDocs').doc(id).update(updateData);
       const badge = card.querySelector('.status-badge');
       const statusInfo = {
         nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
@@ -963,7 +989,7 @@
         if (data.status !== 'impresso') {
           const items = (data.skus || data.skuList || []).map(s => ({ sku: s, quantidade: 1 }));
           if (items.length) await savePrintedSkuQuantities(items, data.loja || '');
-          await docRef.update({ status: 'impresso' });
+          await docRef.update({ status: 'impresso', impressoEm: firebase.firestore.FieldValue.serverTimestamp(), concluidoEm: null });
         }
 
         if (data.url) {
@@ -994,9 +1020,10 @@
           }
         }
 
-        await docRef.update({ status: 'concluido' });
+        await docRef.update({ status: 'concluido', concluidoEm: firebase.firestore.FieldValue.serverTimestamp() });
         if (card) card.remove();
         showToast('Marcado como concluído');
+        carregarEtiquetas();
       } catch (e) {
         console.error('Erro ao concluir etiqueta:', e);
         alert('Erro ao concluir etiqueta');
