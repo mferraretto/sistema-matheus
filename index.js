@@ -98,9 +98,10 @@ async function carregarResumoFaturamento(uid, isAdmin) {
   if (!el) return;
   el.innerHTML = 'Carregando...';
   if (kpiEl) kpiEl.innerHTML = 'Carregando...';
-  const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7);
-  const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1).toISOString().slice(0,7);
+  const filtro = document.getElementById('filtroMes');
+  const mesAtual = filtro?.value || new Date().toISOString().slice(0,7);
+  const mesAtualDate = new Date(mesAtual + '-01');
+  const mesAnterior = new Date(mesAtualDate.getFullYear(), mesAtualDate.getMonth() - 1).toISOString().slice(0,7);
 
   let totalLiquido = 0;
   let totalBruto = 0;
@@ -293,8 +294,8 @@ async function carregarTopSkus(uid, isAdmin) {
   const el = document.getElementById('topSkus');
   if (!el) return;
   el.innerHTML = 'Carregando...';
-  const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7);
+  const filtro = document.getElementById('filtroMes');
+  const mesAtual = filtro?.value || new Date().toISOString().slice(0,7);
   const mapa = {};
   const snap = isAdmin
     ? await getDocs(collectionGroup(db, 'skusVendidos'))
@@ -442,6 +443,11 @@ async function iniciarPainel(user) {
     }
   }
 
+  const filtroMes = document.getElementById('filtroMes');
+  if (filtroMes) {
+    filtroMes.value = new Date().toISOString().slice(0,7);
+  }
+
   await Promise.all([
     carregarResumoFaturamento(uid, isAdmin),
     carregarGraficoFaturamento(uid, isAdmin),
@@ -449,12 +455,13 @@ async function iniciarPainel(user) {
     carregarTarefas(uid, isAdmin)
   ]);
 
-  const filtroMes = document.getElementById('filtroMesFaturamento');
   if (filtroMes) {
-    filtroMes.value = new Date().toISOString().slice(0,7);
-    filtroMes.addEventListener('change', () =>
-      carregarGraficoFaturamento(uid, isAdmin)
-    );
+    filtroMes.addEventListener('change', () => {
+      carregarResumoFaturamento(uid, isAdmin);
+      carregarGraficoFaturamento(uid, isAdmin);
+      carregarTopSkus(uid, isAdmin);
+      carregarTarefas(uid, isAdmin);
+    });
   }
 
   applyBlurStates();
@@ -470,7 +477,7 @@ async function carregarGraficoFaturamento(uid, isAdmin) {
   const ctxLinha = canvasLinha.getContext('2d');
   const { primary, secondary } = getPalette();
 
-  const filtro = document.getElementById('filtroMesFaturamento');
+  const filtro = document.getElementById('filtroMes');
   const mesFiltro = filtro?.value || new Date().toISOString().slice(0, 7);
 
   const snap = isAdmin
