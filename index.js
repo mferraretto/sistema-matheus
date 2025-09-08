@@ -255,7 +255,7 @@ async function carregarResumoFaturamento(uid, isAdmin) {
       }).join('');
   }
     el.innerHTML = `
-        <div id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard" class="cursor-pointer" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento';">
+        <div id="resumoFaturamentoCard" data-blur-id="resumoFaturamentoCard" class="card cursor-pointer h-full" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento';">
           <div class="flex items-center mb-4">
             <div class="card-header-icon"><span class="text-2xl">💰</span></div>
             <div>
