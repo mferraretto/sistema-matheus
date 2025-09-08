@@ -25,7 +25,7 @@
           <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
           <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
           <input type="email" id="email" placeholder="E-mail do Usuário" class="w-full p-2 border rounded">
-          <input type="text" id="emailExpedicao" placeholder="E-mails Responsável Expedição (separados por vírgula)" class="w-full p-2 border rounded">
+          <input type="text" id="emailExpedicao" placeholder="E-mails Responsável Expedição (até 2, separados por vírgula)" class="w-full p-2 border rounded">
       <select id="perfil" class="w-full p-2 border rounded">
         <option value="Cliente">Cliente</option>
         <option value="ADM">ADM</option>
@@ -83,6 +83,10 @@ if (!firebase.apps.length) {
       const email = document.getElementById("email").value.trim();
  const emailExpedicaoRaw = document.getElementById("emailExpedicao").value.trim();
       const gestoresEmails = emailExpedicaoRaw.split(',').map(e => e.trim()).filter(e => e);
+      if (gestoresEmails.length > 2) {
+        alert("Informe no máximo 2 e-mails de gestores de expedição.");
+        return;
+      }
       const perfil = document.getElementById("perfil").value;
 
       if (uid && nome && email) {
