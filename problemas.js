@@ -87,6 +87,7 @@ async function carregarPecas() {
       <td class="p-2">${d.numero || ''}</td>
       <td class="p-2">${d.loja || ''}</td>
       <td class="p-2">${d.peca || ''}</td>
+      <td class="p-2">${d.nf || ''}</td>
       <td class="p-2 text-right">
         <div class="flex items-center justify-end">
           <span class="mr-1">R$</span>
