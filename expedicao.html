@@ -736,7 +736,7 @@
           <div class="flex items-start gap-2">
             ${statusBadge}
             <div class="relative">
-              <button class="text-gray-600 hover:text-gray-800" onclick="toggleMenu(this)"><i class="fas fa-ellipsis-v"></i></button>
+              <button class="text-gray-600 hover:text-gray-800" onclick="toggleCardMenu(this)"><i class="fas fa-ellipsis-v"></i></button>
               <div class="hidden absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-10">
                 <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="visualizar('${url}')"><i class="fas fa-eye text-indigo-600"></i><span>Ver</span></button>
                 <button class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 w-full text-left" onclick="imprimir('${url}')"><i class="fas fa-print text-indigo-600"></i><span>Imprimir</span></button>
@@ -835,11 +835,11 @@
     }
     window.imprimir = imprimir;
 
-    function toggleMenu(btn) {
+    function toggleCardMenu(btn) {
       const menu = btn.nextElementSibling;
       if (menu) menu.classList.toggle('hidden');
     }
-    window.toggleMenu = toggleMenu;
+    window.toggleCardMenu = toggleCardMenu;
 
     async function toggleImpresso(id, checkbox, card) {
       const checked = checkbox.checked;
