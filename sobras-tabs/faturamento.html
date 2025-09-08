@@ -15,28 +15,43 @@ exporte <strong>um único dia</strong> por vez. Em seguida selecione
   </p>
 </div>
 
-<div class="card shadow-lg rounded-xl border border-gray-200">
-    <div class="card-header flex items-center gap-2 mb-2">
-      <i class="fas fa-chart-line text-blue-600"></i>
-      <h3 class="text-lg font-semibold">Importar Planilha de Vendas</h3>
+<div class="grid gap-6 md:grid-cols-3">
+  <div class="md:col-span-2 space-y-6">
+    <div class="card">
+      <div class="card-header mb-4">
+        <h3 class="text-lg font-semibold">Importar Planilha de Vendas</h3>
+      </div>
+      <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="w-full mb-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+      <label for="inputFaturamento" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+        <p class="text-sm text-gray-500">Arrastar e soltar ou clicar para fazer upload</p>
+        <input id="inputFaturamento" type="file" accept=".xlsx, .xls, .csv" class="hidden" />
+      </label>
+      <div class="flex items-center justify-between mt-4">
+        <button onclick="importarFaturamento()" class="btn-primary flex items-center gap-2">
+          <i class="fas fa-upload"></i> Importar &amp; Processar
+        </button>
+        <a href="#" class="action-link text-sm">Baixar modelo CSV</a>
+      </div>
     </div>
-    <p class="text-sm text-gray-600 mb-4">Importar Vendas do Dia</p>
-  <div class="form-row grid gap-4">
-    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
-      <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
-      <input type="date" id="dataFaturamento" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
+
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-4">Pré-visualização da Tabela</h3>
+      <div id="resultadoFaturamento"></div>
     </div>
-    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
-      <i class="fas fa-store text-gray-400 mr-2"></i>
-      <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
-    </div>
-    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
-      <i class="fas fa-file-upload text-gray-400 mr-2"></i>
-      <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
-    </div>
-    <button onclick="importarFaturamento()" class="bg-gradient-to-r from-orange-500 to-purple-500 text-white font-semibold rounded-lg px-6 py-2 flex items-center justify-center gap-2 transition-transform transform hover:scale-105">
-      <i class="fas fa-upload"></i> Importar
-    </button>
   </div>
-  <div id="resultadoFaturamento" class="mt-4"></div>
+
+  <div class="space-y-6">
+    <div class="card">
+      <h3 class="text-lg font-semibold mb-4">Progresso</h3>
+      <ol class="space-y-2 text-sm text-gray-700">
+        <li class="flex items-center gap-2"><span class="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-medium">1</span> Importar arquivo de vendas</li>
+        <li class="flex items-center gap-2"><span class="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-medium">2</span> Exibir pré-visualização</li>
+        <li class="flex items-center gap-2"><span class="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-medium">3</span> Processar Dados</li>
+      </ol>
+    </div>
+    <div class="card border-l-4 border-yellow-400 bg-yellow-50 text-yellow-800">
+      <p class="text-sm">Certifique-se de que sua planilha de vendas está formatada corretamente. Use nosso modelo CSV como referência.</p>
+    </div>
+  </div>
 </div>
