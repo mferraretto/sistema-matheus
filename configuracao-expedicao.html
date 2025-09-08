@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuração Expedição</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4">
+    <h1 class="text-2xl font-bold mb-4">Configuração Expedição</h1>
+    <form id="horariosForm" class="space-y-4 max-w-md">
+      <div class="flex items-center gap-2">
+        <input type="time" id="inicio1" class="form-control">
+        <input type="time" id="fim1" class="form-control">
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="time" id="inicio2" class="form-control">
+        <input type="time" id="fim2" class="form-control">
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="time" id="inicio3" class="form-control">
+        <input type="time" id="fim3" class="form-control">
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="time" id="inicio4" class="form-control">
+        <input type="time" id="fim4" class="form-control">
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
+    </form>
+    <p id="status" class="mt-4 text-green-600 hidden"></p>
+  </div>
+  <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    let currentUser = null;
+    const form = document.getElementById('horariosForm');
+    const statusEl = document.getElementById('status');
+    const inputs = [1,2,3,4].map(i => ({
+      inicio: document.getElementById(`inicio${i}`),
+      fim: document.getElementById(`fim${i}`)
+    }));
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+        return;
+      }
+      currentUser = user;
+      try {
+        const doc = await db.collection('uid').doc(user.uid).get();
+        const data = doc.data() || {};
+        const horarios = data.horariosEtiquetas || [];
+        horarios.forEach((h, idx) => {
+          if (inputs[idx]) {
+            inputs[idx].inicio.value = h.inicio || '';
+            inputs[idx].fim.value = h.fim || '';
+          }
+        });
+      } catch (e) {
+        console.error('Erro ao carregar horários:', e);
+      }
+    });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!currentUser) return;
+      const horarios = inputs.map(({inicio, fim}) => ({inicio: inicio.value, fim: fim.value}))
+        .filter(h => h.inicio && h.fim);
+      try {
+        await db.collection('uid').doc(currentUser.uid).set({ horariosEtiquetas: horarios }, { merge: true });
+        statusEl.textContent = 'Horários salvos com sucesso!';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-red-600');
+        statusEl.classList.add('text-green-600');
+      } catch (err) {
+        console.error('Erro ao salvar horários:', err);
+        statusEl.textContent = 'Erro ao salvar horários.';
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-600');
+        statusEl.classList.add('text-red-600');
+      }
+    });
+  </script>
+</body>
+</html>
