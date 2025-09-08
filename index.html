@@ -51,18 +51,18 @@
         </p>
       </div>
       
-
-      <!-- Visão Geral -->
-      <section class="section">
-        <h2 class="section-title">Visão Geral</h2>
-          <div id="kpiCards" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+      <!-- Painel Inicial -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Visão Geral -->
+        <section class="section">
+          <h2 class="section-title">Visão Geral</h2>
+          <div id="kpiCards" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
         </section>
 
-      <!-- Análise de Vendas -->
-      <section class="section">
-        <h2 class="section-title">Análise de Vendas</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div id="resumoFaturamento"></div>
+        <!-- Análise de Vendas -->
+        <section class="section">
+          <h2 class="section-title">Análise de Vendas</h2>
+          <div id="resumoFaturamento" class="space-y-4"></div>
 
           <div class="card cursor-pointer" id="faturamentoMetaCard" onclick="location.href='/VendedorPro/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas';">
             <div class="card-header">
@@ -84,8 +84,8 @@
               <div id="metaProgressText" class="text-sm text-gray-600"></div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <!-- Produtos em Destaque -->
       <section class="section">
