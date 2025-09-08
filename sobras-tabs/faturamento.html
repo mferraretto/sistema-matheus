@@ -15,28 +15,26 @@ exporte <strong>um único dia</strong> por vez. Em seguida selecione
   </p>
 </div>
 
-
-        <div class="card">
-         <div class="card-header">
-            <i class="fas fa-file-import"></i>
-            <h3>Importar Planilha de Vendas</h3>
-          </div>
-          <div class="form-row">
-         
-            <div class="form-group input-with-icon">
-              <i class="fas fa-calendar-alt"></i>
-              <input type="date" id="dataFaturamento" class="form-control" />
-            </div>
-            <div class="form-group input-with-icon">
-              <i class="fas fa-store"></i>
-              <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="form-control" />
-            </div>
-             <div class="form-group">
-              <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="form-control" />
-            </div>
-            <button onclick="importarFaturamento()" class="btn btn-primary">
-              <i class="fas fa-upload"></i> Importar
-            </button>
-          </div>
-          <div id="resultadoFaturamento" class="mt-4"></div>
-        </div>
+<div class="card shadow-lg rounded-xl border border-gray-200">
+  <div class="card-header mb-4">
+    <h3 class="text-lg font-semibold">Importar Vendas do Dia</h3>
+  </div>
+  <div class="form-row grid gap-4">
+    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
+      <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
+      <input type="date" id="dataFaturamento" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
+    </div>
+    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
+      <i class="fas fa-store text-gray-400 mr-2"></i>
+      <input type="text" id="lojaFaturamento" placeholder="Nome da Loja" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
+    </div>
+    <div class="form-group flex items-center bg-gray-50 rounded-lg px-4 py-2">
+      <i class="fas fa-file-upload text-gray-400 mr-2"></i>
+      <input type="file" id="inputFaturamento" accept=".xlsx, .xls" class="flex-1 bg-transparent focus:outline-none rounded-lg focus:ring-2 focus:ring-orange-500" />
+    </div>
+    <button onclick="importarFaturamento()" class="bg-gradient-to-r from-orange-500 to-purple-500 text-white font-semibold rounded-lg px-6 py-2 flex items-center justify-center gap-2 transition-transform transform hover:scale-105">
+      <i class="fas fa-upload"></i> Importar
+    </button>
+  </div>
+  <div id="resultadoFaturamento" class="mt-4"></div>
+</div>
