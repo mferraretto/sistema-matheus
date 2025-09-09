@@ -322,15 +322,13 @@
   let _tessWorker = null;
   async function getTessWorker(){
     if (_tessWorker) return _tessWorker;
-    _tessWorker = await Tesseract.createWorker({
+    _tessWorker = await Tesseract.createWorker('eng', Tesseract.OEM.LSTM_ONLY, {
       // logger: m => console.log(m), // opcional
       // workerPath: '/tess/worker.min.js',
       // corePath: '/tess/tesseract-core.wasm.js',
       // langPath: '/tess/lang-data'
     });
-    await _tessWorker.load();
-    await _tessWorker.loadLanguage('eng');
-    await _tessWorker.initialize('eng');
+    // createWorker já carrega e inicializa o idioma informado
     return _tessWorker;
   }
   async function terminateTess(){
