@@ -142,7 +142,12 @@
     document.body.appendChild(wrap.firstElementChild);
   }
 
-  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    console.log('[Firebase] App initialized', firebaseConfig.projectId);
+  } else {
+    console.log('[Firebase] App already initialized', firebaseConfig.projectId);
+  }
   const auth = firebase.auth();
   const db = firebase.firestore();
   const storage = firebase.storage();
@@ -344,17 +349,32 @@
     return text||'';
   }
   function parseItemsFromText(text){
+    console.log('[parseItemsFromText] raw text:', text);
     const items=[]; const lines=(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    console.log('[parseItemsFromText] lines:', lines);
     for(const line of lines){
+      console.log('[parseItemsFromText] processing line:', line);
       // Padrões comuns: "SKU123 2", "SKU: ABC-99  Qtd: 2", "ABC123 x 2"
       let m = line.match(/SKU[:\s-]*([A-Za-z0-9\-_]{2,})[^\d]*(\b\d{1,3}\b)/i);
       if(!m) m = line.match(/([A-Za-z0-9\-_]{2,})\s*[xX*]\s*(\d{1,3})/);
       if(!m) m = line.match(/([A-Za-z0-9\-_]{2,})[^\d]{0,10}\b(Qtd|Qde|Qtde)[:\s-]*(\d{1,3})/i);
-      if(m){ const sku=(m[1]||'').toUpperCase(); const q=parseInt(m[3]||m[2],10); if(sku && Number.isInteger(q)) items.push({sku, quantidade:q}); }
+      if(m){
+        const sku=(m[1]||'').toUpperCase();
+        const q=parseInt(m[3]||m[2],10);
+        if(sku && Number.isInteger(q)){
+          items.push({sku, quantidade:q});
+          console.log('[parseItemsFromText] match:', {sku, quantidade:q});
+        }
+      } else {
+        console.log('[parseItemsFromText] no match for line', line);
+      }
     }
+    console.log('[parseItemsFromText] items before dedupe:', items);
     // Dedupe somando iguais
     const map=new Map(); items.forEach(it=>{ map.set(it.sku, (map.get(it.sku)||0)+it.quantidade)});
-    return Array.from(map, ([sku, quantidade])=>({sku, quantidade}));
+    const result = Array.from(map, ([sku, quantidade])=>({sku, quantidade}));
+    console.log('[parseItemsFromText] result:', result);
+    return result;
   }
 
   function sanitizeZpl(content){ return (content||'').replace(/\^XA|\^XZ/g,''); }
@@ -379,22 +399,31 @@
 
   // ===== Firestore helpers =====
   async function getNextLabelNumber(total){
+    console.log('[getNextLabelNumber] total:', total);
     const ref = db.collection('uid').doc(currentUser.uid).collection('config').doc('contadores');
     return await db.runTransaction(async (tx)=>{
       const snap = await tx.get(ref);
       const cur = (snap.exists && (snap.data().zplLastNumber|0)) || 0;
       const start = cur + 1; const next = cur + (total|0);
       tx.set(ref, { zplLastNumber: next }, { merge:true });
+      console.log('[getNextLabelNumber] current:', cur, 'start:', start, 'next:', next);
       return start;
     });
   }
   async function findUidByEmail(email){
     if(!email) return null;
+    console.log('[findUidByEmail] email:', email);
     const q = await db.collection('uid').where('email','==',email).limit(1).get();
-    if(!q.empty){ return q.docs[0].id; }
+    if(!q.empty){
+      const id = q.docs[0].id;
+      console.log('[findUidByEmail] found uid:', id);
+      return id;
+    }
+    console.warn('[findUidByEmail] no UID for email', email);
     return null;
   }
   async function savePrintedItems(items, meta){
+    console.log('[savePrintedItems] items:', items, 'meta:', meta);
     // Salva em uid/{uid}/skuimpressos
     const base = db.collection('uid').doc(currentUser.uid).collection('skuimpressos');
     const batch = db.batch();
@@ -404,6 +433,7 @@
       const doc = base.doc(); batch.set(doc, data, { merge:true });
     });
     await batch.commit();
+    console.log('[savePrintedItems] saved for current user');
 
     // Se houver responsável, tenta salvar no UID dele também
     if(meta.responsavelUid){
@@ -415,10 +445,12 @@
         const doc = base2.doc(); batch2.set(doc, data, { merge:true });
       });
       await batch2.commit();
+      console.log('[savePrintedItems] saved for responsavel', meta.responsavelUid);
     }
   }
 
   async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario){
+    console.log('[savePdfRecord] saving record', {name, url, storagePath, responsavelUid, foraHorario});
     const record = {
       name,
       url,
@@ -430,21 +462,26 @@
     if(responsavelUid){
       await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add(record);
     }
+    console.log('[savePdfRecord] record saved');
   }
 
   // ===== Handler principal =====
   $(el.btnProcessar).onclick = async ()=>{
+    console.log('[btnProcessar] clicked');
     hideErr(); hideOk(); resetProgress();
     if(!currentUser){ showErr('Faça login para continuar.'); return; }
+    console.log('[btnProcessar] user', currentUser.uid);
     const dentroHorario = isDentroHorario();
     const foraHorario = !dentroHorario;
     const file = $(el.zplFile).files?.[0]; if(!file){ showErr('Selecione um arquivo .zpl/.txt.'); return; }
+    console.log('[btnProcessar] file selected', file.name);
 
     // gestores
     let gestores = ($(el.gestoresEmails).value||'').split(/[;,\s]+/).map(s=>s.trim()).filter(Boolean);
     let gestorEmail = gestores[0]||null;
     if(gestores.length>1){ gestorEmail = await escolherGestorEmail(gestores); }
     let responsavelUid = gestorEmail ? await findUidByEmail(gestorEmail) : null;
+    console.log('[btnProcessar] gestor', gestorEmail, 'responsavelUid', responsavelUid);
 
     const startTs = Date.now();
     let timer = setInterval(()=> $(el.elapsed).textContent = fmtTime((Date.now()-startTs)/1000), 1000);
@@ -452,13 +489,17 @@
     try{
       $(el.btnProcessar).disabled = true; setProgress(2,'Lendo arquivo…');
       const zplText = await readFileAsText(file);
+      console.log('[btnProcessar] file read bytes', zplText.length);
       const zplPrefix = buildPrefixWithDG(zplText);
-      const blocks = splitZplBlocks(zplText);
-      if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
+        const blocks = splitZplBlocks(zplText);
+        console.log('[btnProcessar] blocks found', blocks.length);
+        if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
 
-      const totalLabels = blocks.length/2;
-      const startNumber = await getNextLabelNumber(totalLabels);
-      const name = `etiquetas-${Date.now()}.pdf`;
+        const totalLabels = blocks.length/2;
+        console.log('[btnProcessar] total labels', totalLabels);
+        const startNumber = await getNextLabelNumber(totalLabels);
+        const name = `etiquetas-${Date.now()}.pdf`;
+        console.log('[btnProcessar] startNumber', startNumber, 'pdf name', name);
 
       // PDF
       const pdfDoc = await PDFLib.PDFDocument.create();
@@ -475,14 +516,17 @@
         foraHorario
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
+      console.log('[btnProcessar] pdfPath', pdfPath);
 
       let labelCounter = startNumber;
       for(let i=0;i<blocks.length;i+=2){
         const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
+        console.log(`[btnProcessar] processando checklist ${idx}/${totalLabels}`);
         const labelZpl = blocks[i]; const checklistZpl = blocks[i+1];
 
         // Identificar loja
         const loja = detectLojaFromZpl(labelZpl);
+        console.log('[btnProcessar] loja', loja);
 
         // Extrair itens (primeiro tentando ^FD, depois OCR)
         let text = extractFDText(checklistZpl);
@@ -491,7 +535,9 @@
           const bin = await binarizeBlob(chkBlob, 200);
           text = await ocrBlobToText(bin);
         }
+        console.log('[btnProcessar] checklist text:', text);
         let items = parseItemsFromText(text);
+        console.log('[btnProcessar] parsed items:', items);
         if(!items.length){ throw new Error(`Nenhum item encontrado no checklist #${idx}.`); }
 
         // Montar ZPL combinado e renderizar
@@ -517,6 +563,7 @@
       const ref = storage.ref().child(pdfPath);
       await ref.put(pdfBlob);
       const url = await ref.getDownloadURL();
+      console.log('[btnProcessar] PDF uploaded', url);
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
       await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario);
 
