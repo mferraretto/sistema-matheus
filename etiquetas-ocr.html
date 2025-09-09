@@ -411,13 +411,19 @@ firebase.auth().onAuthStateChanged(async u => {
         }
         console.log('[OCR] Colunas (primeira linha)', colFirst, bounds);
 
-        // Reconstrói a primeira linha do rodapé com as colunas
+        // Reconstrói a primeira linha completa e a versão resumida (SKU + Quantidade)
         const firstLine = [colFirst.produto, colFirst.sku, colFirst.variacao, colFirst.quantidade]
           .filter(Boolean)
           .join(' ')
           .replace(/\s+/g,' ')
           .trim();
         if (firstLine) footerLines[0] = firstLine; // substitui linha 1 por linha reconstruída
+
+        const skuLine = (colFirst.sku || '').trim();
+        const qtyLine = (colFirst.quantidade || '').trim();
+        if (skuLine || qtyLine) {
+          var footerOneLine = `SKU: ${skuLine} | Quantidade: ${qtyLine}`.replace(/\s+\|\s+$/, '').trim();
+        }
       } catch (e) {
         console.warn('[OCR] Falha ao segmentar colunas:', e);
       }
@@ -642,13 +648,16 @@ completoCtx.drawImage(
         height: alturaEtiquetaFinal,
       });
 
-      // Rodapé textual com 4 linhas do checklist (em texto, não imagem)
-      const linhas = (extracted && extracted.footerLines) ? extracted.footerLines : [];
-      if (linhas.length) {
+      // Rodapé textual: agora exibimos somente SKU e Quantidade (1 linha)
+      const oneLine = (typeof footerOneLine !== 'undefined' && footerOneLine)
+        ? footerOneLine
+        : (extracted && extracted.items && extracted.items[0]
+            ? `SKU: ${extracted.items[0].sku} | Quantidade: ${extracted.items[0].quantidade}`
+            : (extracted && extracted.footerLines ? extracted.footerLines[0] : ''));
+      if (oneLine) {
         const fontSize = 9.5;
-        const gap = 2;
         const padding = 4;
-        const blocoAltura = (fontSize + gap) * 4 + padding * 2;
+        const blocoAltura = (fontSize) + padding * 2;
 
         // Preferência: desenhar logo abaixo da etiqueta; se não couber, sobrepor a base da etiqueta
         let footerY = yPos - blocoAltura - 2;
@@ -663,16 +672,14 @@ completoCtx.drawImage(
           color: PDFLib.rgb(1, 1, 1)
         });
 
-        // Texto em preto
-        for (let li = 0; li < 4; li++) {
-          pag.drawText(linhas[li], {
-            x: margemX + 6,
-            y: footerY + padding + li * (fontSize + gap),
-            size: fontSize,
-            font: rodapeFont,
-            color: PDFLib.rgb(0, 0, 0)
-          });
-        }
+        // Texto em preto (apenas uma linha)
+        pag.drawText(oneLine, {
+          x: margemX + 6,
+          y: footerY + padding,
+          size: fontSize,
+          font: rodapeFont,
+          color: PDFLib.rgb(0, 0, 0)
+        });
       }
     }
   }
