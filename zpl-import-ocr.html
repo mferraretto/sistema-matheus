@@ -287,7 +287,11 @@
       body: zpl
     });
     if(!res.ok){
-      const msg = await res.text().catch(()=> '');
+      let msg = '';
+      try { msg = await res.text(); } catch {}
+      if(res.status === 404 && msg.includes('no labels')){
+        throw new Error('Labelary falhou: ZPL não gerou nenhuma etiqueta. Verifique se o bloco está completo.');
+      }
       throw new Error(`Labelary falhou (${res.status}) ${msg}`);
     }
     return await res.blob();
