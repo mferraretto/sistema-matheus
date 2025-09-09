@@ -103,8 +103,8 @@
         <select id="gestorSelect"></select>
       </div>
       <div class="ft">
-        <button id="gestorCancel" class="btn secondary">Cancelar</button>
-        <button id="gestorConfirm" class="btn">Confirmar</button>
+        <button id="gestorCancel" type="button" class="btn secondary">Cancelar</button>
+        <button id="gestorConfirm" type="button" class="btn">Confirmar</button>
       </div>
     </div>
   </div>
@@ -212,13 +212,31 @@
   // ===== Modal Gestor =====
   function escolherGestorEmail(possiveis){
     return new Promise((resolve)=>{
-      const modal = $(el.gestorModal); const sel = $(el.gestorSelect);
+      const modal = $(el.gestorModal);
+      const sel = $(el.gestorSelect);
+      const confirmBtn = $(el.gestorConfirm);
+      const cancelBtn = $(el.gestorCancel);
       sel.innerHTML = '';
-      possiveis.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=e; sel.appendChild(o); });
+      possiveis.forEach(e=>{
+        const o=document.createElement('option');
+        o.value=e;
+        o.textContent=e;
+        sel.appendChild(o);
+      });
+      function close(v){
+        modal.classList.add('hidden');
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+        modal.removeEventListener('click', onBackdrop);
+        resolve(v||possiveis[0]);
+      }
+      function onConfirm(){ close(sel.value); }
+      function onCancel(){ close(possiveis[0]); }
+      function onBackdrop(e){ if(e.target===modal) close(possiveis[0]); }
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+      modal.addEventListener('click', onBackdrop);
       modal.classList.remove('hidden');
-      const off = ()=> modal.classList.add('hidden');
-      $(el.gestorConfirm).onclick = ()=>{ const v=sel.value; off(); resolve(v||possiveis[0]); };
-      $(el.gestorCancel).onclick  = ()=>{ off(); resolve(possiveis[0]); };
     });
   }
 
