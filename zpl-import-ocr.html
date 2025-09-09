@@ -203,13 +203,19 @@
     if(!horariosEtiquetas?.length) return true; // se não configurado, permite
     const now = new Date();
     return horariosEtiquetas.some(intv => {
-      const [ini, fim] = (intv||'').split('-');
-      if(!ini||!fim) return false;
-      const [h1,m1] = ini.split(':').map(Number);
-      const [h2,m2] = fim.split(':').map(Number);
-      const a = new Date(); a.setHours(h1||0,m1||0,0,0);
-      const b = new Date(); b.setHours(h2||23,m2||59,59,999);
-      return now>=a && now<=b;
+      let ini, fim;
+      if(typeof intv === 'string'){
+        [ini, fim] = intv.split('-');
+      }else if(intv && typeof intv === 'object'){
+        ini = intv.inicio;
+        fim = intv.fim;
+      }
+      if(!ini || !fim) return false;
+      const [h1, m1] = (ini||'').split(':').map(Number);
+      const [h2, m2] = (fim||'').split(':').map(Number);
+      const a = new Date(); a.setHours(h1||0, m1||0, 0, 0);
+      const b = new Date(); b.setHours(h2||23, m2||59, 59, 999);
+      return now >= a && now <= b;
     });
   }
 
