@@ -635,7 +635,7 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
         height: alturaEtiquetaFinal,
       });
 
-      // Rodapé textual: agora exibimos somente SKU e Quantidade (1 linha)
+      // Rodapé textual: agora exibimos SKU e Quantidade em 2 linhas
       const oneLine = (extracted && extracted.footerOneLine)
         ? extracted.footerOneLine
         : (extracted && extracted.items && extracted.items[0]
@@ -643,8 +643,17 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
             : (extracted && extracted.footerLines ? extracted.footerLines[0] : ''));
       if (oneLine) {
         const fontSize = 9.5;
+        const lineGap = 2;
         const padding = 4;
-        const blocoAltura = (fontSize) + padding * 2;
+        // Deriva as duas linhas (SKU e Quantidade) a partir do texto consolidado
+        let skuTxt = '';
+        let qtdTxt = '';
+        const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
+        const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
+        skuTxt = mSku ? `SKU: ${mSku[1].trim()}` : oneLine;
+        qtdTxt = mQtd ? `Quantidade: ${mQtd[1].trim()}` : '';
+        const linhasRodape = [skuTxt, qtdTxt].filter(Boolean);
+        const blocoAltura = (fontSize + lineGap) * linhasRodape.length + padding * 2;
 
         // Preferência: desenhar logo abaixo da etiqueta; se não couber, sobrepor a base da etiqueta
         let footerY = yPos - blocoAltura - 2;
@@ -659,14 +668,16 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
           color: PDFLib.rgb(1, 1, 1)
         });
 
-        // Texto em preto (apenas uma linha)
-        pag.drawText(oneLine, {
-          x: margemX + 6,
-          y: footerY + padding,
-          size: fontSize,
-          font: rodapeFont,
-          color: PDFLib.rgb(0, 0, 0)
-        });
+        // Texto em preto (duas linhas: SKU e Quantidade)
+        for (let li = 0; li < linhasRodape.length; li++) {
+          pag.drawText(linhasRodape[li], {
+            x: margemX + 6,
+            y: footerY + padding + li * (fontSize + lineGap),
+            size: fontSize,
+            font: rodapeFont,
+            color: PDFLib.rgb(0, 0, 0)
+          });
+        }
       }
     }
   }
