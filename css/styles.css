@@ -1481,32 +1481,46 @@ body.dark-mode .table tr:nth-child(2n) {
   background: rgba(255,255,255,.03);
 }
 .scenario-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   background: var(--background);
-  border-radius: 0.5rem;
-  padding: 15px;
-  margin-top: 10px;
-  border-left: 4px solid
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
 }
-.scenario-ideal {
-  border-left-color: var(--success);
-  background-color: rgba(76,175,80,.05)
-}
-.scenario-medium {
-  border-left-color: #ffc107;
-  background-color: rgba(255,193,7,.05)
-}
-.scenario-promo {
-  border-left-color: var(--error);
-  background-color: rgba(244,67,54,.05)
+.scenario-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
 }
 .scenario-title {
+  flex: 1;
   font-weight: 600;
-  margin-bottom: 5px;
-  font-size: 14px
+  font-size: 0.875rem;
 }
 .scenario-value {
-  font-size: 1.2rem;
-  font-weight: 700
+  font-size: 1rem;
+  font-weight: 700;
+}
+.scenario-ideal {
+  background-color: rgba(76,175,80,0.1);
+}
+.scenario-ideal .scenario-dot {
+  background-color: var(--success);
+}
+.scenario-medium {
+  background-color: rgba(255,193,7,0.1);
+}
+.scenario-medium .scenario-dot {
+  background-color: #ffc107;
+}
+.scenario-promo {
+  background-color: rgba(244,67,54,0.1);
+}
+.scenario-promo .scenario-dot {
+  background-color: var(--error);
 }
 .platform-tag {
   display: inline-block;
