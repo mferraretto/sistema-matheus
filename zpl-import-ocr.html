@@ -103,6 +103,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script type="module">
   import { firebaseConfig } from './firebase-config.js';
@@ -557,6 +558,7 @@
         }
 
         console.log('[btnProcessar] texto extraído:', checklistText);
+        saveAs(checklistBlob, `debug-checklist-${idx}.png`);
         const items = parseItemsFromText(checklistText);
         console.log('[btnProcessar] parsed items:', items);
 
