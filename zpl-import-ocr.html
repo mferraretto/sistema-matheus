@@ -104,9 +104,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script type="module">
   import { firebaseConfig } from './firebase-config.js';
+  import { createOcrWorker } from './createWorker.js';
   // ===== Utilitários UI =====
   const $ = (sel) => document.querySelector(sel);
   const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
@@ -162,18 +162,7 @@
   let ocrWorker = null;
   async function ensureOcrWorker(){
     if (ocrWorker) return;
-    ocrWorker = await Tesseract.createWorker({ logger: m => console.log('[OCR]', m) }); // v4
-
-    await ocrWorker.load();                      // v4: carrega core
-    await ocrWorker.loadLanguage('por+eng');     // v4: carrega idiomas
-    await ocrWorker.initialize('por+eng');       // v4: inicializa idiomas
-
-    await ocrWorker.setParameters({              // só depois de initialize()
-      tessedit_pageseg_mode: '6',
-      preserve_interword_spaces: '1',
-      user_defined_dpi: '300',
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- xX'
-    });
+    ocrWorker = await createOcrWorker();
   }
 
   // ===== Auth =====
@@ -228,15 +217,17 @@
     const now = new Date();
     return horariosEtiquetas.some(intv => {
       let ini, fim;
-      if(typeof intv === 'string'){
+      if (Array.isArray(intv)) {
+        [ini, fim] = intv;
+      } else if (typeof intv === 'string') {
         [ini, fim] = intv.split('-');
-      }else if(intv && typeof intv === 'object'){
+      } else if (intv && typeof intv === 'object') {
         ini = intv.inicio;
         fim = intv.fim;
       }
       if(!ini || !fim) return false;
-      const [h1, m1] = (ini||'').split(':').map(Number);
-      const [h2, m2] = (fim||'').split(':').map(Number);
+      const [h1, m1] = String(ini).split(':').map(Number);
+      const [h2, m2] = String(fim).split(':').map(Number);
       const a = new Date(); a.setHours(h1||0, m1||0, 0, 0);
       const b = new Date(); b.setHours(h2||23, m2||59, 59, 999);
       return now >= a && now <= b;
@@ -284,8 +275,8 @@
     return blocks;
   }
   function buildPrefixWithDG(allZplText){
-    const dg = (allZplText.match(/^~DG[^\r\n]+/gmi) || []).join('\n');
-    return dg ? dg + '\n' : '';
+    const dgrs = allZplText.match(/~DGR[\s\S]*?\^XZ/g) || [];
+    return dgrs.length ? dgrs.join('\n') + '\n' : '';
   }
   function decodeZplFieldText(s, wholeBlock){
     if(/\^FH/i.test(wholeBlock)){
@@ -313,21 +304,16 @@
     }
     return null;
   }
-  async function renderZplToPngBlob(zpl, dpmm=8, widthIn=4.0, heightIn=5.2, index=0){
+  async function renderZplToPngBlob(zpl, dpmm=8, widthIn=4.0, heightIn=6.0, index=0){
     if(!zpl || !zpl.trim()){
       throw new Error('ZPL vazio não pode ser renderizado');
     }
     const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/${index}/`;
-    let res = await fetch(url, {
+    const res = await fetch(url, {
       method:'POST',
-      headers:{'Accept':'image/png', 'Content-Type':'application/x-www-form-urlencoded'},
+      headers:{'Accept':'image/png'},
       body: zpl
     });
-    if(res.status === 415){
-      const fd = new FormData();
-      fd.append('file', new Blob([zpl], { type: 'text/plain' }), 'label.zpl');
-      res = await fetch(url, { method:'POST', headers:{'Accept':'image/png'}, body: fd });
-    }
     if(!res.ok){
       const txt = await res.text().catch(()=> '');
       if(res.status === 404 && txt.includes('no labels')){
@@ -518,7 +504,7 @@
 
       // PDF
       const pdfDoc = await PDFLib.PDFDocument.create();
-      const dpmm = 8, widthIn=4.0, heightIn=5.2;
+      const dpmm = 8, widthIn=4.0, heightIn=6.0;
 
       // Cria doc Firestore para metadados e reserva Storage path
       const metaRef = await db.collection('pdfDocs').add({
