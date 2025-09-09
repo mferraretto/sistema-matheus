@@ -59,13 +59,21 @@ async function carregarProdutos() {
 }
 
 function aplicarFiltros() {
-    const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+  const termo = document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+  const tipo = document.getElementById('tipoFiltro')?.value || 'contains';
 
   const filtrados = produtos.filter(p => {
     const texto = `${p.produto || ''} ${(p.sku || '')}`.toLowerCase();
-        return !termo || texto.includes(termo);
-
+    if (!termo) return true;
+    if (tipo === 'exact') {
+      return texto === termo;
+    }
+    if (tipo === 'starts') {
+      return texto.startsWith(termo);
+    }
+    return texto.includes(termo);
   });
+
   renderLista(filtrados);
 }
 
@@ -431,9 +439,10 @@ function importarExcelLista() {
 }
 function setupListeners() {
   document.getElementById('filtroBusca')?.addEventListener('input', aplicarFiltros);
+  document.getElementById('tipoFiltro')?.addEventListener('change', aplicarFiltros);
   document.getElementById('btnCardView')?.addEventListener('click', () => { viewMode = 'cards'; aplicarFiltros(); });
   document.getElementById('btnListView')?.addEventListener('click', () => { viewMode = 'list'; aplicarFiltros(); });
-    document.getElementById('selectAll')?.addEventListener('change', e => selecionarTodos(e.target.checked));
+  document.getElementById('selectAll')?.addEventListener('change', e => selecionarTodos(e.target.checked));
 }
 
 function initTooltips() {

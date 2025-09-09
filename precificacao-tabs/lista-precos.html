@@ -6,6 +6,11 @@
     </span>
   </h2>  <div class="flex flex-wrap items-end gap-4 mb-4">
     <input id="filtroBusca" type="text" placeholder="Filtrar por SKU, nome ou loja" class="border p-2 rounded flex-1" />
+    <select id="tipoFiltro" class="border p-2 rounded">
+      <option value="contains">Contém</option>
+      <option value="starts">Começa com</option>
+      <option value="exact">Exato</option>
+    </select>
     <div class="flex">
       <button id="btnCardView" class="px-3 py-2 bg-gray-200 rounded-l">Cards</button>
       <button id="btnListView" class="px-3 py-2 bg-gray-200 rounded-r">Lista</button>
