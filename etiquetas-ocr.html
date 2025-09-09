@@ -577,7 +577,7 @@ firebase.auth().onAuthStateChanged(async u => {
       const deslocamentoY = 60; 
 const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
       
-     const scaleChecklist = 4; // reduzir resolução acelera OCR mantendo precisão
+     const scaleChecklist = 6; // reduzir resolução acelera OCR mantendo precisão
 chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
 chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
 const chkCtx = chkCanvas.getContext("2d");
