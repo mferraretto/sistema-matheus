@@ -397,7 +397,11 @@
   $(el.btnProcessar).onclick = async ()=>{
     hideErr(); hideOk(); resetProgress();
     if(!currentUser){ showErr('Faça login para continuar.'); return; }
-    if(!isDentroHorario()){ showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).'); return; }
+    const dentroHorario = isDentroHorario();
+    if(!dentroHorario){
+      showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).');
+      return;
+    }
     const file = $(el.zplFile).files?.[0]; if(!file){ showErr('Selecione um arquivo .zpl/.txt.'); return; }
 
     // gestores
@@ -431,7 +435,7 @@
         created: firebase.firestore.FieldValue.serverTimestamp(),
         total: totalLabels,
         name,
-        foraHorario: !isDentroHorario()
+        foraHorario: !dentroHorario
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
 
