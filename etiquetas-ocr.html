@@ -36,6 +36,11 @@
       justify-content: center;
       color: #fff;
     }
+    .progress-time {
+      font-size: 0.875rem;
+      color: #374151;
+      margin-top: 0.5rem;
+    }
     /* Card Glassmorphism */
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
@@ -115,6 +120,7 @@
             <span id="progressText" class="w-full text-center"></span>
           </div>
         </div>
+        <div id="progressTime" class="progress-time text-center" style="display:none;"></div>
       </div>
       <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
       <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
@@ -471,13 +477,23 @@ firebase.auth().onAuthStateChanged(async u => {
       await batch.commit();
     }
 
+    function formatTime(seconds) {
+      const s = Math.max(0, Math.ceil(seconds));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${m.toString().padStart(2,'0')}:${r.toString().padStart(2,'0')}`;
+    }
+
     async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
   const progressText = document.getElementById("progressText");
-  progressBar.style.display = "block";
+  const progressTime = document.getElementById("progressTime");
+  progressBar.style.display = progressTime.style.display = "block";
   progressFill.style.width = "0%";
   progressText.textContent = "";
+  progressTime.textContent = "";
+  const startTime = performance.now();
 
   const status = document.getElementById("status");
   const pdfFile = document.getElementById("pdfInput").files[0];
@@ -498,10 +514,6 @@ firebase.auth().onAuthStateChanged(async u => {
   canvas.style.display = "block";
 
   for (let i = 0; i < pdf.numPages; i++) {
-    const progress = Math.round((i / pdf.numPages) * 100);
-    progressFill.style.width = progress + "%";
-    progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-
     const page = await pdf.getPage(i + 1);
     const scale = 8;
     const viewport = page.getViewport({ scale });
@@ -680,12 +692,22 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
         }
       }
     }
+    const progressRatio = (i + 1) / pdf.numPages;
+    const progress = Math.round(progressRatio * 100);
+    progressFill.style.width = progress + "%";
+    progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+    const elapsed = (performance.now() - startTime) / 1000;
+    const remaining = elapsed / progressRatio - elapsed;
+    progressTime.textContent = `Tempo restante: ${formatTime(remaining)}`;
   }
 
   progressFill.style.width = "100%";
   progressText.textContent = "✅ Concluído!";
+  const totalTime = (performance.now() - startTime) / 1000;
+  progressTime.textContent = `Tempo total: ${formatTime(totalTime)}`;
   setTimeout(() => {
     progressBar.style.display = "none";
+    progressTime.style.display = "none";
   }, 2000);
 
   const pdfFinal = await novoPdf.save();
@@ -736,9 +758,12 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
       const progressBar = document.getElementById("progressBar");
       const progressFill = document.getElementById("progressFill");
       const progressText = document.getElementById("progressText");
-      progressBar.style.display = "block";
+      const progressTime = document.getElementById("progressTime");
+      progressBar.style.display = progressTime.style.display = "block";
       progressFill.style.width = "0%";
       progressText.textContent = "";
+      progressTime.textContent = "";
+      const startTime = performance.now();
 
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
@@ -756,10 +781,14 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
       const allItems = [];
 
       for (let i = 0; i < pdf.numPages; i++) {
-        const progress = Math.round((i / pdf.numPages) * 100);
+        const page = await pdf.getPage(i + 1);
+        const progressRatio = (i + 1) / pdf.numPages;
+        const progress = Math.round(progressRatio * 100);
         progressFill.style.width = progress + "%";
         progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-        const page = await pdf.getPage(i + 1);
+        const elapsed = (performance.now() - startTime) / 1000;
+        const remaining = elapsed / progressRatio - elapsed;
+        progressTime.textContent = `Tempo restante: ${formatTime(remaining)}`;
         const scale = 3;
         const viewport = page.getViewport({ scale });
         canvas.width = viewport.width;
@@ -771,7 +800,9 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
 
       progressFill.style.width = "100%";
       progressText.textContent = "✅ Concluído!";
-      setTimeout(() => { progressBar.style.display = "none"; }, 2000);
+      const totalTime = (performance.now() - startTime) / 1000;
+      progressTime.textContent = `Tempo total: ${formatTime(totalTime)}`;
+      setTimeout(() => { progressBar.style.display = "none"; progressTime.style.display = "none"; }, 2000);
 
       if (currentUser) {
         const gestoresRaw = document.getElementById('gestoresEmails').value || '';
