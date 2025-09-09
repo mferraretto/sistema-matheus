@@ -93,8 +93,16 @@ function renderLista(lista) {
             </div>
           </div>
           <div class="text-right">
-            <div class="text-gray-500 text-sm">Preço mínimo</div>
-            <div class="text-lg font-semibold text-green-600">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
+            ${data.calculosTaxas ? Object.entries(data.calculosTaxas).map(([taxa, valores]) => `
+              <div class="mb-2">
+                <div class="text-gray-500 text-sm">${taxa} - Preço mínimo</div>
+                <div class="text-lg font-semibold text-green-600">R$ ${parseFloat(valores.precoMinimo).toFixed(2)}</div>
+                <div class="text-xs text-gray-500">Promo: R$ ${parseFloat(valores.precoPromo).toFixed(2)} | Médio: R$ ${parseFloat(valores.precoMedio).toFixed(2)} | Ideal: R$ ${parseFloat(valores.precoIdeal).toFixed(2)}</div>
+              </div>
+            `).join('') : `
+              <div class="text-gray-500 text-sm">Preço mínimo</div>
+              <div class="text-lg font-semibold text-green-600">R$ ${parseFloat(data.precoMinimo).toFixed(2)}</div>
+            `}
           </div>
         </div>
         <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">

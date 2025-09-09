@@ -926,15 +926,20 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
 
       if (plataforma === 'shopee' && document.getElementById('shopee_duas_taxas')?.checked) {
         sistema.produtoEditando = null;
-        calcularComTaxa(plataforma, custo, produto, sku, 20, true);
-        calcularComTaxa(plataforma, custo, produto, sku, 14, true);
+        const calc20 = calcularComTaxa(plataforma, custo, produto, sku, 20, false, true);
+        const calc14 = calcularComTaxa(plataforma, custo, produto, sku, 14, false, true);
+        document.getElementById(`preco_${plataforma}`).value = calc20.precoMinimo;
+        document.getElementById(`preco_${plataforma}_ideal`).textContent = `R$ ${calc20.precoIdeal}`;
+        document.getElementById(`preco_${plataforma}_medio`).textContent = `R$ ${calc20.precoMedio}`;
+        document.getElementById(`preco_${plataforma}_promo`).textContent = `R$ ${calc20.precoPromo}`;
+        salvarProdutoMultiplasTaxas(produto, sku, plataforma.toUpperCase(), custo, [calc20, calc14]);
         return;
       }
 
       calcularComTaxa(plataforma, custo, produto, sku);
     }
 
-    function calcularComTaxa(plataforma, custo, produto, sku, taxaOverride, forceNew = false) {
+    function calcularComTaxa(plataforma, custo, produto, sku, taxaOverride, forceNew = false, returnOnly = false) {
       let totalPercentual = 0;
       let totalFixo = 0;
       const taxasDetalhadas = {};
@@ -980,13 +985,24 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
 
       // Calcular preço mínimo (sem lucro)
       const precoMinimo = ((custo + totalFixo) / (1 - totalPercentual / 100)).toFixed(2);
-      document.getElementById(`preco_${plataforma}`).value = precoMinimo;
-
-      // Calcular cenários de lucro
       const precoPromo = precoMinimo; // 0% de lucro
       const precoMedio = (precoMinimo * 1.05).toFixed(2); // 5% de lucro
       const precoIdeal = (precoMinimo * 1.10).toFixed(2); // 10% de lucro
 
+      const resultado = {
+        taxaPercentual: taxa,
+        precoMinimo: parseFloat(precoMinimo),
+        precoIdeal: parseFloat(precoIdeal),
+        precoMedio: parseFloat(precoMedio),
+        precoPromo: parseFloat(precoPromo),
+        taxas: taxasDetalhadas
+      };
+
+      if (returnOnly) {
+        return resultado;
+      }
+
+      document.getElementById(`preco_${plataforma}`).value = precoMinimo;
       document.getElementById(`preco_${plataforma}_ideal`).textContent = `R$ ${precoIdeal}`;
       document.getElementById(`preco_${plataforma}_medio`).textContent = `R$ ${precoMedio}`;
       document.getElementById(`preco_${plataforma}_promo`).textContent = `R$ ${precoPromo}`;
@@ -998,6 +1014,58 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
         sistema.produtoEditando = null;
       } else {
         salvarProduto(produto, sku, plataformaNome, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas, forceNew);
+      }
+
+      return resultado;
+    }
+
+    async function salvarProdutoMultiplasTaxas(produto, sku, plataforma, custo, resultados) {
+      const user = auth.currentUser;
+      if (!user) {
+        showToast("Usuário não autenticado!", "error");
+        return;
+      }
+
+      const calculos = {};
+      resultados.forEach(r => {
+        calculos[`${r.taxaPercentual}%`] = {
+          precoMinimo: r.precoMinimo,
+          precoIdeal: r.precoIdeal,
+          precoMedio: r.precoMedio,
+          precoPromo: r.precoPromo
+        };
+      });
+
+      const base = resultados[0];
+      const novoProduto = {
+        produto,
+        sku,
+        plataforma,
+        custo,
+        precoMinimo: base.precoMinimo,
+        precoIdeal: base.precoIdeal,
+        precoMedio: base.precoMedio,
+        precoPromo: base.precoPromo,
+        taxas: base.taxas,
+        calculosTaxas: calculos,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        const docRef = await db
+          .collection('uid')
+          .doc(user.uid)
+          .collection('produtos')
+          .add(novoProduto);
+        sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
+        atualizarLista();
+
+        showToast("Produto criado com sucesso!", "success");
+        addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+      } catch (error) {
+        console.error("Erro ao salvar produto:", error);
+        showToast("Erro ao salvar produto!", "error");
       }
     }
 
