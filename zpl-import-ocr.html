@@ -168,6 +168,7 @@
   let horariosEtiquetas = [];
   let responsavelExpedicaoUid = null;
   let responsavelExpedicaoEmail = null;
+  let processStart = null;
 
   async function preloadUserSettings(){
     if(!currentUser) return;
@@ -199,9 +200,9 @@
     }
   }
 
-  function isDentroHorario(){
+  function isDentroHorario(refDate = new Date()){
     if(!horariosEtiquetas?.length) return true; // se não configurado, permite
-    const now = new Date();
+    const now = refDate instanceof Date ? refDate : new Date(refDate);
     return horariosEtiquetas.some(intv => {
       let ini, fim;
       if(typeof intv === 'string'){
@@ -360,7 +361,7 @@
     // Salva em uid/{uid}/skuimpressos
     const base = db.collection('uid').doc(currentUser.uid).collection('skuimpressos');
     const batch = db.batch();
-    const now = new Date();
+    const now = processStart || new Date();
     items.forEach(it=>{
       const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null };
       const doc = base.doc(); batch.set(doc, data, { merge:true });
@@ -371,7 +372,7 @@
     if(meta.responsavelUid){
       const base2 = db.collection('uid').doc(meta.responsavelUid).collection('skuimpressos');
       const batch2 = db.batch();
-      const now2 = new Date();
+      const now2 = processStart || new Date();
       items.forEach(it=>{
         const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now2.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null, origemUid: currentUser.uid };
         const doc = base2.doc(); batch2.set(doc, data, { merge:true });
@@ -397,7 +398,8 @@
   $(el.btnProcessar).onclick = async ()=>{
     hideErr(); hideOk(); resetProgress();
     if(!currentUser){ showErr('Faça login para continuar.'); return; }
-    if(!isDentroHorario()){ showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).'); return; }
+    processStart = new Date();
+    if(!isDentroHorario(processStart)){ showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).'); return; }
     const file = $(el.zplFile).files?.[0]; if(!file){ showErr('Selecione um arquivo .zpl/.txt.'); return; }
 
     // gestores
@@ -431,7 +433,7 @@
         created: firebase.firestore.FieldValue.serverTimestamp(),
         total: totalLabels,
         name,
-        foraHorario: !isDentroHorario()
+        foraHorario: !isDentroHorario(processStart)
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
 
