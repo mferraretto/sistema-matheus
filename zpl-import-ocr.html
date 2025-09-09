@@ -260,6 +260,14 @@
     const blocks = zpl.match(/\^XA[\s\S]*?\^XZ/g) || [];
     return blocks;
   }
+  function ensureWrapped(z){
+    const hasXA = /\^XA/i.test(z);
+    const hasXZ = /\^XZ/i.test(z);
+    return hasXA && hasXZ ? z : `^XA${z}^XZ`;
+  }
+  function sanitize(z){
+    return (z||'').replace(/^\uFEFF/, '').replace(/^[\s\r\n]+/, '');
+  }
   function extractFDText(zpl){ // concatena texto entre ^FD ... ^FS
     const out=[]; const re=/\^FD([\s\S]*?)\^FS/g; let m; while((m=re.exec(zpl))!==null){ out.push(m[1].trim()); }
     return out.join('\n');
@@ -283,16 +291,18 @@
     const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/0/`;
     const res = await fetch(url, {
       method:'POST',
-      headers:{'Accept':'image/png','Content-Type':'application/x-www-form-urlencoded'},
+      headers:{'Accept':'image/png','Content-Type':'text/plain'},
       body: zpl
     });
     if(!res.ok){
       let msg = '';
       try { msg = await res.text(); } catch {}
+      console.warn('Labelary erro', res.status, msg);
+      console.warn('ZPL preview:', (zpl||'').slice(0,500));
       if(res.status === 404 && msg.includes('no labels')){
         throw new Error('Labelary falhou: ZPL não gerou nenhuma etiqueta. Verifique se o bloco está completo.');
       }
-      throw new Error(`Labelary falhou (${res.status}) ${msg}`);
+      throw new Error(`Labelary falhou (${res.status}) ${msg}`.trim());
     }
     return await res.blob();
   }
@@ -429,6 +439,8 @@
     try{
       $(el.btnProcessar).disabled = true; setProgress(2,'Lendo arquivo…');
       const zplText = await readFileAsText(file);
+      const dgDefs = (zplText.match(/^~DG[^\r\n]+/gmi) || []).join('\n');
+      const zplPrefix = dgDefs ? dgDefs + '\n' : '';
       const blocks = splitZplBlocks(zplText);
       if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
 
@@ -463,7 +475,8 @@
         // Extrair itens (primeiro tentando ^FD, depois OCR)
         let text = extractFDText(checklistZpl);
         if(!text || text.length<3){
-          const chkBlob = await renderZplToPngBlob(checklistZpl, dpmm, widthIn, heightIn);
+          const chkZpl = sanitize(zplPrefix + ensureWrapped(checklistZpl));
+          const chkBlob = await renderZplToPngBlob(chkZpl, dpmm, widthIn, heightIn);
           const bin = await binarizeBlob(chkBlob, 200);
           text = await ocrBlobToText(bin);
         }
@@ -472,7 +485,8 @@
 
         // Montar ZPL combinado e renderizar
         const combinedZpl = buildCombinedZpl(labelZpl, items, { dpmm, widthIn, heightIn, labelNumber: labelCounter });
-        const imgBlob = await renderZplToPngBlob(combinedZpl, dpmm, widthIn, heightIn + 1.0); // +1" margem de segurança
+        const combinedWrapped = sanitize(zplPrefix + ensureWrapped(combinedZpl));
+        const imgBlob = await renderZplToPngBlob(combinedWrapped, dpmm, widthIn, heightIn + 1.0); // +1" margem de segurança
         const imgBytes = new Uint8Array(await imgBlob.arrayBuffer());
         const png = await pdfDoc.embedPng(imgBytes);
         const page = pdfDoc.addPage([widthIn*72, (png.height/png.width)*widthIn*72]);
