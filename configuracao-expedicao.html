@@ -44,12 +44,44 @@
     }
     const db = firebase.firestore();
     let currentUser = null;
+    let responsavelExpedicaoUid = null;
+    let isGestor = false;
     const form = document.getElementById('horariosForm');
     const statusEl = document.getElementById('status');
     const inputs = [1,2,3,4].map(i => ({
       inicio: document.getElementById(`inicio${i}`),
       fim: document.getElementById(`fim${i}`)
     }));
+
+    function preencherHorarios(horarios){
+      horarios.forEach((h, idx) => {
+        if (inputs[idx]) {
+          inputs[idx].inicio.value = h.inicio || '';
+          inputs[idx].fim.value = h.fim || '';
+        }
+      });
+    }
+
+    async function carregarHorarios(){
+      if(!responsavelExpedicaoUid) return;
+      try {
+        const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
+        const data = doc.data() || {};
+        const horarios = data.horariosEtiquetas || [];
+        preencherHorarios(horarios);
+      } catch(e){
+        console.error('Erro ao carregar horários:', e);
+      }
+    }
+
+    function desabilitarFormulario(){
+      inputs.forEach(({inicio,fim})=>{ inicio.disabled = true; fim.disabled = true; });
+      const btn = form.querySelector('button[type="submit"]');
+      if(btn) btn.classList.add('hidden');
+      statusEl.textContent = 'Horários definidos pelo gestor de expedição.';
+      statusEl.classList.remove('hidden');
+    }
+
     firebase.auth().onAuthStateChanged(async user => {
       if (!user) {
         window.location.href = 'index.html?login=1';
@@ -59,20 +91,26 @@
       try {
         const doc = await db.collection('uid').doc(user.uid).get();
         const data = doc.data() || {};
-        const horarios = data.horariosEtiquetas || [];
-        horarios.forEach((h, idx) => {
-          if (inputs[idx]) {
-            inputs[idx].inicio.value = h.inicio || '';
-            inputs[idx].fim.value = h.fim || '';
-          }
-        });
+        const respEmail = Array.isArray(data.gestoresExpedicaoEmails)
+          ? data.gestoresExpedicaoEmails[0]
+          : data.responsavelExpedicaoEmail;
+        if(respEmail && respEmail !== user.email){
+          const snap = await db.collection('uid').where('email','==', respEmail).limit(1).get();
+          if(!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+        } else {
+          responsavelExpedicaoUid = user.uid;
+          isGestor = true;
+        }
+        await carregarHorarios();
+        if(!isGestor) desabilitarFormulario();
       } catch (e) {
         console.error('Erro ao carregar horários:', e);
       }
     });
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!currentUser) return;
+      if (!currentUser || !isGestor) return;
       const horarios = inputs.map(({inicio, fim}) => ({inicio: inicio.value, fim: fim.value}))
         .filter(h => h.inicio && h.fim);
       try {
