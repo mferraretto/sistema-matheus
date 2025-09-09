@@ -1304,6 +1304,18 @@ body.dark-mode .data-table th {
   align-items: center;
   gap: 20px;
 }
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.navbar-title {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+@media (min-width:768px) {
+  .navbar-title { font-size: 1.25rem; }
+}
 .navbar .menu-item {
   color: #fff;
   display: inline-flex;
