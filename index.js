@@ -10,6 +10,20 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+document.addEventListener('DOMContentLoaded', () => {
+  const lastUpdateEl = document.getElementById('lastUpdate');
+  if (lastUpdateEl) {
+    const now = new Date();
+    lastUpdateEl.textContent = `Atualizado em: ${now.toLocaleDateString('pt-BR')}`;
+  }
+  const scrollBtn = document.getElementById('scrollTopBtn');
+  if (scrollBtn) {
+    scrollBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+});
+
 function getPalette() {
   const styles = getComputedStyle(document.documentElement);
   return {

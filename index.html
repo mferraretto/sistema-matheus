@@ -41,14 +41,15 @@
         <i class="fas fa-exclamation-circle mr-2"></i>Erro ao importar planilha
       </div>
       
-      <!-- Hero Section -->
-        <div class="max-w-6xl w-full flex flex-col items-center mb-6">
-        <div class="flex items-center space-x-4 mb-4">
-          <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
-    <span class="text-orange-600 font-extrabold">Sistemas de Gestão</span> para sua Loja
-  </h1>
-          <input type="month" id="filtroMes" class="border rounded p-1 text-sm" />
-        </div>
+        <!-- Hero Section -->
+        <div class="max-w-6xl w-full flex flex-col items-center mb-6 relative">
+          <div id="lastUpdate" class="absolute top-0 right-0 text-xs text-gray-500"></div>
+          <div class="flex items-center space-x-4 mb-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+              <span class="text-orange-600 font-extrabold">Sistemas de Gestão</span> para sua Loja
+            </h1>
+            <input type="month" id="filtroMes" class="border rounded p-1 text-sm" />
+          </div>
           <p class="text-gray-600 max-w-2xl mx-auto mb-8 text-center">
             Ferramentas poderosas para otimizar seus negócios na Shopee. Controle de estoque, precificação inteligente e análise de desempenho em um só lugar.
           </p>
@@ -174,6 +175,10 @@
       
     </div>
   </div>
+
+  <button id="scrollTopBtn" class="floating-btn">
+    <i class="fas fa-plus text-xl"></i>
+  </button>
 
   <!-- Modais de Login -->
    <div id="auth-modals-container"></div>
