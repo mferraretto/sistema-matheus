@@ -5,39 +5,30 @@
   --primary-hover: #818CF8;
   --primary-dark: #4F46E5;
   --primary-light: #A5B4FC;
-  --brand: #6366F1;
-  --hover: #818CF8;
-  --dark: #0F172A;
   --secondary: #F3F4F6;
   --nav-bg: var(--primary);
   --success: #4CAF50;
   --error: #F44336;
-  --danger: #F44336;
-  --bg-light: #F3F4F6;
   --background: #FFFFFF;
-  --bg: #FFFFFF;
   --border: #e5e7eb;
-  --card: #FFFFFF;
-  --card-bg: #FFFFFF;
-  --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
   --gray: #6B7280;
   --text: #0F172A;
-  --text-dark: #0F172A;
-  --text-light: #6B7280;
+  --text-light: var(--gray);
   --highlight: #14B8A6;
   --highlight-hover: #0D9488;
   --transition: all 0.3s ease;
   --navbar-height: 64px;
   --sidebar-width: 16rem;
+  --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 
 .text-brand {
-  color: var(--brand);
+  color: var(--primary);
 }
 
 .bg-brand {
-  background-color: var(--brand);
+  background-color: var(--primary);
 }
 
 
@@ -76,7 +67,7 @@
 }
 
 .section {
-  background-color: var(--card-bg);
+  background-color: var(--background);
   border-radius: 1rem;
   box-shadow: var(--card-shadow);
   padding: 1.5rem;
@@ -86,7 +77,7 @@
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: var(--text-dark);
+  color: var(--text);
 }
 
 .content-wrapper {
@@ -226,8 +217,8 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .card-header {
-  background-color: var(--card-bg);
-  color: var(--text-dark);
+  background-color: var(--background);
+  color: var(--text);
   border-bottom: 1px solid var(--border);
   border-radius: 0.75rem 0.75rem 0 0;
 }
@@ -238,10 +229,10 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .card-body {
-  background-color: var(--card-bg);
+  background-color: var(--background);
 }
 
-#tarefasCard .progress-wrapper {
+#tarefasCard .progress {
   width: 100%;
   background-color: var(--border);
   border-radius: 0.5rem;
@@ -269,7 +260,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .task-item:hover {
-  background-color: var(--bg-light);
+  background-color: var(--secondary);
   box-shadow: 0 6px 8px rgba(0,0,0,0.08);
   transform: translateY(-2px);
 }
@@ -485,7 +476,7 @@ h4 {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
-    color: var(--text-dark)
+    color: var(--text)
   }
   button {
     background: var(--primary);
@@ -500,7 +491,7 @@ h4 {
     font-size: 16px
   }
   button:hover {
-    background: var(--hover);
+  background: var(--primary-hover);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,.15)
   }
@@ -607,7 +598,7 @@ h4 {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: var(--danger);
+  background: var(--error);
   color: #fff;
   border-radius: 50%;
   width: 18px;
@@ -958,7 +949,7 @@ h4 {
   color: #fff
 }
 .offline {
-  background: var(--danger);
+  background: var(--error);
   color: #fff
 }
 .status-dot {
@@ -1177,9 +1168,6 @@ body.dark-mode {
   --primary: #6366F1;
   --primary-hover: #818CF8;
   --secondary: #1E293B;
-  --bg: #1E293B;
-  --card: #1E293B;
-  --card-bg: #1E293B;
   --text: #E5E7EB;
   --text-light: #94A3B8;
   --border: #334155;
@@ -1193,11 +1181,11 @@ body.dark-mode .card,
 body.dark-mode .chart-container,
 body.dark-mode .tab-content,
 body.dark-mode .table-container {
-  background: var(--card-bg);
+  background: var(--secondary);
   color: var(--text);
 }
 body.dark-mode .navbar {
-  background: var(--card-bg);
+  background: var(--background);
   color: var(--text);
   border-bottom: 1px solid var(--border);
 }
@@ -1341,12 +1329,12 @@ body.dark-mode .data-table th {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--bg);
+  background: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--brand)
+  color: var(--primary)
 }
 .user-info {
   display: flex;
@@ -1371,7 +1359,7 @@ body.dark-mode .data-table th {
   box-shadow: 0 15px 25px rgba(0,0,0,.1)
 }
 .dashboard-card {
-  background: var(--card);
+  background: var(--background);
   border-radius: 0.75rem;
   padding: 20px;
   box-shadow: 0 4px 6px rgba(0,0,0,.05)
@@ -1447,7 +1435,7 @@ select {
   margin-bottom: 12px;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
-  background: var(--card);
+  background: var(--background);
   color: var(--text);
   font-size: 14px
 }
@@ -1461,14 +1449,14 @@ select:focus {
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: var(--card)
+  background: var(--background)
 }
 .table {
   width: 100%;
   border-collapse: collapse
 }
 .table th {
-  background: var(--bg);
+  background: var(--background);
   text-align: left;
   padding: 12px 15px;
   font-weight: 600;
@@ -1493,7 +1481,7 @@ body.dark-mode .table tr:nth-child(2n) {
   background: rgba(255,255,255,.03);
 }
 .scenario-card {
-  background: var(--card);
+  background: var(--background);
   border-radius: 0.5rem;
   padding: 15px;
   margin-top: 10px;
@@ -1556,7 +1544,7 @@ body.dark-mode .table tr:nth-child(2n) {
   animation: .3s fadeIn
 }
 .modal-content {
-  background-color: var(--card);
+  background-color: var(--background);
   margin: 5% auto;
   padding: 25px;
   border-radius: 0.75rem;
@@ -1658,7 +1646,7 @@ body.dark-mode .table tr:nth-child(2n) {
 .tooltip .tooltip-text {
   visibility: hidden;
   width: 120px;
-  background-color: var(--brand);
+  background-color: var(--primary);
   color: #fff;
   text-align: center;
   border-radius: 0.375rem;
@@ -1680,7 +1668,7 @@ body.dark-mode .table tr:nth-child(2n) {
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: var(--brand) transparent transparent transparent
+  border-color: var(--primary) transparent transparent transparent
 }
 .tooltip:hover .tooltip-text {
   visibility: visible;
@@ -1734,7 +1722,6 @@ input:checked + .toggle-slider:before {
 
     
   @media (max-width:768px) {
-    :root { --navbar-height: 64px; }
     .grid-cols-2 {
       grid-template-columns: 1fr;
     }

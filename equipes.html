@@ -21,11 +21,10 @@
             --primary: #4262ff;
             --primary-dark: #3351e8;
             --secondary: #00c875;
-            --danger: #dc3545;
-            --danger-dark: #c82333;
+            --error: #dc3545;
+            --error-dark: #c82333;
             --text: #333;
             --text-light: #666;
-            --bg-light: #f8f9fa;
             --border: #e0e0e0;
             --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
             --modal-bg: rgba(0, 0, 0, 0.5);
@@ -140,7 +139,7 @@
         }
 
         .btn-outline:hover {
-            background: var(--bg-light);
+            background: var(--secondary);
         }
         
         .btn-green {
@@ -152,11 +151,11 @@
         }
 
         .btn-danger {
-            background: var(--danger);
+            background: var(--error);
             color: white;
         }
         .btn-danger:hover {
-            background: var(--danger-dark);
+            background: var(--error-dark);
         }
 
         /* Boards Grid */
@@ -320,7 +319,7 @@
             transition: color 0.2s;
         }
         .member-card-actions button:hover {
-            color: var(--danger);
+            color: var(--error);
         }
 
         .member-name {
@@ -384,7 +383,7 @@
         }
 
         .board-table tbody tr:hover {
-            background-color: var(--bg-light);
+            background-color: var(--secondary);
         }
         
         .editable-cell {
@@ -459,7 +458,7 @@
             transition: color 0.2s;
         }
         .task-actions button:hover {
-            color: var(--danger);
+            color: var(--error);
         }
         
         .file-cell {
@@ -467,11 +466,11 @@
         }
 
         .file-cell a {
-            color: var(--danger);
+            color: var(--error);
         }
 
         .file-icon {
-            color: var(--danger);
+            color: var(--error);
             font-size: 20px;
         }
 

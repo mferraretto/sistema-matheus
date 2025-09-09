@@ -612,7 +612,7 @@ let consulta;
             <button onclick="editarMeta(this, '${sku}')" class="btn btn-sm" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">
               <i class="fas fa-edit"></i>
             </button>
-            <button onclick="excluirMeta('${sku}', this)" class="btn btn-sm" style="background: rgba(239, 71, 111, 0.1); color: var(--danger);">
+            <button onclick="excluirMeta('${sku}', this)" class="btn btn-sm" style="background: rgba(239, 71, 111, 0.1); color: var(--error);">
               <i class="fas fa-trash-alt"></i>
             </button>
           </td>
@@ -1145,7 +1145,7 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
 
         const progresso = (item.status === 'postado' ? 1 : 0) + (item.checklist.itens ? 1 : 0) + (item.checklist.etiqueta ? 1 : 0) + (item.checklist.lacre ? 1 : 0);
         const progressoPercent = (progresso / 4) * 100;
-        const corProgresso = progressoPercent === 100 ? 'var(--success)' : (progressoPercent >= 50 ? '#f59e0b' : 'var(--danger)');
+        const corProgresso = progressoPercent === 100 ? 'var(--success)' : (progressoPercent >= 50 ? '#f59e0b' : 'var(--error)');
 
         tr.innerHTML = `
           <td>${p.id}</td>
@@ -1161,7 +1161,7 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
             <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','etiqueta', this.checked)" ${item.checklist.etiqueta ? 'checked' : ''}/> Etiqueta</label><br>
             <label><input type="checkbox" onchange="atualizarChecklist('${p.id}','lacre', this.checked)" ${item.checklist.lacre ? 'checked' : ''}/> Lacre</label>
           </td>
-          <td><div class="progress-wrapper"><div class="progress-bar" style="width:${progressoPercent}%; background:${corProgresso};"></div></div></td>
+          <td><div class="progress"><div class="progress-bar" style="width:${progressoPercent}%; background:${corProgresso};"></div></div></td>
           <td>${postadoPrazo === null ? '-' : postadoPrazo ? 'Sim' : 'Não'}</td>
         `;
         tbody.appendChild(tr);
