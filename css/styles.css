@@ -27,7 +27,7 @@
   --highlight: #FF6F61;
   --highlight-hover: #E65B54;
   --transition: all 0.3s ease;
-  --navbar-height: 70px;
+  --navbar-height: 64px;
   --sidebar-width: 16rem;
 }
     
@@ -1189,12 +1189,13 @@ body.dark-mode .table-container {
 body.dark-mode .navbar {
   background: var(--card-bg);
   color: var(--text);
-  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  border-bottom: 1px solid var(--border);
 }
 body.dark-mode .navbar .menu-item {
   color: var(--text);
 }
 body.dark-mode .navbar .menu-item:hover {
+  background-color: rgba(255,255,255,0.1);
   color: #fff;
 }
 body.dark-mode .form-control {
@@ -1280,10 +1281,6 @@ body.dark-mode .data-table th {
 
 
 .navbar {
-  height: var(--navbar-height);
-  background: var(--card);
-  color: var(--text-dark);
-  box-shadow: 0 2px 10px rgba(0,0,0,.05);
   position: fixed;
   top: 0;
   left: var(--sidebar-width);
@@ -1291,8 +1288,15 @@ body.dark-mode .data-table th {
   z-index: 99;
   display: flex;
   align-items: center;
-  padding: 0 25px;
   justify-content: space-between;
+  height: var(--navbar-height);
+  padding: 0 1rem;
+  background: var(--card);
+  color: var(--text-dark);
+  border-bottom: 1px solid rgba(229,231,235,0.7);
+}
+@media (min-width:768px) {
+  .navbar { padding-left: 1.5rem; padding-right: 1.5rem; }
 }
 .navbar .hamburger {
   display: none;
@@ -1300,13 +1304,20 @@ body.dark-mode .data-table th {
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 20px
+  gap: 20px;
 }
 .navbar .menu-item {
   color: var(--text-light);
-  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 .navbar .menu-item:hover {
+  background-color: #f5f5f5;
   color: var(--text-dark);
 }
 .user-dropdown {
@@ -1713,20 +1724,17 @@ input:checked + .toggle-slider:before {
 
     
   @media (max-width:768px) {
-    :root { --navbar-height: 50px; }
+    :root { --navbar-height: 64px; }
     .grid-cols-2 {
-      grid-template-columns: 1fr
+      grid-template-columns: 1fr;
     }
     .modal-content {
       width: 95%;
-      margin: 10px auto
+      margin: 10px auto;
     }
     .navbar {
       left: 0;
-      height: var(--navbar-height);
-      padding: 0 10px;
-      background-color: rgba(0,0,0,0.8);
-      color: #fff;
+      padding: 0 1rem;
     }
     .navbar .menu-item {
       display: none;

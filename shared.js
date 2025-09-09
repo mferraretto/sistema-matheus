@@ -471,6 +471,20 @@ document.addEventListener('navbarLoaded', setupMobileSidebar);
 document.addEventListener('sidebarLoaded', setupMobileSidebar);
 document.addEventListener('DOMContentLoaded', setupMobileSidebar);
 
+document.addEventListener('navbarLoaded', () => {
+  const btn = document.getElementById('userMenuBtn');
+  const menu = document.getElementById('userMenu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', () => {
+    menu.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!btn.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+});
+
 // Controle de visibilidade do sidebar baseado no perfil do usuário
 document.addEventListener('sidebarLoaded', async () => {
   const sidebar = document.getElementById('sidebar');
