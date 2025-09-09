@@ -120,7 +120,7 @@
   <script type="module" src="firebase-config.js"></script>
 
 
-  <script>
+  <script type="module">
   // ===== Utilitários UI =====
   const $ = (sel) => document.querySelector(sel);
   const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
@@ -137,7 +137,7 @@
     gestorModal:'#gestorModal', gestorSelect:'#gestorSelect', gestorConfirm:'#gestorConfirm', gestorCancel:'#gestorCancel'
   };
 
-  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+  if (!firebase.apps.length) { firebase.initializeApp(window.firebaseConfig); }
   const auth = firebase.auth();
   const db = firebase.firestore();
   const storage = firebase.storage();
