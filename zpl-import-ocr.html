@@ -318,15 +318,31 @@
       img.onerror=reject; img.src=URL.createObjectURL(blob);
     });
   }
-  async function ocrBlobToText(blob){
-    // Carrega Tesseract on-demand
-    if(!window.__tess){
-      window.__tess = Tesseract.createWorker();
-      await __tess.load();
-      await __tess.loadLanguage('eng');
-      await __tess.initialize('eng');
+  // --- Tesseract Worker Singleton ---
+  let _tessWorker = null;
+  async function getTessWorker(){
+    if (_tessWorker) return _tessWorker;
+    _tessWorker = await Tesseract.createWorker({
+      // logger: m => console.log(m), // opcional
+      // workerPath: '/tess/worker.min.js',
+      // corePath: '/tess/tesseract-core.wasm.js',
+      // langPath: '/tess/lang-data'
+    });
+    await _tessWorker.load();
+    await _tessWorker.loadLanguage('eng');
+    await _tessWorker.initialize('eng');
+    return _tessWorker;
+  }
+  async function terminateTess(){
+    if(_tessWorker){
+      await _tessWorker.terminate();
+      _tessWorker = null;
     }
-    const { data:{ text } } = await __tess.recognize(blob);
+  }
+
+  async function ocrBlobToText(blob){
+    const worker = await getTessWorker();
+    const { data:{ text } } = await worker.recognize(blob);
     return text||'';
   }
   function parseItemsFromText(text){
