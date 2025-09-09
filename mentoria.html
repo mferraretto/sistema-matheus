@@ -14,30 +14,11 @@
   <!-- Seus estilos -->
   <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="css/components.css">
-
-  <!-- Layout padrão para TODAS as páginas -->
-  <style>
-    :root { --sbw: 256px; } /* largura do sidebar */
-    @media (min-width:1024px){ .main-content { margin-left: var(--sbw); } } /* empurra o conteúdo no desktop */
-    .mobile-menu-btn{ position:fixed; left:12px; top:12px; z-index:50; }
-  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- Botão mobile -->
-  <button class="mobile-menu-btn lg:hidden bg-white rounded-md px-3 py-2 shadow"
-          onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
-
-  <!-- SIDEBAR fixo no desktop / offcanvas no mobile -->
-  <aside id="sidebar-container"
-         class="fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40
-                transition-transform duration-200 ease-out
-                -translate-x-full lg:translate-x-0 shadow-lg">
-    <!-- parcial é injetado aqui -->
-  </aside>
-
-  <!-- NAVBAR -->
-  <div id="navbar-container" class="lg:pl-64"></div>
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
 
   <!-- CONTEÚDO -->
   <main class="main-content p-4 space-y-4">

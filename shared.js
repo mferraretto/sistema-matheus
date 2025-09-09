@@ -310,7 +310,7 @@ async function loadPartial(selector, path){
     el = document.createElement(selector.startsWith('#') ? 'div' : 'aside');
     el.id = id;
     if (id === 'sidebar-container') {
-      el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] bg-purple-700 text-white overflow-auto z-40 transition-transform duration-200 ease-out shadow-lg';
+      el.className = 'fixed inset-y-0 left-0 w-64 max-w-[80vw] overflow-auto z-40 transition-transform duration-200 ease-out shadow-lg';
       document.body.prepend(el);
       // garante margem do conteúdo no desktop
       document.querySelector('.main-content')?.classList.add('lg:ml-64');
@@ -320,7 +320,7 @@ async function loadPartial(selector, path){
     }
   } else {
     if (id === 'sidebar-container') {
-      el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','bg-purple-700','text-white','overflow-auto','z-40','transition-transform','duration-200','ease-out','shadow-lg');
+      el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','overflow-auto','z-40','transition-transform','duration-200','ease-out','shadow-lg');
       document.querySelector('.main-content')?.classList.add('lg:ml-64');
     }
   }

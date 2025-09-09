@@ -11,8 +11,7 @@
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body class="bg-gray-100 text-gray-800">
-  <button class="mobile-menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
-  <div id="sidebar-container" class="-translate-x-full"></div>
+  <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
 
   <main class="main-content p-4 space-y-4">
@@ -68,9 +67,9 @@
   </div>
 </template>
 
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="comunicacao.js"></script>
   <script>window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';</script>
   <script src="shared.js"></script>
+  <script type="module" src="firebase-config.js"></script>
+  <script type="module" src="comunicacao.js"></script>
 </body>
 </html>
