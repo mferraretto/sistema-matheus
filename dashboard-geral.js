@@ -276,8 +276,8 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
           {
             label: 'Bruto',
             data: dias.map(d => diarioBruto[d]),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(99,102,241,0.2)',
             tension: 0.3
           },
           {
@@ -317,7 +317,7 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
         labels: lojas,
         datasets: [{
           data: lojas.map(l => porLoja[l]),
-          backgroundColor: ['#3b82f6','#f97316','#6366f1','#10b981','#f59e0b','#ef4444']
+          backgroundColor: ['var(--primary-light)','var(--highlight)','var(--primary)','var(--success)','#f59e0b','#ef4444']
         }]
       },
       options: opts
@@ -376,7 +376,7 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
     data: {
       labels,
       datasets: [
-        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: '#3b82f6', yAxisID: 'y' },
+        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: 'var(--primary)', yAxisID: 'y' },
         { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
       ]
     },
@@ -430,7 +430,7 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
         datasets: [{
           label: 'Valor (R$)',
           data: [meta, liquido],
-          backgroundColor: ['#9ca3af', '#3b82f6']
+          backgroundColor: ['#9ca3af', 'var(--primary)']
         }]
       },
       options: opts
@@ -464,8 +464,8 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
           {
             label: 'Realizado',
             data: realAcum,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.2)',
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(99,102,241,0.2)',
             tension: 0.3
           },
           {
@@ -727,16 +727,16 @@ async function exportarFechamentoMes() {
           {
             label: 'Bruto',
             data: dias.map(d => dashboardData.diarioBruto[d] || 0),
-            borderColor: '#4C1D95',
-            backgroundColor: 'rgba(76,29,149,0.15)',
+            borderColor: 'var(--primary-dark)',
+            backgroundColor: 'rgba(79,70,229,0.15)',
             fill: false,
             tension: 0.3
           },
           {
             label: 'Líquido',
             data: dias.map(d => dashboardData.diarioLiquido[d] || 0),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.15)',
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(99,102,241,0.15)',
             fill: false,
             tension: 0.3
           }
@@ -780,8 +780,8 @@ async function exportarFechamentoMes() {
           {
             label: 'Acumulado',
             data: acumulado,
-            borderColor: '#4C1D95',
-            backgroundColor: 'rgba(76,29,149,0.2)',
+            borderColor: 'var(--primary-dark)',
+            backgroundColor: 'rgba(79,70,229,0.2)',
             tension: 0.3
           },
           {
@@ -824,7 +824,7 @@ async function exportarFechamentoMes() {
         labels: ['Atingido', 'Restante'],
         datasets: [{
           data: [pct, Math.max(100 - pct, 0)],
-          backgroundColor: ['#4C1D95', '#e5e7eb'],
+          backgroundColor: ['var(--primary-dark)', '#e5e7eb'],
           borderWidth: 0
         }]
       },
@@ -851,7 +851,7 @@ async function exportarFechamentoMes() {
         labels: ['Bruto', 'Líquido'],
         datasets: [{
           data: [dashboardData.totalBruto, dashboardData.totalLiquido],
-          backgroundColor: ['#4C1D95', '#3b82f6']
+          backgroundColor: ['var(--primary-dark)', 'var(--primary)']
         }]
       },
       options: opts
@@ -913,8 +913,8 @@ function gerarHTMLFechamento() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
         @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
         :root {
-          --primary-color: #4C1D95;
-          --secondary-color: #3b82f6;
+          --primary-color: #6366F1;
+          --secondary-color: #14B8A6;
           --text-color: #111827;
           --bg-color: #f8f8f8;
           --card-bg: #ffffff;

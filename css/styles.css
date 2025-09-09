@@ -1,31 +1,31 @@
 
 :root {
   /* VendedorPro brand color palette */
-  --primary: #5E60CE;
-  --primary-hover: #7678ED;
-  --primary-dark: #4B4DAA;
-  --primary-light: #B8B9F2;
-  --brand: #5E60CE;
-  --hover: #7678ED;
-  --dark: #1C2B36;
-  --secondary: #F5F5F5;
+  --primary: #6366F1;
+  --primary-hover: #818CF8;
+  --primary-dark: #4F46E5;
+  --primary-light: #A5B4FC;
+  --brand: #6366F1;
+  --hover: #818CF8;
+  --dark: #0F172A;
+  --secondary: #F3F4F6;
   --nav-bg: var(--primary);
   --success: #4CAF50;
   --error: #F44336;
   --danger: #F44336;
-  --bg-light: #F5F5F5;
+  --bg-light: #F3F4F6;
   --background: #FFFFFF;
   --bg: #FFFFFF;
   --border: #e5e7eb;
-  --card: #F5F5F5;
-  --card-bg: #F5F5F5;
+  --card: #FFFFFF;
+  --card-bg: #FFFFFF;
   --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
   --gray: #6B7280;
-  --text: #212121;
-  --text-dark: #212121;
-  --text-light: #9E9E9E;
-  --highlight: #FF6F61;
-  --highlight-hover: #E65B54;
+  --text: #0F172A;
+  --text-dark: #0F172A;
+  --text-light: #6B7280;
+  --highlight: #14B8A6;
+  --highlight-hover: #0D9488;
   --transition: all 0.3s ease;
   --navbar-height: 64px;
   --sidebar-width: 16rem;
@@ -113,7 +113,7 @@ body.has-sidebar .content-wrapper {
   align-items: center;
  justify-content: center;
   margin-right: 15px;
-  background-color: rgba(255,112,67,0.1); /* subtle highlight */
+  background-color: rgba(20,184,166,0.1); /* subtle highlight */
   color: var(--primary);
 }
 
@@ -233,7 +233,7 @@ input:checked + .dark-mode-slider:before {
 }
 
 #tarefasCard .card-header-icon {
-  background-color: rgba(255,112,67,0.1);
+  background-color: rgba(20,184,166,0.1);
   color: var(--primary);
 }
 
@@ -1173,16 +1173,18 @@ h4 {
   }
 }
 body.dark-mode {
-  --background: #1a202c;
-  --primary: #5E60CE;
-  --primary-hover: #7678ED;
-  --secondary: #2D3748;
+  --background: #0F172A;
+  --primary: #6366F1;
+  --primary-hover: #818CF8;
+  --secondary: #1E293B;
   --bg: #1E293B;
-  --card: #1F2937;
-  --card-bg: #1F2937;
-  --text: #CBD5E1;
+  --card: #1E293B;
+  --card-bg: #1E293B;
+  --text: #E5E7EB;
   --text-light: #94A3B8;
-  --border: #475569;
+  --border: #334155;
+  --highlight: #14B8A6;
+  --highlight-hover: #0D9488;
   --card-shadow: 0 4px 6px rgba(0,0,0,0.4);
   color: var(--text);
   background: var(--background);
@@ -1207,13 +1209,13 @@ body.dark-mode .navbar .menu-item:hover {
   color: #fff;
 }
 body.dark-mode .form-control {
-  background: #4a5568;
-  border-color: #4a5568;
+  background: #334155;
+  border-color: #334155;
   color: var(--text);
 }
 body.dark-mode .table th,
 body.dark-mode .data-table th {
-  background: #4a5568;
+  background: #334155;
 }
 
 .submenu .nav-item {

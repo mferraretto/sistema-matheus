@@ -729,8 +729,8 @@ function updateSalesChart(labels, data) {
         datasets: [{
           label: 'Vendas',
           data,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.2)',
+          borderColor: 'var(--primary)',
+          backgroundColor: 'rgba(99,102,241,0.2)',
           tension: 0.3
         }]
       },

@@ -116,13 +116,13 @@
 
 /* Color variations for financeiro cards */
 .card-blue {
-  border-top: 4px solid #3b82f6;
+  border-top: 4px solid var(--primary);
 }
 .card-blue .card-header {
-  background-color: #eff6ff;
+  background-color: #eef2ff;
 }
 .card-blue .card-header h2 {
-  color: #1e3a8a;
+  color: var(--primary-dark);
 }
 
 .card-green {
