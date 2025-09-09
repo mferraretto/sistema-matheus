@@ -586,39 +586,22 @@ chkCtx.drawImage(
 
       
             
-     // COMBINA AS DUAS PARTES EM UM ÚNICO CANVAS
+     // COMBINAÇÃO FINAL: somente a etiqueta principal (sem checklist no PNG final)
 const etiquetaCompletaCanvas = document.createElement("canvas");
 const paddingX = 0; // margem lateral extra (se quiser)
 etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
 
-const ajusteVerticalChecklist = 12;
+const ajusteVerticalChecklist = 12; // pequeno espaçamento interno
 etiquetaCompletaCanvas.height =
   (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
-  novaAlturaChecklist +
   ajusteVerticalChecklist;
 
 const completoCtx = etiquetaCompletaCanvas.getContext("2d");
 completoCtx.imageSmoothingEnabled = true;
 completoCtx.imageSmoothingQuality = 'high';
 
-// Desenha a etiqueta principal
+// Desenha somente a etiqueta principal
 completoCtx.drawImage(etCanvas, paddingX, 0);
-
-// 👉 POSICIONAMENTO QUE VOCÊ VAI AJUSTAR
-// Horizontal: posX (esquerda/direita)
-// Vertical:   posY (cima/baixo)
-const posX = paddingX -2100; // +valor = direita, -valor = esquerda
-const posY = (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) + ajusteVerticalChecklist - 0; // +valor = desce, -valor = sobe
-
-const zoomChecklist = 2.2; // 2.0 = tamanho atual, 1.5 = 50% maior, 2.0 = 100% maior
-
-completoCtx.drawImage(
-  chkCanvas,
-  0, 0, chkCanvas.width, chkCanvas.height, // origem: imagem inteira
-  posX, posY,                               // posição final
-  colWidth * zoomChecklist,                 // largura com zoom
-  novaAlturaChecklist * zoomChecklist       // altura com zoom
-);
 
 
       // Inserção no novo PDF
