@@ -238,11 +238,29 @@ firebase.auth().onAuthStateChanged(async u => {
       });
     }
 
+    // ===== Worker único do Tesseract para acelerar OCR =====
+    let ocrWorker = null;
+    async function ensureOcrWorker(){
+      if (ocrWorker) return ocrWorker;
+      ocrWorker = await Tesseract.createWorker({ logger: null });
+      await ocrWorker.load();
+      await ocrWorker.loadLanguage('por+eng');
+      await ocrWorker.initialize('por+eng');
+      await ocrWorker.setParameters({
+        tessedit_pageseg_mode: '6',
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '200',
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+_-/.: áéíóúãõçÁÉÍÓÚÃÕÇ'
+      });
+      return ocrWorker;
+    }
+
     async function extractSkuQuantitiesFromCanvas(canvas, info) {
       const ctxInfo = info || {};
       console.groupCollapsed('[OCR] Iniciando reconhecimento', ctxInfo);
       console.time('[OCR] tempo');
-      const { data } = await Tesseract.recognize(canvas, 'por+eng');
+      await ensureOcrWorker();
+      const { data } = await ocrWorker.recognize(canvas);
       const text = data?.text || '';
       console.timeEnd('[OCR] tempo');
       console.log('[OCR] Dimensões canvas', { width: canvas.width, height: canvas.height });
@@ -503,7 +521,7 @@ firebase.auth().onAuthStateChanged(async u => {
     progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
 
     const page = await pdf.getPage(i + 1);
-    const scale = 8;
+    const scale = 5; // reduzir escala acelera renderização do PDF js
     const viewport = page.getViewport({ scale });
 
     canvas.width = viewport.width;
@@ -547,7 +565,7 @@ firebase.auth().onAuthStateChanged(async u => {
       const deslocamentoY = 60; 
 const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
       
-     const scaleChecklist = 8; // resolução extra
+     const scaleChecklist = 4; // reduzir resolução acelera OCR mantendo precisão
 chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
 chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
 const chkCtx = chkCanvas.getContext("2d");
