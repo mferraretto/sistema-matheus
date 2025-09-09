@@ -129,7 +129,7 @@ function renderEvolucao(diaria) {
         datasets: [{
           label: 'Vendas diárias',
           data: dias.map(d => diaria[d]),
-          borderColor: '#6366f1',
+          borderColor: 'var(--primary)',
           backgroundColor: 'rgba(99,102,241,0.2)',
           tension: 0.3
         }]
@@ -148,7 +148,7 @@ function renderEvolucao(diaria) {
         datasets: [{
           label: 'Vendas semanais',
           data: semanas.map(s => semanal[s]),
-          backgroundColor: '#6366f1'
+          backgroundColor: 'var(--primary)'
         }]
       },
       options: { responsive: true, maintainAspectRatio: false }
@@ -165,7 +165,7 @@ function renderEvolucao(diaria) {
         datasets: [{
           label: 'Vendas mensais',
           data: meses.map(m => mensal[m]),
-          backgroundColor: '#3b82f6'
+          backgroundColor: 'var(--primary)'
         }]
       },
       options: { responsive: true, maintainAspectRatio: false }

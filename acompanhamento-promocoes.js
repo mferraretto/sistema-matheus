@@ -42,8 +42,8 @@ const promocoes = [
 const tipoConfig = {
   'Desconto': { color: '#dc2626', icon: '🔻' },
   'Oferta Relâmpago': { color: '#f97316', icon: '⚡' },
-  'Cupom de Vendedor': { color: '#a855f7', icon: '🎫' },
-  'Shopee Ads': { color: '#3b82f6', icon: '📢' },
+  'Cupom de Vendedor': { color: 'var(--primary-light)', icon: '🎫' },
+  'Shopee Ads': { color: 'var(--primary)', icon: '📢' },
   'Shopee Live': { color: '#16a34a', icon: '🎥' },
   'Moedas': { color: '#fbbf24', icon: '💰' },
   'Avaliação': { color: '#86efac', icon: '⭐' },
@@ -121,7 +121,7 @@ function verDetalhes(id) {
       datasets: [
         { label: 'Vendas', data: vendas, borderColor: '#f97316', fill: false },
         { label: 'Fora da promoção', data: fora, borderColor: '#94a3b8', borderDash: [5,5], fill: false },
-        { label: 'Outra promoção', data: comparacao, borderColor: '#3b82f6', fill: false }
+        { label: 'Outra promoção', data: comparacao, borderColor: 'var(--primary)', fill: false }
       ]
     }
   });

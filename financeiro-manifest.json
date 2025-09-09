@@ -4,7 +4,7 @@
   "start_url": "financeiro.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2196f3",
+  "theme_color": "#6366F1",
   "icons": [
     {
       "src": "icons/icon-192.png",

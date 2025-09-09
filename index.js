@@ -340,7 +340,7 @@ async function carregarTopSkus(uid, isAdmin) {
     return;
   }
   const max = ordenado[0][1];
-  const cores = ['var(--primary)', 'var(--success)', 'var(--secondary)', '#3b82f6', '#a855f7'];
+  const cores = ['var(--primary)', 'var(--success)', 'var(--highlight)', 'var(--primary-dark)', 'var(--primary-light)'];
   const linhas = ordenado.map(([ch,q],i) => {
     const [sku] = ch.split('||');
     const largura = (q / max) * 100;
