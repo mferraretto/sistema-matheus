@@ -1841,6 +1841,13 @@ input:checked + .toggle-slider:before {
   padding-top: 1rem;
 }
 
+.sidebar-menu,
+.sidebar-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
