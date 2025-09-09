@@ -1281,7 +1281,7 @@ body.dark-mode .data-table th {
 .navbar {
   position: fixed;
   top: 0;
-  left: var(--sidebar-width);
+  left: 0;
   right: 0;
   z-index: 99;
   display: flex;

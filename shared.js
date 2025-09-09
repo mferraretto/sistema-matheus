@@ -384,8 +384,8 @@ async function ensureLayout(){
   }
 }
 
-// roda em várias fases para cobrir login/redirect/back-forward-cache
-['DOMContentLoaded','load','pageshow','focus'].forEach(evt=>{
+// roda em momentos essenciais para evitar recargas desnecessárias
+['DOMContentLoaded','pageshow'].forEach(evt=>{
   window.addEventListener(evt, ensureLayout, { once: false });
 });
 
@@ -468,6 +468,7 @@ document.addEventListener('navbarLoaded', setupMobileSidebar);
 document.addEventListener('sidebarLoaded', setupMobileSidebar);
 document.addEventListener('DOMContentLoaded', setupMobileSidebar);
 
+let userMenuClickRegistered = false;
 document.addEventListener('navbarLoaded', () => {
   const btn = document.getElementById('userMenuBtn');
   const menu = document.getElementById('userMenu');
@@ -475,11 +476,17 @@ document.addEventListener('navbarLoaded', () => {
   btn.addEventListener('click', () => {
     menu.classList.toggle('hidden');
   });
-  document.addEventListener('click', (e) => {
-    if (!btn.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add('hidden');
-    }
-  });
+  if (!userMenuClickRegistered) {
+    document.addEventListener('click', (e) => {
+      const b = document.getElementById('userMenuBtn');
+      const m = document.getElementById('userMenu');
+      if (!b || !m) return;
+      if (!b.contains(e.target) && !m.contains(e.target)) {
+        m.classList.add('hidden');
+      }
+    });
+    userMenuClickRegistered = true;
+  }
 });
 
 // Controle de visibilidade do sidebar baseado no perfil do usuário
