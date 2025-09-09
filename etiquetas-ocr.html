@@ -313,6 +313,8 @@ firebase.auth().onAuthStateChanged(async u => {
   const arrayBuffer = await pdfFile.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const novoPdf = await PDFLib.PDFDocument.create();
+  // Fonte para escrever o rodapé textual (SKU + Quantidade) no PDF
+  const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
   const canvas = document.getElementById("pdfCanvas");
   const ctx = canvas.getContext("2d");
   canvas.style.display = "block";
@@ -447,12 +449,46 @@ completoCtx.drawImage(
       // Adiciona uma página para cada etiqueta
       const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
 
+      // Desenha a imagem da etiqueta
       pag.drawImage(imgEmbed, {
         x: margemX,
         y: yPos,
         width: larguraEtiquetaFinal,
         height: alturaEtiquetaFinal,
       });
+
+      // Rodapé textual com dados reconhecidos (em texto, não imagem)
+      if (extracted && extracted.length) {
+        const linhas = extracted.map(it => `\u2714 SKU: ${it.sku} | Quantidade: ${it.quantidade}`);
+        const fontSize = 9.5;
+        const gap = 2;
+        const padding = 4;
+        const blocoAltura = (fontSize + gap) * linhas.length + padding * 2;
+
+        // Preferência: desenhar logo abaixo da etiqueta; se não couber, sobrepor a base da etiqueta
+        let footerY = yPos - blocoAltura - 2;
+        if (footerY < 2) footerY = yPos; // sem espaço: sobrepõe base da etiqueta
+
+        // Fundo branco para garantir legibilidade
+        pag.drawRectangle({
+          x: margemX,
+          y: footerY,
+          width: larguraEtiquetaFinal,
+          height: blocoAltura,
+          color: PDFLib.rgb(1, 1, 1)
+        });
+
+        // Texto em preto
+        for (let li = 0; li < linhas.length; li++) {
+          pag.drawText(linhas[li], {
+            x: margemX + 6,
+            y: footerY + padding + li * (fontSize + gap),
+            size: fontSize,
+            font: rodapeFont,
+            color: PDFLib.rgb(0, 0, 0)
+          });
+        }
+      }
     }
   }
 
