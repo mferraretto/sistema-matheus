@@ -918,12 +918,23 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       const custo = parseFloat(document.getElementById("custo").value) || 0;
       const produto = document.getElementById("produto").value.trim();
       const sku = document.getElementById("sku").value.trim();
-      
+
       if (!produto || custo <= 0) {
         showToast("Preencha o nome do produto e um custo válido!", "warning");
         return;
       }
 
+      if (plataforma === 'shopee' && document.getElementById('shopee_duas_taxas')?.checked) {
+        sistema.produtoEditando = null;
+        calcularComTaxa(plataforma, custo, produto, sku, 20, true);
+        calcularComTaxa(plataforma, custo, produto, sku, 14, true);
+        return;
+      }
+
+      calcularComTaxa(plataforma, custo, produto, sku);
+    }
+
+    function calcularComTaxa(plataforma, custo, produto, sku, taxaOverride, forceNew = false) {
       let totalPercentual = 0;
       let totalFixo = 0;
       const taxasDetalhadas = {};
@@ -931,17 +942,17 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       // Taxa da Plataforma
       const taxaSelect = document.getElementById(`${plataforma}_taxa_select`);
       const taxaInput = document.getElementById(`${plataforma}_taxa_custom`);
-      const taxa = taxaInput.value.trim() !== '' ? 
-                   parseFloat(taxaInput.value) : 
-                   parseFloat(taxaSelect.value) || 0;
+      const taxa = typeof taxaOverride === 'number'
+        ? taxaOverride
+        : (taxaInput.value.trim() !== '' ? parseFloat(taxaInput.value) : parseFloat(taxaSelect.value) || 0);
       totalPercentual += taxa;
       taxasDetalhadas['Taxas da Plataforma (%)'] = taxa;
 
       // Custo Fixo
       const fixoSelect = document.getElementById(`${plataforma}_fixo_select`);
       const fixoInput = document.getElementById(`${plataforma}_fixo_custom`);
-      const fixo = fixoInput.value.trim() !== '' ? 
-                   parseFloat(fixoInput.value) : 
+      const fixo = fixoInput.value.trim() !== '' ?
+                   parseFloat(fixoInput.value) :
                    parseFloat(fixoSelect.value) || 0;
       totalFixo += fixo;
       taxasDetalhadas['Custo Fixo Plataforma (R$)'] = fixo;
@@ -970,26 +981,27 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       // Calcular preço mínimo (sem lucro)
       const precoMinimo = ((custo + totalFixo) / (1 - totalPercentual / 100)).toFixed(2);
       document.getElementById(`preco_${plataforma}`).value = precoMinimo;
-      
+
       // Calcular cenários de lucro
-       const precoPromo = precoMinimo; // 0% de lucro
+      const precoPromo = precoMinimo; // 0% de lucro
       const precoMedio = (precoMinimo * 1.05).toFixed(2); // 5% de lucro
       const precoIdeal = (precoMinimo * 1.10).toFixed(2); // 10% de lucro
-      
+
       document.getElementById(`preco_${plataforma}_ideal`).textContent = `R$ ${precoIdeal}`;
       document.getElementById(`preco_${plataforma}_medio`).textContent = `R$ ${precoMedio}`;
       document.getElementById(`preco_${plataforma}_promo`).textContent = `R$ ${precoPromo}`;
 
-      // Se está editando, atualiza o produto existente
-      if (sistema.produtoEditando) {
-        atualizarProduto(produto, sku, plataforma.toUpperCase(), precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas);
+      const plataformaNome = plataforma.toUpperCase();
+
+      if (!forceNew && sistema.produtoEditando) {
+        atualizarProduto(produto, sku, plataformaNome, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas);
         sistema.produtoEditando = null;
       } else {
-        salvarProduto(produto, sku, plataforma.toUpperCase(), precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas);
+        salvarProduto(produto, sku, plataformaNome, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxasDetalhadas, forceNew);
       }
     }
 
-    async function salvarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
+    async function salvarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas, forceNew = false) {
       const user = auth.currentUser;
       if (!user) {
         showToast("Usuário não autenticado!", "error");
@@ -1011,33 +1023,46 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       };
 
       try {
- const querySnapshot = await db
-          .collection('uid')
-          .doc(user.uid)
-          .collection('produtos')
-          .where('sku', '==', sku)
-          .get();
-
-        if (!querySnapshot.empty) {
-          const docId = querySnapshot.docs[0].id;
-await db
+        if (!forceNew) {
+          const querySnapshot = await db
             .collection('uid')
             .doc(user.uid)
             .collection('produtos')
-            .doc(docId)
-            .update(novoProduto);
-          const index = sistema.produtos.findIndex(item => item.id === docId);
-          if (index !== -1) {
-            sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
-          } else {
-            sistema.produtos.unshift({ ...novoProduto, id: docId });
-          }
+            .where('sku', '==', sku)
+            .get();
 
-          atualizarLista();
-          showToast("Produto atualizado com sucesso!", "success");
-          addHistoryEntry('product_edit', `Produto "${produto}" atualizado`);
+          if (!querySnapshot.empty) {
+            const docId = querySnapshot.docs[0].id;
+            await db
+              .collection('uid')
+              .doc(user.uid)
+              .collection('produtos')
+              .doc(docId)
+              .update(novoProduto);
+            const index = sistema.produtos.findIndex(item => item.id === docId);
+            if (index !== -1) {
+              sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
+            } else {
+              sistema.produtos.unshift({ ...novoProduto, id: docId });
+            }
+
+            atualizarLista();
+            showToast("Produto atualizado com sucesso!", "success");
+            addHistoryEntry('product_edit', `Produto \"${produto}\" atualizado`);
+          } else {
+            const docRef = await db
+              .collection('uid')
+              .doc(user.uid)
+              .collection('produtos')
+              .add(novoProduto);
+            sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
+            atualizarLista();
+
+            showToast("Produto criado com sucesso!", "success");
+            addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+          }
         } else {
- const docRef = await db
+          const docRef = await db
             .collection('uid')
             .doc(user.uid)
             .collection('produtos')
@@ -1046,7 +1071,7 @@ await db
           atualizarLista();
 
           showToast("Produto criado com sucesso!", "success");
-          addHistoryEntry('product_add', `Produto "${produto}" cadastrado para ${plataforma}`);
+          addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
         }
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
