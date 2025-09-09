@@ -281,16 +281,26 @@
     const dg = (allZplText.match(/^~DG[^\r\n]+/gmi) || []).join('\n');
     return dg ? dg + '\n' : '';
   }
-  function extractFDText(zpl){ // concatena texto entre ^FD ... ^FS
-    const out=[]; const re=/\^FD([\s\S]*?)\^FS/g; let m; while((m=re.exec(zpl))!==null){ out.push(m[1].trim()); }
-    return out.join('\n');
+  function decodeZplFieldText(s, wholeBlock){
+    if(/\^FH/i.test(wholeBlock)){
+      s = s.replace(/_([0-9A-F]{2})/gi, (_,hh)=>String.fromCharCode(parseInt(hh,16)));
+    }
+    s = s.replace(/\&/g,'^');
+    s = s.replace(/[|=\[\]]+/g,' ').replace(/\s{2,}/g,' ').trim();
+    return s;
   }
+  function extractFdTextFromZpl(zpl){
+    const out=[]; const re=/\^FD([\s\S]*?)\^FS/gm; let m; while((m=re.exec(zpl))!==null){ out.push(decodeZplFieldText(m[1], zpl)); }
+    return out.join('\n').trim();
+  }
+  function hasFd(zpl){ return /\^FD[\s\S]*?\^FS/i.test(zpl); }
+  function hasRaster(zpl){ return /\^(XG|GF|DG|DGR)\b|~DG/i.test(zpl); }
   function detectLojaFromZpl(labelZpl){
     // tenta ^FDRemetente: NOME^FS ou linhas com "REMENTE"/"REMETENTE"
     let m = labelZpl.match(/\^FD\s*Remetente:?\s*([^\^]+)\^FS/i);
     if(m) return m[1].trim();
     // fallback: tenta qualquer ^FD com palavra-chave
-    const all = extractFDText(labelZpl).split(/\r?\n/);
+    const all = extractFdTextFromZpl(labelZpl).split(/\r?\n/);
     for(const line of all){
       const mm = line.match(/Remetente:?\s*(.+)/i);
       if(mm) return mm[1].trim();
@@ -356,17 +366,22 @@
     ctx.putImageData(imgData,0,0);
     return new Promise(res=>canvas.toBlob(res));
   }
-  async function ocrBestRotation(pngBlob, worker){
+  async function ocrBestRotation(pngBlob, worker, threshold=170){
     const img=await blobToImage(pngBlob);
     const rotations=[0,90,270];
     let best={text:'',conf:-1};
     for(const deg of rotations){
       const rotated=await rotateImageBlob(img,deg);
-      const bin=await binarizeBlob(rotated,170);
+      const bin=await binarizeBlob(rotated,threshold);
       const { data } = await worker.recognize(bin);
       if(data.confidence>best.conf){ best={text:data.text, conf:data.confidence}; }
     }
     return best.text;
+  }
+  async function ocrChecklistBlock(zpl, prefix, widthIn, heightIn, worker){
+    const png = await renderZplToPngBlob(prefix + zpl, 12, widthIn, heightIn);
+    const txt = await ocrBestRotation(png, worker, 170);
+    return { text: (txt||'').trim(), blob: png };
   }
   function parseItemsFromText(text){
     console.log('[parseItemsFromText] raw text:', text);
@@ -486,9 +501,10 @@
       const zplPrefix = buildPrefixWithDG(zplText);
         const blocks = splitZplBlocks(zplText);
         console.log('[btnProcessar] blocks found', blocks.length);
-        if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
+        if(blocks.length % 2 !== 0){ console.warn('[process] número ímpar de blocos — pode faltar checklist'); }
+        if(blocks.length < 2){ throw new Error('Arquivo não contém blocos suficientes.'); }
 
-        const totalLabels = blocks.length/2;
+        const totalLabels = Math.floor(blocks.length/2);
         console.log('[btnProcessar] total labels', totalLabels);
         const startNumber = await getNextLabelNumber(totalLabels);
         const name = `etiquetas-${Date.now()}.pdf`;
@@ -513,7 +529,7 @@
 
       await ensureOcrWorker();
       let labelCounter = startNumber;
-      for(let i=0;i<blocks.length;i+=2){
+      for(let i=0;i+1<blocks.length;i+=2){
         const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
         console.log(`[btnProcessar] processando checklist ${idx}/${totalLabels}`);
         const labelZpl = blocks[i];
@@ -523,12 +539,21 @@
         const loja = detectLojaFromZpl(labelZpl);
         console.log('[btnProcessar] loja', loja);
 
-        // Renderizar checklist, OCR e parse
-        const checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
-        const ocrText = await ocrBestRotation(checklistBlob, ocrWorker);
-        if(!ocrText || ocrText.trim().length<3){ throw new Error(`Checklist #${idx} não contém texto reconhecível.`); }
-        let items = parseItemsFromText(ocrText);
-        if(!items.length){ throw new Error(`Nenhum item encontrado no checklist #${idx}.`); }
+        // Extrair texto do checklist
+        let checklistBlob, checklistText='';
+        if(hasFd(checklistZpl)){
+          checklistText = extractFdTextFromZpl(checklistZpl);
+          checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
+        } else if(hasRaster(checklistZpl)){
+          ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, ocrWorker));
+        } else {
+          console.warn(`[checklist] bloco sem ^FD e sem gráfico conhecido; tentando OCR mesmo assim`);
+          ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, ocrWorker));
+        }
+
+        console.log('[btnProcessar] texto extraído:', checklistText);
+        const items = parseItemsFromText(checklistText);
+        console.log('[btnProcessar] parsed items:', items);
 
         // Renderizar etiqueta
         const labelBlob = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
@@ -546,7 +571,11 @@
         pageChecklist.drawImage(checklistPng, { x:0, y:0, width: widthIn*72, height: (checklistPng.height/checklistPng.width)*widthIn*72 });
 
         // Salvar SKUs
-        await savePrintedItems(items, { loja, labelNumber: labelCounter, storagePath: pdfPath, responsavelUid });
+        if(items.length === 0){
+          console.info(`Sem itens; gerando PDF sem SKUs para a etiqueta ${labelCounter}`);
+        } else {
+          await savePrintedItems(items, { loja, labelNumber: labelCounter, storagePath: pdfPath, responsavelUid });
+        }
 
         labelCounter++;
         await sleep(120); // pequeno intervalo para não sobrecarregar API Labelary
