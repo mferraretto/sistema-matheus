@@ -197,7 +197,7 @@
     if(doc.exists){
       const d = doc.data()||{};
       if(Array.isArray(d.horariosEtiquetas)) horariosEtiquetas = d.horariosEtiquetas;
-      if(Array.isArray(d.gestoresExpedicaoEmails) && !$(el.gestoresEmails).value){
+      if(Array.isArray(d.gestoresExpedicaoEmails)){
         $(el.gestoresEmails).value = d.gestoresExpedicaoEmails.join(', ');
       }
     }
@@ -331,7 +331,7 @@
   }
   async function findUidByEmail(email){
     if(!email) return null;
-    const q = await db.collection('usuarios').where('email','==',email).limit(1).get();
+    const q = await db.collection('uid').where('email','==',email).limit(1).get();
     if(!q.empty){ const d=q.docs[0].data(); return d?.uid || q.docs[0].id; }
     return null;
   }
@@ -388,13 +388,15 @@
       const pdfDoc = await PDFLib.PDFDocument.create();
       const dpmm = 8, widthIn=4.0, heightIn=5.2;
 
+      const pdfName = `etiquetas-combinadas-${Date.now()}.pdf`;
       // Cria doc Firestore para metadados e reserva Storage path
       const metaRef = await db.collection('pdfDocs').add({
         ownerUid: currentUser.uid,
         ownerEmail: currentUser.email,
         gestorEmail: gestorEmail||null,
         created: firebase.firestore.FieldValue.serverTimestamp(),
-        total: totalLabels
+        total: totalLabels,
+        name: pdfName
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
 
@@ -440,6 +442,17 @@
       await ref.put(pdfBlob);
       const url = await ref.getDownloadURL();
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+      const record = {
+        name: pdfName,
+        url,
+        path: pdfPath,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+      if(responsavelUid){
+        await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add({ ...record });
+      }
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');
