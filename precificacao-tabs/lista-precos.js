@@ -63,15 +63,17 @@ function aplicarFiltros() {
   const tipo = document.getElementById('tipoFiltro')?.value || 'contains';
 
   const filtrados = produtos.filter(p => {
-    const texto = `${p.produto || ''} ${(p.sku || '')}`.toLowerCase();
+    const nome = (p.produto || '').toLowerCase();
+    const sku = (p.sku || '').toLowerCase();
+    const loja = (p.plataforma || '').toLowerCase();
     if (!termo) return true;
     if (tipo === 'exact') {
-      return texto === termo;
+      return nome === termo || sku === termo || loja === termo;
     }
     if (tipo === 'starts') {
-      return texto.startsWith(termo);
+      return nome.startsWith(termo) || sku.startsWith(termo) || loja.startsWith(termo);
     }
-    return texto.includes(termo);
+    return nome.includes(termo) || sku.includes(termo) || loja.includes(termo);
   });
 
   renderLista(filtrados);
