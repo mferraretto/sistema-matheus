@@ -1,680 +1,453 @@
-<!DOCTYPE html> 
-<html lang="pt-BR"> 
-<head> 
-    <meta charset="UTF-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>Combinador de Etiqueta ZPL</title> 
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=20240826">
-    <link rel="stylesheet" href="css/components.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- A biblioteca pdf-lib é carregada aqui -->
-    <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
-    <script type="module" src="firebase-config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-</head> 
-<body class="bg-gray-50">
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
-  <div class="main-content flex items-center justify-center min-h-screen p-4">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZPL Import – Sem Gemini</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #ff6a00; --bg:#0b0c10; --card:#111318; --muted:#9aa4b2; --ok:#18b57e; --err:#ff4d4d; }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#0b0c10,#0f1117);color:#e6e6e6}
+    header{position:sticky;top:0;z-index:5;background:rgba(15,17,23,.7);backdrop-filter:saturate(1.2) blur(10px);border-bottom:1px solid #1e2330}
+    .wrap{max-width:1120px;margin:0 auto;padding:20px}
+    h1{font-size:22px;display:flex;gap:10px;align-items:center;margin:0}
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:#18202f;color:#a8b3c7;border:1px solid #223049}
+    main{padding:28px 0}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    .card{background:linear-gradient(180deg,#0f1420,#0d121a);border:1px solid #1e2330;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+    .card h2{font-size:16px;margin:0 0 12px;color:#d9e1ee}
+    .card .body{padding:18px}
+    .muted{color:#9aa4b2;font-size:13px}
+    label{font-size:13px;color:#cfd7e6;margin-bottom:6px;display:block}
+    input[type=file],input[type=text],input[type=email],input[type=password],select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #2a3142;background:#0e1320;color:#e6eefc;outline:none}
+    input::placeholder{color:#667084}
+    .row{display:flex;gap:12px;align-items:center}
+    .btn{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:12px 16px;font-weight:600;background:linear-gradient(180deg,#ff7a1a,#ff6a00);color:#111;box-shadow:0 6px 16px rgba(255,106,0,.25)}
+    .btn.secondary{background:#121826;color:#e6e6e6;border:1px solid #263248}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .progress{height:10px;background:#161b27;border-radius:999px;overflow:hidden;border:1px solid #20283a}
+    .bar{height:100%;width:0;background:linear-gradient(90deg,#67e8f9,#22d3ee,#60a5fa);transition:width .25s ease}
+    .stat{display:flex;justify-content:space-between;font-size:12px;color:#9aa4b2;margin-top:8px}
+    .toast{padding:12px 14px;border-radius:12px;font-size:14px}
+    .ok{background:#0f201b;border:1px solid #1c4d3f;color:#9af6d0}
+    .err{background:#201012;border:1px solid #4d1c22;color:#ffb3b3}
+    .hidden{display:none}
 
-<div class="card-container w-full max-w-2xl flex flex-col gap-6">
-    <div class="card bg-white p-8 rounded-xl shadow-lg border border-gray-200"> 
-        <h1 class="text-2xl font-semibold text-gray-900 text-center mb-2">Combinador de ZPL</h1> 
-        <p class="text-gray-600 text-center mb-6"> 
-            Selecione um ficheiro .zpl ou .txt para extrair os dados do checklist e combiná-los na etiqueta de envio. 
-        </p> 
-        <div class="flex flex-col items-center gap-4">
-            <input
-                type="file"
-                id="zplFile"
-                accept=".zpl, .txt"
-                class="block w-full max-w-sm text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100 cursor-pointer"
-            >
-            <input
-                type="text"
-                id="gestoresEmails"
-                placeholder="E-mails do gestor de expedição (separados por vírgula)"
-                class="block w-full max-w-sm text-sm text-gray-500 border border-gray-300 rounded p-2"
-            >
-            <button
-                id="converterButton"
-                class="px-6 py-3 bg-blue-800 text-white font-bold text-lg rounded-full
-                        shadow-lg hover:bg-blue-700 transition-all duration-300 transform
-                        hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-                Extrair e Gerar 
-            </button> 
-        </div> 
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,12,18,.6);backdrop-filter:blur(6px);z-index:50}
+    .modal{width:100%;max-width:520px;background:#0f1420;border:1px solid #223049;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+    .modal .hd{padding:16px 18px;border-bottom:1px solid #1f283c;font-weight:700}
+    .modal .ct{padding:18px}
+    .modal .ft{padding:16px 18px;border-top:1px solid #1f283c;display:flex;gap:10px;justify-content:flex-end}
 
-        <!-- Progress bar and status -->
-        <div id="progress-container" class="mt-6 hidden">
-            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
-            </div>
-            <p id="progress-status" class="text-center text-sm text-gray-600 mt-2"></p>
-        </div>
-        
-        <div id="error-message" class="text-red-500 font-bold text-center mt-4"></div> 
-    </div> 
-
-    <div class="card bg-white p-6 rounded-xl shadow-lg border border-gray-200" id="results-card" style="display:none;"> 
-        <h2 class="text-xl font-semibold text-gray-900 text-center mb-4">Pré-visualização da Etiqueta</h2> 
-        <div id="preview-image-container" class="flex justify-center mb-4 p-4 border border-gray-300 rounded-lg"> 
-            <img id="preview-image" src="" alt="Pré-visualização da etiqueta" class="max-w-full h-auto"> 
-        </div> 
-        <div id="pdf-links" class="flex flex-col items-center gap-2">
-            <!-- O link para o PDF será inserido aqui -->
-        </div>
+    /* Auth */
+    .auth{display:grid;gap:10px}
+    .pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;background:#141b2b;color:#a2b0c6;border:1px solid #223049;font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap row" style="justify-content:space-between">
+      <h1>📦 ZPL Import <span class="badge">Sem Gemini</span></h1>
+      <div id="userBox" class="pill">Desconectado</div>
     </div>
-</div>
-</div>
+  </header>
 
-<div id="gestorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-  <div class="bg-white w-full max-w-md p-4 rounded shadow-lg">
-    <h2 class="text-lg font-semibold mb-2">Enviar arquivo para qual gestor?</h2>
-    <select id="gestorSelect" class="form-control mb-4"></select>
-    <div class="flex justify-end gap-2">
-      <button id="gestorCancel" class="btn btn-secondary">Cancelar</button>
-      <button id="gestorConfirm" class="btn btn-primary">Confirmar</button>
+  <main class="wrap">
+    <div class="grid">
+      <section class="card">
+        <div class="body">
+          <h2>1) Arquivo de Etiquetas</h2>
+          <p class="muted">Selecione um arquivo <b>.zpl</b> ou <b>.txt</b> contendo blocos ZPL (etiqueta + checklist).</p>
+          <div class="row">
+            <input id="zplFile" type="file" accept=".zpl,.txt" />
+          </div>
+          <div style="height:10px"></div>
+          <h2>2) Gestores e Regras</h2>
+          <label for="gestoresEmails">E-mails de gestores (separe por vírgula)</label>
+          <input id="gestoresEmails" type="text" placeholder="gestor1@dominio.com, gestor2@dominio.com" />
+          <p class="muted">Respeita os horários configurados no Firestore (campo <code>horariosEtiquetas</code> em <code>uid/{uid}</code>).</p>
+          <div style="height:14px"></div>
+          <button id="btnProcessar" class="btn">🔧 Extrair e Gerar</button>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="body">
+          <h2>Status</h2>
+          <div id="toastOk" class="toast ok hidden">Tudo pronto.</div>
+          <div id="toastErr" class="toast err hidden"></div>
+          <div id="progressWrap" class="hidden">
+            <div class="progress"><div id="progressBar" class="bar"></div></div>
+            <div class="stat"><span id="progressStatus">Aguardando…</span><span id="elapsed">00:00</span></div>
+          </div>
+        </div>
+        <div class="body">
+          <h2>Autenticação</h2>
+          <div id="authBox" class="auth">
+            <label>E‑mail</label>
+            <input id="loginEmail" type="email" placeholder="seu@email.com" />
+            <label>Senha</label>
+            <input id="loginPass" type="password" placeholder="••••••••" />
+            <div class="row">
+              <button id="btnLogin" class="btn">Entrar</button>
+              <button id="btnLogout" class="btn secondary">Sair</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Modal Gestor -->
+  <div id="gestorModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="hd">Selecionar Gestor</div>
+      <div class="ct">
+        <p class="muted">Selecione qual gestor receberá o PDF gerado.</p>
+        <select id="gestorSelect"></select>
+      </div>
+      <div class="ft">
+        <button id="gestorCancel" class="btn secondary">Cancelar</button>
+        <button id="gestorConfirm" class="btn">Confirmar</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.firestore();
-        const storage = firebase.storage();
-        let currentUser = null;
-        let responsavelExpedicaoUid = null;
-        let responsavelExpedicaoEmail = null;
-        let horariosEtiquetas = [];
+  <!-- Libs: PDF, Firebase (compat), Tesseract -->
+  <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script src="https://unpkg.com/tesseract.js@v6.0.0/dist/tesseract.min.js"></script>
 
-        function escolherGestorEmail(emails) {
-            return new Promise(resolve => {
-                if (!emails || !emails.length) return resolve([]);
-                if (emails.length === 1) return resolve([emails[0]]);
+  <!-- Firebase config (projeto do usuário) -->
+  <script>
+    // ⚠️ Caso queira alterar, substitua pelos dados do seu projeto Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
+      authDomain: "matheus-35023.firebaseapp.com",
+      projectId: "matheus-35023",
+      storageBucket: "matheus-35023.appspot.com",
+      messagingSenderId: "1011113149395",
+      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
+      databaseURL: "https://matheus-35023.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+  </script>
 
-                const modal = document.getElementById('gestorModal');
-                const select = document.getElementById('gestorSelect');
-                const confirmBtn = document.getElementById('gestorConfirm');
-                const cancelBtn = document.getElementById('gestorCancel');
+  <script>
+  // ===== Utilitários UI =====
+  const $ = (sel) => document.querySelector(sel);
+  const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
+  const fmtTime = (s)=>{
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const r = Math.floor(s%60).toString().padStart(2,'0');
+    return `${m}:${r}`;
+  };
 
-                select.innerHTML = '';
-                emails.forEach(email => {
-                    const opt = document.createElement('option');
-                    opt.value = email;
-                    opt.textContent = email;
-                    select.appendChild(opt);
-                });
+  const el = {
+    userBox: '#userBox',
+    btnLogin: '#btnLogin', btnLogout: '#btnLogout',
+    loginEmail: '#loginEmail', loginPass: '#loginPass',
+    zplFile: '#zplFile', gestoresEmails: '#gestoresEmails', btnProcessar: '#btnProcessar',
+    toastOk:'#toastOk', toastErr:'#toastErr', progressWrap:'#progressWrap', progressBar:'#progressBar', progressStatus:'#progressStatus', elapsed:'#elapsed',
+    gestorModal:'#gestorModal', gestorSelect:'#gestorSelect', gestorConfirm:'#gestorConfirm', gestorCancel:'#gestorCancel'
+  };
+  function showOk(msg){ const n=$(el.toastOk); n.textContent=msg; n.classList.remove('hidden'); }
+  function hideOk(){ $(el.toastOk).classList.add('hidden'); }
+  function showErr(msg){ const n=$(el.toastErr); n.textContent=msg; n.classList.remove('hidden'); }
+  function hideErr(){ $(el.toastErr).classList.add('hidden'); }
+  function setProgress(p, status){ $(el.progressWrap).classList.remove('hidden'); $(el.progressBar).style.width = `${Math.max(0,Math.min(100,p))}%`; if(status) $(el.progressStatus).textContent = status; }
+  function resetProgress(){ $(el.progressWrap).classList.add('hidden'); $(el.progressBar).style.width='0%'; $(el.progressStatus).textContent='Aguardando…'; $(el.elapsed).textContent='00:00'; }
 
-                function close(value) {
-                    modal.classList.add('hidden');
-                    confirmBtn.removeEventListener('click', onConfirm);
-                    cancelBtn.removeEventListener('click', onCancel);
-                    modal.removeEventListener('click', onBackdrop);
-                    resolve([value]);
-                }
+  // ===== Auth =====
+  let currentUser = null;
+  auth.onAuthStateChanged(async (u)=>{
+    currentUser = u || null;
+    if(u){
+      $(el.userBox).textContent = `Conectado: ${u.email}`;
+      $('#authBox').classList.add('hidden');
+      try { await preloadUserSettings(); } catch(e){ console.warn('Falha ao carregar settings', e); }
+    } else {
+      $(el.userBox).textContent = 'Desconectado';
+      $('#authBox').classList.remove('hidden');
+    }
+  });
+  $(el.btnLogin).onclick = async ()=>{
+    hideErr(); hideOk();
+    const email = $(el.loginEmail).value.trim();
+    const pass = $(el.loginPass).value.trim();
+    if(!email||!pass){ showErr('Informe e‑mail e senha.'); return; }
+    try{ await auth.signInWithEmailAndPassword(email, pass); showOk('Login realizado.'); }catch(e){ showErr('Falha no login: '+e.message); }
+  };
+  $(el.btnLogout).onclick = ()=> auth.signOut();
 
-                function onConfirm() { close(select.value || emails[0]); }
-                function onCancel() { close(emails[0]); }
-                function onBackdrop(e) { if (e.target === modal) close(emails[0]); }
+  // ===== Configurações por usuário (gestores/horários) =====
+  let horariosEtiquetas = [];
+  async function preloadUserSettings(){
+    if(!currentUser) return;
+    const doc = await db.collection('uid').doc(currentUser.uid).get();
+    if(doc.exists){
+      const d = doc.data()||{};
+      if(Array.isArray(d.horariosEtiquetas)) horariosEtiquetas = d.horariosEtiquetas;
+      if(Array.isArray(d.gestoresExpedicaoEmails) && !$(el.gestoresEmails).value){
+        $(el.gestoresEmails).value = d.gestoresExpedicaoEmails.join(', ');
+      }
+    }
+  }
 
-                confirmBtn.addEventListener('click', onConfirm);
-                cancelBtn.addEventListener('click', onCancel);
-                modal.addEventListener('click', onBackdrop);
+  function isDentroHorario(){
+    if(!horariosEtiquetas?.length) return true; // se não configurado, permite
+    const now = new Date();
+    return horariosEtiquetas.some(intv => {
+      const [ini, fim] = (intv||'').split('-');
+      if(!ini||!fim) return false;
+      const [h1,m1] = ini.split(':').map(Number);
+      const [h2,m2] = fim.split(':').map(Number);
+      const a = new Date(); a.setHours(h1||0,m1||0,0,0);
+      const b = new Date(); b.setHours(h2||23,m2||59,59,999);
+      return now>=a && now<=b;
+    });
+  }
 
-                modal.classList.remove('hidden');
-            });
+  // ===== Modal Gestor =====
+  function escolherGestorEmail(possiveis){
+    return new Promise((resolve)=>{
+      const modal = $(el.gestorModal); const sel = $(el.gestorSelect);
+      sel.innerHTML = '';
+      possiveis.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=e; sel.appendChild(o); });
+      modal.classList.remove('hidden');
+      const off = ()=> modal.classList.add('hidden');
+      $(el.gestorConfirm).onclick = ()=>{ const v=sel.value; off(); resolve(v||possiveis[0]); };
+      $(el.gestorCancel).onclick  = ()=>{ off(); resolve(possiveis[0]); };
+    });
+  }
+
+  // ===== Helpers ZPL / OCR =====
+  function readFileAsText(file){
+    return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=()=>rej(fr.error); fr.onload=()=>res(fr.result); fr.readAsText(file); });
+  }
+  function splitZplBlocks(zpl){ // captura blocos ^XA ... ^XZ (ignora ~DGR isolados)
+    const blocks = zpl.match(/\^XA[\s\S]*?\^XZ/g) || [];
+    return blocks;
+  }
+  function extractFDText(zpl){ // concatena texto entre ^FD ... ^FS
+    const out=[]; const re=/\^FD([\s\S]*?)\^FS/g; let m; while((m=re.exec(zpl))!==null){ out.push(m[1].trim()); }
+    return out.join('\n');
+  }
+  function detectLojaFromZpl(labelZpl){
+    // tenta ^FDRemetente: NOME^FS ou linhas com "REMENTE"/"REMETENTE"
+    let m = labelZpl.match(/\^FD\s*Remetente:?\s*([^\^]+)\^FS/i);
+    if(m) return m[1].trim();
+    // fallback: tenta qualquer ^FD com palavra-chave
+    const all = extractFDText(labelZpl).split(/\r?\n/);
+    for(const line of all){
+      const mm = line.match(/Remetente:?\s*(.+)/i);
+      if(mm) return mm[1].trim();
+    }
+    return null;
+  }
+  async function renderZplToPngBlob(zpl, dpmm=8, widthIn=4.0, heightIn=5.2){
+    const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/0/`;
+    const res = await fetch(url, { method:'POST', headers:{'Accept':'image/png','Content-Type':'application/x-www-form-urlencoded'}, body: zpl });
+    if(!res.ok) throw new Error('Labelary falhou ao renderizar ZPL');
+    return await res.blob();
+  }
+  function binarizeBlob(blob, threshold=200){
+    return new Promise((resolve,reject)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+        const ctx=c.getContext('2d'); ctx.drawImage(img,0,0);
+        const id=ctx.getImageData(0,0,c.width,c.height); const d=id.data;
+        for(let i=0;i<d.length;i+=4){ const lum=0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2]; const v=lum<threshold?0:255; d[i]=d[i+1]=d[i+2]=v; }
+        ctx.putImageData(id,0,0); c.toBlob(resolve,'image/png');
+      };
+      img.onerror=reject; img.src=URL.createObjectURL(blob);
+    });
+  }
+  async function ocrBlobToText(blob){
+    // Carrega Tesseract on-demand
+    if(!window.__tess){
+      window.__tess = Tesseract.createWorker();
+      await __tess.load();
+      await __tess.loadLanguage('eng');
+      await __tess.initialize('eng');
+    }
+    const { data:{ text } } = await __tess.recognize(blob);
+    return text||'';
+  }
+  function parseItemsFromText(text){
+    const items=[]; const lines=(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    for(const line of lines){
+      // Padrões comuns: "SKU123 2", "SKU: ABC-99  Qtd: 2", "ABC123 x 2"
+      let m = line.match(/SKU[:\s-]*([A-Za-z0-9\-_]{2,})[^\d]*(\b\d{1,3}\b)/i);
+      if(!m) m = line.match(/([A-Za-z0-9\-_]{2,})\s*[xX*]\s*(\d{1,3})/);
+      if(!m) m = line.match(/([A-Za-z0-9\-_]{2,})[^\d]{0,10}\b(Qtd|Qde|Qtde)[:\s-]*(\d{1,3})/i);
+      if(m){ const sku=(m[1]||'').toUpperCase(); const q=parseInt(m[3]||m[2],10); if(sku && Number.isInteger(q)) items.push({sku, quantidade:q}); }
+    }
+    // Dedupe somando iguais
+    const map=new Map(); items.forEach(it=>{ map.set(it.sku, (map.get(it.sku)||0)+it.quantidade)});
+    return Array.from(map, ([sku, quantidade])=>({sku, quantidade}));
+  }
+
+  function sanitizeZpl(content){ return (content||'').replace(/\^XA|\^XZ/g,''); }
+  function inchesToDots(inches, dpmm=8){ return Math.round(inches * 25.4 * dpmm); }
+
+  function buildCombinedZpl(originalLabelZpl, items, opts){
+    const { dpmm=8, widthIn=4.0, heightIn=5.2, startY=1200, fontH=22, fontW=22, step=34, labelNumber } = opts||{};
+    const originalContent = sanitizeZpl(originalLabelZpl);
+    let y = startY; let list='';
+    for(const it of items){
+      list += `^FO50,${y}^ABN,${fontH},${fontW}^FDSKU: ${it.sku}^FS`;
+      y += fontH + 6;
+      list += `^FO50,${y}^ABN,${fontH},${fontW}^FDQtd: ${it.quantidade}^FS`;
+      y += step;
+    }
+    const extraDots = Math.max(0, y - inchesToDots(heightIn, dpmm) + 80);
+    const totalDots = inchesToDots(heightIn, dpmm) + extraDots;
+    const numberY = totalDots - 48;
+    const numberTag = labelNumber? `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS` : '';
+    return `^XA^LL${totalDots}^LH0,0${originalContent}${list}${numberTag}^XZ`;
+  }
+
+  // ===== Firestore helpers =====
+  async function getNextLabelNumber(total){
+    const ref = db.collection('uid').doc(currentUser.uid).collection('config').doc('contadores');
+    return await db.runTransaction(async (tx)=>{
+      const snap = await tx.get(ref);
+      const cur = (snap.exists && (snap.data().zplLastNumber|0)) || 0;
+      const start = cur + 1; const next = cur + (total|0);
+      tx.set(ref, { zplLastNumber: next }, { merge:true });
+      return start;
+    });
+  }
+  async function findUidByEmail(email){
+    if(!email) return null;
+    const q = await db.collection('usuarios').where('email','==',email).limit(1).get();
+    if(!q.empty){ const d=q.docs[0].data(); return d?.uid || q.docs[0].id; }
+    return null;
+  }
+  async function savePrintedItems(items, meta){
+    // Salva em uid/{uid}/skuimpressos
+    const base = db.collection('uid').doc(currentUser.uid).collection('skuimpressos');
+    const batch = db.batch();
+    const now = new Date();
+    items.forEach(it=>{
+      const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null };
+      const doc = base.doc(); batch.set(doc, data, { merge:true });
+    });
+    await batch.commit();
+
+    // Se houver responsável, tenta salvar no UID dele também
+    if(meta.responsavelUid){
+      const base2 = db.collection('uid').doc(meta.responsavelUid).collection('skuimpressos');
+      const batch2 = db.batch();
+      const now2 = new Date();
+      items.forEach(it=>{
+        const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now2.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null, origemUid: currentUser.uid };
+        const doc = base2.doc(); batch2.set(doc, data, { merge:true });
+      });
+      await batch2.commit();
+    }
+  }
+
+  // ===== Handler principal =====
+  $(el.btnProcessar).onclick = async ()=>{
+    hideErr(); hideOk(); resetProgress();
+    if(!currentUser){ showErr('Faça login para continuar.'); return; }
+    if(!isDentroHorario()){ showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).'); return; }
+    const file = $(el.zplFile).files?.[0]; if(!file){ showErr('Selecione um arquivo .zpl/.txt.'); return; }
+
+    // gestores
+    let gestores = ($(el.gestoresEmails).value||'').split(/[;,\s]+/).map(s=>s.trim()).filter(Boolean);
+    let gestorEmail = gestores[0]||null;
+    if(gestores.length>1){ gestorEmail = await escolherGestorEmail(gestores); }
+    let responsavelUid = gestorEmail ? await findUidByEmail(gestorEmail) : null;
+
+    const startTs = Date.now();
+    let timer = setInterval(()=> $(el.elapsed).textContent = fmtTime((Date.now()-startTs)/1000), 1000);
+
+    try{
+      $(el.btnProcessar).disabled = true; setProgress(2,'Lendo arquivo…');
+      const zplText = await readFileAsText(file);
+      const blocks = splitZplBlocks(zplText);
+      if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
+
+      const totalLabels = blocks.length/2;
+      const startNumber = await getNextLabelNumber(totalLabels);
+
+      // PDF
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      const dpmm = 8, widthIn=4.0, heightIn=5.2;
+
+      // Cria doc Firestore para metadados e reserva Storage path
+      const metaRef = await db.collection('pdfDocs').add({
+        ownerUid: currentUser.uid,
+        ownerEmail: currentUser.email,
+        gestorEmail: gestorEmail||null,
+        created: firebase.firestore.FieldValue.serverTimestamp(),
+        total: totalLabels
+      });
+      const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
+
+      let labelCounter = startNumber;
+      for(let i=0;i<blocks.length;i+=2){
+        const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
+        const labelZpl = blocks[i]; const checklistZpl = blocks[i+1];
+
+        // Identificar loja
+        const loja = detectLojaFromZpl(labelZpl);
+
+        // Extrair itens (primeiro tentando ^FD, depois OCR)
+        let text = extractFDText(checklistZpl);
+        if(!text || text.length<3){
+          const chkBlob = await renderZplToPngBlob(checklistZpl, dpmm, widthIn, heightIn);
+          const bin = await binarizeBlob(chkBlob, 200);
+          text = await ocrBlobToText(bin);
         }
-        firebase.auth().onAuthStateChanged(async u => {
-            currentUser = u;
-            if (!u) return;
-            try {
-                const doc = await db.collection('uid').doc(u.uid).get();
-                const data = doc.data() || {};
-                const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
-                document.getElementById('gestoresEmails').value = Array.isArray(emails) ? emails.join(', ') : emails;
-                const respEmail = Array.isArray(data.gestoresExpedicaoEmails)
-                    ? data.gestoresExpedicaoEmails[0]
-                    : data.responsavelExpedicaoEmail;
-                if (respEmail) {
-                    responsavelExpedicaoEmail = respEmail;
-                    const snap = await db.collection('uid').where('email', '==', respEmail).limit(1).get();
-                    if (!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
-                    await carregarHorarios();
-                }
-            } catch (e) {
-                console.error('Erro ao carregar gestor de expedição:', e);
-            }
-        });
-        async function savePdf(blob, name) {
-            if (!currentUser) return;
-            const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-            const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-            const selecionado = await escolherGestorEmail(gestoresEmails);
-            const docRef = await db.collection('pdfDocs').add({
-                ownerUid: currentUser.uid,
-                ownerEmail: currentUser.email,
-                gestoresExpedicaoEmails: selecionado,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                name: name,
-                foraHorario: foraDoHorario()
-            });
-            const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-            await fileRef.put(blob);
-            const url = await fileRef.getDownloadURL();
-            await docRef.update({ url: url, storagePath: fileRef.fullPath });
-            const record = {
-                name: name,
-                url: url,
-                path: fileRef.fullPath,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-            if (responsavelExpedicaoUid) {
-                const respRecord = {
-                    name: name,
-                    url: url,
-                    path: fileRef.fullPath,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
-            }
-        }
-
-        async function savePrintedSkuQuantities(items) {
-            if (!currentUser || !items || items.length === 0) return;
-            const batch = db.batch();
-            const userDoc = db.collection('uid').doc(currentUser.uid);
-            const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
-            items.forEach(item => {
-                const data = {
-                    sku: item.sku,
-                    quantidade: item.quantidade,
-                    loja: item.loja || '',
-                    pedido: item.pedido || '',
-                    userUid: currentUser.uid,
-                    userEmail: currentUser.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                batch.set(userDoc.collection('skuimpressos').doc(), data);
-                if (respDoc) {
-                    batch.set(respDoc.collection('skuimpressos').doc(), data);
-                }
-            });
-            await batch.commit();
-        }
-
-        async function carregarHorarios() {
-            if (!responsavelExpedicaoUid) return;
-            try {
-                const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
-                const data = doc.data() || {};
-                horariosEtiquetas = data.horariosEtiquetas || [];
-            } catch (e) {
-                console.error('Erro ao carregar horários:', e);
-            }
-        }
-
-        function foraDoHorario() {
-            if (!horariosEtiquetas.length) return false;
-            const now = new Date();
-            return !horariosEtiquetas.some(h => {
-                if (!h.inicio || !h.fim) return false;
-                const [ih, im] = h.inicio.split(':').map(Number);
-                const [fh, fm] = h.fim.split(':').map(Number);
-                const start = new Date(now);
-                start.setHours(ih, im, 0, 0);
-                const end = new Date(now);
-                end.setHours(fh, fm, 0, 0);
-                return now >= start && now <= end;
-            });
-        }
-
-        const fileInput = document.getElementById('zplFile');
-        const converterButton = document.getElementById('converterButton');
-        const progressContainer = document.getElementById('progress-container');
-        const progressBar = document.getElementById('progress-bar');
-        const progressStatus = document.getElementById('progress-status');
-        const errorDiv = document.getElementById('error-message');
-        const resultsCard = document.getElementById('results-card');
-        const pdfLinksDiv = document.getElementById('pdf-links');
-        const previewImage = document.getElementById('preview-image');
-
-        // Initial state of the user interface
-        converterButton.disabled = true; 
-
-        fileInput.addEventListener('change', () => { 
-            converterButton.disabled = !fileInput.files.length; 
-            errorDiv.textContent = ''; 
-            pdfLinksDiv.innerHTML = ''; 
-            resultsCard.style.display = 'none'; 
-            previewImage.src = ''; 
-        }); 
-
-        converterButton.addEventListener('click', processZPL); 
-
-        async function processZPL() { 
-            const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files.item(0) : null; 
-            errorDiv.textContent = ''; 
-            pdfLinksDiv.innerHTML = ''; 
-            resultsCard.style.display = 'none'; 
-            previewImage.src = ''; 
-
-            if (!file) { 
-                errorDiv.textContent = 'Por favor, selecione um ficheiro ZPL para processar.'; 
-                return; 
-            } 
-
-            // Show progress bar and disable button
-            progressContainer.classList.remove('hidden');
-            progressBar.style.width = '0%';
-            progressStatus.textContent = 'A preparar...';
-            converterButton.disabled = true; 
-
-            try { 
-                const zplCode = await readFileAsync(file);
-                // Captura genericamente blocos ^XA...^XZ para suportar ficheiros sem ~DGR.
-                const blocks = zplCode.match(/\^XA[\s\S]*?\^XZ/g);
-
-                if (!blocks || blocks.length < 2 || blocks.length % 2 !== 0) {
-                    throw new Error('Não foram encontrados blocos ZPL suficientes para a etiqueta e o checklist, ou o número de blocos é ímpar.');
-                }
-                
-                const dpmm = 8;
-                const originalWidthIn = 4.0;
-                const originalHeightIn = 5.2;
-                const { PDFDocument } = PDFLib;
-                const pdfDoc = await PDFDocument.create();
-                const totalLabels = blocks.length / 2;
-
-                // Recupera o próximo número de etiqueta a partir do Firestore
-                let startLabelNumber = 1;
-                try {
-                    const counterDocRef = db.collection('uid').doc(currentUser.uid);
-                    await db.runTransaction(async tx => {
-                        const doc = await tx.get(counterDocRef);
-                        const current = doc.exists && doc.data().zplLastNumber ? doc.data().zplLastNumber : 0;
-                        startLabelNumber = current + 1;
-                        tx.set(counterDocRef, { zplLastNumber: current + totalLabels }, { merge: true });
-                    });
-                } catch (e) {
-                    console.error('Erro ao atualizar o contador de etiquetas:', e);
-                }
-
-                const allExtractedItems = [];
-                let labelCounter = startLabelNumber;
-
-                // Loop to process each pair of ZPL blocks
-                for (let i = 0; i < blocks.length; i += 2) {
-                    const currentLabelIndex = (i / 2) + 1;
-                    progressStatus.textContent = `A processar etiqueta ${currentLabelIndex} de ${totalLabels}...`;
-                    progressBar.style.width = `${(currentLabelIndex / totalLabels) * 100}%`;
-
-                    const labelBlock = blocks[i];
-                    const checklistBlock = blocks[i + 1];
-
-                    // Extração da loja a partir da etiqueta
-                    const loja = await getStoreFromLabel(labelBlock, dpmm, originalWidthIn, originalHeightIn);
-
-                    // 1. Extrai dados do checklist
-                    const extractedData = await extractDataFromChecklist(checklistBlock, dpmm, originalWidthIn, originalHeightIn);
-                    if (!extractedData.length) {
-                        console.warn(`Checklist sem SKU encontrado para a etiqueta ${currentLabelIndex}.`);
-                    }
-                    if (loja) {
-                        extractedData.forEach(item => item.loja = loja);
-                    }
-                    // keep track of all items for posterior saving
-                    allExtractedItems.push(...extractedData);
-
-                    // 3. Generate ZPL for the new combined label
-                    const combinedZPL = generateCombinedZPL(labelBlock, extractedData, labelCounter);
-                    
-                    // 4. Calculate new total page height
-                    const newTotalHeightInches = calculateNewTotalHeight(originalHeightIn, extractedData.length, dpmm); 
-                    
-                    // 5. Get PNG of the combined label from Labelary API
-                    const combinedPngBlob = await generateImageFromZpl(combinedZPL, dpmm, originalWidthIn, newTotalHeightInches); 
-                    const processedPngBlob = await applyBlackContrastFromBlob(combinedPngBlob); 
-
-                    // 6. Create PDF from the processed PNG
-                    const pngBytes = await processedPngBlob.arrayBuffer(); 
-                    const pngImage = await pdfDoc.embedPng(pngBytes); 
-                    const page = pdfDoc.addPage([originalWidthIn * 72, newTotalHeightInches * 72]); 
-                    page.drawImage(pngImage, { x: 0, y: 0, width: originalWidthIn * 72, height: newTotalHeightInches * 72 });
-                    labelCounter++;
-                }
-
-                // 7. Save the final PDF
-                const pdfBytes = await pdfDoc.save();
-                const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-
-                const fileName = `etiquetas-combinadas-${Date.now()}.pdf`;
-
-                // Add the download link
-                const link = document.createElement('a');
-                link.href = pdfUrl;
-                link.download = fileName;
-                link.textContent = 'Transferir PDF Combinado';
-                link.classList.add('px-6', 'py-3', 'bg-green-600', 'text-white', 'font-bold', 'rounded-full', 'shadow-lg', 'hover:bg-green-500', 'transition-all', 'duration-300');
-                pdfLinksDiv.appendChild(link);
-
-                await savePdf(pdfBlob, fileName);
-                await savePrintedSkuQuantities(allExtractedItems);
-                
-                // 8. Display the preview of the first label
-                const firstChecklistData = await extractDataFromChecklist(blocks[1], dpmm, originalWidthIn, originalHeightIn);
-                const firstLabelImageBlob = await generateImageFromZpl(
-                    generateCombinedZPL(blocks[0], firstChecklistData, startLabelNumber),
-                    dpmm,
-                    originalWidthIn,
-                    calculateNewTotalHeight(originalHeightIn, firstChecklistData.length, dpmm)
-                );
-                const firstLabelImageUrl = URL.createObjectURL(firstLabelImageBlob);
-                previewImage.src = firstLabelImageUrl;
-                previewImage.onload = () => { if (firstLabelImageUrl) URL.revokeObjectURL(firstLabelImageUrl); };
-                resultsCard.style.display = 'block';
-
-            } catch (error) { 
-                errorDiv.textContent = `Ocorreu um erro durante o processamento: ${error.message}`; 
-                console.error('Erro na conversão:', error); 
-            } finally { 
-                // Hide progress bar and re-enable button
-                progressContainer.classList.add('hidden');
-                converterButton.disabled = false; 
-                progressBar.style.width = '0%';
-            } 
-        } 
-        
-function calculateNewTotalHeight(originalHeightIn, numberOfItems, dpmm) {
-            const fontH = 22;      // mesma fonte usada no desenho
-            const lineStep = 30;   // respiro entre blocos
-            const yPadding = 250;  // margem extra inferior (em dots)
-
-            // Cada item ocupa: SKU (fontH) + Qtd (fontH) + pequeno gap (5) + respiro (lineStep)
-            const perItemDots = (fontH + 5 + fontH) + lineStep;
-
-            const addedContentHeightDots = (numberOfItems * perItemDots) + yPadding;
-
-            const dotsPerInch = dpmm * 25.4; // 8 dpmm => ~203.2 dpi
-            const addedContentHeightInches = addedContentHeightDots / dotsPerInch;
-
-            return originalHeightIn + addedContentHeightInches;
-        }
-
-async function generateImageFromZpl(zplCode, dpmm, width, height) {
-            const apiUrl = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${width}x${height}/0/`;
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'image/png',
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: zplCode
-            });
-            if (!response.ok) { 
-                const errorText = await response.text(); 
-                throw new Error(`Erro na API Labelary (imagem): ${response.status} ${response.statusText} - ${errorText}`); 
-            } 
-
-              return response.blob();
-        }
-
-        function extractStoreFromZpl(zplCode) {
-            const remRegex = /Remetente\^FS[\s\S]*?\^FD([^\^]+)\^FS/i;
-            const match = zplCode.match(remRegex);
-            if (match) {
-                return match[1].trim();
-            }
-            const sameLine = /Remetente:?\s*([^\^]+)\^FS/i;
-            const matchSame = zplCode.match(sameLine);
-            return matchSame ? matchSame[1].trim() : null;
-        }
-
-        async function getStoreFromLabel(zplCode, dpmm, width, height) {
-            try {
-                // 1) tenta direto do ZPL
-                const lojaFromZpl = extractStoreFromZpl(zplCode);
-                if (lojaFromZpl) return lojaFromZpl;
-
-                // 2) fallback OCR
-                const labelBlob = await generateImageFromZpl(zplCode, dpmm, width, height);
-                const text = await ocrImageToText(labelBlob);
-                const loja = parseLojaFromText(text);
-                return loja || null;
-            } catch (e) {
-                console.error('Erro ao obter loja da etiqueta:', e);
-                return null;
-            }
-        }
-
-        
-        async function ocrImageToText(imageBlob) {
-            const { data } = await Tesseract.recognize(imageBlob, 'por+eng', {
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._:/()°%+ ,x×',
-            });
-            return (data && data.text ? data.text : '').replace(/\r/g, '');
-        }
-
-        function parseLojaFromText(text) {
-            const m = text.match(/remetente[:\s-]*([^\n]+)/i);
-            return m ? m[1].trim() : null;
-        }
-
-        function extractItemsFromChecklistZpl(zpl) {
-            const items = [];
-            const fdTexts = Array.from(zpl.matchAll(/\^FD([^\^]+)\^FS/g)).map(m => m[1]);
-
-            let current = {};
-            let currentPedido = null;
-            for (const raw of fdTexts) {
-                const line = raw.replace(/\s+/g, ' ').trim();
-
-                const mPedido = line.match(/\b(Pedido|Order)[:\s-]*([0-9]+)/i);
-                if (mPedido) {
-                    currentPedido = mPedido[2];
-                    continue;
-                }
-
-                const mSku = line.match(/\bSKU[:\s-]*([A-Z0-9._\-\/]+)\b/i);
-                if (mSku) {
-                    if (current.sku) {
-                        if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                        if (currentPedido) current.pedido = currentPedido;
-                        items.push(current);
-                        current = {};
-                    }
-                    current.sku = mSku[1];
-                    continue;
-                }
-
-                const mQtd = line.match(/\b(Qtd|Qtde|Quantidade)[:\s-]*([0-9]{1,4})\b/i);
-                if (mQtd) {
-                    current.quantidade = Number(mQtd[2]);
-                    continue;
-                }
-
-                const mInline = line.match(/SKU[:\s-]*([A-Z0-9._\-\/]+).*?(x|×)?\s*([0-9]{1,4})/i);
-                if (mInline) {
-                    const item = { sku: mInline[1], quantidade: Number(mInline[3]) || 1 };
-                    if (currentPedido) item.pedido = currentPedido;
-                    items.push(item);
-                    current = {};
-                    continue;
-                }
-            }
-            if (current.sku) {
-                if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                if (currentPedido) current.pedido = currentPedido;
-                items.push(current);
-            }
-            return items;
-        }
-
-        function parseItemsFromText(text) {
-            const items = [];
-            const lines = text.split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
-
-            let current = {};
-            let currentPedido = null;
-            for (const line of lines) {
-                const mPedido = line.match(/\b(Pedido|Order)[:\s-]*([0-9]+)/i);
-                if (mPedido) {
-                    currentPedido = mPedido[2];
-                    continue;
-                }
-
-                const mSku = line.match(/\bSKU[:\s-]*([A-Z0-9._\-\/]+)\b/i);
-                if (mSku) {
-                    if (current.sku) {
-                        if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                        if (currentPedido) current.pedido = currentPedido;
-                        items.push(current);
-                        current = {};
-                    }
-                    current.sku = mSku[1];
-                    continue;
-                }
-                const mQtd = line.match(/\b(Qtd|Qtde|Quantidade)[:\s-]*([0-9]{1,4})\b/i);
-                if (mQtd) {
-                    current.quantidade = Number(mQtd[2]);
-                    continue;
-                }
-                const mInline = line.match(/SKU[:\s-]*([A-Z0-9._\-\/]+).*?(x|×)?\s*([0-9]{1,4})/i);
-                if (mInline) {
-                    const item = { sku: mInline[1], quantidade: Number(mInline[3]) || 1 };
-                    if (currentPedido) item.pedido = currentPedido;
-                    items.push(item);
-                    current = {};
-                    continue;
-                }
-            }
-            if (current.sku) {
-                if (typeof current.quantidade !== 'number') current.quantidade = 1;
-                if (currentPedido) current.pedido = currentPedido;
-                items.push(current);
-            }
-            return items;
-        }
-
-async function extractDataFromChecklist(checklistZpl, dpmm, widthIn, heightIn) {
-            const fromZpl = extractItemsFromChecklistZpl(checklistZpl);
-            if (fromZpl.length) return fromZpl;
-
-            const checklistBlob = await generateImageFromZpl(checklistZpl, dpmm, widthIn, heightIn);
-            const text = await ocrImageToText(checklistBlob);
-            return parseItemsFromText(text);
-        }
-
-        function generateCombinedZPL(labelBlock, data, labelNumber) {
-            let originalContent = labelBlock.replace(/\^XA|\^XZ/g, '');
-   originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22');
-
-            const dpmm = 8;
-            const originalWidthIn = 4.0;
-            const originalHeightIn = 5.2;
-            const dotsPerInch = dpmm * 25.4;
-            const originalHeightDots = Math.round(originalHeightIn * dotsPerInch);
-
-            const fontH = 22;
-            const fontW = 22;
-            const lineStep = 30;
-
-            // 👉 começa logo após o final da etiqueta original (+ um pequeno respiro)
-            const newContentStartX = 50;
-            const newContentStartY = originalHeightDots + 30;
-
-            let newContentZPL = '';
-            if (data && data.length > 0) {
-                // bloco por item = 2 linhas (SKU e Qtd) + respiro
-                const perItemStep = (fontH + 5 + fontH) + lineStep;
-
-                data.forEach((item, index) => {
-                    const y = newContentStartY + (index * perItemStep);
-                    const skuText = `^FO${newContentStartX},${y}^ABN,${fontH},${fontW}^FD SKU: ${item.sku} ^FS`;
-                    const qtdText = `^FO${newContentStartX},${y + fontH + 5}^ABN,${fontH},${fontW}^FD Qtd: ${item.quantidade} ^FS`;
-                    newContentZPL += `${skuText}${qtdText}`;
-                });
-            }
-
-            // Altura total recalculada com a função corrigida
-            const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm);
-            const totalPageHeightDots = Math.round(totalPageHeightInches * dotsPerInch);
-
-            // Número da etiqueta: deixe com margem do rodapé
-            const numberY = totalPageHeightDots - (fontH * 2 + 40);
-            const numberZpl = `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS`;
-
-            return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}${numberZpl}^XZ`;
-        }
-
-        function readFileAsync(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    resolve(reader.result);
-                };
-                reader.onerror = reject;
-                reader.readAsText(file);
-            });
-        }
-
-        async function applyBlackContrastFromBlob(imageBlob, { contrast = 40, gamma = 0.9, threshold = 200 } = {}) { 
-            return new Promise((resolve, reject) => { 
-                const imgElement = new Image(); 
-                imgElement.onload = () => { 
-                    const canvas = document.createElement('canvas'); 
-                    canvas.width = imgElement.naturalWidth; 
-                    canvas.height = imgElement.naturalHeight; 
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true }); 
-                    ctx.drawImage(imgElement, 0, 0); 
-
-                    const img = ctx.getImageData(0, 0, canvas.width, canvas.height); 
-                    const data = img.data; 
-
-                    const factor = (359 * (contrast + 255)) / (255 * (259 - contrast)); 
-
-                    for (let i = 0; i < data.length; i += 4) { 
-                        const r = data[i], g = data[i + 1], b = data[i + 2]; 
-                        let y = 0.2126 * r + 0.7152 * g + 0.0722 * b; 
-
-                        if (y < threshold) { 
-                            let v = factor * (y - 128) + 128; 
-                            v = 255 * Math.pow(v / 255, gamma); 
-                            if (v > y) v = y; 
-                            if (v < 0) v = 0; 
-                            if (v > 255) v = 255; 
-
-                            data[i] = data[i + 1] = data[i + 2] = v; 
-                        } else { 
-                            const v = y > 255 ? 255 : y; 
-                            data[i] = data[i + 1] = data[i + 2] = v; 
-                        } 
-                    } 
-                    ctx.putImageData(img, 0, 0); 
-                    canvas.toBlob(resolve, 'image/png', 1); 
-                    if (imgElement.src) URL.revokeObjectURL(imgElement.src); 
-                }; 
-                imgElement.onerror = reject; 
-                imgElement.src = URL.createObjectURL(imageBlob); 
-            }); 
-        } 
-    }); 
-</script>
-<script src="shared.js"></script>
-
+        let items = parseItemsFromText(text);
+        if(!items.length){ throw new Error(`Nenhum item encontrado no checklist #${idx}.`); }
+
+        // Montar ZPL combinado e renderizar
+        const combinedZpl = buildCombinedZpl(labelZpl, items, { dpmm, widthIn, heightIn, labelNumber: labelCounter });
+        const imgBlob = await renderZplToPngBlob(combinedZpl, dpmm, widthIn, heightIn + 1.0); // +1" margem de segurança
+        const imgBytes = new Uint8Array(await imgBlob.arrayBuffer());
+        const png = await pdfDoc.embedPng(imgBytes);
+        const page = pdfDoc.addPage([widthIn*72, (png.height/png.width)*widthIn*72]);
+        page.drawImage(png, { x:0, y:0, width: widthIn*72, height: (png.height/png.width)*widthIn*72 });
+
+        // Salvar SKUs
+        await savePrintedItems(items, { loja, labelNumber, storagePath: pdfPath, responsavelUid });
+
+        labelCounter++;
+        await sleep(120); // pequeno intervalo para não sobrecarregar API Labelary
+      }
+
+      setProgress(96,'Finalizando PDF…');
+      const pdfBytes = await pdfDoc.save();
+      const pdfBlob = new Blob([pdfBytes], { type:'application/pdf' });
+
+      // Upload Storage
+      const ref = storage.ref().child(pdfPath);
+      await ref.put(pdfBlob);
+      const url = await ref.getDownloadURL();
+      await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+      setProgress(100,'Concluído');
+      showOk('PDF salvo com sucesso.');
+      // oferece download imediato
+      const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; a.click();
+    }catch(e){ console.error(e); showErr(e.message||String(e)); }
+    finally{ clearInterval(timer); $(el.btnProcessar).disabled=false; }
+  };
+  </script>
 </body>
 </html>
