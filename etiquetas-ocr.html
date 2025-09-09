@@ -16,6 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     /* Barra de progresso customizada */
     .progress-bar-bg {
@@ -147,7 +148,6 @@
 
       <script type="module">
     import { firebaseConfig } from './firebase-config.js';
-    import { createOcrWorker } from './createWorker.js';
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
@@ -159,7 +159,6 @@
     let currentUser = null;
     let responsavelExpedicaoUid = null;
     let horariosEtiquetas = [];
-    const ocrWorkerPromise = createOcrWorker();
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -254,8 +253,7 @@ firebase.auth().onAuthStateChanged(async u => {
       const ctxInfo = info || {};
       console.groupCollapsed('[OCR] Iniciando reconhecimento', ctxInfo);
       console.time('[OCR] tempo');
-      const worker = await ocrWorkerPromise;
-      const { data } = await worker.recognize(canvas);
+      const { data } = await Tesseract.recognize(canvas, 'por+eng');
       const text = data?.text || '';
       console.timeEnd('[OCR] tempo');
       console.log('[OCR] Dimensões canvas', { width: canvas.width, height: canvas.height });
@@ -452,8 +450,7 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function extractMercadoLivreData(canvas) {
-      const worker = await ocrWorkerPromise;
-      const { data: { text } } = await worker.recognize(canvas);
+      const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
       const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
       let sku = '', quantidade = 0, loja = '';
       for (let i = 0; i < lines.length; i++) {
