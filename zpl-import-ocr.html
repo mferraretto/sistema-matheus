@@ -347,15 +347,13 @@
     const originalContent = sanitizeZpl(originalLabelZpl);
     let y = startY; let list='';
     for(const it of items){
-      list += `^FO50,${y}^ABN,${fontH},${fontW}^FDSKU: ${it.sku}^FS`;
-      y += fontH + 6;
-      list += `^FO50,${y}^ABN,${fontH},${fontW}^FDQtd: ${it.quantidade}^FS`;
+      list += `^FO50,${y}^A0N,${fontH},${fontW}^FDSKU: ${it.sku} Qtd: ${it.quantidade}^FS`;
       y += step;
     }
     const extraDots = Math.max(0, y - inchesToDots(heightIn, dpmm) + 80);
     const totalDots = inchesToDots(heightIn, dpmm) + extraDots;
     const numberY = totalDots - 48;
-    const numberTag = labelNumber? `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS` : '';
+    const numberTag = labelNumber? `^FO50,${numberY}^A0N,22,22^FD${labelNumber}^FS` : '';
     return `^XA^LL${totalDots}^LH0,0${originalContent}${list}${numberTag}^XZ`;
   }
 
