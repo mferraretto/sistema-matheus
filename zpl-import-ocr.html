@@ -203,7 +203,13 @@
     if(!horariosEtiquetas?.length) return true; // se não configurado, permite
     const now = new Date();
     return horariosEtiquetas.some(intv => {
-      const [ini, fim] = (intv||'').split('-');
+      let ini, fim;
+      if(typeof intv === 'string'){
+        [ini, fim] = intv.split('-');
+      } else if(intv && typeof intv === 'object'){
+        ini = intv.inicio;
+        fim = intv.fim;
+      }
       if(!ini||!fim) return false;
       const [h1,m1] = ini.split(':').map(Number);
       const [h2,m2] = fim.split(':').map(Number);
