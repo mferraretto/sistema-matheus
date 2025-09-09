@@ -332,6 +332,7 @@ firebase.auth().onAuthStateChanged(async u => {
         .filter(l => !/\b(Produto|SKU|Variac[aã]o|Quantidade)\b/i.test(l));
 
       const footerLines = [];
+      let footerOneLine = '';
       const idx1 = cleaned.findIndex(l => /^\s*1\b/.test(l));
       if (idx1 >= 0) {
         // Linha da contagem 1: remove o "1" do início e mantém o restante intacto (inclusive quantidade ao final)
@@ -422,7 +423,9 @@ firebase.auth().onAuthStateChanged(async u => {
         const skuLine = (colFirst.sku || '').trim();
         const qtyLine = (colFirst.quantidade || '').trim();
         if (skuLine || qtyLine) {
-          var footerOneLine = `SKU: ${skuLine} | Quantidade: ${qtyLine}`.replace(/\s+\|\s+$/, '').trim();
+          footerOneLine = `SKU: ${skuLine} | Quantidade: ${qtyLine}`
+            .replace(/\s+\|\s+$/, '')
+            .trim();
         }
       } catch (e) {
         console.warn('[OCR] Falha ao segmentar colunas:', e);
@@ -430,8 +433,9 @@ firebase.auth().onAuthStateChanged(async u => {
 
       console.log('[OCR] Footer 4 linhas', footerLines);
       console.log('[OCR] Itens extraídos', items);
+      if (footerOneLine) console.log('[OCR] Rodapé (SKU+Qtd)', footerOneLine);
       console.groupEnd();
-      return { items, footerLines };
+      return { items, footerLines, footerOneLine };
     }
 
     async function extractMercadoLivreData(canvas) {
@@ -649,8 +653,8 @@ completoCtx.drawImage(
       });
 
       // Rodapé textual: agora exibimos somente SKU e Quantidade (1 linha)
-      const oneLine = (typeof footerOneLine !== 'undefined' && footerOneLine)
-        ? footerOneLine
+      const oneLine = (extracted && extracted.footerOneLine)
+        ? extracted.footerOneLine
         : (extracted && extracted.items && extracted.items[0]
             ? `SKU: ${extracted.items[0].sku} | Quantidade: ${extracted.items[0].quantidade}`
             : (extracted && extracted.footerLines ? extracted.footerLines[0] : ''));
