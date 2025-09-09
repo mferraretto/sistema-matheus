@@ -322,9 +322,59 @@ firebase.auth().onAuthStateChanged(async u => {
         }
       }
 
+      // ===== Construção do rodapé (4 linhas) com base no CHECKLIST =====
+      // Estratégia: pegar o texto após a primeira linha que começa com "1" e quebrar em 4 linhas
+      const rawLines = text.split(/\n/).map(l => l.trim());
+      const cleaned = rawLines
+        .filter(l => l)
+        .filter(l => !/^=+/.test(l))
+        .filter(l => !/\b(Produto|SKU|Variac[aã]o|Quantidade)\b/i.test(l));
+
+      let idx1 = cleaned.findIndex(l => /^\s*1\b/.test(l));
+      let footerText = '';
+      if (idx1 >= 0) {
+        let first = cleaned[idx1].replace(/^\s*1\s*/, '').trim();
+        // Remove quantidade isolada no fim, mantendo SKUs com dígitos e sinais
+        first = first.replace(/\s(\d{1,3})\s*$/, '');
+        const rest = cleaned.slice(idx1 + 1).join(' ');
+        footerText = (first + ' ' + rest).replace(/\s+/g, ' ').trim();
+      } else {
+        footerText = cleaned.join(' ').replace(/\s+/g, ' ').trim();
+      }
+
+      // Quebra em 4 linhas por palavras, tentando balancear
+      function wrapFourLines(txt, maxPerLine = 46) {
+        const out = [];
+        if (!txt) {
+          while (out.length < 4) out.push('');
+          return out;
+        }
+        const words = txt.split(/\s+/);
+        let line = '';
+        for (const w of words) {
+          if ((line + ' ' + w).trim().length > maxPerLine && line) {
+            out.push(line.trim());
+            line = w;
+            if (out.length === 3) {
+              // última linha: coloca o resto inteiro
+              out.push([line, ...words.slice(words.indexOf(w) + 1)].join(' ').trim());
+              line = '';
+              break;
+            }
+          } else {
+            line = (line ? line + ' ' : '') + w;
+          }
+        }
+        if (line) out.push(line.trim());
+        while (out.length < 4) out.push('');
+        return out.slice(0, 4);
+      }
+      const footerLines = wrapFourLines(footerText);
+
+      console.log('[OCR] Footer 4 linhas', footerLines);
       console.log('[OCR] Itens extraídos', items);
       console.groupEnd();
-      return items;
+      return { items, footerLines };
     }
 
     async function extractMercadoLivreData(canvas) {
@@ -470,7 +520,7 @@ chkCtx.drawImage(
       console.groupEnd();
 
       const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
-      allExtractedItems.push(...extracted);
+      allExtractedItems.push(...(extracted.items || []));
 
 
       
@@ -541,13 +591,13 @@ completoCtx.drawImage(
         height: alturaEtiquetaFinal,
       });
 
-      // Rodapé textual com dados reconhecidos (em texto, não imagem)
-      if (extracted && extracted.length) {
-        const linhas = extracted.map(it => `SKU: ${it.sku} | Quantidade: ${it.quantidade}`);
+      // Rodapé textual com 4 linhas do checklist (em texto, não imagem)
+      const linhas = (extracted && extracted.footerLines) ? extracted.footerLines : [];
+      if (linhas.length) {
         const fontSize = 9.5;
         const gap = 2;
         const padding = 4;
-        const blocoAltura = (fontSize + gap) * linhas.length + padding * 2;
+        const blocoAltura = (fontSize + gap) * 4 + padding * 2;
 
         // Preferência: desenhar logo abaixo da etiqueta; se não couber, sobrepor a base da etiqueta
         let footerY = yPos - blocoAltura - 2;
@@ -563,7 +613,7 @@ completoCtx.drawImage(
         });
 
         // Texto em preto
-        for (let li = 0; li < linhas.length; li++) {
+        for (let li = 0; li < 4; li++) {
           pag.drawText(linhas[li], {
             x: margemX + 6,
             y: footerY + padding + li * (fontSize + gap),
