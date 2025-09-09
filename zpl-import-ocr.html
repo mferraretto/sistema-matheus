@@ -313,6 +313,10 @@
     }
     return null;
   }
+  function looksLikeShippingLabel(zpl){
+    const txt = extractFdTextFromZpl(zpl).toUpperCase();
+    return /DESTINAT[ÁA]RIO|REMETENTE|CEP/.test(txt);
+  }
   async function renderZplToPngBlob(zpl, dpmm=8, widthIn=4.0, heightIn=5.2, index=0){
     if(!zpl || !zpl.trim()){
       throw new Error('ZPL vazio não pode ser renderizado');
@@ -541,6 +545,10 @@
         const labelZpl = blocks[i];
         const checklistZpl = blocks[i+1];
 
+        if(looksLikeShippingLabel(checklistZpl)){
+          throw new Error('Arquivo parece conter apenas etiquetas; checklist não encontrado.');
+        }
+
         // Identificar loja
         const loja = detectLojaFromZpl(labelZpl);
         console.log('[btnProcessar] loja', loja);
@@ -558,7 +566,6 @@
         }
 
         console.log('[btnProcessar] texto extraído:', checklistText);
-        saveAs(checklistBlob, `debug-checklist-${idx}.png`);
         const items = parseItemsFromText(checklistText);
         console.log('[btnProcessar] parsed items:', items);
 
