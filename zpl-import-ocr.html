@@ -161,13 +161,10 @@
   let ocrWorker = null;
   async function ensureOcrWorker(){
     if (ocrWorker) return;
-
-    // createWorker não aceita idiomas diretamente; é necessário carregar e inicializar
-    // explicitamente para evitar erros como "Cannot read properties of null".
-    ocrWorker = Tesseract.createWorker();
-    await ocrWorker.load();
-    await ocrWorker.loadLanguage('por+eng');
-    await ocrWorker.initialize('por+eng');
+    // As versões recentes do Tesseract.js retornam uma promessa de worker
+    // já carregado ao chamar `createWorker`. Basta informar os idiomas na
+    // criação e configurar os parâmetros necessários.
+    ocrWorker = await Tesseract.createWorker('por+eng');
 
     await ocrWorker.setParameters({
       tessedit_pageseg_mode: '6',
