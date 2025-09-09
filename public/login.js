@@ -320,9 +320,8 @@ window.requireLogin = (event) => {
 
 function initNotificationListener(uid) {
   const btn = document.getElementById('notificationBtn');
-  const badge = document.getElementById('notificationBadge');
   const list = document.getElementById('notificationList');
-  if (!btn || !badge || !list) return;
+  if (!btn || !list) return;
   if (notifUnsub) notifUnsub();
   const q = query(
     collection(db, 'financeiroAtualizacoes'),
@@ -345,10 +344,9 @@ function initNotificationListener(uid) {
       count++;
     });
     if (count > 0) {
-      badge.textContent = count;
-      badge.classList.remove('hidden');
+      btn.dataset.count = count;
     } else {
-      badge.classList.add('hidden');
+      btn.dataset.count = '';
     }
   }, err => {
     console.error('Erro no listener de notificações:', err);
