@@ -242,7 +242,8 @@ firebase.auth().onAuthStateChanged(async u => {
       const ctxInfo = info || {};
       console.groupCollapsed('[OCR] Iniciando reconhecimento', ctxInfo);
       console.time('[OCR] tempo');
-      const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+      const { data } = await Tesseract.recognize(canvas, 'por+eng');
+      const text = data?.text || '';
       console.timeEnd('[OCR] tempo');
       console.log('[OCR] Dimensões canvas', { width: canvas.width, height: canvas.height });
       console.log('[OCR] Texto bruto');
@@ -342,6 +343,84 @@ firebase.auth().onAuthStateChanged(async u => {
         }
       }
       while (footerLines.length < 4) footerLines.push('');
+
+      // ===== Segmentação por COLUNAS (Produto | SKU | Variação | Quantidade) =====
+      try {
+        const words = Array.isArray(data?.words) ? data.words : [];
+        const W = canvas.width, H = canvas.height;
+        function norm(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+        const headerZoneY = H * 0.45; // cabeçalho costuma ficar no topo da área
+        const headers = { produto: null, sku: null, variacao: null, quantidade: null };
+        for (const w of words) {
+          const t = norm(w.text || w.symbol || '');
+          const y0 = w.bbox?.y0 ?? w.bbox?.y ?? 0;
+          if (y0 > headerZoneY) continue;
+          if (!headers.produto && t === 'produto') headers.produto = w;
+          if (!headers.sku && t === 'sku') headers.sku = w;
+          if (!headers.variacao && (t === 'variacao' || t === 'variacao:')) headers.variacao = w;
+          if (!headers.quantidade && (t === 'quantidade' || t === 'quantidade:')) headers.quantidade = w;
+        }
+        // Limites em X das colunas
+        const xPos = [];
+        if (headers.produto?.bbox?.x0 != null) xPos.push({ key: 'produto', x: headers.produto.bbox.x0 });
+        if (headers.sku?.bbox?.x0 != null) xPos.push({ key: 'sku', x: headers.sku.bbox.x0 });
+        if (headers.variacao?.bbox?.x0 != null) xPos.push({ key: 'variacao', x: headers.variacao.bbox.x0 });
+        if (headers.quantidade?.bbox?.x0 != null) xPos.push({ key: 'quantidade', x: headers.quantidade.bbox.x0 });
+        xPos.sort((a,b)=>a.x-b.x);
+
+        let bounds = [];
+        if (xPos.length >= 3) {
+          for (let i=0;i<xPos.length;i++){
+            const left = xPos[i].x - 40; // margem
+            const right = (xPos[i+1]?.x ?? (W-10)) - 10;
+            bounds.push({ key: xPos[i].key, left: Math.max(0,left), right: Math.min(W,right) });
+          }
+        } else {
+          // fallback: frações fixas
+          bounds = [
+            { key: 'produto', left: Math.round(W*0.08), right: Math.round(W*0.55) },
+            { key: 'sku', left: Math.round(W*0.56), right: Math.round(W*0.66) },
+            { key: 'variacao', left: Math.round(W*0.66), right: Math.round(W*0.83) },
+            { key: 'quantidade', left: Math.round(W*0.83), right: Math.round(W*0.97) },
+          ];
+        }
+
+        const headerMaxY = Math.max(
+          headers.produto?.bbox?.y1 ?? 0,
+          headers.sku?.bbox?.y1 ?? 0,
+          headers.variacao?.bbox?.y1 ?? 0,
+          headers.quantidade?.bbox?.y1 ?? 0,
+          H*0.18
+        );
+        const rowStartY = headerMaxY + 10;
+        const band = H * 0.08; // faixa para capturar a primeira linha após o cabeçalho
+
+        const colFirst = { produto: '', sku: '', variacao: '', quantidade: '' };
+        for (const b of bounds) {
+          const colW = words.filter(w => {
+            const x0 = w.bbox?.x0 ?? 0, x1 = w.bbox?.x1 ?? 0, y0 = w.bbox?.y0 ?? 0;
+            return x0 >= b.left && x1 <= b.right && y0 >= rowStartY;
+          });
+          if (!colW.length) continue;
+          // encontra a menor y (primeira linha)
+          const yMin = Math.min(...colW.map(w => w.bbox?.y0 ?? 0));
+          const lineWords = colW.filter(w => (w.bbox?.y0 ?? 0) <= yMin + band)
+                                .sort((a,b)=>(a.bbox?.x0 ?? 0)-(b.bbox?.x0 ?? 0));
+          const txt = lineWords.map(w => (w.text||'').trim()).join(' ').replace(/\s+/g,' ').trim();
+          colFirst[b.key] = txt;
+        }
+        console.log('[OCR] Colunas (primeira linha)', colFirst, bounds);
+
+        // Reconstrói a primeira linha do rodapé com as colunas
+        const firstLine = [colFirst.produto, colFirst.sku, colFirst.variacao, colFirst.quantidade]
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\s+/g,' ')
+          .trim();
+        if (firstLine) footerLines[0] = firstLine; // substitui linha 1 por linha reconstruída
+      } catch (e) {
+        console.warn('[OCR] Falha ao segmentar colunas:', e);
+      }
 
       console.log('[OCR] Footer 4 linhas', footerLines);
       console.log('[OCR] Itens extraídos', items);
