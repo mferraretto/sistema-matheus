@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
+  <link rel="stylesheet" href="css/components.css">
   <style>
     :root { --primary: #ff6a00; --bg:#0b0c10; --card:#111318; --muted:#9aa4b2; --ok:#18b57e; --err:#ff4d4d; }
     *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#0b0c10,#0f1117);color:#e6e6e6}
@@ -48,6 +51,9 @@
   </style>
 </head>
 <body>
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content">
   <header>
     <div class="wrap row" style="justify-content:space-between">
       <h1>📦 ZPL Import <span class="badge">Sem Gemini</span></h1>
@@ -84,19 +90,6 @@
             <div class="stat"><span id="progressStatus">Aguardando…</span><span id="elapsed">00:00</span></div>
           </div>
         </div>
-        <div class="body">
-          <h2>Autenticação</h2>
-          <div id="authBox" class="auth">
-            <label>E‑mail</label>
-            <input id="loginEmail" type="email" placeholder="seu@email.com" />
-            <label>Senha</label>
-            <input id="loginPass" type="password" placeholder="••••••••" />
-            <div class="row">
-              <button id="btnLogin" class="btn">Entrar</button>
-              <button id="btnLogout" class="btn secondary">Sair</button>
-            </div>
-          </div>
-        </div>
       </aside>
     </div>
   </main>
@@ -115,6 +108,7 @@
       </div>
     </div>
   </div>
+  </div>
 
   <!-- Libs: PDF, Firebase (compat), Tesseract -->
   <script src="https://unpkg.com/pdf-lib@1.4.0"></script>
@@ -123,24 +117,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script src="https://unpkg.com/tesseract.js@v6.0.0/dist/tesseract.min.js"></script>
+  <script type="module" src="firebase-config.js"></script>
 
-  <!-- Firebase config (projeto do usuário) -->
-  <script>
-    // ⚠️ Caso queira alterar, substitua pelos dados do seu projeto Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyC78l9b2DTNj64y_0fbRKofNupO6NHDmeo",
-      authDomain: "matheus-35023.firebaseapp.com",
-      projectId: "matheus-35023",
-      storageBucket: "matheus-35023.appspot.com",
-      messagingSenderId: "1011113149395",
-      appId: "1:1011113149395:web:c1f449e0e974ca8ecb2526",
-      databaseURL: "https://matheus-35023.firebaseio.com"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-  </script>
 
   <script>
   // ===== Utilitários UI =====
@@ -154,12 +132,15 @@
 
   const el = {
     userBox: '#userBox',
-    btnLogin: '#btnLogin', btnLogout: '#btnLogout',
-    loginEmail: '#loginEmail', loginPass: '#loginPass',
     zplFile: '#zplFile', gestoresEmails: '#gestoresEmails', btnProcessar: '#btnProcessar',
     toastOk:'#toastOk', toastErr:'#toastErr', progressWrap:'#progressWrap', progressBar:'#progressBar', progressStatus:'#progressStatus', elapsed:'#elapsed',
     gestorModal:'#gestorModal', gestorSelect:'#gestorSelect', gestorConfirm:'#gestorConfirm', gestorCancel:'#gestorCancel'
   };
+
+  if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const storage = firebase.storage();
   function showOk(msg){ const n=$(el.toastOk); n.textContent=msg; n.classList.remove('hidden'); }
   function hideOk(){ $(el.toastOk).classList.add('hidden'); }
   function showErr(msg){ const n=$(el.toastErr); n.textContent=msg; n.classList.remove('hidden'); }
@@ -173,33 +154,44 @@
     currentUser = u || null;
     if(u){
       $(el.userBox).textContent = `Conectado: ${u.email}`;
-      $('#authBox').classList.add('hidden');
       try { await preloadUserSettings(); } catch(e){ console.warn('Falha ao carregar settings', e); }
     } else {
       $(el.userBox).textContent = 'Desconectado';
-      $('#authBox').classList.remove('hidden');
     }
   });
-  $(el.btnLogin).onclick = async ()=>{
-    hideErr(); hideOk();
-    const email = $(el.loginEmail).value.trim();
-    const pass = $(el.loginPass).value.trim();
-    if(!email||!pass){ showErr('Informe e‑mail e senha.'); return; }
-    try{ await auth.signInWithEmailAndPassword(email, pass); showOk('Login realizado.'); }catch(e){ showErr('Falha no login: '+e.message); }
-  };
-  $(el.btnLogout).onclick = ()=> auth.signOut();
 
   // ===== Configurações por usuário (gestores/horários) =====
   let horariosEtiquetas = [];
+  let responsavelExpedicaoUid = null;
+  let responsavelExpedicaoEmail = null;
+
   async function preloadUserSettings(){
     if(!currentUser) return;
-    const doc = await db.collection('uid').doc(currentUser.uid).get();
-    if(doc.exists){
-      const d = doc.data()||{};
-      if(Array.isArray(d.horariosEtiquetas)) horariosEtiquetas = d.horariosEtiquetas;
-      if(Array.isArray(d.gestoresExpedicaoEmails) && !$(el.gestoresEmails).value){
-        $(el.gestoresEmails).value = d.gestoresExpedicaoEmails.join(', ');
+    try {
+      const doc = await db.collection('uid').doc(currentUser.uid).get();
+      const data = doc.data()||{};
+      const emails = data.gestoresExpedicaoEmails || data.responsavelExpedicaoEmail || '';
+      $(el.gestoresEmails).value = Array.isArray(emails) ? emails.join(', ') : emails;
+      const respEmail = Array.isArray(data.gestoresExpedicaoEmails) ? data.gestoresExpedicaoEmails[0] : data.responsavelExpedicaoEmail;
+      if(respEmail){
+        responsavelExpedicaoEmail = respEmail;
+        const snap = await db.collection('uid').where('email','==', respEmail).limit(1).get();
+        if(!snap.empty) responsavelExpedicaoUid = snap.docs[0].id;
+        await carregarHorarios();
       }
+    } catch(e){
+      console.error('Erro ao carregar gestor de expedição:', e);
+    }
+  }
+
+  async function carregarHorarios(){
+    if(!responsavelExpedicaoUid) return;
+    try {
+      const doc = await db.collection('uid').doc(responsavelExpedicaoUid).get();
+      const data = doc.data()||{};
+      horariosEtiquetas = data.horariosEtiquetas || [];
+    } catch(e){
+      console.error('Erro ao carregar horários:', e);
     }
   }
 
@@ -331,8 +323,8 @@
   }
   async function findUidByEmail(email){
     if(!email) return null;
-    const q = await db.collection('usuarios').where('email','==',email).limit(1).get();
-    if(!q.empty){ const d=q.docs[0].data(); return d?.uid || q.docs[0].id; }
+    const q = await db.collection('uid').where('email','==',email).limit(1).get();
+    if(!q.empty){ return q.docs[0].id; }
     return null;
   }
   async function savePrintedItems(items, meta){
@@ -356,6 +348,19 @@
         const doc = base2.doc(); batch2.set(doc, data, { merge:true });
       });
       await batch2.commit();
+    }
+  }
+
+  async function savePdfRecord(url, storagePath, name, responsavelUid){
+    const record = {
+      name,
+      url,
+      path: storagePath,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add(record);
+    if(responsavelUid){
+      await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add(record);
     }
   }
 
@@ -383,6 +388,7 @@
 
       const totalLabels = blocks.length/2;
       const startNumber = await getNextLabelNumber(totalLabels);
+      const name = `etiquetas-${Date.now()}.pdf`;
 
       // PDF
       const pdfDoc = await PDFLib.PDFDocument.create();
@@ -394,7 +400,9 @@
         ownerEmail: currentUser.email,
         gestorEmail: gestorEmail||null,
         created: firebase.firestore.FieldValue.serverTimestamp(),
-        total: totalLabels
+        total: totalLabels,
+        name,
+        foraHorario: !isDentroHorario()
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
 
@@ -440,14 +448,16 @@
       await ref.put(pdfBlob);
       const url = await ref.getDownloadURL();
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await savePdfRecord(url, pdfPath, name, responsavelUid);
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');
       // oferece download imediato
       const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; a.click();
-    }catch(e){ console.error(e); showErr(e.message||String(e)); }
-    finally{ clearInterval(timer); $(el.btnProcessar).disabled=false; }
+  }catch(e){ console.error(e); showErr(e.message||String(e)); }
+  finally{ clearInterval(timer); $(el.btnProcessar).disabled=false; }
   };
   </script>
+  <script src="shared.js"></script>
 </body>
 </html>
