@@ -117,10 +117,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script src="https://unpkg.com/tesseract.js@v6.0.0/dist/tesseract.min.js"></script>
-  <script type="module" src="firebase-config.js"></script>
-
-
-  <script>
+  <script type="module">
+  import { firebaseConfig } from './firebase-config.js';
   // ===== Utilitários UI =====
   const $ = (sel) => document.querySelector(sel);
   const sleep = (ms) => new Promise(r=>setTimeout(r, ms));
