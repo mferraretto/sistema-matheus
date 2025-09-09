@@ -161,12 +161,13 @@
   let ocrWorker = null;
   async function ensureOcrWorker(){
     if (ocrWorker) return;
-    // As versões recentes do Tesseract.js retornam uma promessa de worker
-    // já carregado ao chamar `createWorker`. Basta informar os idiomas na
-    // criação e configurar os parâmetros necessários.
-    ocrWorker = await Tesseract.createWorker('por+eng');
+    ocrWorker = await Tesseract.createWorker({ logger: m => console.log('[OCR]', m) }); // v4
 
-    await ocrWorker.setParameters({
+    await ocrWorker.load();                      // v4: carrega core
+    await ocrWorker.loadLanguage('por+eng');     // v4: carrega idiomas
+    await ocrWorker.initialize('por+eng');       // v4: inicializa idiomas
+
+    await ocrWorker.setParameters({              // só depois de initialize()
       tessedit_pageseg_mode: '6',
       preserve_interword_spaces: '1',
       user_defined_dpi: '300',
