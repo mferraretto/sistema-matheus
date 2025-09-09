@@ -917,14 +917,14 @@ function gerarHTMLFechamento() {
           --secondary-color: #14B8A6;
           --text-color: #111827;
           --bg-color: #f8f8f8;
-          --card-bg: #ffffff;
+          --background: #ffffff;
         }
 
         body { background-color: var(--bg-color); }
         .page {
           page-break-after: always;
           padding: 20px;
-          background: var(--card-bg);
+          background: var(--background);
           box-shadow: 0 4px 6px rgba(0,0,0,0.1);
           border-radius: 12px;
           margin-bottom: 20px;
@@ -963,7 +963,7 @@ function gerarHTMLFechamento() {
           margin-bottom: 20px;
         }
         .card {
-          background-color: var(--card-bg);
+          background-color: var(--background);
           border: 1px solid #e5e7eb;
           border-radius: 12px;
           padding: 16px;
@@ -1002,7 +1002,7 @@ function gerarHTMLFechamento() {
           height: 300px;
           margin: 20px 0;
           padding: 15px;
-          background: var(--card-bg);
+          background: var(--background);
           border-radius: 12px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
@@ -1015,7 +1015,7 @@ function gerarHTMLFechamento() {
         .table-box {
           flex: 1;
           min-width: 300px;
-          background: var(--card-bg);
+          background: var(--background);
           border-radius: 12px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.05);
           padding: 15px;
