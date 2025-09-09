@@ -280,6 +280,48 @@ firebase.auth().onAuthStateChanged(async u => {
         }
       }
 
+      // 4) Heurística por linha com quantidade no fim
+      //    Estruturas vistas no OCR: "1 Artigo ... T6+P4 CILINDROS + ARCO 2" ou "1 Trio de Boleiras TR15 1"
+      if (items.length === 0) {
+        const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          const mQty = line.match(/(.+?)\s+(\d{1,3})\s*$/);
+          if (!mQty) continue;
+          const body = mQty[1];
+          const qty = parseInt(mQty[2], 10) || 0;
+
+          const rawTokens = body.split(/\s+/);
+          // vasculha da direita p/ esquerda
+          let candidate = '';
+          for (let ti = rawTokens.length - 1; ti >= 0; ti--) {
+            let tok = rawTokens[ti];
+            // junta sinais adjacentes separados (por ex. '+' isolado)
+            if ((tok === '+' || tok === '-' || tok === '/') && ti > 0) {
+              rawTokens[ti - 1] = rawTokens[ti - 1] + tok;
+              continue;
+            }
+            const clean = tok.replace(/[^A-Za-z0-9+_\-\/\.]/g, '');
+            const hasDigit = /\d/.test(clean);
+            const hasSpecial = /[+_\-\/\.]/.test(clean);
+            if (clean.length >= 2 && (hasDigit || hasSpecial)) {
+              candidate = clean;
+              break;
+            }
+          }
+          // fallback: última palavra relevante antes da quantidade
+          if (!candidate) {
+            const lastWord = body.split(/\s+/).pop() || '';
+            const clean = lastWord.replace(/[^A-Za-z0-9]/g, '');
+            if (clean.length >= 3) candidate = clean.toUpperCase();
+          }
+
+          if (candidate) {
+            console.log('[OCR] Heurística (linha com quantidade) encontrou', { line, candidate, qty });
+            items.push({ sku: candidate, quantidade: qty });
+          }
+        }
+      }
+
       console.log('[OCR] Itens extraídos', items);
       console.groupEnd();
       return items;
