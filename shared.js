@@ -317,14 +317,11 @@ async function loadPartial(selector, path){
     } else {
       // navbar acima do main
       document.body.insertBefore(el, document.querySelector('main') || null);
-      el.classList.add('lg:pl-64');
     }
   } else {
     if (id === 'sidebar-container') {
       el.classList.add('fixed','inset-y-0','left-0','w-64','max-w-[80vw]','bg-purple-700','text-white','overflow-auto','z-40','transition-transform','duration-200','ease-out','shadow-lg');
       document.querySelector('.main-content')?.classList.add('lg:ml-64');
-    } else {
-      el.classList.add('lg:pl-64');
     }
   }
 
@@ -429,7 +426,7 @@ function setupMobileSidebar() {
 
   btns.forEach(btn => {
     if (btn.dataset.sidebarReady) return;
-    btn.addEventListener('click', toggleSidebar);
+    btn.addEventListener('click', toggleSidebar, { once: false });
     btn.dataset.sidebarReady = 'true';
   });
   if (!overlay.dataset.sidebarReady) {
