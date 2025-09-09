@@ -277,8 +277,13 @@
     return null;
   }
   async function renderZplToPngBlob(zpl, dpmm=8, widthIn=4.0, heightIn=5.2){
+    const clean = (zpl||'').trim();
+    console.log('ZPL enviado para Labelary:\n', clean);
+    if(!clean || !clean.includes('^XA') || !clean.includes('^XZ')){
+      throw new Error('Bloco ZPL incompleto ou mal formado. Verifique se contém ^XA e ^XZ.');
+    }
     const url = `https://api.labelary.com/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/0/`;
-    const res = await fetch(url, { method:'POST', headers:{'Accept':'image/png','Content-Type':'application/x-www-form-urlencoded'}, body: zpl });
+    const res = await fetch(url, { method:'POST', headers:{'Accept':'image/png','Content-Type':'application/x-www-form-urlencoded'}, body: clean });
     if(!res.ok) throw new Error('Labelary falhou ao renderizar ZPL');
     return await res.blob();
   }
@@ -442,6 +447,10 @@
       for(let i=0;i<blocks.length;i+=2){
         const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
         const labelZpl = blocks[i]; const checklistZpl = blocks[i+1];
+        if(!labelZpl || !checklistZpl){
+          console.error(`Bloco inválido #${i}:`, labelZpl, checklistZpl);
+          throw new Error(`Bloco ZPL inválido no par ${idx}.`);
+        }
 
         // Identificar loja
         const loja = detectLojaFromZpl(labelZpl);
