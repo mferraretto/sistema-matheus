@@ -437,7 +437,8 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
-                    'Accept': 'image/png'
+                    'Accept': 'image/png',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: zplCode
             });
