@@ -158,10 +158,17 @@
   function setProgress(p, status){ $(el.progressWrap).classList.remove('hidden'); $(el.progressBar).style.width = `${Math.max(0,Math.min(100,p))}%`; if(status) $(el.progressStatus).textContent = status; }
   function resetProgress(){ $(el.progressWrap).classList.add('hidden'); $(el.progressBar).style.width='0%'; $(el.progressStatus).textContent='Aguardando…'; $(el.elapsed).textContent='00:00'; }
 
-  let ocrWorker=null;
+  let ocrWorker = null;
   async function ensureOcrWorker(){
-    if(ocrWorker) return;
-    ocrWorker = await Tesseract.createWorker('por+eng');
+    if (ocrWorker) return;
+
+    // createWorker não aceita idiomas diretamente; é necessário carregar e inicializar
+    // explicitamente para evitar erros como "Cannot read properties of null".
+    ocrWorker = Tesseract.createWorker();
+    await ocrWorker.load();
+    await ocrWorker.loadLanguage('por+eng');
+    await ocrWorker.initialize('por+eng');
+
     await ocrWorker.setParameters({
       tessedit_pageseg_mode: '6',
       preserve_interword_spaces: '1',
