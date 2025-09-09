@@ -238,25 +238,50 @@ firebase.auth().onAuthStateChanged(async u => {
       });
     }
 
-    async function extractSkuQuantitiesFromCanvas(canvas) {
+    async function extractSkuQuantitiesFromCanvas(canvas, info) {
+      const ctxInfo = info || {};
+      console.groupCollapsed('[OCR] Iniciando reconhecimento', ctxInfo);
+      console.time('[OCR] tempo');
       const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+      console.timeEnd('[OCR] tempo');
+      console.log('[OCR] Dimensões canvas', { width: canvas.width, height: canvas.height });
+      console.log('[OCR] Texto bruto');
+      console.log(text);
+
       const items = [];
-      const regex = /SKU\s*[:\-]?\s*([\w\.\-\/]+).*?(?:QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/gis;
+      // 1) Padrão principal: SKU ... (QTD|QUANTIDADE|QTY) ... número
+      //    Permite + no SKU (ex.: T6+P4)
+      const regex = /SKU\s*[:\-]?\s*([A-Z0-9\.\+_\-\/]+).*?(?:QTD|QUANTIDADE|QTY|QDE)\s*[:\-]?\s*(\d{1,3})/gis;
       let match;
       while ((match = regex.exec(text)) !== null) {
-        items.push({ sku: match[1], quantidade: parseInt(match[2], 10) || 0 });
+        items.push({ sku: (match[1]||'').trim(), quantidade: parseInt(match[2], 10) || 0 });
       }
+
+      // 2) Padrão alternativo: SKU ... x 2
       if (items.length === 0) {
-        const lines = text.split(/\n/).map(l => l.trim());
+        const alt = /SKU\s*[:\-]?\s*([A-Z0-9\.\+_\-\/]+)\s*[xX*]\s*(\d{1,3})/gis;
+        while ((match = alt.exec(text)) !== null) {
+          items.push({ sku: (match[1]||'').trim(), quantidade: parseInt(match[2], 10) || 0 });
+        }
+      }
+
+      // 3) Heurística linha-a-linha (SKU na linha N, quantidade na N+1)
+      if (items.length === 0) {
+        const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+        console.log('[OCR] Linhas normalizadas', lines);
         for (let i = 0; i < lines.length; i++) {
-          const skuMatch = lines[i].match(/SKU\s*[:\-]?\s*([\w\.\-\/]+)/i);
+          const skuMatch = lines[i].match(/SKU\s*[:\-]?\s*([A-Z0-9\.\+_\-\/]+)/i);
           if (skuMatch) {
-            const next = lines[i + 1] || '';
-            const qtdMatch = next.match(/(QTD|QUANTIDADE)\s*[:\-]?\s*(\d+)/i);
-            items.push({ sku: skuMatch[1], quantidade: qtdMatch ? parseInt(qtdMatch[2], 10) || 0 : 0 });
+            const next = (lines[i + 1] || '') + ' ' + (lines[i + 2] || '');
+            const qtdMatch = next.match(/(QTD|QUANTIDADE|QTY|QDE)\s*[:\-]?\s*(\d{1,3})/i) || next.match(/[xX*]\s*(\d{1,3})/);
+            const qtdVal = qtdMatch ? parseInt(qtdMatch[qtdMatch.length - 1], 10) || 0 : 0;
+            items.push({ sku: (skuMatch[1]||'').trim(), quantidade: qtdVal });
           }
         }
       }
+
+      console.log('[OCR] Itens extraídos', items);
+      console.groupEnd();
       return items;
     }
 
@@ -385,7 +410,24 @@ chkCtx.drawImage(
   chkCanvas.width, chkCanvas.height                     // destino (maior)
 );
 
-      const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas);
+      console.groupCollapsed('[Crop] Parâmetros de corte');
+      console.log({
+        pagina: i + 1,
+        par,
+        colWidth,
+        rowHeight,
+        proporcaoEtiqueta,
+        proporcaoChecklist,
+        alturaEtiquetaPrincipal,
+        alturaChecklist,
+        deslocamentoEtiquetaY,
+        deslocamentoY,
+        novaAlturaChecklist,
+        scaleChecklist
+      });
+      console.groupEnd();
+
+      const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
       allExtractedItems.push(...extracted);
 
 
