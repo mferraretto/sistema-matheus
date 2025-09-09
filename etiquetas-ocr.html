@@ -323,53 +323,25 @@ firebase.auth().onAuthStateChanged(async u => {
       }
 
       // ===== Construção do rodapé (4 linhas) com base no CHECKLIST =====
-      // Estratégia: pegar o texto após a primeira linha que começa com "1" e quebrar em 4 linhas
+      // Estratégia: pegar as 4 primeiras linhas originais a partir da linha que começa com "1"
       const rawLines = text.split(/\n/).map(l => l.trim());
       const cleaned = rawLines
         .filter(l => l)
         .filter(l => !/^=+/.test(l))
         .filter(l => !/\b(Produto|SKU|Variac[aã]o|Quantidade)\b/i.test(l));
 
-      let idx1 = cleaned.findIndex(l => /^\s*1\b/.test(l));
-      let footerText = '';
+      const footerLines = [];
+      const idx1 = cleaned.findIndex(l => /^\s*1\b/.test(l));
       if (idx1 >= 0) {
-        let first = cleaned[idx1].replace(/^\s*1\s*/, '').trim();
-        // Remove quantidade isolada no fim, mantendo SKUs com dígitos e sinais
-        first = first.replace(/\s(\d{1,3})\s*$/, '');
-        const rest = cleaned.slice(idx1 + 1).join(' ');
-        footerText = (first + ' ' + rest).replace(/\s+/g, ' ').trim();
-      } else {
-        footerText = cleaned.join(' ').replace(/\s+/g, ' ').trim();
-      }
-
-      // Quebra em 4 linhas por palavras, tentando balancear
-      function wrapFourLines(txt, maxPerLine = 46) {
-        const out = [];
-        if (!txt) {
-          while (out.length < 4) out.push('');
-          return out;
+        // Linha da contagem 1: remove o "1" do início e mantém o restante intacto (inclusive quantidade ao final)
+        const firstLine = cleaned[idx1].replace(/^\s*1\s*/, '').trim();
+        footerLines.push(firstLine);
+        for (let k = idx1 + 1; k < cleaned.length && footerLines.length < 4; k++) {
+          // Mantém as linhas seguintes exatamente como o OCR retornou
+          footerLines.push(cleaned[k]);
         }
-        const words = txt.split(/\s+/);
-        let line = '';
-        for (const w of words) {
-          if ((line + ' ' + w).trim().length > maxPerLine && line) {
-            out.push(line.trim());
-            line = w;
-            if (out.length === 3) {
-              // última linha: coloca o resto inteiro
-              out.push([line, ...words.slice(words.indexOf(w) + 1)].join(' ').trim());
-              line = '';
-              break;
-            }
-          } else {
-            line = (line ? line + ' ' : '') + w;
-          }
-        }
-        if (line) out.push(line.trim());
-        while (out.length < 4) out.push('');
-        return out.slice(0, 4);
       }
-      const footerLines = wrapFourLines(footerText);
+      while (footerLines.length < 4) footerLines.push('');
 
       console.log('[OCR] Footer 4 linhas', footerLines);
       console.log('[OCR] Itens extraídos', items);
