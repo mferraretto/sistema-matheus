@@ -384,10 +384,14 @@ async function ensureLayout(){
   }
 }
 
-// roda em várias fases para cobrir login/redirect/back-forward-cache
-['DOMContentLoaded','load','pageshow','focus'].forEach(evt=>{
-  window.addEventListener(evt, ensureLayout, { once: false });
-});
+// roda em momentos essenciais para evitar recargas desnecessárias
+// evita acumular listeners em execuções repetidas do script
+if (!window._layoutListenersBound) {
+  ['DOMContentLoaded', 'pageshow'].forEach(evt => {
+    window.addEventListener(evt, ensureLayout, { once: true });
+  });
+  window._layoutListenersBound = true;
+}
 
 // se algum script remover os containers, recolocamos
 const mo = new MutationObserver(() => {
