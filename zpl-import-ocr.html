@@ -263,7 +263,8 @@
   }
   function splitZplBlocks(zpl){ // captura blocos ^XA ... ^XZ (ignora ~DGR isolados)
     const blocks = zpl.match(/\^XA[\s\S]*?\^XZ/g) || [];
-    return blocks;
+    // remove blocos que são apenas ^ID… (delete) sem conteúdo útil
+    return blocks.filter(b => !/^\s*\^XA\s*\^ID[^\^]+\^FS\s*\^XZ\s*$/i.test(b));
   }
   function buildPrefixWithDG(allZplText){
     const dg = (allZplText.match(/^~DG[^\r\n]+/gmi) || []).join('\n');
@@ -493,10 +494,22 @@
       const zplPrefix = buildPrefixWithDG(zplText);
         const blocks = splitZplBlocks(zplText);
         console.log('[btnProcessar] blocks found', blocks.length);
-        if(blocks.length<2 || blocks.length%2!==0){ throw new Error('Arquivo não contém pares válidos de etiqueta + checklist.'); }
 
-        const totalLabels = blocks.length/2;
-        console.log('[btnProcessar] total labels', totalLabels);
+        // agrupa cada etiqueta com um checklist opcional (próximo bloco sem imagem)
+        const pairs=[];
+        for(let i=0;i<blocks.length;i++){
+          const labelZpl = blocks[i];
+          let checklistZpl=null;
+          const next=blocks[i+1];
+          if(next && !/\^XG|\^GF/i.test(next)){
+            checklistZpl=next; i++; // usa próximo bloco como checklist
+          }
+          pairs.push({labelZpl, checklistZpl});
+        }
+        console.log('[btnProcessar] total labels', pairs.length);
+        if(!pairs.length){ throw new Error('Arquivo não contém etiquetas válidas.'); }
+
+        const totalLabels = pairs.length;
         const startNumber = await getNextLabelNumber(totalLabels);
         const name = `etiquetas-${Date.now()}.pdf`;
         console.log('[btnProcessar] startNumber', startNumber, 'pdf name', name);
@@ -519,26 +532,33 @@
       console.log('[btnProcessar] pdfPath', pdfPath);
 
       let labelCounter = startNumber;
-      for(let i=0;i<blocks.length;i+=2){
-        const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
-        console.log(`[btnProcessar] processando checklist ${idx}/${totalLabels}`);
-        const labelZpl = blocks[i]; const checklistZpl = blocks[i+1];
+      for(let idx=0; idx<pairs.length; idx++){
+        setProgress(idx/totalLabels*100, `Processando ${idx+1}/${totalLabels}…`);
+        console.log(`[btnProcessar] processando etiqueta ${idx+1}/${totalLabels}`);
+        const {labelZpl, checklistZpl} = pairs[idx];
 
         // Identificar loja
         const loja = detectLojaFromZpl(labelZpl);
         console.log('[btnProcessar] loja', loja);
 
         // Extrair itens (primeiro tentando ^FD, depois OCR)
-        let text = extractFDText(checklistZpl);
+        let text = checklistZpl ? extractFDText(checklistZpl) : '';
         if(!text || text.length<3){
-          const chkBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, dpmm, widthIn, heightIn);
-          const bin = await binarizeBlob(chkBlob, 200);
-          text = await ocrBlobToText(bin);
+          // tentar extrair texto do próprio label, com OCR como fallback
+          let altText = extractFDText(labelZpl);
+          if(!altText || altText.length<3){
+            const img = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
+            const bin = await binarizeBlob(img, 200);
+            altText = await ocrBlobToText(bin);
+          }
+          text = altText;
         }
-        console.log('[btnProcessar] checklist text:', text);
+        console.log('[btnProcessar] texto extraído:', text);
         let items = parseItemsFromText(text);
         console.log('[btnProcessar] parsed items:', items);
-        if(!items.length){ throw new Error(`Nenhum item encontrado no checklist #${idx}.`); }
+        if(!items.length){
+          console.warn('Sem itens; gerando PDF sem SKUs para a etiqueta', labelCounter);
+        }
 
         // Montar ZPL combinado e renderizar
         const combinedZpl = buildCombinedZpl(labelZpl, items, { dpmm, widthIn, heightIn, labelNumber: labelCounter });
@@ -548,8 +568,10 @@
         const page = pdfDoc.addPage([widthIn*72, (png.height/png.width)*widthIn*72]);
         page.drawImage(png, { x:0, y:0, width: widthIn*72, height: (png.height/png.width)*widthIn*72 });
 
-        // Salvar SKUs
-        await savePrintedItems(items, { loja, labelNumber, storagePath: pdfPath, responsavelUid });
+        // Salvar SKUs se houver
+        if(items.length){
+          await savePrintedItems(items, { loja, labelNumber: labelCounter, storagePath: pdfPath, responsavelUid });
+        }
 
         labelCounter++;
         await sleep(120); // pequeno intervalo para não sobrecarregar API Labelary
