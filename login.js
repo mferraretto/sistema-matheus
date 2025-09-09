@@ -416,8 +416,9 @@ window.requireLogin = (event) => {
 
 function initNotificationListener(uid) {
   const btn = document.getElementById('notificationBtn');
+  const badge = document.getElementById('notificationBadge');
   const list = document.getElementById('notificationList');
-  if (!btn || !list) return;
+  if (!btn || !badge || !list) return;
   if (notifUnsub) notifUnsub();
   if (expNotifUnsub) expNotifUnsub();
   if (updNotifUnsub) updNotifUnsub();
@@ -438,9 +439,10 @@ function initNotificationListener(uid) {
       count++;
     });
     if (count > 0) {
-      btn.dataset.count = count;
+      badge.textContent = count;
+      badge.classList.remove('hidden');
     } else {
-      btn.dataset.count = '';
+      badge.classList.add('hidden');
     }
   };
 

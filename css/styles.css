@@ -27,7 +27,7 @@
   --highlight: #FF6F61;
   --highlight-hover: #E65B54;
   --transition: all 0.3s ease;
-  --navbar-height: 64px;
+  --navbar-height: 70px;
   --sidebar-width: 16rem;
 }
     
@@ -1281,7 +1281,9 @@ body.dark-mode .data-table th {
 
 .navbar {
   height: var(--navbar-height);
-  background: #fff;
+  background: var(--card);
+  color: var(--text-dark);
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
   position: fixed;
   top: 0;
   left: var(--sidebar-width);
@@ -1289,9 +1291,8 @@ body.dark-mode .data-table th {
   z-index: 99;
   display: flex;
   align-items: center;
+  padding: 0 25px;
   justify-content: space-between;
-  padding: 0 1rem;
-  border-bottom: 1px solid rgba(229,229,229,0.7);
 }
 .navbar .hamburger {
   display: none;
@@ -1299,48 +1300,14 @@ body.dark-mode .data-table th {
 .navbar-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 20px
 }
 .navbar .menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  color: #4b5563;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s ease;
+  color: var(--text-light);
+  transition: color 0.2s ease;
 }
 .navbar .menu-item:hover {
-  background-color: #f5f5f5;
-}
-
-#notificationBtn[data-count]:after {
-  content: attr(data-count);
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  background-color: #ef4444;
-  color: #fff;
-  font-size: 0.75rem;
-  width: 1rem;
-  height: 1rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#notificationBtn[data-count=""]:after,
-#notificationBtn[data-count="0"]:after {
-  display: none;
-}
-
-@media (min-width:768px) {
-  .navbar {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
+  color: var(--text-dark);
 }
 .user-dropdown {
   display: flex;
@@ -1746,7 +1713,7 @@ input:checked + .toggle-slider:before {
 
     
   @media (max-width:768px) {
-    :root { --navbar-height: 64px; }
+    :root { --navbar-height: 50px; }
     .grid-cols-2 {
       grid-template-columns: 1fr
     }
@@ -1757,7 +1724,12 @@ input:checked + .toggle-slider:before {
     .navbar {
       left: 0;
       height: var(--navbar-height);
-      padding: 0 1rem;
+      padding: 0 10px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+    }
+    .navbar .menu-item {
+      display: none;
     }
     .navbar .hamburger {
       display: block;
