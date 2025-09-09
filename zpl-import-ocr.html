@@ -94,20 +94,6 @@
     </div>
   </main>
 
-  <!-- Modal Gestor -->
-  <div id="gestorModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div class="hd">Selecionar Gestor</div>
-      <div class="ct">
-        <p class="muted">Selecione qual gestor receberá o PDF gerado.</p>
-        <select id="gestorSelect"></select>
-      </div>
-      <div class="ft">
-        <button id="gestorCancel" type="button" class="btn secondary">Cancelar</button>
-        <button id="gestorConfirm" type="button" class="btn">Confirmar</button>
-      </div>
-    </div>
-  </div>
   </div>
 
   <!-- Libs: PDF, Firebase (compat), Tesseract -->
@@ -134,6 +120,26 @@
     toastOk:'#toastOk', toastErr:'#toastErr', progressWrap:'#progressWrap', progressBar:'#progressBar', progressStatus:'#progressStatus', elapsed:'#elapsed',
     gestorModal:'#gestorModal', gestorSelect:'#gestorSelect', gestorConfirm:'#gestorConfirm', gestorCancel:'#gestorCancel'
   };
+
+  function ensureGestorModal(){
+    if(document.getElementById('gestorModal')) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+    <div id="gestorModal" class="modal-backdrop hidden">
+      <div class="modal">
+        <div class="hd">Selecionar Gestor</div>
+        <div class="ct">
+          <p class="muted">Selecione qual gestor receberá o PDF gerado.</p>
+          <select id="gestorSelect"></select>
+        </div>
+        <div class="ft">
+          <button id="gestorCancel" type="button" class="btn secondary">Cancelar</button>
+          <button id="gestorConfirm" type="button" class="btn">Confirmar</button>
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(wrap.firstElementChild);
+  }
 
   if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
   const auth = firebase.auth();
@@ -209,6 +215,7 @@
 
   // ===== Modal Gestor =====
   function escolherGestorEmail(possiveis){
+    ensureGestorModal();
     return new Promise((resolve)=>{
       const modal = $(el.gestorModal);
       const sel = $(el.gestorSelect);
