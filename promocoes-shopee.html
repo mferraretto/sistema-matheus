@@ -79,7 +79,14 @@
           <p id="promoChangesCount" class="mt-2 font-bold"></p>
         </div>
         <!-- Botões de ação -->
-<div class="flex flex-wrap gap-3 mt-4" id="acaoPromocoes" style="display:none;">
+<div class="flex flex-wrap gap-3 mt-4 items-center" id="acaoPromocoes" style="display:none;">
+  <label class="flex items-center gap-2">
+    <span class="font-medium">Taxa:</span>
+    <select id="taxRateSelect" class="border p-2 rounded">
+      <option value="20">20%</option>
+      <option value="14">14%</option>
+    </select>
+  </label>
   <button onclick="applyPromoPriceUpdate('promo')" class="btn-danger">
     <i class="fas fa-tag mr-2"></i> Aplicar Sem Lucro (0%)
   </button>
@@ -408,14 +415,16 @@ async function applyPromoPriceUpdate(type) {
       ? String(p.parentSku).trim().toUpperCase()
       : '';
     if (sku) systemMap.set(sku, p);
-if (parentSku) systemMap.set(parentSku, p);
+    if (parentSku) systemMap.set(parentSku, p);
   });
-console.log("Mapeamento de SKUs do sistema:", Array.from(systemMap.keys()));
+  console.log("Mapeamento de SKUs do sistema:", Array.from(systemMap.keys()));
 
   let productsWithNoSku = 0;
   let productsNotFound = 0;
   let productsUpdated = 0;
   const skusNaoEncontrados = [];
+
+  const selectedTax = document.getElementById('taxRateSelect')?.value || '20';
 
   sistema.promoShopeeData.forEach((importedProduct) => {
 const sku = importedProduct['Nº de Ref. SKU. (Opcional)'] ? 
@@ -443,16 +452,21 @@ const searchSku = (sku || parentSku || '').toUpperCase();
       return;
     }
 
+    const taxKey = `${selectedTax}%`;
+    const priceSet = (systemProduct.calculosTaxas && systemProduct.calculosTaxas[taxKey])
+      ? systemProduct.calculosTaxas[taxKey]
+      : systemProduct;
+
     let priceToApply = 0;
     switch(type) {
       case 'promo':
-        priceToApply = parseFloat(systemProduct.precoMinimo).toFixed(2);
+        priceToApply = parseFloat(priceSet.precoMinimo).toFixed(2);
         break;
       case 'medium':
-        priceToApply = parseFloat(systemProduct.precoMedio).toFixed(2);
+        priceToApply = parseFloat(priceSet.precoMedio).toFixed(2);
         break;
       case 'ideal':
-        priceToApply = parseFloat(systemProduct.precoIdeal).toFixed(2);
+        priceToApply = parseFloat(priceSet.precoIdeal).toFixed(2);
         break;
     }
 
