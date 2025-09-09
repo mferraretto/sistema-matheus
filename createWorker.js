@@ -1,4 +1,5 @@
-import { createWorker } from 'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.esm.min.js';
+// Importa a versão correta do Tesseract que fornece o método `createWorker`
+import { createWorker } from 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js';
 
 export async function createOcrWorker() {
   const worker = await createWorker({ logger: m => console.log('[OCR]', m) });
