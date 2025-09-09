@@ -380,13 +380,14 @@
     }
   }
 
-  async function savePdfRecord(url, storagePath, name, responsavelUid){
+  async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario){
     const record = {
       name,
       url,
       path: storagePath,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
+    if(foraHorario) record.foraHorario = true;
     await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add(record);
     if(responsavelUid){
       await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add(record);
@@ -398,10 +399,7 @@
     hideErr(); hideOk(); resetProgress();
     if(!currentUser){ showErr('Faça login para continuar.'); return; }
     const dentroHorario = isDentroHorario();
-    if(!dentroHorario){
-      showErr('Fora do horário permitido para impressão (ver Firestore: horariosEtiquetas).');
-      return;
-    }
+    const foraHorario = !dentroHorario;
     const file = $(el.zplFile).files?.[0]; if(!file){ showErr('Selecione um arquivo .zpl/.txt.'); return; }
 
     // gestores
@@ -435,7 +433,7 @@
         created: firebase.firestore.FieldValue.serverTimestamp(),
         total: totalLabels,
         name,
-        foraHorario: !dentroHorario
+        foraHorario
       });
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
 
@@ -481,7 +479,7 @@
       await ref.put(pdfBlob);
       const url = await ref.getDownloadURL();
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
-      await savePdfRecord(url, pdfPath, name, responsavelUid);
+      await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario);
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');
