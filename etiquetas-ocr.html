@@ -459,7 +459,7 @@ completoCtx.drawImage(
 
       // Rodapé textual com dados reconhecidos (em texto, não imagem)
       if (extracted && extracted.length) {
-        const linhas = extracted.map(it => `\u2714 SKU: ${it.sku} | Quantidade: ${it.quantidade}`);
+        const linhas = extracted.map(it => `SKU: ${it.sku} | Quantidade: ${it.quantidade}`);
         const fontSize = 9.5;
         const gap = 2;
         const padding = 4;
