@@ -35,6 +35,16 @@
       align-items: center;
       justify-content: center;
       color: #fff;
+      background-size: 200% 100%;
+      animation: progress-animation 2s linear infinite;
+    }
+    @keyframes progress-animation {
+      0% { background-position: 0% 0; }
+      100% { background-position: -200% 0; }
+    }
+    #timerText {
+      font-size: 0.875rem;
+      color: #374151;
     }
     /* Card Glassmorphism */
     .glass-card {
@@ -115,6 +125,7 @@
             <span id="progressText" class="w-full text-center"></span>
           </div>
         </div>
+        <div id="timerText" class="text-center text-sm text-gray-700 mt-2"></div>
       </div>
       <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
       <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
@@ -471,13 +482,22 @@ firebase.auth().onAuthStateChanged(async u => {
       await batch.commit();
     }
 
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
     async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
   const progressText = document.getElementById("progressText");
+  const timerText = document.getElementById("timerText");
   progressBar.style.display = "block";
   progressFill.style.width = "0%";
   progressText.textContent = "";
+  timerText.textContent = "";
+  const startTime = Date.now();
 
   const status = document.getElementById("status");
   const pdfFile = document.getElementById("pdfInput").files[0];
@@ -501,6 +521,10 @@ firebase.auth().onAuthStateChanged(async u => {
     const progress = Math.round((i / pdf.numPages) * 100);
     progressFill.style.width = progress + "%";
     progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+    const elapsed = (Date.now() - startTime) / 1000;
+    const avg = elapsed / (i + 1);
+    const remaining = Math.max(0, Math.round(avg * (pdf.numPages - (i + 1))));
+    timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
 
     const page = await pdf.getPage(i + 1);
     const scale = 8;
@@ -684,6 +708,7 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
 
   progressFill.style.width = "100%";
   progressText.textContent = "✅ Concluído!";
+  timerText.textContent = "Tempo restante: 00:00";
   setTimeout(() => {
     progressBar.style.display = "none";
   }, 2000);
@@ -728,7 +753,7 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
   a.download = "etiquetas_editadas.pdf";
   a.click();
 
-  status.textContent = "✅ PDF gerado com sucesso!";
+  status.textContent = "✅ PDF gerado com sucesso! Concluído.";
     }
 
     window.processar = processar;
@@ -736,9 +761,12 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
       const progressBar = document.getElementById("progressBar");
       const progressFill = document.getElementById("progressFill");
       const progressText = document.getElementById("progressText");
+      const timerText = document.getElementById("timerText");
       progressBar.style.display = "block";
       progressFill.style.width = "0%";
       progressText.textContent = "";
+      timerText.textContent = "";
+      const startTime = Date.now();
 
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
@@ -759,6 +787,10 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
         const progress = Math.round((i / pdf.numPages) * 100);
         progressFill.style.width = progress + "%";
         progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
+        const elapsed = (Date.now() - startTime) / 1000;
+        const avg = elapsed / (i + 1);
+        const remaining = Math.max(0, Math.round(avg * (pdf.numPages - (i + 1))));
+        timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
         const page = await pdf.getPage(i + 1);
         const scale = 3;
         const viewport = page.getViewport({ scale });
@@ -771,6 +803,7 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
 
       progressFill.style.width = "100%";
       progressText.textContent = "✅ Concluído!";
+      timerText.textContent = "Tempo restante: 00:00";
       setTimeout(() => { progressBar.style.display = "none"; }, 2000);
 
       if (currentUser) {
@@ -809,7 +842,7 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
       }
 
       await savePrintedSkuQuantities(allItems);
-      status.textContent = "✅ Etiquetas Mercado Livre processadas!";
+      status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
     }
 
     window.processarMercadoLivre = processarMercadoLivre;
