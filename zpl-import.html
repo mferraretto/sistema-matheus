@@ -638,28 +638,27 @@ async function generateImageFromZpl(zplCode, dpmm, width, height) {
         function generateCombinedZPL(labelBlock, data, labelNumber) {
             let originalContent = labelBlock.replace(/\^XA|\^XZ/g, ''); 
             originalContent = originalContent.replace(/\^A0N,20,20/g, '^ABN,22,22'); 
-            const newContentStartX = 50; 
-            const newContentStartY = 1200; 
-            const fontH = 22; 
-            const fontW = 22; 
-            const lineStep = 30; 
+            const newContentStartX = 50;
+            const newContentStartY = 1200;
+            const fontH = 22;
+            const fontW = 22;
+            const lineStep = 34;
 
-            let newContentZPL = ''; 
-            if (data && data.length > 0) { 
-                data.forEach((item, index) => { 
-                    const y = newContentStartY + (index * (lineStep + fontH)); 
-                    const skuText = `^FO${newContentStartX},${y}^ABN,${fontH},${fontW}^FD SKU: ${item.sku} ^FS`; 
-                    const qtdText = `^FO${newContentStartX},${y + fontH + 5}^ABN,${fontH},${fontW}^FD Qtd: ${item.quantidade} ^FS`; 
-                    newContentZPL += `${skuText}${qtdText}`; 
-                }); 
-            } 
-            
-            const dpmm = 8; 
-            const originalHeightIn = 5.2; 
+            let newContentZPL = '';
+            if (data && data.length > 0) {
+                data.forEach((item, index) => {
+                    const y = newContentStartY + (index * lineStep);
+                    const line = `^FO${newContentStartX},${y}^A0N,${fontH},${fontW}^FDSKU: ${item.sku} Qtd: ${item.quantidade}^FS`;
+                    newContentZPL += line;
+                });
+            }
+
+            const dpmm = 8;
+            const originalHeightIn = 5.2;
             const totalPageHeightInches = calculateNewTotalHeight(originalHeightIn, data.length, dpmm);
             const totalPageHeightDots = Math.round(totalPageHeightInches * dpmm * 8);
             const numberY = totalPageHeightDots - 420;
-            const numberZpl = `^FO50,${numberY}^ABN,22,22^FD${labelNumber}^FS`;
+            const numberZpl = `^FO50,${numberY}^A0N,22,22^FD${labelNumber}^FS`;
 
             return `^XA^LL${totalPageHeightDots}^LH0,0${originalContent}${newContentZPL}${numberZpl}^XZ`;
         }
