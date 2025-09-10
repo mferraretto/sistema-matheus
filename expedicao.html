@@ -507,18 +507,39 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
       try {
-        const q = db
-          .collectionGroup('skuimpressos')
-          .where('createdAt', '>=', start)
-          .where('createdAt', '<=', end);
-        const snap = await q.get();
+        const [skuSnap, etiquetasSnap] = await Promise.all([
+          db
+            .collectionGroup('skuimpressos')
+            .where('createdAt', '>=', start)
+            .where('createdAt', '<=', end)
+            .get(),
+          db
+            .collectionGroup('etiquetasimpressas')
+            .where('data', '>=', start)
+            .where('data', '<=', end)
+            .get()
+        ]);
         const seen = new Set();
         const rows = [];
-        snap.forEach(doc => {
+        skuSnap.forEach(doc => {
           const data = doc.data();
           const createdAt = data.createdAt?.toDate?.();
           if (!createdAt) return;
           const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          rows.push({
+            sku: data.sku || '',
+            quantidade: data.quantidade || 0,
+            usuario: data.userEmail || ''
+          });
+        });
+        etiquetasSnap.forEach(doc => {
+          const data = doc.data();
+          const createdAt = data.data?.toDate?.();
+          if (!createdAt) return;
+          const uid = doc.ref.parent?.parent?.id || '';
+          const key = `${uid}_${data.sku}_${createdAt.getTime()}`;
           if (seen.has(key)) return;
           seen.add(key);
           rows.push({
