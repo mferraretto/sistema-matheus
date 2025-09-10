@@ -151,27 +151,6 @@
   transition: width 0.3s ease;
 }
 
-/* Mobile adjustments for cards and tables */
-@media (max-width: 640px) {
-  .card {
-    padding: 1rem;
-  }
-  .data-table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-  }
-  .data-table th,
-  .data-table td {
-    padding: 0.5rem;
-  }
-}
-
-@media (max-width: 640px) {
-  #resumoTotais .card {
-    padding: 0.5rem;
-  }
-}
 
 .floating-btn {
   position: fixed;

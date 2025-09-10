@@ -315,21 +315,6 @@ input:checked + .dark-mode-slider:before {
     transform: translateY(0)
   }
 }
-/* Allow sidebar text to remain visible on small screens */
-@media (max-width:768px) {
-  .sidebar {
-    width: var(--sidebar-width);
-  }
-  .sidebar .link-text {
-    display: inline;
-  }
-  .sidebar-link {
-    justify-content: flex-start;
-  }
-  .sidebar-link .mr-3 {
-    margin-right: 0.75rem;
-  }
-}
 .badge {
   margin-left: 5px
 }
@@ -521,11 +506,6 @@ h4 {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 5px rgba(0,0,0,.2)
-}
-@media (max-width:768px) {
-  .mobile-menu-btn {
-    display: flex;
-  }
 }
 .app-container {
   display: flex;
@@ -745,15 +725,6 @@ h4 {
 .card.metric-card .metric-value {
   font-weight: 700;
   font-size: 1.125rem;
-}
-@media (max-width: 768px) {
-  .card.metric-card {
-    min-width: 150px;
-    padding: 2rem;
-  }
-  .card.metric-card .metric-value {
-    font-size: 1.25rem;
-  }
 }
 
 /* Layout for histórico de faturamento cards */
@@ -976,42 +947,6 @@ h4 {
     transform: rotate(360deg)
   }
 }
-@media (max-width:768px) {
-  .tab-btn {
-    padding: .6rem 1rem;
-    font-size: .9rem
-  }
-    /* Ensure form inputs remain side by side on smaller screens */
-  .form-row {
- flex-direction: row;
-    flex-wrap: wrap;
-    gap: .8rem;
-  }
-  .chart-container {
-    padding: 1rem
-  }
-  td,
-  th {
-    padding: .8rem;
-    font-size: .9rem
-  }
-}
-@media (max-width:576px) {
-  .page-title {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .8rem
-  }
-  .tab-btn {
-    flex: 1;
-    text-align: center;
-    justify-content: center
-  }
-  .btn {
-    width: 100%;
-    margin-bottom: .5rem
-  }
-}
 .grid {
   display: grid
 }
@@ -1151,18 +1086,6 @@ h4 {
   font-size: 1.5rem;
   cursor: pointer
 }
-@media (max-width:992px) {
-  .navbar {
-    left: 0;
-    justify-content: space-between;
-  }
-  .main-content {
-    margin-left: 0;
-  }
-  .menu-toggle {
-    display: block
-  }
-}
 body.dark-mode {
   --background: #0F172A;
   --primary: #6366F1;
@@ -1237,13 +1160,6 @@ body.dark-mode .data-table th {
 }
 
 
-@media (max-width:768px) {
-  /* Sidebar visibility handled by container; remove legacy transforms */
-  .content-wrapper,
-  body.has-sidebar .content-wrapper {
-    margin-left: 0;
-  }
-}
 
 #sidebar::-webkit-scrollbar {
   width: 4px;
@@ -1414,12 +1330,6 @@ body.dark-mode .data-table th {
   height: 3px;
   background: var(--primary);
   border-radius: 0.1875rem 0.1875rem 0 0
-}
-@media (max-width:768px) {
-  .tabs {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
 }
 .tab-content {
   display: none;
@@ -1746,33 +1656,6 @@ input:checked + .toggle-slider:before {
   transform: translateX(26px)
 }
 
-    
-  @media (max-width:768px) {
-    .grid-cols-2 {
-      grid-template-columns: 1fr;
-    }
-    .modal-content {
-      width: 95%;
-      margin: 10px auto;
-    }
-    .navbar {
-      left: 0;
-      padding: 0 1rem;
-    }
-    .navbar .menu-item {
-      display: none;
-    }
-    .navbar .hamburger {
-      display: block;
-    }
-    .main-content {
-      margin-left: 0;
-      padding-left: 1rem;
-      padding-right: 1rem;
-      padding-top: var(--navbar-height);
-    }
-  }
-
 .sidebar-item {
   display: flex;
   align-items: center;
@@ -1942,10 +1825,3 @@ body.dark .sidebar-link.active {
 }
 
 
-/* Mobile adjustments for histórico de faturamento cards */
-@media (max-width: 640px) {
-  .faturamento-header,
-  .faturamento-dia {
-    width: 130px;
-  }
-}
