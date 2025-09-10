@@ -624,10 +624,10 @@
           const rows = [];
           for (const uid of allowedUsers) {
             const pass = getPassphrase() || `chave-${uid}`;
-            const collectionPath = `usuarios/${uid}/pedidostiny`;
-            const snap = await getDocs(collection(dbMod, collectionPath));
+            const col = collection(dbMod, 'usuarios', uid, 'pedidostiny');
+            const snap = await getDocs(col);
             for (const doc of snap.docs) {
-              let pedido = await loadSecureDoc(dbMod, collectionPath, doc.id, pass);
+              let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
               if (!pedido) {
                 const raw = doc.data();
                 if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
