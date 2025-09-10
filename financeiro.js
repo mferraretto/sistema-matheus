@@ -60,12 +60,11 @@ function setupFiltros(usuarios) {
   userSel.value = 'todos';
   mesSel.value = formatMes(new Date());
 
-  // Evita que cliques nesses filtros acionem links subjacentes
-  userSel.addEventListener('click', e => e.stopPropagation());
-  mesSel.addEventListener('click', e => e.stopPropagation());
+  // A interação com os filtros não precisa mais bloquear a propagação
+  // de cliques. Isso evita conflitos com o botão que abre o sidebar
+  // em dispositivos móveis.
   document.getElementById('usuarioIcon')?.addEventListener('click', e => {
     e.preventDefault();
-    e.stopPropagation();
     if (typeof userSel.showPicker === 'function') {
       userSel.showPicker();
     } else {
@@ -74,7 +73,6 @@ function setupFiltros(usuarios) {
   });
   document.getElementById('mesIcon')?.addEventListener('click', e => {
     e.preventDefault();
-    e.stopPropagation();
     if (typeof mesSel.showPicker === 'function') {
       mesSel.showPicker();
     } else {
