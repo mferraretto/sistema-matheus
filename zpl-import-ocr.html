@@ -436,25 +436,33 @@
   }
   async function savePrintedItems(items, meta){
     console.log('[savePrintedItems] items:', items, 'meta:', meta);
-    // Salva em uid/{uid}/skuimpressos
-    const base = db.collection('uid').doc(currentUser.uid).collection('skuimpressos');
+    const base = db.collection('uid').doc(currentUser.uid).collection('etiquetasimpressas');
     const batch = db.batch();
-    const now = new Date();
-    items.forEach(it=>{
-      const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null };
-      const doc = base.doc(); batch.set(doc, data, { merge:true });
+    items.forEach(it => {
+      const data = {
+        sku: it.sku,
+        quantidade: it.quantidade,
+        loja: meta.loja || '',
+        data: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      const doc = base.doc();
+      batch.set(doc, data);
     });
     await batch.commit();
     console.log('[savePrintedItems] saved for current user');
 
-    // Se houver responsável, tenta salvar no UID dele também
     if(meta.responsavelUid){
-      const base2 = db.collection('uid').doc(meta.responsavelUid).collection('skuimpressos');
+      const base2 = db.collection('uid').doc(meta.responsavelUid).collection('etiquetasimpressas');
       const batch2 = db.batch();
-      const now2 = new Date();
-      items.forEach(it=>{
-        const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now2.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null, origemUid: currentUser.uid };
-        const doc = base2.doc(); batch2.set(doc, data, { merge:true });
+      items.forEach(it => {
+        const data = {
+          sku: it.sku,
+          quantidade: it.quantidade,
+          loja: meta.loja || '',
+          data: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        const doc = base2.doc();
+        batch2.set(doc, data);
       });
       await batch2.commit();
       console.log('[savePrintedItems] saved for responsavel', meta.responsavelUid);

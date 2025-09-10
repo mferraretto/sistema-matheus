@@ -508,23 +508,34 @@
       start.setHours(17, 0, 0, 0);
       try {
         const q = db
-          .collectionGroup('skuimpressos')
-          .where('createdAt', '>=', start)
-          .where('createdAt', '<=', end);
+          .collectionGroup('etiquetasimpressas')
+          .where('data', '>=', start)
+          .where('data', '<=', end);
         const snap = await q.get();
         const seen = new Set();
         const rows = [];
-        snap.forEach(doc => {
+        const docs = [];
+        snap.forEach(doc => docs.push(doc));
+        const uids = Array.from(new Set(docs.map(d => d.ref.parent.parent.id)));
+        const emailMap = {};
+        await Promise.all(
+          uids.map(async uid => {
+            const udoc = await db.collection('uid').doc(uid).get();
+            emailMap[uid] = udoc.data()?.email || '';
+          })
+        );
+        docs.forEach(doc => {
           const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
+          const createdAt = data.data?.toDate?.();
           if (!createdAt) return;
-          const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
+          const uid = doc.ref.parent.parent.id;
+          const key = `${uid}_${data.sku}_${createdAt.getTime()}`;
           if (seen.has(key)) return;
           seen.add(key);
           rows.push({
             sku: data.sku || '',
             quantidade: data.quantidade || 0,
-            usuario: data.userEmail || ''
+            usuario: emailMap[uid] || ''
           });
         });
         rows.forEach(r => {
@@ -806,12 +817,10 @@
           sku: item.sku,
           quantidade: item.quantidade,
           loja: loja || '',
-          userUid: currentUser.uid,
-          userEmail: currentUser.email,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          data: firebase.firestore.FieldValue.serverTimestamp()
         };
-        batch.set(userDoc.collection('skuimpressos').doc(), data);
-        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+        batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
       });
       await batch.commit();
     }
@@ -863,9 +872,9 @@
       const uid = currentUser.uid;
       const userDoc = db.collection('uid').doc(uid);
       const snap = await userDoc
-        .collection('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collection('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
       const resumo = {};
       snap.forEach(d => {
@@ -899,14 +908,25 @@
 
     async function gerarRelatorioDiaPorUsuario(inicio, fim, diaDados) {
       const snap = await db
-        .collectionGroup('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collectionGroup('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
+      const docs = [];
+      snap.forEach(d => docs.push(d));
+      const uids = Array.from(new Set(docs.map(d => d.ref.parent.parent.id)));
+      const emailMap = {};
+      await Promise.all(
+        uids.map(async uid => {
+          const udoc = await db.collection('uid').doc(uid).get();
+          emailMap[uid] = udoc.data()?.email || 'Desconhecido';
+        })
+      );
       const resumo = {};
-      snap.forEach(d => {
+      docs.forEach(d => {
         const data = d.data();
-        const usuario = data.userEmail || 'Desconhecido';
+        const uid = d.ref.parent.parent.id;
+        const usuario = emailMap[uid] || 'Desconhecido';
         const loja = data.loja || 'sem-loja';
         const sku = data.sku || 'sem-sku';
         const qtd = data.quantidade || 0;

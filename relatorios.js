@@ -73,9 +73,9 @@ export async function exportarSkuImpressos() {
   fim.setMonth(fim.getMonth() + 1);
 
   const q = query(
-    collection(db, `uid/${uid}/skuimpressos`),
-    where('createdAt', '>=', Timestamp.fromDate(inicio)),
-    where('createdAt', '<', Timestamp.fromDate(fim))
+    collection(db, `uid/${uid}/etiquetasimpressas`),
+    where('data', '>=', Timestamp.fromDate(inicio)),
+    where('data', '<', Timestamp.fromDate(fim))
   );
   const snap = await getDocs(q);
   const linhas = [];
@@ -84,10 +84,10 @@ export async function exportarSkuImpressos() {
     const sku = dados.sku || 'sem-sku';
     const quantidade = Number(dados.quantidade) || 0;
     const loja = dados.loja || '';
-    const data = dados.createdAt && dados.createdAt.toDate
-      ? dados.createdAt.toDate().toLocaleDateString('pt-BR')
+    const dataStr = dados.data && dados.data.toDate
+      ? dados.data.toDate().toLocaleDateString('pt-BR')
       : '';
-    linhas.push({ SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
+    linhas.push({ SKU: sku, Quantidade: quantidade, Loja: loja, Data: dataStr });
   });
   const sobras = [];
   const qSobras = query(
@@ -149,9 +149,9 @@ export async function exportarSkuImpressosGestor() {
     const uid = u.id;
     const emailUsuario = u.data().email || 'sem-email';
     const q = query(
-      collection(db, `uid/${uid}/skuimpressos`),
-      where('createdAt', '>=', Timestamp.fromDate(inicio)),
-      where('createdAt', '<', Timestamp.fromDate(fim))
+      collection(db, `uid/${uid}/etiquetasimpressas`),
+      where('data', '>=', Timestamp.fromDate(inicio)),
+      where('data', '<', Timestamp.fromDate(fim))
     );
     promessas.push(
       getDocs(q).then(snap => {
@@ -160,10 +160,10 @@ export async function exportarSkuImpressosGestor() {
           const sku = dados.sku || 'sem-sku';
           const quantidade = dados.quantidade || 0;
           const loja = dados.loja || '';
-          const data = dados.createdAt && dados.createdAt.toDate
-            ? dados.createdAt.toDate().toLocaleDateString('pt-BR')
+          const dataStr = dados.data && dados.data.toDate
+            ? dados.data.toDate().toLocaleDateString('pt-BR')
             : '';
-          linhas.push({ Usuario: emailUsuario, SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
+          linhas.push({ Usuario: emailUsuario, SKU: sku, Quantidade: quantidade, Loja: loja, Data: dataStr });
         });
       })
     );
