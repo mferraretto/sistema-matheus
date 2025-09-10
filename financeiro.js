@@ -35,7 +35,6 @@ onAuthStateChanged(auth, async user => {
   }
   setupFiltros(usuariosCache);
   await carregar();
-  initFaturamentoFeed(usuariosCache);
   initKpiRealtime();
   initKpiVendasDetalhes();
 });
@@ -494,36 +493,6 @@ async function getFaturamentoRegistrosDia(uid, dia) {
     });
   }
   return registros;
-}
-
-async function calcularFaturamentoDia(uid, dia) {
-  const { liquido } = await calcularFaturamentoDiaDetalhado(uid, dia);
-  return liquido;
-}
-
-function initFaturamentoFeed(usuarios) {
-  const card = document.getElementById('faturamentoUpdatesCard');
-  const feed = document.getElementById('faturamentoFeed');
-  if (!card || !feed) return;
-  feed.innerHTML = '';
-  usuarios.forEach(u => {
-    const ref = collection(db, `uid/${u.uid}/faturamento`);
-    let initialized = false;
-    onSnapshot(ref, snapshot => {
-      if (!initialized) { initialized = true; return; }
-      snapshot.docChanges().forEach(async change => {
-        if (change.type === 'added' || change.type === 'modified') {
-          const totalDia = await calcularFaturamentoDia(u.uid, change.doc.id);
-          const item = document.createElement('div');
-          item.className = 'border-b pb-1 text-sm';
-          item.textContent = `${u.nome} - ${formatarData(change.doc.id)}: R$ ${totalDia.toLocaleString('pt-BR')}`;
-          feed.prepend(item);
-          card.classList.remove('hidden');
-          while (feed.children.length > 20) feed.removeChild(feed.lastChild);
-        }
-      });
-    });
-  });
 }
 
 function initKpiRealtime() {
