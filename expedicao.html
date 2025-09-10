@@ -623,36 +623,42 @@
           }
           const rows = [];
           for (const uid of allowedUsers) {
+            if (!uid) continue; // Evita erros com UID indefinido
             const pass = getPassphrase() || `chave-${uid}`;
-            const pedidosCol = collection(dbMod, `usuarios/${uid}/pedidostiny`);
-            const snap = await getDocs(pedidosCol);
-            for (const doc of snap.docs) {
-              let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
-              if (!pedido) {
-                const raw = doc.data();
-                if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-              }
-              if (!pedido) continue;
-              const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
-                .join(' ')
-                .trim();
-              const data = parseDateTime(dataStr);
-              if (isNaN(data) || data < start || data > end) continue;
-              const loja = pedido.loja || pedido.store || '';
-              const usuario = await getNome(uid);
-              if (Array.isArray(pedido.itens) && pedido.itens.length) {
-                pedido.itens.forEach(item => {
-                  const sku = item.sku || '';
+            const collectionPath = `usuarios/${uid}/pedidostiny`;
+
+            try {
+              const snap = await getDocs(collection(dbMod, collectionPath));
+              for (const doc of snap.docs) {
+                let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
+                if (!pedido) {
+                  const raw = doc.data();
+                  if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+                }
+                if (!pedido) continue;
+                const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
+                  .join(' ')
+                  .trim();
+                const data = parseDateTime(dataStr);
+                if (isNaN(data) || data < start || data > end) continue;
+                const loja = pedido.loja || pedido.store || '';
+                const usuario = await getNome(uid);
+                if (Array.isArray(pedido.itens) && pedido.itens.length) {
+                  pedido.itens.forEach(item => {
+                    const sku = item.sku || '';
+                    const row = { id: doc.id, loja, sku, data, usuario };
+                    rows.push(row);
+                    checklistRows.push(row);
+                  });
+                } else {
+                  const sku = pedido.sku || '';
                   const row = { id: doc.id, loja, sku, data, usuario };
                   rows.push(row);
                   checklistRows.push(row);
-                });
-              } else {
-                const sku = pedido.sku || '';
-                const row = { id: doc.id, loja, sku, data, usuario };
-                rows.push(row);
-                checklistRows.push(row);
+                }
               }
+            } catch (err) {
+              console.error(`Erro ao carregar pedidos do usuário ${uid}:`, err);
             }
           }
           rows.forEach(r => {
