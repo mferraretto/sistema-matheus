@@ -629,20 +629,23 @@
             try {
               const snap = await db.collection(`usuarios/${uid}/pedidostiny`).get();
               for (const docu of snap.docs) {
-                const id = docu.id;
-                let pedido = docu.data();
-                if (pedido && (pedido.encrypted || pedido.encryptedData)) {
+                let docData = docu.data();
+                let pedido = null;
+                if (docData && (docData.encrypted || docData.encryptedData)) {
                   try {
-                    let jsonStr = pedido.encrypted || pedido.encryptedData;
+                    let jsonStr = docData.encrypted || docData.encryptedData;
                     if (typeof jsonStr !== 'string') jsonStr = JSON.stringify(jsonStr);
                     const plaintext = await decryptString(jsonStr, pass);
                     pedido = JSON.parse(plaintext);
                   } catch (err) {
-                    console.warn('Erro ao descriptografar pedido', id, err);
+                    console.warn('Erro ao descriptografar pedido', docu.id, err);
                     continue;
                   }
+                } else {
+                  pedido = docData;
                 }
                 if (!pedido) continue;
+                const id = pedido.idPedido || docu.id;
                 const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
                   .join(' ')
                   .trim();
