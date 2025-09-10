@@ -433,7 +433,9 @@ function setupMobileSidebar() {
 
   btns.forEach(btn => {
     if (btn.dataset.sidebarReady) return;
-    btn.addEventListener('click', toggleSidebar, { once: false });
+    // Impede que outros listeners de clique capturem o evento
+    // antes de abrir o menu lateral em telas menores.
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleSidebar(); }, { once: false });
     btn.dataset.sidebarReady = 'true';
   });
   if (!overlay.dataset.sidebarReady) {
