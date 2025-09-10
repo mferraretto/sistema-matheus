@@ -101,12 +101,12 @@
         <button id="exportChecklistBtn" class="btn btn-primary">Exportar</button>
       </div>
       <div class="overflow-y-auto max-h-96">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr><th class="p-2 border">SKU</th><th class="p-2 border">Quantidade</th><th class="p-2 border">Usuário</th></tr>
-          </thead>
-          <tbody id="checklistBody"></tbody>
-        </table>
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr><th class="p-2 border">Pedido</th><th class="p-2 border">Loja</th><th class="p-2 border">SKU</th><th class="p-2 border">Data</th><th class="p-2 border">Usuário</th></tr>
+            </thead>
+            <tbody id="checklistBody"></tbody>
+          </table>
       </div>
     </div>
   </div>
@@ -125,6 +125,7 @@
  <script type="module">
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
     import { decryptString } from './crypto.js';
+    import { loadSecureDoc } from './secure-firestore.js';
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -528,108 +529,122 @@
       renderUserCards(perUser);
     }
 
-    async function carregarChecklist() {
-      if (!checklistBody || !currentUser) return;
-      checklistBody.innerHTML = '';
-      checklistRows = [];
-      const now = new Date();
-      const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
-      const start = new Date(end);
-      start.setDate(start.getDate() - 1);
-      start.setHours(17, 0, 0, 0);
-      try {
-        let allowedUsers = [currentUser.uid];
-        if (isResponsavel) {
-          const usuarios = new Set();
-          const snap1 = await db
-            .collection('uid')
-            .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
-            .get();
-          snap1.forEach(d => usuarios.add(d.id));
-          const snap2 = await db
-            .collection('uid')
-            .where('responsavelExpedicaoEmail', '==', currentUser.email)
-            .get();
-          snap2.forEach(d => usuarios.add(d.id));
-          allowedUsers = [...allowedUsers, ...usuarios];
-        }
-
-        const userCache = new Map();
-        async function getNome(uid) {
-          if (!userCache.has(uid)) {
-            userCache.set(uid, await getOwnerName(uid, ''));
+      async function carregarChecklist() {
+        if (!checklistBody || !currentUser) return;
+        checklistBody.innerHTML = '';
+        checklistRows = [];
+        function parseDate(str) {
+          if (!str) return new Date('');
+          const parts = str.split(/[\/\-]/);
+          if (parts.length === 3) {
+            if (str.includes('-') && parts[0].length === 4) {
+              return new Date(str);
+            }
+            const [d, m, y] = parts;
+            return new Date(`${y}-${m}-${d}`);
           }
-          return userCache.get(uid);
+          return new Date(str);
         }
-
-        const acumulados = new Map();
-        async function adicionar(uid, sku, qtd, data) {
-          if (!allowedUsers.includes(uid)) return;
-          const nome = await getNome(uid);
-          const chave = `${uid}_${sku}`;
-          let item = acumulados.get(chave);
-          if (!item) {
-            item = { sku, quantidade: 0, usuario: nome };
+        function parseDateTime(str) {
+          if (!str) return new Date('');
+          const [datePart, timePart] = str.split(' ');
+          const dt = parseDate(datePart);
+          if (timePart) {
+            const [h, m] = timePart.split(':').map(Number);
+            dt.setHours(h || 0, m || 0, 0, 0);
           }
-          item.quantidade += qtd;
-          acumulados.set(chave, item);
-          checklistRows.push({ data, usuario: nome, sku, quantidade: qtd });
+          return dt;
         }
-
-        const q1 = db
-          .collectionGroup('skuimpressos')
-          .where('createdAt', '>=', start)
-          .where('createdAt', '<=', end);
-        const snap1 = await q1.get();
-        for (const doc of snap1.docs) {
-          const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
-          if (!createdAt) continue;
-          await adicionar(data.userUid, data.sku || '', data.quantidade || 0, createdAt);
+        const now = new Date();
+        const end = new Date(now.toISOString().split('T')[0] + 'T13:30:00');
+        const start = new Date(end);
+        start.setDate(start.getDate() - 1);
+        start.setHours(17, 0, 0, 0);
+        try {
+          let allowedUsers = [currentUser.uid];
+          if (isResponsavel) {
+            const usuarios = new Set();
+            const snap1 = await db
+              .collection('uid')
+              .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
+              .get();
+            snap1.forEach(d => usuarios.add(d.id));
+            const snap2 = await db
+              .collection('uid')
+              .where('responsavelExpedicaoEmail', '==', currentUser.email)
+              .get();
+            snap2.forEach(d => usuarios.add(d.id));
+            allowedUsers = [...allowedUsers, ...usuarios];
+          }
+          const userCache = new Map();
+          async function getNome(uid) {
+            if (!userCache.has(uid)) {
+              userCache.set(uid, await getOwnerName(uid, ''));
+            }
+            return userCache.get(uid);
+          }
+          const rows = [];
+          for (const uid of allowedUsers) {
+            const pass = getPassphrase() || `chave-${uid}`;
+            const col = db.collection(`usuarios/${uid}/pedidostiny`);
+            const snap = await col.get();
+            for (const doc of snap.docs) {
+              let pedido = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, doc.id, pass);
+              if (!pedido) {
+                const raw = doc.data();
+                if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+              }
+              if (!pedido) continue;
+              const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
+                .join(' ')
+                .trim();
+              const data = parseDateTime(dataStr);
+              if (isNaN(data) || data < start || data > end) continue;
+              const loja = pedido.loja || pedido.store || '';
+              const usuario = await getNome(uid);
+              if (Array.isArray(pedido.itens) && pedido.itens.length) {
+                pedido.itens.forEach(item => {
+                  const sku = item.sku || '';
+                  const row = { id: doc.id, loja, sku, data, usuario };
+                  rows.push(row);
+                  checklistRows.push(row);
+                });
+              } else {
+                const sku = pedido.sku || '';
+                const row = { id: doc.id, loja, sku, data, usuario };
+                rows.push(row);
+                checklistRows.push(row);
+              }
+            }
+          }
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="p-2 border">${r.id}</td><td class="p-2 border">${r.loja}</td><td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.data.toLocaleString('pt-BR')}</td><td class="p-2 border">${r.usuario}</td>`;
+            checklistBody.appendChild(tr);
+          });
+          if (!rows.length) {
+            checklistBody.innerHTML = '<tr><td class="p-2 text-center text-gray-500" colspan="5">Nenhum registro</td></tr>';
+          }
+        } catch (e) {
+          console.error('Erro ao carregar checklist:', e);
+          checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="5">Erro ao carregar</td></tr>';
         }
-
-        const q2 = db
-          .collectionGroup('etiquetasimpressas')
-          .where('data', '>=', start)
-          .where('data', '<=', end);
-        const snap2 = await q2.get();
-        for (const doc of snap2.docs) {
-          const data = doc.data();
-          const createdAt = data.data?.toDate?.();
-          if (!createdAt) continue;
-          const uid = doc.ref.parent.parent?.id;
-          if (!uid) continue;
-          await adicionar(uid, data.sku || '', data.quantidade || 0, createdAt);
-        }
-
-        const rows = Array.from(acumulados.values());
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.quantidade}</td><td class="p-2 border">${r.usuario}</td>`;
-          checklistBody.appendChild(tr);
-        });
-        if (!rows.length) {
-          checklistBody.innerHTML = '<tr><td class="p-2 text-center text-gray-500" colspan="3">Nenhum registro</td></tr>';
-        }
-      } catch (e) {
-        console.error('Erro ao carregar checklist:', e);
-        checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="3">Erro ao carregar</td></tr>';
       }
-    }
 
-    function exportarChecklist() {
-      if (!checklistRows.length) return;
-      const wsData = checklistRows.map(r => ({
-        Data: r.data.toISOString().split('T')[0],
-        Usuario: r.usuario,
-        SKU: r.sku,
-        Quantidade: r.quantidade
-      }));
-      const ws = XLSX.utils.json_to_sheet(wsData, { header: ['Data', 'Usuario', 'SKU', 'Quantidade'] });
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Checklist');
-      XLSX.writeFile(wb, 'checklist_expedicao.xlsx');
-    }
+      function exportarChecklist() {
+        if (!checklistRows.length) return;
+        const wsData = checklistRows.map(r => ({
+          Pedido: r.id,
+          Loja: r.loja,
+          SKU: r.sku,
+          Data: r.data.toISOString(),
+          Usuario: r.usuario
+        }));
+        const ws = XLSX.utils.json_to_sheet(wsData, { header: ['Pedido', 'Loja', 'SKU', 'Data', 'Usuario'] });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Checklist');
+        XLSX.writeFile(wb, 'checklist_expedicao.xlsx');
+      }
 
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
