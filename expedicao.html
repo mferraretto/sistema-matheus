@@ -132,7 +132,6 @@
     }
     const db = firebase.firestore();
     const storage = firebase.storage();
-    const dbMod = db._delegate || db; // Firestore instance for modular APIs
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     let currentUser = null;
     let currentFilter = 'all';
@@ -625,7 +624,7 @@
             const col = db.collection(`usuarios/${uid}/pedidostiny`);
             const snap = await col.get();
             for (const doc of snap.docs) {
-              let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
+              let pedido = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, doc.id, pass);
               if (!pedido) {
                 const raw = doc.data();
                 if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
