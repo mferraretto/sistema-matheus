@@ -39,13 +39,13 @@ export async function carregarPedidosTiny(uidParam) {
     const pass = getPassphrase() || `chave-${uid}`;
 
     const [snap, produtosSnap] = await Promise.all([
-      getDocs(collection(db, `usuarios/${uid}/pedidostiny`)),
+      getDocs(collection(db, `uid/${uid}/pedidostiny`)),
       getDocs(collection(db, `uid/${uid}/produtos`))
     ]);
 
     const pedidos = [];
     for (const d of snap.docs) {
-      let pedido = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+      let pedido = await loadSecureDoc(db, `uid/${uid}/pedidostiny`, d.id, pass);
       if (!pedido) {
         const raw = d.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
@@ -282,10 +282,10 @@ async function verificarDuplicados() {
   try {
     const uid = document.getElementById('usuarioFiltro')?.value || auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
-    const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
+    const snap = await getDocs(collection(db, `uid/${uid}/pedidostiny`));
     const mapa = {};
     for (const d of snap.docs) {
-      let dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+      let dados = await loadSecureDoc(db, `uid/${uid}/pedidostiny`, d.id, pass);
       if (!dados) {
         const raw = d.data();
         if (raw && !raw.encrypted && !raw.encryptedData) dados = raw;
@@ -299,7 +299,7 @@ async function verificarDuplicados() {
     for (const ids of Object.values(mapa)) {
       if (ids.length > 1) {
         for (const id of ids.slice(1)) {
-          await deleteDoc(doc(db, `usuarios/${uid}/pedidostiny`, id));
+          await deleteDoc(doc(db, `uid/${uid}/pedidostiny`, id));
           removidos++;
         }
       }
