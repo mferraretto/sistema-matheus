@@ -97,6 +97,9 @@
     <div class="bg-white w-full max-w-2xl p-4 rounded shadow-lg relative">
       <button id="closeChecklistModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
       <h2 class="text-lg font-semibold mb-2">Checklist do dia</h2>
+      <div class="flex justify-end mb-2">
+        <button id="exportChecklistBtn" class="btn btn-primary">Exportar</button>
+      </div>
       <div class="overflow-y-auto max-h-96">
         <table class="min-w-full text-sm">
           <thead>
@@ -146,6 +149,7 @@
     let responsavelFiltro = '';
     let attentionOnly = false;
     const equipeUsuarios = new Map();
+    let checklistRows = [];
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -201,6 +205,7 @@
     const checklistModal = document.getElementById('checklistModal');
     const closeChecklistModal = document.getElementById('closeChecklistModal');
     const checklistBody = document.getElementById('checklistBody');
+    const exportChecklistBtn = document.getElementById('exportChecklistBtn');
     
     if (uploadManualBtn) {
       uploadManualBtn.addEventListener('click', () => {
@@ -241,6 +246,7 @@
         checklistModal.classList.remove('hidden');
       });
     }
+    if (exportChecklistBtn) exportChecklistBtn.addEventListener('click', exportarChecklist);
     if (closeChecklistModal && checklistModal) {
       closeChecklistModal.addEventListener('click', () => checklistModal.classList.add('hidden'));
       checklistModal.addEventListener('click', e => { if (e.target === checklistModal) checklistModal.classList.add('hidden'); });
@@ -525,6 +531,7 @@
     async function carregarChecklist() {
       if (!checklistBody || !currentUser) return;
       checklistBody.innerHTML = '';
+      checklistRows = [];
       const now = new Date();
       const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
       const start = new Date(end);
@@ -547,17 +554,26 @@
           allowedUsers = [...allowedUsers, ...usuarios];
         }
 
+        const userCache = new Map();
+        async function getNome(uid) {
+          if (!userCache.has(uid)) {
+            userCache.set(uid, await getOwnerName(uid, ''));
+          }
+          return userCache.get(uid);
+        }
+
         const acumulados = new Map();
-        async function adicionar(uid, sku, qtd) {
+        async function adicionar(uid, sku, qtd, data) {
           if (!allowedUsers.includes(uid)) return;
+          const nome = await getNome(uid);
           const chave = `${uid}_${sku}`;
           let item = acumulados.get(chave);
           if (!item) {
-            const nome = await getOwnerName(uid, '');
             item = { sku, quantidade: 0, usuario: nome };
           }
           item.quantidade += qtd;
           acumulados.set(chave, item);
+          checklistRows.push({ data, usuario: nome, sku, quantidade: qtd });
         }
 
         const q1 = db
@@ -569,7 +585,7 @@
           const data = doc.data();
           const createdAt = data.createdAt?.toDate?.();
           if (!createdAt) continue;
-          await adicionar(data.userUid, data.sku || '', data.quantidade || 0);
+          await adicionar(data.userUid, data.sku || '', data.quantidade || 0, createdAt);
         }
 
         const q2 = db
@@ -583,7 +599,7 @@
           if (!createdAt) continue;
           const uid = doc.ref.parent.parent?.id;
           if (!uid) continue;
-          await adicionar(uid, data.sku || '', data.quantidade || 0);
+          await adicionar(uid, data.sku || '', data.quantidade || 0, createdAt);
         }
 
         const rows = Array.from(acumulados.values());
@@ -599,6 +615,20 @@
         console.error('Erro ao carregar checklist:', e);
         checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="3">Erro ao carregar</td></tr>';
       }
+    }
+
+    function exportarChecklist() {
+      if (!checklistRows.length) return;
+      const wsData = checklistRows.map(r => ({
+        Data: r.data.toISOString().split('T')[0],
+        Usuario: r.usuario,
+        SKU: r.sku,
+        Quantidade: r.quantidade
+      }));
+      const ws = XLSX.utils.json_to_sheet(wsData, { header: ['Data', 'Usuario', 'SKU', 'Quantidade'] });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Checklist');
+      XLSX.writeFile(wb, 'checklist_expedicao.xlsx');
     }
 
     async function carregarEtiquetas() {
