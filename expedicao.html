@@ -624,8 +624,8 @@
           const rows = [];
           for (const uid of allowedUsers) {
             const pass = getPassphrase() || `chave-${uid}`;
-            const col = collection(dbMod, 'usuarios', uid, 'pedidostiny');
-            const snap = await getDocs(col);
+            const pedidosCol = collection(dbMod, `usuarios/${uid}/pedidostiny`);
+            const snap = await getDocs(pedidosCol);
             for (const doc of snap.docs) {
               let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
               if (!pedido) {
