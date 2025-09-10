@@ -493,7 +493,6 @@
     async function calcularTotalPedidosDia() {
       if (!currentUser) return;
       const totalEl = document.getElementById('dailyTotal');
-      const snap = await db.collection('pdfDocs').get();
 
       // Intervalo: 17h do dia anterior até 13h do dia atual
       const now = new Date();
@@ -502,28 +501,64 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
 
-      let total = 0;
-      const perUser = {};
-      for (const doc of snap.docs) {
-        const data = doc.data();
-        const allowed =
-          data.ownerEmail === currentUser.email ||
-          (data.gestoresExpedicaoEmails || []).includes(currentUser.email);
-        if (!allowed || !data.createdAt) continue;
-        const createdAt = data.createdAt.toDate ? data.createdAt.toDate() : null;
-        if (!createdAt) continue;
-        if (
-          createdAt >= start &&
-          createdAt <= end &&
-          data.status !== 'concluido'
-        ) {
-          const labelsCount = Number(data.total ?? data.totalLabels);
-          const qty = isNaN(labelsCount) ? 1 : labelsCount;
-          total += qty;
-          const key = data.ownerUid || data.ownerEmail;
-          if (key) perUser[key] = (perUser[key] || 0) + qty;
+      // Determina usuários permitidos (próprio usuário + subordinados)
+      let allowedUsers = [currentUser.uid];
+      if (isResponsavel) {
+        try {
+          const usuarios = new Set();
+          const snap1 = await db
+            .collection('uid')
+            .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
+            .get();
+          snap1.forEach(d => usuarios.add(d.id));
+          const snap2 = await db
+            .collection('uid')
+            .where('responsavelExpedicaoEmail', '==', currentUser.email)
+            .get();
+          snap2.forEach(d => usuarios.add(d.id));
+          allowedUsers = [...allowedUsers, ...usuarios];
+        } catch (e) {
+          console.error('Erro ao buscar usuários permitidos:', e);
         }
       }
+
+      let total = 0;
+      const perUser = {};
+
+      try {
+        // Soma registros da coleção skuimpressos
+        const q1 = db
+          .collectionGroup('skuimpressos')
+          .where('createdAt', '>=', start)
+          .where('createdAt', '<=', end);
+        const snap1 = await q1.get();
+        for (const doc of snap1.docs) {
+          const data = doc.data();
+          const uid = data.userUid;
+          if (!uid || !allowedUsers.includes(uid)) continue;
+          const qty = Number(data.quantidade) || 0;
+          total += qty;
+          perUser[uid] = (perUser[uid] || 0) + qty;
+        }
+
+        // Soma registros da coleção etiquetasimpressas
+        const q2 = db
+          .collectionGroup('etiquetasimpressas')
+          .where('data', '>=', start)
+          .where('data', '<=', end);
+        const snap2 = await q2.get();
+        for (const doc of snap2.docs) {
+          const data = doc.data();
+          const uid = doc.ref.parent.parent?.id;
+          if (!uid || !allowedUsers.includes(uid)) continue;
+          const qty = Number(data.quantidade) || 0;
+          total += qty;
+          perUser[uid] = (perUser[uid] || 0) + qty;
+        }
+      } catch (err) {
+        console.error('Erro ao calcular pedidos do dia:', err);
+      }
+
       if (totalEl) totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
       renderUserCards(perUser);
     }
