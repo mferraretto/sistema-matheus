@@ -1755,17 +1755,21 @@ input:checked + .toggle-slider:before {
       width: 95%;
       margin: 10px auto;
     }
-    :root {
-      --navbar-height: 0;
-    }
     .navbar {
+      left: 0;
+      padding: 0 1rem;
+    }
+    .navbar .menu-item {
       display: none;
+    }
+    .navbar .hamburger {
+      display: block;
     }
     .main-content {
       margin-left: 0;
       padding-left: 1rem;
       padding-right: 1rem;
-      padding-top: 0;
+      padding-top: var(--navbar-height);
     }
   }
 
