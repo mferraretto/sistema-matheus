@@ -1,7 +1,8 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, orderBy, limit, startAfter, startAt, endAt, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, orderBy, limit, startAfter, startAt, endAt, getDocs, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, getPassphrase } from './firebase-config.js';
+import { loadSecureDoc } from '../secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -321,7 +322,14 @@ async function carregarPedidos(direction = 0) {
   const uid = auth.currentUser.uid;
   const cont = document.getElementById('listaPedidos');
   cont.innerHTML = '';
-  const ref = collection(db, `usuarios/${uid}/pedidosShopeeTiny`);
+  const pass = getPassphrase() || `chave-${uid}`;
+
+  // Verifica e remove pedidos duplicados uma única vez ao carregar a primeira página
+  if (direction === 0 && stateTiny.pedidos.page === 1) {
+    await verificarDuplicadosTiny(uid, pass);
+  }
+
+  const ref = collection(db, `usuarios/${uid}/pedidostiny`);
   let q = query(ref, orderBy('data'), limit(stateTiny.pedidos.pageSize));
   if (direction === 1 && stateTiny.pedidos.lastDoc) {
     stateTiny.pedidos.stack.push(stateTiny.pedidos.lastDoc);
@@ -339,13 +347,45 @@ async function carregarPedidos(direction = 0) {
   } else {
     stateTiny.pedidos.page = 1;
   }
+
   const snap = await getDocs(q);
-  snap.forEach(doc => {
-    const p = doc.data();
+  const vistos = {};
+  for (const d of snap.docs) {
+    let p = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+    if (!p) {
+      const raw = d.data();
+      if (raw && !raw.encrypted && !raw.encryptedData) p = raw;
+    }
+    if (!p) continue;
+    const idPedido = p.idPedido || p.idpedido || p.numero || p.numeroEcommerce || d.id;
+    if (vistos[idPedido]) {
+      await deleteDoc(doc(db, `usuarios/${uid}/pedidostiny`, d.id));
+      continue;
+    }
+    vistos[idPedido] = true;
     cont.insertAdjacentHTML('beforeend', cardPedido(p));
-  });
+  }
   stateTiny.pedidos.lastDoc = snap.docs[snap.docs.length - 1] || null;
   document.getElementById('pagPedidos').textContent = `Página ${stateTiny.pedidos.page}`;
+}
+
+async function verificarDuplicadosTiny(uid, pass) {
+  const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
+  const mapa = {};
+  for (const d of snap.docs) {
+    let dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+    if (!dados) {
+      const raw = d.data();
+      if (raw && !raw.encrypted && !raw.encryptedData) dados = raw;
+    }
+    const idPedido = dados?.idPedido || dados?.idpedido || dados?.numero || dados?.numeroEcommerce || d.id;
+    if (!idPedido) continue;
+    if (mapa[idPedido]) {
+      await deleteDoc(doc(db, `usuarios/${uid}/pedidostiny`, d.id));
+    } else {
+      mapa[idPedido] = true;
+    }
+  }
 }
 
 function cardPedido(p) {
