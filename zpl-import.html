@@ -206,11 +206,11 @@
                     loja: item.loja || '',
                     userUid: currentUser.uid,
                     userEmail: currentUser.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    data: firebase.firestore.FieldValue.serverTimestamp()
                 };
-                batch.set(userDoc.collection('skuimpressos').doc(), data);
+                batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
                 if (respDoc) {
-                    batch.set(respDoc.collection('skuimpressos').doc(), data);
+                    batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
                 }
             });
             await batch.commit();
