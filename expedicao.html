@@ -497,7 +497,7 @@
 
       // Intervalo: 17h do dia anterior até 13h do dia atual
       const now = new Date();
-      const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
+      const end = new Date(now.toISOString().split('T')[0] + 'T15:00:00');
       const start = new Date(end);
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
@@ -591,10 +591,10 @@
           return dt;
         }
         const now = new Date();
-        const end = new Date(now.toISOString().split('T')[0] + 'T13:30:00');
+        const end = new Date(now.toISOString().split('T')[0] + 'T15:00:00');
         const start = new Date(end);
         start.setDate(start.getDate() - 1);
-        start.setHours(17, 0, 0, 0);
+        start.setHours(15, 3, 0, 0);
         try {
           let allowedUsers = [currentUser.uid];
           if (isResponsavel) {
