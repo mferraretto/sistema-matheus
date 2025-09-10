@@ -159,11 +159,10 @@
   function setProgress(p, status){ $(el.progressWrap).classList.remove('hidden'); $(el.progressBar).style.width = `${Math.max(0,Math.min(100,p))}%`; if(status) $(el.progressStatus).textContent = status; }
   function resetProgress(){ $(el.progressWrap).classList.add('hidden'); $(el.progressBar).style.width='0%'; $(el.progressStatus).textContent='Aguardando…'; $(el.elapsed).textContent='00:00'; }
 
-  let ocrWorker = null;
-  async function ensureOcrWorker(){
-    if (ocrWorker) return;
-    ocrWorker = await createOcrWorker();
-  }
+  const WORKER_COUNT = Math.min(4, navigator.hardwareConcurrency || 2);
+  const ocrWorkers = await Promise.all(
+    Array.from({ length: WORKER_COUNT }, () => createOcrWorker())
+  );
 
   // ===== Auth =====
   let currentUser = null;
@@ -519,66 +518,63 @@
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
       console.log('[btnProcessar] pdfPath', pdfPath);
 
-      await ensureOcrWorker();
-      let labelCounter = startNumber;
+      let completed = 0;
+      const tasks = [];
       for(let i=0;i+1<blocks.length;i+=2){
-        const idx = (i/2)+1; setProgress((idx-1)/totalLabels*100, `Processando ${idx}/${totalLabels}…`);
-        console.log(`[btnProcessar] processando checklist ${idx}/${totalLabels}`);
+        const idx = (i/2)+1;
         const labelZpl = blocks[i];
         const checklistZpl = blocks[i+1];
+        const worker = ocrWorkers[(idx-1) % ocrWorkers.length];
+        tasks.push((async ()=>{
+          const loja = detectLojaFromZpl(labelZpl);
+          let checklistBlob, checklistText='';
+          if(hasFd(checklistZpl)){
+            checklistText = extractFdTextFromZpl(checklistZpl);
+            checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
+          } else if(hasRaster(checklistZpl)){
+            ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
+          } else {
+            console.warn(`[checklist] bloco sem ^FD e sem gráfico conhecido; tentando OCR mesmo assim`);
+            ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
+          }
+          saveAs(checklistBlob, `debug-checklist-${idx}.png`);
+          const items = parseItemsFromText(checklistText);
+          const labelBlob = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
+          return { idx, loja, checklistBlob, items, labelBlob };
+        })().then(res=>{
+          completed++;
+          setProgress((completed/totalLabels)*90, `Processando ${completed}/${totalLabels}…`);
+          return res;
+        }));
+      }
 
-        // Identificar loja
-        const loja = detectLojaFromZpl(labelZpl);
-        console.log('[btnProcessar] loja', loja);
+      const pages = await Promise.all(tasks);
+      pages.sort((a,b)=>a.idx-b.idx);
 
-        // Extrair texto do checklist
-        let checklistBlob, checklistText='';
-        if(hasFd(checklistZpl)){
-          checklistText = extractFdTextFromZpl(checklistZpl);
-          checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
-        } else if(hasRaster(checklistZpl)){
-          ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, ocrWorker));
-        } else {
-          console.warn(`[checklist] bloco sem ^FD e sem gráfico conhecido; tentando OCR mesmo assim`);
-          ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, ocrWorker));
-        }
-
-        console.log('[btnProcessar] texto extraído:', checklistText);
-        saveAs(checklistBlob, `debug-checklist-${idx}.png`);
-        const items = parseItemsFromText(checklistText);
-        console.log('[btnProcessar] parsed items:', items);
-
-        // Renderizar etiqueta
-        const labelBlob = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
-
-        // Página 1: etiqueta
+      let labelCounter = startNumber;
+      for(const { loja, checklistBlob, items, labelBlob } of pages){
         const labelBytes = new Uint8Array(await labelBlob.arrayBuffer());
         const labelPng = await pdfDoc.embedPng(labelBytes);
         const pageLabel = pdfDoc.addPage([widthIn*72, (labelPng.height/labelPng.width)*widthIn*72]);
         pageLabel.drawImage(labelPng, { x:0, y:0, width: widthIn*72, height: (labelPng.height/labelPng.width)*widthIn*72 });
 
-        // Página 2: checklist
         const checklistBytes = new Uint8Array(await checklistBlob.arrayBuffer());
         const checklistPng = await pdfDoc.embedPng(checklistBytes);
         const pageChecklist = pdfDoc.addPage([widthIn*72, (checklistPng.height/checklistPng.width)*widthIn*72]);
         pageChecklist.drawImage(checklistPng, { x:0, y:0, width: widthIn*72, height: (checklistPng.height/checklistPng.width)*widthIn*72 });
 
-        // Salvar SKUs
         if(items.length === 0){
           console.info(`Sem itens; gerando PDF sem SKUs para a etiqueta ${labelCounter}`);
         } else {
           await savePrintedItems(items, { loja, labelNumber: labelCounter, storagePath: pdfPath, responsavelUid });
         }
-
         labelCounter++;
-        await sleep(120); // pequeno intervalo para não sobrecarregar API Labelary
       }
 
       setProgress(96,'Finalizando PDF…');
       const pdfBytes = await pdfDoc.save();
       const pdfBlob = new Blob([pdfBytes], { type:'application/pdf' });
 
-      // Upload Storage
       const ref = storage.ref().child(pdfPath);
       await ref.put(pdfBlob);
       const url = await ref.getDownloadURL();
@@ -588,13 +584,11 @@
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');
-      // oferece download imediato
       const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; a.click();
   }catch(e){ console.error(e); showErr(e.message||String(e)); }
   finally{
     clearInterval(timer);
     $(el.btnProcessar).disabled=false;
-    if(ocrWorker){ await ocrWorker.terminate(); ocrWorker=null; }
   }
   };
   </script>
