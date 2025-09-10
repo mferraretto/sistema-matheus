@@ -285,12 +285,18 @@ async function verificarDuplicados() {
     const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
     const mapa = {};
     for (const d of snap.docs) {
-      let dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
-      if (!dados) {
-        const raw = d.data();
-        if (raw && !raw.encrypted && !raw.encryptedData) dados = raw;
+      const raw = d.data() || {};
+      let idPedido = raw.idPedido || raw.idpedido || raw.numeroPedido || raw.numero;
+
+      if (!idPedido) {
+        try {
+          const dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+          idPedido = dados?.idPedido || dados?.idpedido || dados?.numeroPedido || dados?.numero || dados?.id;
+        } catch (e) {
+          // ignore decrypt errors, we'll skip this doc if id remains undefined
+        }
       }
-      const idPedido = dados?.idPedido || dados?.idpedido || dados?.id;
+
       if (!idPedido) continue;
       if (!mapa[idPedido]) mapa[idPedido] = [];
       mapa[idPedido].push(d.id);
