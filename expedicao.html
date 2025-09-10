@@ -523,18 +523,18 @@
           allowedUsers = [...allowedUsers, ...usuarios];
         }
         const q = db
-          .collectionGroup('skuimpressos')
-          .where('createdAt', '>=', start)
-          .where('createdAt', '<=', end);
+          .collectionGroup('etiquetasimpressas')
+          .where('data', '>=', start)
+          .where('data', '<=', end);
         const snap = await q.get();
         const seen = new Set();
         const rows = [];
         snap.forEach(doc => {
           const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
+          const createdAt = data.data?.toDate?.();
           if (!createdAt) return;
-          if (!allowedUsers.includes(data.userUid)) return;
-          const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
+          if (data.userUid && !allowedUsers.includes(data.userUid)) return;
+          const key = `${data.userUid || ''}_${data.sku}_${createdAt.getTime()}`;
           if (seen.has(key)) return;
           seen.add(key);
           rows.push({
@@ -824,10 +824,10 @@
           loja: loja || '',
           userUid: currentUser.uid,
           userEmail: currentUser.email,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          data: firebase.firestore.FieldValue.serverTimestamp()
         };
-        batch.set(userDoc.collection('skuimpressos').doc(), data);
-        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+        batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
       });
       await batch.commit();
     }
@@ -879,9 +879,9 @@
       const uid = currentUser.uid;
       const userDoc = db.collection('uid').doc(uid);
       const snap = await userDoc
-        .collection('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collection('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
       const resumo = {};
       snap.forEach(d => {
@@ -915,9 +915,9 @@
 
     async function gerarRelatorioDiaPorUsuario(inicio, fim, diaDados) {
       const snap = await db
-        .collectionGroup('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collectionGroup('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
       const resumo = {};
       snap.forEach(d => {
