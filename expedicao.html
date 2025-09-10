@@ -14,7 +14,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -133,7 +132,6 @@
     const app = firebase.app();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    const rtdb = firebase.database();
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     let currentUser = null;
     let currentFilter = 'all';
@@ -624,13 +622,11 @@
           for (const uid of allowedUsers) {
             if (!uid) continue; // Evita erros com UID indefinido
             const pass = getPassphrase() || `chave-${uid}`;
-            const ref = rtdb.ref(`usuarios/${uid}/pedidostiny`);
-
             try {
-              const snap = await ref.once('value');
-              const pedidos = snap.val() || {};
-              for (const [id, raw] of Object.entries(pedidos)) {
-                let pedido = raw;
+              const snap = await db.collection(`usuarios/${uid}/pedidostiny`).get();
+              for (const docu of snap.docs) {
+                const id = docu.id;
+                let pedido = docu.data();
                 if (pedido && (pedido.encrypted || pedido.encryptedData)) {
                   try {
                     let jsonStr = pedido.encrypted || pedido.encryptedData;
