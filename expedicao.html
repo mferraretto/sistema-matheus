@@ -97,6 +97,7 @@
     <div class="bg-white w-full max-w-2xl p-4 rounded shadow-lg relative">
       <button id="closeChecklistModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
       <h2 class="text-lg font-semibold mb-2">Checklist do dia</h2>
+      <div id="checklistEnvioTotals" class="mb-2 text-sm font-medium"></div>
       <div id="checklistTotals" class="mb-2 text-sm font-medium"></div>
       <div class="flex justify-end mb-2">
         <button id="exportChecklistBtn" class="btn btn-primary">Exportar</button>
@@ -209,6 +210,7 @@
     const checklistBody = document.getElementById('checklistBody');
     const exportChecklistBtn = document.getElementById('exportChecklistBtn');
     const checklistTotals = document.getElementById('checklistTotals');
+    const checklistEnvioTotals = document.getElementById('checklistEnvioTotals');
     
     if (uploadManualBtn) {
       uploadManualBtn.addEventListener('click', () => {
@@ -571,6 +573,10 @@
   checklistBody.innerHTML = '';
   checklistRows = [];
   if (checklistTotals) checklistTotals.textContent = '';
+  if (checklistEnvioTotals) checklistEnvioTotals.textContent = '';
+
+  let enviados = 0;
+  let pendentes = 0;
 
   function parseDate(str) {
     if (!str) return new Date('');
@@ -683,6 +689,13 @@
 
           const loja = pedido.loja || pedido.store || '';
           const usuario = await getNome(uid);
+
+          if (pedido && pedido.coletado) {
+            enviados++;
+          } else {
+            pendentes++;
+          }
+
           storeTotals[loja] = (storeTotals[loja] || 0) + 1;
 
           if (Array.isArray(pedido.itens) && pedido.itens.length) {
@@ -710,6 +723,10 @@
       checklistBody.appendChild(tr);
     });
 
+    if (checklistEnvioTotals) {
+      checklistEnvioTotals.textContent = `Enviados: ${enviados} | Faltam enviar: ${pendentes}`;
+    }
+
     if (checklistTotals) {
       const entries = Object.entries(storeTotals).map(([loja, count]) => `${loja || 'Sem loja'}: ${count}`);
       checklistTotals.textContent = entries.length ? entries.join(' | ') : 'Nenhum pedido';
@@ -723,6 +740,7 @@
     console.error('Erro ao carregar checklist:', e);
     checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="5">Erro ao carregar</td></tr>';
     if (checklistTotals) checklistTotals.textContent = 'Erro ao carregar';
+    if (checklistEnvioTotals) checklistEnvioTotals.textContent = 'Erro ao carregar';
   }
 }
 
