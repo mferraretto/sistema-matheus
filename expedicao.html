@@ -461,7 +461,8 @@
           createdAt <= end &&
           data.status !== 'concluido'
         ) {
-          total++;
+          const labelsCount = Number(data.total ?? data.totalLabels);
+          total += isNaN(labelsCount) ? 1 : labelsCount;
         }
       }
       totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
