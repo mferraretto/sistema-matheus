@@ -167,6 +167,12 @@
   }
 }
 
+@media (max-width: 640px) {
+  #resumoTotais .card {
+    padding: 0.5rem;
+  }
+}
+
 .floating-btn {
   position: fixed;
   bottom: 1.5rem;
