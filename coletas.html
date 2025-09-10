@@ -95,38 +95,46 @@
 
     // Isola a seção de pedidos coletados
     function sliceColetadosSection(text) {
-      const start = text.indexOf('Pedidos coletados com sucesso');
-      if (start === -1) return '';
-      let end = text.indexOf('Pedidos com ocorrência', start);
-      if (end === -1) end = text.length;
-      return text.slice(start, end);
-    }
+  // aceita com/sem “:”, e variações de espaço/maiúsculas
+  const startRe = /Pedidos\s+coletados\s+com\s+sucesso\s*:?\s*\d*/i;
+  const endRe   = /Pedidos\s+com\s+ocorr[êe]ncia/i;
+
+  const mStart = text.match(startRe);
+  if (!mStart) return '';
+
+  const startIdx = mStart.index;
+  const rest = text.slice(startIdx);
+  const mEnd = rest.match(endRe);
+  const endIdx = mEnd ? mEnd.index : rest.length;
+
+  return rest.slice(0, endIdx);
+}
+
 
     // Extrai os pedidos coletados
     function extractColetadosOrders(sectionText) {
-      const lines = sectionText.split(/\n/).map(l => l.trim()).filter(l => l);
-      const orders = [];
-      for (const line of lines) {
-        if (/^Pedidos/.test(line) || /^#/.test(line)) continue;
-        let m = line.match(/^\d+\s+([A-Z0-9]{10,20})\s+([A-Z]{2}\d+)\s+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/);
-        if (!m) {
-          m = line.match(/^\d+\s+([A-Z0-9]{10,20})([A-Z]{2}\d+)(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/);
-        }
-        if (!m) {
-          const parts = line.split(/\s+/);
-          if (parts.length >= 4) {
-            const horario = parts.slice(3).join(' ');
-            if (/^\d{2}-\d{2}-\d{4}/.test(horario)) {
-              m = [, parts[1], parts[2], horario];
-            }
-          }
-        }
-        if (m) {
-          orders.push({ numeroPedido: m[1], spx: m[2], horarioColeta: m[3] });
-        }
-      }
-      return orders;
+  const orders = [];
+  // casa blocos do tipo:  "1 25090928EBBYH4 BR2534097941036 10-09-2025 12:08"
+  // sem depender de \n e tolerando letra final no tracking
+  const re = /(?:^|\s)\d+\s+([A-Z0-9]{10,20})\s+([A-Z0-9]+)\s+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})(?=\s|$)/g;
+
+  let m;
+  while ((m = re.exec(sectionText)) !== null) {
+    const [, numeroPedido, spx, horarioColeta] = m;
+    orders.push({ numeroPedido, spx, horarioColeta });
+  }
+
+  // fallback (algumas extrações “grudam” colunas)
+  if (!orders.length) {
+    const re2 = /(?:^|\s)\d+\s+([A-Z0-9]{10,20})\s+([A-Z0-9]+)\s+(\d{2}-\d{2}-\d{4})\s*(\d{2}:\d{2})(?=\s|$)/g;
+    let m2;
+    while ((m2 = re2.exec(sectionText)) !== null) {
+      const [, numeroPedido, spx, d, h] = m2;
+      orders.push({ numeroPedido, spx, horarioColeta: `${d} ${h}` });
     }
+  }
+  return orders;
+}
 
     // Salva pedidos no Firestore de forma idempotente
     async function savePedidosColetados(orders, meta) {
