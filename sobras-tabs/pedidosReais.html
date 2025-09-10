@@ -1,0 +1,55 @@
+<div class="card">
+  <div class="card-header">
+    <h3 class="text-lg font-semibold">Pedidos Reais</h3>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr>
+          <th class="p-2 border">Status</th>
+          <th class="p-2 border">SKU</th>
+          <th class="p-2 border">Loja</th>
+          <th class="p-2 border">Data</th>
+          <th class="p-2 border">Subtotal</th>
+          <th class="p-2 border">Taxas</th>
+          <th class="p-2 border">Líquido</th>
+          <th class="p-2 border">Reembolso</th>
+        </tr>
+      </thead>
+      <tbody id="pedidosReaisBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+  import { firebaseConfig, getPassphrase } from '../firebase-config.js';
+  import { loadSecureDocFromSnap } from '../secure-firestore.js';
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+  const passphrase = getPassphrase();
+  const tbody = document.getElementById('pedidosReaisBody');
+  const uid = window.usuarioLogado?.uid;
+  if (uid && passphrase) {
+    db.collection('uid').doc(uid).collection('pedidosreais').onSnapshot(async snap => {
+      tbody.innerHTML = '';
+      for (const doc of snap.docs) {
+        const data = await loadSecureDocFromSnap(doc, passphrase);
+        if (!data) continue;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 border">${data.status || ''}</td>
+          <td class="p-2 border">${data.sku || ''}</td>
+          <td class="p-2 border">${data.loja || ''}</td>
+          <td class="p-2 border">${data.data || ''}</td>
+          <td class="p-2 border">${(data.subtotal || 0).toFixed(2)}</td>
+          <td class="p-2 border">${(data.taxas || 0).toFixed(2)}</td>
+          <td class="p-2 border">${(data.liquido || 0).toFixed(2)}</td>
+          <td class="p-2 border">${data.reembolso ? data.reembolso.toFixed(2) : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+  }
+</script>
