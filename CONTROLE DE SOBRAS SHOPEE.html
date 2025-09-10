@@ -1508,41 +1508,26 @@ const dataInput = document.getElementById("dataFaturamento");
             let bruto = 0, taxas = 0, qtdVendas = 0;
             const skusVendidos = {};
             const pedidosErrados = [];
-            const pedidosReais = [];
 
             rows.forEach((row) => {
             const status = (row["Status do pedido"] || "").toLowerCase();
+            if (status.includes("cancelado") || status.includes("não pago")) return;
+
+            const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
+            const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
+            const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
+            const comissao = parseFloat(row["Taxa de comissão"]) || 0;
+            const servico = parseFloat(row["Taxa de serviço"]) || 0;
+
+            const liquidoLinha = subtotal + reembolso - cupom - comissao - servico;
+
+            bruto += subtotal + reembolso;
+            taxas += cupom + comissao + servico;
+            qtdVendas++;
+
               const headers = Object.keys(row);
               const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
               const sku = headerSKU ? row[headerSKU] : null;
-
-              const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
-              const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
-              const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
-              const comissao = parseFloat(row["Taxa de comissão"]) || 0;
-              const servico = parseFloat(row["Taxa de serviço"]) || 0;
-              const taxasPedido = cupom + comissao + servico;
-              const liquidoLinha = subtotal + reembolso - taxasPedido;
-
-              const pedidoReal = {
-                status: status,
-                sku: sku,
-                loja: loja,
-                data: dataReferencia,
-                subtotal: subtotal,
-                taxas: taxasPedido,
-                liquido: liquidoLinha,
-                uid: usuarioLogado.uid
-              };
-              if (reembolso) pedidoReal.reembolso = reembolso;
-              pedidosReais.push(pedidoReal);
-
-            if (status.includes("cancelado") || status.includes("não pago")) return;
-
-            bruto += subtotal + reembolso;
-            taxas += taxasPedido;
-            qtdVendas++;
-
               if (!sku) return;
 
               if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
@@ -1573,14 +1558,6 @@ const dataInput = document.getElementById("dataFaturamento");
                 });
               }
             });
-
-            if (pedidosReais.length) {
-              const pedidosRef = db
-                .collection('uid')
-                .doc(usuarioLogado.uid)
-                .collection('pedidosreais');
-              await Promise.all(pedidosReais.map(p => pedidosRef.add(p)));
-            }
 
             if (pedidosErrados.length) {
               const errRef = db
