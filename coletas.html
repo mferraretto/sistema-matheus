@@ -136,19 +136,28 @@
   return orders;
 }
 
-    // Salva pedidos no Firestore de forma idempotente
+    // Salva pedidos no Firestore evitando duplicidades
     async function savePedidosColetados(orders, meta) {
-      if (!currentUser || !orders.length) return;
+      if (!currentUser || !orders.length) return 0;
       const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
       const baseRef = db.collection('uid').doc(currentUser.uid).collection('coletas').doc(todayStr);
+      const pedidosCol = baseRef.collection('pedidos');
+
+      // Verifica quais pedidos já existem para não registrá-los novamente
+      const existing = await Promise.all(
+        orders.map(o => pedidosCol.doc(o.numeroPedido).get())
+      );
+      const novos = orders.filter((_, idx) => !existing[idx].exists);
+
       const batch = db.batch();
       batch.set(baseRef, { ...meta, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      orders.forEach(o => {
-        const docRef = baseRef.collection('pedidos').doc(o.numeroPedido);
+      novos.forEach(o => {
+        const docRef = pedidosCol.doc(o.numeroPedido);
         batch.set(docRef, { ...o, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       });
       await batch.commit();
-      await marcarPedidosTinyColetados(orders);
+      if (novos.length) await marcarPedidosTinyColetados(novos);
+      return novos.length;
     }
 
     // Marca pedidos correspondentes em pedidostiny como coletados
@@ -199,8 +208,8 @@
           alert('Tabela de pedidos coletados está vazia.');
           return;
         }
-        await savePedidosColetados(orders, meta);
-        alert(`Importado com sucesso: ${orders.length} pedidos coletados.`);
+        const novos = await savePedidosColetados(orders, meta);
+        alert(`Importado com sucesso: ${novos} pedidos coletados.`);
         carregarPedidosDia();
         if (typeof calcularTotalPedidosDia === 'function') {
           calcularTotalPedidosDia();
