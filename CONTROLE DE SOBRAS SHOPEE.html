@@ -122,8 +122,7 @@
   </div>
 
 <script type="module">
-    import { firebaseConfig, getPassphrase } from './firebase-config.js';
-    import { saveSecureDoc } from './secure-firestore.js';
+    import { firebaseConfig } from './firebase-config.js';
   // =============================================
     // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
     // =============================================
@@ -147,7 +146,7 @@ let graficoBarras, graficoPizza, graficoPrevisao;
 let previsaoDados = {};
 let initialTab = null;
 const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
-   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','pedidosReais','controleVendas','sobras','previsao','acompanhamento','acompanhamentoGestor'];
+   const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','sobras','previsao','acompanhamento','acompanhamentoGestor'];
       const tabsLoaded = Promise.all(
         tabIds.map(t =>
           fetch(`sobras-tabs/${t}.html`)
@@ -1480,18 +1479,6 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
             }
           }
 
-          const expEmails = dadosUsuario.gestoresExpedicaoEmails || dadosUsuario.responsavelExpedicaoEmail || [];
-          let responsavelExpedicaoUid = null;
-          const expEmail = Array.isArray(expEmails) ? expEmails[0] : expEmails;
-          if (expEmail) {
-            const expSnap = await db.collection('usuarios').where('email', '==', expEmail).limit(1).get();
-            if (!expSnap.empty) {
-              const expDoc = expSnap.docs[0];
-              const expData = expDoc.data() || {};
-              responsavelExpedicaoUid = expData.uid || expDoc.id;
-            }
-          }
-
 const dataInput = document.getElementById("dataFaturamento");
           const lojaInput = document.getElementById("lojaFaturamento");
           const dataReferencia = dataInput?.value;
@@ -1521,41 +1508,26 @@ const dataInput = document.getElementById("dataFaturamento");
             let bruto = 0, taxas = 0, qtdVendas = 0;
             const skusVendidos = {};
             const pedidosErrados = [];
-            const pedidosReais = [];
 
             rows.forEach((row) => {
             const status = (row["Status do pedido"] || "").toLowerCase();
+            if (status.includes("cancelado") || status.includes("não pago")) return;
+
+            const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
+            const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
+            const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
+            const comissao = parseFloat(row["Taxa de comissão"]) || 0;
+            const servico = parseFloat(row["Taxa de serviço"]) || 0;
+
+            const liquidoLinha = subtotal + reembolso - cupom - comissao - servico;
+
+            bruto += subtotal + reembolso;
+            taxas += cupom + comissao + servico;
+            qtdVendas++;
+
               const headers = Object.keys(row);
               const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
               const sku = headerSKU ? row[headerSKU] : null;
-
-              const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
-              const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
-              const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
-              const comissao = parseFloat(row["Taxa de comissão"]) || 0;
-              const servico = parseFloat(row["Taxa de serviço"]) || 0;
-              const taxasPedido = cupom + comissao + servico;
-              const liquidoLinha = subtotal + reembolso - taxasPedido;
-
-              const pedidoReal = {
-                status: status,
-                sku: sku,
-                loja: loja,
-                data: dataReferencia,
-                subtotal: subtotal,
-                taxas: taxasPedido,
-                liquido: liquidoLinha,
-                uid: usuarioLogado.uid
-              };
-              if (reembolso) pedidoReal.reembolso = reembolso;
-              pedidosReais.push(pedidoReal);
-
-            if (status.includes("cancelado") || status.includes("não pago")) return;
-
-            bruto += subtotal + reembolso;
-            taxas += taxasPedido;
-            qtdVendas++;
-
               if (!sku) return;
 
               if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
@@ -1586,22 +1558,6 @@ const dataInput = document.getElementById("dataFaturamento");
                 });
               }
             });
-
-            if (pedidosReais.length) {
-              const passphrase = getPassphrase();
-              const basePath = `uid/${usuarioLogado.uid}/pedidosreais`;
-              for (const pedido of pedidosReais) {
-                const id = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais').doc().id;
-                await saveSecureDoc(db, basePath, id, { ...pedido, uid: usuarioLogado.uid }, passphrase);
-                if (responsavelExpedicaoUid && responsavelExpedicaoUid !== usuarioLogado.uid) {
-                  await saveSecureDoc(db, `uid/${responsavelExpedicaoUid}/uid/${usuarioLogado.uid}/pedidosreais`, id, { ...pedido, uid: usuarioLogado.uid }, passphrase);
-                }
-                const respFinUid = window.responsavelFinanceiro?.uid;
-                if (respFinUid && respFinUid !== usuarioLogado.uid && respFinUid !== responsavelExpedicaoUid) {
-                  await saveSecureDoc(db, `uid/${respFinUid}/uid/${usuarioLogado.uid}/pedidosreais`, id, { ...pedido, uid: usuarioLogado.uid }, passphrase);
-                }
-              }
-            }
 
             if (pedidosErrados.length) {
               const errRef = db
