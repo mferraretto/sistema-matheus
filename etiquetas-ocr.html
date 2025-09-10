@@ -488,6 +488,42 @@ firebase.auth().onAuthStateChanged(async u => {
       return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
+    async function uploadPdfToFirebase(blob, fileName, items) {
+      if (!currentUser) {
+        await savePrintedSkuQuantities(items);
+        return;
+      }
+      try {
+        const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+        const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+        const selecionado = await escolherGestorEmail(gestoresEmails);
+        const docRef = await db.collection('pdfDocs').add({
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email,
+          gestoresExpedicaoEmails: selecionado,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          name: fileName,
+          foraHorario: foraDoHorario()
+        });
+        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        await fileRef.put(blob);
+        const url = await fileRef.getDownloadURL();
+        await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        const record = {
+          name: fileName,
+          url: url,
+          path: fileRef.fullPath,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+        await savePrintedSkuQuantities(items);
+      } catch (err) {
+        console.error('Erro ao enviar PDF para Firebase:', err);
+        showMessage('Erro ao enviar PDF. Tente novamente mais tarde.');
+        throw err;
+      }
+    }
+
     async function processar() {
   const progressBar = document.getElementById("progressBar");
   const progressFill = document.getElementById("progressFill");
@@ -712,48 +748,23 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
   setTimeout(() => {
     progressBar.style.display = "none";
   }, 2000);
-
   const pdfFinal = await novoPdf.save();
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
-  if (currentUser) {
- const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
-    const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-    const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-    const selecionado = await escolherGestorEmail(gestoresEmails);
-    const docRef = await db.collection('pdfDocs').add({
-      ownerUid: currentUser.uid,
-      ownerEmail: currentUser.email,
-      gestoresExpedicaoEmails: selecionado,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      name: fileName,
-      foraHorario: foraDoHorario()
-    });
-    const fileRef = storage
-      .ref()
-      .child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-    await fileRef.put(blob);
-    const url = await fileRef.getDownloadURL();
-    await docRef.update({ url: url, storagePath: fileRef.fullPath });
-    const record = {
-        name: fileName,
-        url: url,
-        path: fileRef.fullPath,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-    await db
-      .collection('users')
-      .doc(currentUser.uid)
-      .collection('etiquetaenvio')
-      .add({ ...record });
-  }
-  await savePrintedSkuQuantities(allExtractedItems);
+  const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
   const localUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = localUrl;
-  a.download = "etiquetas_editadas.pdf";
+  a.download = fileName;
   a.click();
 
-  status.textContent = "✅ PDF gerado com sucesso! Concluído.";
+  status.textContent = "📤 Enviando ao servidor...";
+  uploadPdfToFirebase(blob, fileName, allExtractedItems)
+    .then(() => {
+      status.textContent = "✅ PDF gerado com sucesso! Concluído.";
+    })
+    .catch(() => {
+      status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
+    });
     }
 
     window.processar = processar;
