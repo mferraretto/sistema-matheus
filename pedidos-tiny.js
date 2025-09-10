@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getFirestore, collection, query, where, doc, getDoc, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
@@ -275,6 +275,46 @@ document.getElementById('aplicarFiltros')?.addEventListener('click', e => {
 });
 document.getElementById('filtroSku')?.addEventListener('input', aplicarFiltros);
 document.getElementById('tipoData')?.addEventListener('change', atualizarTipoData);
+
+async function verificarDuplicados() {
+  const btn = document.getElementById('verificarDuplicados');
+  if (btn) btn.disabled = true;
+  try {
+    const uid = document.getElementById('usuarioFiltro')?.value || auth.currentUser.uid;
+    const pass = getPassphrase() || `chave-${uid}`;
+    const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
+    const mapa = {};
+    for (const d of snap.docs) {
+      let dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+      if (!dados) {
+        const raw = d.data();
+        if (raw && !raw.encrypted && !raw.encryptedData) dados = raw;
+      }
+      const idPedido = dados?.idPedido || dados?.idpedido || dados?.id;
+      if (!idPedido) continue;
+      if (!mapa[idPedido]) mapa[idPedido] = [];
+      mapa[idPedido].push(d.id);
+    }
+    let removidos = 0;
+    for (const ids of Object.values(mapa)) {
+      if (ids.length > 1) {
+        for (const id of ids.slice(1)) {
+          await deleteDoc(doc(db, `usuarios/${uid}/pedidostiny`, id));
+          removidos++;
+        }
+      }
+    }
+    alert(removidos ? `${removidos} pedidos duplicados removidos` : 'Nenhum pedido duplicado encontrado');
+    if (removidos) await carregarPedidosTiny(uid);
+  } catch (err) {
+    console.error('Erro ao verificar duplicados', err);
+    alert('Erro ao verificar duplicados');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+document.getElementById('verificarDuplicados')?.addEventListener('click', verificarDuplicados);
 
 atualizarTipoData();
 
