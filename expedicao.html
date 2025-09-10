@@ -507,26 +507,30 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
       try {
-        const q = db
+        const qSku = db
           .collectionGroup('skuimpressos')
           .where('createdAt', '>=', start)
           .where('createdAt', '<=', end);
-        const snap = await q.get();
-        const seen = new Set();
-        const rows = [];
-        snap.forEach(doc => {
-          const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
-          if (!createdAt) return;
-          const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
-          if (seen.has(key)) return;
-          seen.add(key);
-          rows.push({
-            sku: data.sku || '',
-            quantidade: data.quantidade || 0,
-            usuario: data.userEmail || ''
-          });
-        });
+        const qEtiq = db
+          .collectionGroup('etiquetasimpressas')
+          .where('data', '>=', start)
+          .where('data', '<=', end);
+        const [snapSku, snapEtiq] = await Promise.all([qSku.get(), qEtiq.get()]);
+        const agregados = new Map();
+        function adicionar(data) {
+          const sku = data.sku || '';
+          const usuario = data.userEmail || '';
+          const quantidade = Number(data.quantidade) || 0;
+          const chave = `${sku}_${usuario}`;
+          if (agregados.has(chave)) {
+            agregados.get(chave).quantidade += quantidade;
+          } else {
+            agregados.set(chave, { sku, quantidade, usuario });
+          }
+        }
+        snapSku.forEach(doc => adicionar(doc.data()));
+        snapEtiq.forEach(doc => adicionar(doc.data()));
+        const rows = Array.from(agregados.values());
         rows.forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.quantidade}</td><td class="p-2 border">${r.usuario}</td>`;
