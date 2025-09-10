@@ -134,7 +134,8 @@
     const app = firebase.app();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    const dbMod = getFirestore(app); // Firestore instance for modular APIs
+    // Use the default app instance for the modular Firestore SDK
+    const dbMod = getFirestore();
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     let currentUser = null;
     let currentFilter = 'all';
