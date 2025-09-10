@@ -160,6 +160,28 @@
     let responsavelExpedicaoUid = null;
     let horariosEtiquetas = [];
 
+    // Inicializa e reutiliza um worker do Tesseract para reduzir o tempo por reconhecimento
+    let ocrWorker = null;
+    async function ensureOcrWorker() {
+      if (ocrWorker) return ocrWorker;
+      ocrWorker = await Tesseract.createWorker({ logger: m => console.log('[OCR]', m) });
+      await ocrWorker.load();
+      await ocrWorker.loadLanguage('por+eng');
+      await ocrWorker.initialize('por+eng');
+      await ocrWorker.setParameters({
+        tessedit_pageseg_mode: '6',
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '300',
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+_-/\\. xX'
+      });
+      return ocrWorker;
+    }
+    // Pré-carrega o worker em segundo plano para amortizar custo de inicialização
+    ensureOcrWorker().catch(e => console.warn('Falha ao inicializar OCR antecipadamente:', e));
+    window.addEventListener('beforeunload', async () => {
+      try { if (ocrWorker) await ocrWorker.terminate(); } catch (e) {}
+    });
+
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
         if (!emails || !emails.length) return resolve([]);
@@ -249,11 +271,27 @@ firebase.auth().onAuthStateChanged(async u => {
       });
     }
 
+    // Renderização focada: recorta e renderiza apenas uma região da página do PDF em alta resolução
+    async function renderPdfRegion(page, region, scale) {
+      const viewport = page.getViewport({ scale, rotation: page.rotate || 0 });
+      const out = document.createElement('canvas');
+      out.width = Math.max(1, Math.floor(region.width * scale));
+      out.height = Math.max(1, Math.floor(region.height * scale));
+      const ctx = out.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      // Importante: a translação é em unidades do PDF; o viewport aplica o scale
+      const transform = [1, 0, 0, 1, -region.x, -region.y];
+      await page.render({ canvasContext: ctx, viewport, transform }).promise;
+      return out;
+    }
+
     async function extractSkuQuantitiesFromCanvas(canvas, info) {
       const ctxInfo = info || {};
       console.groupCollapsed('[OCR] Iniciando reconhecimento', ctxInfo);
       console.time('[OCR] tempo');
-      const { data } = await Tesseract.recognize(canvas, 'por+eng');
+      const w = await ensureOcrWorker();
+      const { data } = await w.recognize(canvas);
       const text = data?.text || '';
       console.timeEnd('[OCR] tempo');
       console.log('[OCR] Dimensões canvas', { width: canvas.width, height: canvas.height });
@@ -450,7 +488,8 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function extractMercadoLivreData(canvas) {
-      const { data: { text } } = await Tesseract.recognize(canvas, 'por+eng');
+      const w = await ensureOcrWorker();
+      const { data: { text } } = await w.recognize(canvas);
       const lines = text.split(/\n/).map(l => l.trim()).filter(l => l);
       let sku = '', quantidade = 0, loja = '';
       for (let i = 0; i < lines.length; i++) {
@@ -527,16 +566,10 @@ firebase.auth().onAuthStateChanged(async u => {
     timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
 
     const page = await pdf.getPage(i + 1);
-    const scale = 7;
-    const viewport = page.getViewport({ scale });
-
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    const largura = canvas.width;
-    const altura = canvas.height;
+    // Usamos escala base 1 para calcular as regiões, e renderizamos cada recorte em alta resolução sob demanda
+    const baseViewport = page.getViewport({ scale: 1 });
+    const largura = baseViewport.width;
+    const altura = baseViewport.height;
 
     const colWidth = largura / 2;
     const rowHeight = altura / 1.75;
@@ -548,44 +581,37 @@ firebase.auth().onAuthStateChanged(async u => {
 
     for (const par of pares) {
       // Ajuste das proporções para garantir que a parte do checklist seja totalmente capturada.
-      // Desta vez, vamos dar mais espaço para o checklist para garantir que nada seja cortado.
-      const proporcaoEtiqueta = 0.88; 
-      const proporcaoChecklist = 0.12; 
+      const proporcaoEtiqueta = 0.88;
+      const proporcaoChecklist = 0.12;
 
       const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
       const alturaChecklist = rowHeight * proporcaoChecklist;
-      
-      const deslocamentoEtiquetaY = 6;
-      
-      // CORTA A ETIQUETA PRINCIPAL
-      const etCanvas = document.createElement("canvas");
-      etCanvas.width = colWidth;
-      etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
-      const etCtx = etCanvas.getContext("2d");
-      etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y + deslocamentoEtiquetaY, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY, 0, 0, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY);
-      
-      // CORTA A PARTE DO CHECKLIST
-      const chkCanvas = document.createElement("canvas");
-      
-      // Definimos um deslocamento mínimo para evitar a linha de separação, mas não cortar o texto.
-      const deslocamentoY = 60; 
-const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
-      
-     const scaleChecklist = 7; // resolução extra
-chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
-chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
-const chkCtx = chkCanvas.getContext("2d");
-chkCtx.imageSmoothingEnabled = true;
-chkCtx.imageSmoothingQuality = 'high';
 
-// captura em alta resolução
-chkCtx.drawImage(
-  canvas,
-  par.checklist.x, par.checklist.y + deslocamentoY,     // origem (na página)
-  colWidth, novaAlturaChecklist,                        // tamanho a capturar
-  0, 0,                                                 // destino no chkCanvas
-  chkCanvas.width, chkCanvas.height                     // destino (maior)
-);
+      const deslocamentoEtiquetaY = 6;
+
+      // Define regiões (em coordenadas da página com escala 1)
+      const etiquetaRect = {
+        x: par.etiqueta.x,
+        y: par.etiqueta.y + deslocamentoEtiquetaY,
+        width: colWidth,
+        height: Math.max(1, alturaEtiquetaPrincipal - deslocamentoEtiquetaY)
+      };
+
+      // Deslocamento mínimo para evitar a linha de separação
+      const deslocamentoY = 60;
+      const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100);
+      const checklistRect = {
+        x: par.checklist.x,
+        y: par.checklist.y + deslocamentoY,
+        width: colWidth,
+        height: novaAlturaChecklist
+      };
+
+      // Renderiza regiões diretamente do PDF em alta resolução
+      const scaleEtiqueta = 4.0;
+      const scaleChecklist = 6.0;
+      const etCanvas = await renderPdfRegion(page, etiquetaRect, scaleEtiqueta);
+      const chkCanvas = await renderPdfRegion(page, checklistRect, scaleChecklist);
 
       console.groupCollapsed('[Crop] Parâmetros de corte');
       console.log({
@@ -600,6 +626,7 @@ chkCtx.drawImage(
         deslocamentoEtiquetaY,
         deslocamentoY,
         novaAlturaChecklist,
+        scaleEtiqueta,
         scaleChecklist
       });
       console.groupEnd();
@@ -625,7 +652,7 @@ completoCtx.imageSmoothingEnabled = true;
 completoCtx.imageSmoothingQuality = 'high';
 
 // Desenha somente a etiqueta principal
-completoCtx.drawImage(etCanvas, paddingX, 0);
+completoCtx.drawImage(etCanvas, paddingX, 0, etCanvas.width, etCanvas.height);
 
 
       // Inserção no novo PDF
@@ -715,43 +742,45 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
 
   const pdfFinal = await novoPdf.save();
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
-  if (currentUser) {
- const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
-    const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-    const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-    const selecionado = await escolherGestorEmail(gestoresEmails);
-    const docRef = await db.collection('pdfDocs').add({
-      ownerUid: currentUser.uid,
-      ownerEmail: currentUser.email,
-      gestoresExpedicaoEmails: selecionado,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      name: fileName,
-      foraHorario: foraDoHorario()
-    });
-    const fileRef = storage
-      .ref()
-      .child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-    await fileRef.put(blob);
-    const url = await fileRef.getDownloadURL();
-    await docRef.update({ url: url, storagePath: fileRef.fullPath });
-    const record = {
-        name: fileName,
-        url: url,
-        path: fileRef.fullPath,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-    await db
-      .collection('users')
-      .doc(currentUser.uid)
-      .collection('etiquetaenvio')
-      .add({ ...record });
-  }
-  await savePrintedSkuQuantities(allExtractedItems);
+  const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
   const localUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = localUrl;
-  a.download = "etiquetas_editadas.pdf";
+  a.download = fileName;
   a.click();
+  status.textContent = "✅ PDF gerado com sucesso! Upload em segundo plano…";
+
+  // Realiza upload e gravações no Firebase em segundo plano (não bloqueia a UI)
+  if (currentUser) {
+    const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+    const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+    const selecionado = await escolherGestorEmail(gestoresEmails);
+    (async () => {
+      try {
+        const docRef = await db.collection('pdfDocs').add({
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email,
+          gestoresExpedicaoEmails: selecionado,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          name: fileName,
+          foraHorario: foraDoHorario()
+        });
+        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        await fileRef.put(blob);
+        const url = await fileRef.getDownloadURL();
+        await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        const record = { name: fileName, url: url, path: fileRef.fullPath, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+      } catch (e) {
+        console.error('Falha no upload/registro Firebase:', e);
+      }
+    })();
+  }
+
+  // Salva SKUs impressos em segundo plano
+  (async () => {
+    try { await savePrintedSkuQuantities(allExtractedItems); } catch (e) { console.error('Falha ao salvar SKUs:', e); }
+  })();
 
   status.textContent = "✅ PDF gerado com sucesso! Concluído.";
     }
