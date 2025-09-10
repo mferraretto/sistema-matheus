@@ -165,14 +165,18 @@
           }
           if (!qSnap.empty) {
             const foundRef = tinyCol.doc(qSnap.docs[0].id);
-            await foundRef.set({ coletado: true }, { merge: true });
+            const updateData = { coletado: true };
+            if (o.horarioColeta) updateData.horarioColeta = o.horarioColeta;
+            await foundRef.set(updateData, { merge: true });
             continue;
           }
           // por fim, tenta atualizar um documento cujo ID seja o número do pedido
           const docRef = tinyCol.doc(o.numeroPedido);
           const docSnap = await docRef.get();
           if (docSnap.exists) {
-            await docRef.set({ coletado: true }, { merge: true });
+            const updateData = { coletado: true };
+            if (o.horarioColeta) updateData.horarioColeta = o.horarioColeta;
+            await docRef.set(updateData, { merge: true });
           }
         } catch (err) {
           console.error('Erro ao marcar pedido coletado no Tiny:', o.numeroPedido, err);
