@@ -126,7 +126,7 @@
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
     import { decryptString } from './crypto.js';
     import { loadSecureDoc } from './secure-firestore.js';
-    import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -624,8 +624,8 @@
           const rows = [];
           for (const uid of allowedUsers) {
             const pass = getPassphrase() || `chave-${uid}`;
-            const col = db.collection(`usuarios/${uid}/pedidostiny`);
-            const snap = await col.get();
+            const col = collection(dbMod, 'usuarios', uid, 'pedidostiny');
+            const snap = await getDocs(col);
             for (const doc of snap.docs) {
               let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
               if (!pedido) {
