@@ -45,14 +45,14 @@
         <button class="filter-btn px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 text-sm font-medium" data-status="impresso">Impresso (0)</button>
         <button class="filter-btn px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 text-sm font-medium" data-status="concluido">Concluído (0)</button>
       </div>
-      <div id="searchBar" class="flex flex-wrap gap-2">
-        <input id="searchInput" type="text" class="form-control w-64" placeholder="Buscar por nome, ID, e-mail, data" />
-        <select id="sortSelect" class="form-control">
+      <div id="searchBar" class="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <input id="searchInput" type="text" class="form-control w-full" placeholder="Buscar por nome, ID, e-mail, data" />
+        <select id="sortSelect" class="form-control w-full">
           <option value="createdAt">Ordenar por data</option>
           <option value="owner">Ordenar por responsável</option>
           <option value="status">Ordenar por status</option>
         </select>
-        <button id="advancedToggle" class="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">Filtros Avançados</button>
+        <button id="advancedToggle" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700">Filtros Avançados</button>
       </div>
       <div id="advancedFilters" class="flex flex-wrap gap-2 hidden">
         <input type="date" id="startDate" class="form-control" />
@@ -63,6 +63,7 @@
           <span>Somente Atenção</span>
         </label>
       </div>
+      <div id="userCards" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
     </div>
     <div id="viewToggle" class="flex gap-2 mb-4">
       <button class="view-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium" data-view="cards" title="Exibição em cartões"><i class="fas fa-th"></i></button>
@@ -144,6 +145,7 @@
     let endDateFilter = '';
     let responsavelFiltro = '';
     let attentionOnly = false;
+    const equipeUsuarios = new Map();
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -325,7 +327,8 @@
         carregarEtiquetas();
         if (isResponsavel) {
           verificarDia();
-          carregarEquipeGestor();
+          await carregarEquipeGestor();
+          calcularTotalPedidosDia();
         } else {
           startBtn.classList.add('hidden');
           closeBtn.classList.add('hidden');
@@ -438,9 +441,11 @@
           if (docu.id !== currentUser.uid) usuarios.set(docu.id, docu.data());
         });
         listEl.innerHTML = '';
+        equipeUsuarios.clear();
         if (selectEl) selectEl.innerHTML = '<option value="">Selecione responsável</option>';
         for (const [uid, data] of usuarios) {
           const nome = await getOwnerName(uid, data.email);
+          equipeUsuarios.set(uid, { email: data.email, nome });
           const li = document.createElement('li');
           li.textContent = `${nome} (${data.email || ''})`;
           listEl.appendChild(li);
@@ -465,9 +470,23 @@
       if (concBtn) concBtn.textContent = `Concluído (${counts.concluido || 0})`;
     }
 
+    function renderUserCards(counts) {
+      const container = document.getElementById('userCards');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!equipeUsuarios.size) return;
+      for (const [uid, info] of equipeUsuarios) {
+        const count = counts[uid] || counts[info.email] || 0;
+        const card = document.createElement('div');
+        card.className = 'text-white p-4 rounded-lg text-center shadow bg-gradient-to-r from-pink-500 to-purple-500';
+        card.innerHTML = `<div class="text-lg font-semibold">${info.nome}</div><div class="text-sm">QTN. DIA ${count}</div>`;
+        container.appendChild(card);
+      }
+    }
+
     async function calcularTotalPedidosDia() {
+      if (!currentUser) return;
       const totalEl = document.getElementById('dailyTotal');
-      if (!totalEl || !currentUser) return;
       const snap = await db.collection('pdfDocs').get();
 
       // Intervalo: 17h do dia anterior até 13h do dia atual
@@ -478,6 +497,7 @@
       start.setHours(17, 0, 0, 0);
 
       let total = 0;
+      const perUser = {};
       for (const doc of snap.docs) {
         const data = doc.data();
         const allowed =
@@ -492,10 +512,14 @@
           data.status !== 'concluido'
         ) {
           const labelsCount = Number(data.total ?? data.totalLabels);
-          total += isNaN(labelsCount) ? 1 : labelsCount;
+          const qty = isNaN(labelsCount) ? 1 : labelsCount;
+          total += qty;
+          const key = data.ownerUid || data.ownerEmail;
+          if (key) perUser[key] = (perUser[key] || 0) + qty;
         }
       }
-      totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
+      if (totalEl) totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
+      renderUserCards(perUser);
     }
 
     async function carregarChecklist() {
