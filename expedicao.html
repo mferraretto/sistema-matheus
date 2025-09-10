@@ -440,9 +440,11 @@
       if (!totalEl || !currentUser) return;
       const snap = await db.collection('pdfDocs').get();
       const now = new Date();
-      const startOfDay = new Date(now.toISOString().split('T')[0] + 'T00:00:00');
-      const cutoff = new Date(startOfDay);
-      cutoff.setHours(13, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(13, 0, 0, 0);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 1);
+      start.setHours(17, 0, 0, 0);
       let total = 0;
       for (const doc of snap.docs) {
         const data = doc.data();
@@ -452,7 +454,11 @@
         if (!allowed || !data.createdAt) continue;
         const createdAt = data.createdAt.toDate ? data.createdAt.toDate() : null;
         if (!createdAt) continue;
-        if (createdAt <= cutoff && data.status !== 'concluido') {
+        if (
+          createdAt >= start &&
+          createdAt <= end &&
+          data.status !== 'concluido'
+        ) {
           total++;
         }
       }
