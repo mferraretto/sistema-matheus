@@ -507,32 +507,56 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
       try {
-        const q = db
+        const seen = new Set();
+        const rows = new Map();
+
+        const addRow = (sku, quantidade, usuario, uid, createdAt) => {
+          const uniqKey = `${uid}_${sku}_${createdAt.getTime()}`;
+          if (seen.has(uniqKey)) return;
+          seen.add(uniqKey);
+
+          const key = `${uid}_${sku}`;
+          if (rows.has(key)) {
+            rows.get(key).quantidade += quantidade;
+          } else {
+            rows.set(key, { sku, quantidade, usuario });
+          }
+        };
+
+        const processSnap = async (snap, timeField) => {
+          for (const doc of snap.docs) {
+            const data = doc.data();
+            const createdAt = data[timeField]?.toDate?.();
+            if (!createdAt) continue;
+            const uid = data.userUid || doc.ref.parent.parent?.id || '';
+            const usuario = await getOwnerName(uid, data.userEmail);
+            const sku = data.sku || '';
+            const qty = Number(data.quantidade) || 0;
+            addRow(sku, qty, usuario, uid, createdAt);
+          }
+        };
+
+        const q1 = db
           .collectionGroup('skuimpressos')
           .where('createdAt', '>=', start)
           .where('createdAt', '<=', end);
-        const snap = await q.get();
-        const seen = new Set();
-        const rows = [];
-        snap.forEach(doc => {
-          const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
-          if (!createdAt) return;
-          const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
-          if (seen.has(key)) return;
-          seen.add(key);
-          rows.push({
-            sku: data.sku || '',
-            quantidade: data.quantidade || 0,
-            usuario: data.userEmail || ''
-          });
-        });
-        rows.forEach(r => {
+        const snap1 = await q1.get();
+        await processSnap(snap1, 'createdAt');
+
+        const q2 = db
+          .collectionGroup('etiquetasimpressas')
+          .where('data', '>=', start)
+          .where('data', '<=', end);
+        const snap2 = await q2.get();
+        await processSnap(snap2, 'data');
+
+        const rowsArr = Array.from(rows.values());
+        rowsArr.forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.quantidade}</td><td class="p-2 border">${r.usuario}</td>`;
           checklistBody.appendChild(tr);
         });
-        if (!rows.length) {
+        if (!rowsArr.length) {
           checklistBody.innerHTML = '<tr><td class="p-2 text-center text-gray-500" colspan="3">Nenhum registro</td></tr>';
         }
       } catch (e) {
