@@ -14,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -125,8 +126,6 @@
  <script type="module">
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
     import { decryptString } from './crypto.js';
-    import { loadSecureDoc } from './secure-firestore.js';
-    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -134,7 +133,7 @@
     const app = firebase.app();
     const db = firebase.firestore();
     const storage = firebase.storage();
-    const dbMod = getFirestore(app); // Firestore instance for modular APIs
+    const rtdb = firebase.database();
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
     let currentUser = null;
     let currentFilter = 'all';
@@ -625,15 +624,23 @@
           for (const uid of allowedUsers) {
             if (!uid) continue; // Evita erros com UID indefinido
             const pass = getPassphrase() || `chave-${uid}`;
-            const collectionPath = `usuarios/${uid}/pedidostiny`;
+            const ref = rtdb.ref(`usuarios/${uid}/pedidostiny`);
 
             try {
-              const snap = await getDocs(collection(dbMod, collectionPath));
-              for (const doc of snap.docs) {
-                let pedido = await loadSecureDoc(dbMod, `usuarios/${uid}/pedidostiny`, doc.id, pass);
-                if (!pedido) {
-                  const raw = doc.data();
-                  if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
+              const snap = await ref.once('value');
+              const pedidos = snap.val() || {};
+              for (const [id, raw] of Object.entries(pedidos)) {
+                let pedido = raw;
+                if (pedido && (pedido.encrypted || pedido.encryptedData)) {
+                  try {
+                    let jsonStr = pedido.encrypted || pedido.encryptedData;
+                    if (typeof jsonStr !== 'string') jsonStr = JSON.stringify(jsonStr);
+                    const plaintext = await decryptString(jsonStr, pass);
+                    pedido = JSON.parse(plaintext);
+                  } catch (err) {
+                    console.warn('Erro ao descriptografar pedido', id, err);
+                    continue;
+                  }
                 }
                 if (!pedido) continue;
                 const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
@@ -646,13 +653,13 @@
                 if (Array.isArray(pedido.itens) && pedido.itens.length) {
                   pedido.itens.forEach(item => {
                     const sku = item.sku || '';
-                    const row = { id: doc.id, loja, sku, data, usuario };
+                    const row = { id, loja, sku, data, usuario };
                     rows.push(row);
                     checklistRows.push(row);
                   });
                 } else {
                   const sku = pedido.sku || '';
-                  const row = { id: doc.id, loja, sku, data, usuario };
+                  const row = { id, loja, sku, data, usuario };
                   rows.push(row);
                   checklistRows.push(row);
                 }
