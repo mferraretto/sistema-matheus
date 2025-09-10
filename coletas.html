@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coletas</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20240826" />
+  <link rel="stylesheet" href="css/mobile.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4">
+    <h1 class="text-2xl font-bold mb-4">Coletas</h1>
+    <div class="card mb-4 space-y-4">
+      <div id="actionBar" class="flex flex-wrap items-center gap-2">
+        <label for="reciboColetaPdf" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 cursor-pointer">
+          <i class="fas fa-file-import"></i><span>Importar Recibo de Coleta (PDF)</span>
+        </label>
+        <input type="file" id="reciboColetaPdf" accept="application/pdf" class="hidden" />
+      </div>
+      <div id="listaPedidos" class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr><th class="p-2 border">Pedido</th><th class="p-2 border">SPX</th><th class="p-2 border">Horário de Coleta</th></tr>
+          </thead>
+          <tbody id="pedidosDiaBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseConfig } from './firebase-config.js';
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    let currentUser = null;
+    const inputPdf = document.getElementById('reciboColetaPdf');
+
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+        return;
+      }
+      currentUser = user;
+      carregarPedidosDia();
+    });
+
+    inputPdf.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) importarReciboColetaPDF(file);
+      e.target.value = '';
+    });
+
+    // Lê texto de todas as páginas do PDF
+    async function readPdfText(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items.map(item => item.str);
+        text += strings.join(' ') + '\n';
+      }
+      return text.replace(/\u00A0/g, ' ').replace(/[ ]{2,}/g, ' ');
+    }
+
+    // Extrai metadados do recibo
+    function extractReciboMeta(text) {
+      const meta = {};
+      const task = text.match(/ID\s*Tarefa[:\s]+(\S+)/i);
+      if (task) meta.taskId = task[1];
+      const fin = text.match(/Finaliza(?:ção|cao)[:\s]+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/i);
+      if (fin) meta.finalizacao = fin[1];
+      const inicio = text.match(/In(?:í|i)cio\s+da\s+rota[:\s]+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/i);
+      if (inicio) meta.inicioRota = inicio[1];
+      const chegada = text.match(/Chegada[:\s]+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/i);
+      if (chegada) meta.chegada = chegada[1];
+      return meta;
+    }
+
+    // Isola a seção de pedidos coletados
+    function sliceColetadosSection(text) {
+      const start = text.indexOf('Pedidos coletados com sucesso');
+      if (start === -1) return '';
+      let end = text.indexOf('Pedidos com ocorrência', start);
+      if (end === -1) end = text.length;
+      return text.slice(start, end);
+    }
+
+    // Extrai os pedidos coletados
+    function extractColetadosOrders(sectionText) {
+      const lines = sectionText.split(/\n/).map(l => l.trim()).filter(l => l);
+      const orders = [];
+      for (const line of lines) {
+        if (/^Pedidos/.test(line) || /^#/.test(line)) continue;
+        let m = line.match(/^\d+\s+([A-Z0-9]{10,20})\s+([A-Z]{2}\d+)\s+(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/);
+        if (!m) {
+          m = line.match(/^\d+\s+([A-Z0-9]{10,20})([A-Z]{2}\d+)(\d{2}-\d{2}-\d{4}\s+\d{2}:\d{2})/);
+        }
+        if (!m) {
+          const parts = line.split(/\s+/);
+          if (parts.length >= 4) {
+            const horario = parts.slice(3).join(' ');
+            if (/^\d{2}-\d{2}-\d{4}/.test(horario)) {
+              m = [, parts[1], parts[2], horario];
+            }
+          }
+        }
+        if (m) {
+          orders.push({ numeroPedido: m[1], spx: m[2], horarioColeta: m[3] });
+        }
+      }
+      return orders;
+    }
+
+    // Salva pedidos no Firestore de forma idempotente
+    async function savePedidosColetados(orders, meta) {
+      if (!currentUser || !orders.length) return;
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      const baseRef = db.collection('uid').doc(currentUser.uid).collection('coletas').doc(todayStr);
+      const batch = db.batch();
+      batch.set(baseRef, { ...meta, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      orders.forEach(o => {
+        const docRef = baseRef.collection('pedidos').doc(o.numeroPedido);
+        batch.set(docRef, { ...o, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      });
+      await batch.commit();
+    }
+
+    // Fluxo completo de importação
+    async function importarReciboColetaPDF(file) {
+      try {
+        const text = await readPdfText(file);
+        const meta = extractReciboMeta(text);
+        const section = sliceColetadosSection(text);
+        if (!section) {
+          alert("Seção 'Pedidos coletados com sucesso' não encontrada.");
+          return;
+        }
+        const orders = extractColetadosOrders(section);
+        if (!orders.length) {
+          alert('Tabela de pedidos coletados está vazia.');
+          return;
+        }
+        await savePedidosColetados(orders, meta);
+        alert(`Importado com sucesso: ${orders.length} pedidos coletados.`);
+        carregarPedidosDia();
+        if (typeof calcularTotalPedidosDia === 'function') {
+          calcularTotalPedidosDia();
+        }
+      } catch (e) {
+        console.error('Erro ao importar recibo:', e);
+        alert('Erro ao importar Recibo de Coleta.');
+      }
+    }
+    window.importarReciboColetaPDF = importarReciboColetaPDF;
+
+    // Carrega pedidos do dia atual
+    async function carregarPedidosDia() {
+      if (!currentUser) return;
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      const tbody = document.getElementById('pedidosDiaBody');
+      tbody.innerHTML = '';
+      try {
+        const snap = await db.collection('uid').doc(currentUser.uid).collection('coletas').doc(todayStr).collection('pedidos').get();
+        if (snap.empty) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td colspan="3" class="p-2 text-center text-gray-500">Nenhum pedido enviado hoje.</td>';
+          tbody.appendChild(tr);
+          return;
+        }
+        snap.forEach(doc => {
+          const d = doc.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td class="p-2 border">${doc.id}</td><td class="p-2 border">${d.spx || ''}</td><td class="p-2 border">${d.horarioColeta || ''}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error('Erro ao carregar pedidos do dia:', e);
+      }
+    }
+    window.carregarPedidosDia = carregarPedidosDia;
+  </script>
+  <script type="module" src="login.js"></script>
+  <script src="shared.js"></script>
+</body>
+</html>
