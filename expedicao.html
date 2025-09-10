@@ -522,27 +522,47 @@
           snap2.forEach(d => usuarios.add(d.id));
           allowedUsers = [...allowedUsers, ...usuarios];
         }
-        const q = db
+
+        const acumulados = new Map();
+        async function adicionar(uid, sku, qtd) {
+          if (!allowedUsers.includes(uid)) return;
+          const chave = `${uid}_${sku}`;
+          let item = acumulados.get(chave);
+          if (!item) {
+            const nome = await getOwnerName(uid, '');
+            item = { sku, quantidade: 0, usuario: nome };
+          }
+          item.quantidade += qtd;
+          acumulados.set(chave, item);
+        }
+
+        const q1 = db
+          .collectionGroup('skuimpressos')
+          .where('createdAt', '>=', start)
+          .where('createdAt', '<=', end);
+        const snap1 = await q1.get();
+        for (const doc of snap1.docs) {
+          const data = doc.data();
+          const createdAt = data.createdAt?.toDate?.();
+          if (!createdAt) continue;
+          await adicionar(data.userUid, data.sku || '', data.quantidade || 0);
+        }
+
+        const q2 = db
           .collectionGroup('etiquetasimpressas')
           .where('data', '>=', start)
           .where('data', '<=', end);
-        const snap = await q.get();
-        const seen = new Set();
-        const rows = [];
-        snap.forEach(doc => {
+        const snap2 = await q2.get();
+        for (const doc of snap2.docs) {
           const data = doc.data();
           const createdAt = data.data?.toDate?.();
-          if (!createdAt) return;
-          if (data.userUid && !allowedUsers.includes(data.userUid)) return;
-          const key = `${data.userUid || ''}_${data.sku}_${createdAt.getTime()}`;
-          if (seen.has(key)) return;
-          seen.add(key);
-          rows.push({
-            sku: data.sku || '',
-            quantidade: data.quantidade || 0,
-            usuario: data.userEmail || ''
-          });
-        });
+          if (!createdAt) continue;
+          const uid = doc.ref.parent.parent?.id;
+          if (!uid) continue;
+          await adicionar(uid, data.sku || '', data.quantidade || 0);
+        }
+
+        const rows = Array.from(acumulados.values());
         rows.forEach(r => {
           const tr = document.createElement('tr');
           tr.innerHTML = `<td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.quantidade}</td><td class="p-2 border">${r.usuario}</td>`;
