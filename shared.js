@@ -382,6 +382,10 @@ async function ensureLayout(){
   if (typeof window.initDarkMode === 'function') {
     window.initDarkMode();
   }
+  // Ensure mobile sidebar buttons are wired after partials load
+  if (typeof setupMobileSidebar === 'function') {
+    setupMobileSidebar();
+  }
 }
 
 // roda em momentos essenciais para evitar recargas desnecessárias
