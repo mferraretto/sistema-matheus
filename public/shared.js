@@ -387,9 +387,12 @@ async function ensureLayout(){
 // roda em momentos essenciais para evitar recargas desnecessárias
 // evita acumular listeners em execuções repetidas do script
 if (!window._layoutListenersBound) {
-  ['DOMContentLoaded', 'pageshow'].forEach(evt => {
-    window.addEventListener(evt, ensureLayout, { once: true });
-  });
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', ensureLayout, { once: true });
+  } else {
+    ensureLayout();
+  }
+  window.addEventListener('pageshow', ensureLayout, { once: true });
   window._layoutListenersBound = true;
 }
 
