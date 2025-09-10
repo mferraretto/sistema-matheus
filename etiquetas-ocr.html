@@ -616,7 +616,6 @@ chkCtx.drawImage(
       console.groupEnd();
 
       const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
-      allExtractedItems.push(...(extracted.items || []));
 
 
       
@@ -676,6 +675,23 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
         : (extracted && extracted.items && extracted.items[0]
             ? `SKU: ${extracted.items[0].sku} | Quantidade: ${extracted.items[0].quantidade}`
             : (extracted && extracted.footerLines ? extracted.footerLines[0] : ''));
+
+      // Garante que os dados salvos correspondam ao rodapé final
+      let saveSku = '';
+      let saveQtd = 0;
+      if (oneLine) {
+        const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
+        const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
+        saveSku = mSku ? mSku[1].trim() : (extracted.items && extracted.items[0] ? extracted.items[0].sku : '');
+        saveQtd = mQtd ? parseInt(mQtd[1], 10) || 0 : (extracted.items && extracted.items[0] ? extracted.items[0].quantidade : 0);
+      } else if (extracted.items && extracted.items[0]) {
+        saveSku = extracted.items[0].sku;
+        saveQtd = extracted.items[0].quantidade;
+      }
+      if (saveSku) {
+        allExtractedItems.push({ sku: saveSku, quantidade: saveQtd });
+      }
+
       if (oneLine) {
         const fontSize = 9.5;
         const lineGap = 2;
