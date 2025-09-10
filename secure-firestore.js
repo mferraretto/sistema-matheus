@@ -22,7 +22,10 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
   }
   const ref = buildRef(db, collectionName, id);
   const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
+  // Firestore SDKs vary between an `exists` boolean property and an
+  // `exists()` method. Handle both to avoid runtime errors.
+  const snapExists = typeof snap.exists === 'function' ? snap.exists() : snap.exists;
+  if (!snapExists) return null;
 
   const { encrypted, encryptedData, uid, ...rest } = snap.data();
   const payload = encrypted || encryptedData;
@@ -64,7 +67,10 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
 }
 
 export async function loadSecureDocFromSnap(docSnap, passphrase) {
- if (!docSnap?.exists?.()) return null;
+  // Support both Firestore v9 `exists()` method and SDKs that expose
+  // an `exists` boolean property.
+  const snapExists = docSnap && (typeof docSnap.exists === 'function' ? docSnap.exists() : docSnap.exists);
+  if (!snapExists) return null;
 
   const { encrypted, encryptedData, uid, ...rest } = docSnap.data();
   const payload = encrypted || encryptedData;
