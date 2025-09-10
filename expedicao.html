@@ -499,7 +499,7 @@
     }
 
     async function carregarChecklist() {
-      if (!checklistBody) return;
+      if (!checklistBody || !currentUser) return;
       checklistBody.innerHTML = '';
       const now = new Date();
       const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
@@ -507,6 +507,21 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
       try {
+        let allowedUsers = [currentUser.uid];
+        if (isResponsavel) {
+          const usuarios = new Set();
+          const snap1 = await db
+            .collection('uid')
+            .where('gestoresExpedicaoEmails', 'array-contains', currentUser.email)
+            .get();
+          snap1.forEach(d => usuarios.add(d.id));
+          const snap2 = await db
+            .collection('uid')
+            .where('responsavelExpedicaoEmail', '==', currentUser.email)
+            .get();
+          snap2.forEach(d => usuarios.add(d.id));
+          allowedUsers = [...allowedUsers, ...usuarios];
+        }
         const q = db
           .collectionGroup('skuimpressos')
           .where('createdAt', '>=', start)
@@ -518,6 +533,7 @@
           const data = doc.data();
           const createdAt = data.createdAt?.toDate?.();
           if (!createdAt) return;
+          if (!allowedUsers.includes(data.userUid)) return;
           const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
           if (seen.has(key)) return;
           seen.add(key);
