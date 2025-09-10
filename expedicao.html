@@ -38,7 +38,20 @@
         <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-box-open"></i><span>Sobras</span></button>
         <button id="checklistBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-clipboard-list"></i><span>Checklist</span></button>
       </div>
-      <div id="dailyTotal" class="text-lg font-semibold"></div>
+      <div id="totalsContainer" class="grid grid-cols-3 gap-2">
+        <div class="p-2 bg-white rounded shadow text-center">
+          <div class="text-xs text-gray-500">A enviar hoje</div>
+          <div id="totalAEnviar" class="text-lg font-semibold">0</div>
+        </div>
+        <div class="p-2 bg-white rounded shadow text-center">
+          <div class="text-xs text-gray-500">Enviado</div>
+          <div id="totalEnviado" class="text-lg font-semibold">0</div>
+        </div>
+        <div class="p-2 bg-white rounded shadow text-center">
+          <div class="text-xs text-gray-500">Não enviado</div>
+          <div id="totalNaoEnviado" class="text-lg font-semibold">0</div>
+        </div>
+      </div>
       <div id="statusFilters" class="flex flex-wrap gap-2">
         <button class="filter-btn px-4 py-2 rounded-full border border-indigo-600 bg-indigo-600 text-white text-sm font-medium" data-status="all">Todas</button>
         <button class="filter-btn px-4 py-2 rounded-full border border-gray-300 bg-white text-gray-700 text-sm font-medium" data-status="nao_impresso">Não impresso (0)</button>
@@ -336,6 +349,7 @@
         await verificarResponsavel();
         await carregarHorarios();
         carregarEtiquetas();
+        await carregarChecklist();
         if (isResponsavel) {
           verificarDia();
           await carregarEquipeGestor();
@@ -497,7 +511,6 @@
 
     async function calcularTotalPedidosDia() {
       if (!currentUser) return;
-      const totalEl = document.getElementById('dailyTotal');
 
       // Intervalo: 17h do dia anterior até 13h do dia atual
       const now = new Date();
@@ -527,7 +540,6 @@
         }
       }
 
-      let total = 0;
       const perUser = {};
 
       try {
@@ -542,7 +554,6 @@
           const uid = data.userUid;
           if (!uid || !allowedUsers.includes(uid)) continue;
           const qty = Number(data.quantidade) || 0;
-          total += qty;
           perUser[uid] = (perUser[uid] || 0) + qty;
         }
 
@@ -557,14 +568,12 @@
           const uid = doc.ref.parent.parent?.id;
           if (!uid || !allowedUsers.includes(uid)) continue;
           const qty = Number(data.quantidade) || 0;
-          total += qty;
           perUser[uid] = (perUser[uid] || 0) + qty;
         }
       } catch (err) {
         console.error('Erro ao calcular pedidos do dia:', err);
       }
 
-      if (totalEl) totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
       renderUserCards(perUser);
     }
 
@@ -743,6 +752,13 @@
     if (checklistEnvioTotals) {
       checklistEnvioTotals.textContent = `Enviados: ${enviados} | Faltam enviar: ${pendentes}`;
     }
+
+    const totalEnviarEl = document.getElementById('totalAEnviar');
+    const totalEnviadoEl = document.getElementById('totalEnviado');
+    const totalNaoEnviadoEl = document.getElementById('totalNaoEnviado');
+    if (totalEnviarEl) totalEnviarEl.textContent = enviados + pendentes;
+    if (totalEnviadoEl) totalEnviadoEl.textContent = enviados;
+    if (totalNaoEnviadoEl) totalNaoEnviadoEl.textContent = pendentes;
 
     if (checklistTotals) {
       const entries = Object.entries(storeTotals).map(([loja, count]) => `${loja || 'Sem loja'}: ${count}`);
