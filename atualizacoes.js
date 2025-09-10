@@ -255,7 +255,10 @@ async function carregarTotais() {
   cards.forEach(c => {
     const div = document.createElement('div');
     div.className = 'card text-center';
-    div.innerHTML = `<div class="text-sm text-gray-500">${c.label}</div><div class="text-lg font-semibold">${c.valor}</div>`;
+    div.innerHTML = `
+      <div class="label text-xs sm:text-sm text-gray-500">${c.label}</div>
+      <div class="value text-base sm:text-lg font-semibold">${c.valor}</div>
+    `;
     container.appendChild(div);
   });
 }
