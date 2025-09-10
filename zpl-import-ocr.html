@@ -164,6 +164,18 @@
     Array.from({ length: WORKER_COUNT }, () => createOcrWorker())
   );
 
+  // Controle simples de pool de workers (fila de espera)
+  const availableWorkers = [...ocrWorkers];
+  const workerQueue = [];
+  async function acquireWorker(){
+    if(availableWorkers.length) return availableWorkers.pop();
+    return new Promise(resolve => workerQueue.push(resolve));
+  }
+  function releaseWorker(w){
+    if(workerQueue.length) workerQueue.shift()(w);
+    else availableWorkers.push(w);
+  }
+
   // ===== Auth =====
   let currentUser = null;
   auth.onAuthStateChanged(async (u)=>{
@@ -518,38 +530,42 @@
       const pdfPath = `pdfs/${currentUser.uid}/${metaRef.id}.pdf`;
       console.log('[btnProcessar] pdfPath', pdfPath);
 
-      let completed = 0;
-      const tasks = [];
-      for(let i=0;i+1<blocks.length;i+=2){
-        const idx = (i/2)+1;
-        const labelZpl = blocks[i];
-        const checklistZpl = blocks[i+1];
-        const worker = ocrWorkers[(idx-1) % ocrWorkers.length];
-        tasks.push((async ()=>{
-          const loja = detectLojaFromZpl(labelZpl);
-          let checklistBlob, checklistText='';
-          if(hasFd(checklistZpl)){
-            checklistText = extractFdTextFromZpl(checklistZpl);
-            checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
-          } else if(hasRaster(checklistZpl)){
-            ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
-          } else {
-            console.warn(`[checklist] bloco sem ^FD e sem gráfico conhecido; tentando OCR mesmo assim`);
-            ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
-          }
-          saveAs(checklistBlob, `debug-checklist-${idx}.png`);
-          const items = parseItemsFromText(checklistText);
-          const labelBlob = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
-          return { idx, loja, checklistBlob, items, labelBlob };
-        })().then(res=>{
-          completed++;
-          setProgress((completed/totalLabels)*90, `Processando ${completed}/${totalLabels}…`);
-          return res;
-        }));
-      }
+        let completed = 0;
+        const tasks = [];
+        for(let i=0;i+1<blocks.length;i+=2){
+          const idx = (i/2)+1;
+          const labelZpl = blocks[i];
+          const checklistZpl = blocks[i+1];
+          tasks.push((async ()=>{
+            const worker = await acquireWorker();
+            try{
+              const loja = detectLojaFromZpl(labelZpl);
+              let checklistBlob, checklistText='';
+              if(hasFd(checklistZpl)){
+                checklistText = extractFdTextFromZpl(checklistZpl);
+                checklistBlob = await renderZplToPngBlob(zplPrefix + checklistZpl, 12, widthIn, heightIn);
+              } else if(hasRaster(checklistZpl)){
+                ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
+              } else {
+                console.warn(`[checklist] bloco sem ^FD e sem gráfico conhecido; tentando OCR mesmo assim`);
+                ({ text: checklistText, blob: checklistBlob } = await ocrChecklistBlock(checklistZpl, zplPrefix, widthIn, heightIn, worker));
+              }
+              saveAs(checklistBlob, `debug-checklist-${idx}.png`);
+              const items = parseItemsFromText(checklistText);
+              const labelBlob = await renderZplToPngBlob(zplPrefix + labelZpl, dpmm, widthIn, heightIn);
+              return { idx, loja, checklistBlob, items, labelBlob };
+            } finally {
+              releaseWorker(worker);
+            }
+          })().then(res=>{
+            completed++;
+            setProgress((completed/totalLabels)*90, `Processando ${completed}/${totalLabels}…`);
+            return res;
+          }));
+        }
 
-      const pages = await Promise.all(tasks);
-      pages.sort((a,b)=>a.idx-b.idx);
+        const pages = await Promise.all(tasks);
+        pages.sort((a,b)=>a.idx-b.idx);
 
       let labelCounter = startNumber;
       for(const { loja, checklistBlob, items, labelBlob } of pages){
