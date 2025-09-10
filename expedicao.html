@@ -660,10 +660,25 @@
           if (!pedido) continue;
 
           const id = pedido.idPedido || docu.id;
-          const dataStr = [pedido.data || pedido.dataPedido || pedido.date || '', pedido.hora || pedido.time || '']
-            .join(' ')
-            .trim();
-          const data = parseDateTime(dataStr);
+          let data;
+          if (pedido.timestamp) {
+            try {
+              data = typeof pedido.timestamp.toDate === 'function'
+                ? pedido.timestamp.toDate()
+                : new Date(pedido.timestamp);
+            } catch (err) {
+              console.warn('Erro ao interpretar timestamp', pedido.timestamp, err);
+            }
+          }
+          if (!data || isNaN(data)) {
+            const dataStr = [
+              pedido.data || pedido.dataPedido || pedido.date || '',
+              pedido.hora || pedido.time || ''
+            ]
+              .join(' ')
+              .trim();
+            data = parseDateTime(dataStr);
+          }
           if (isNaN(data) || data < start || data > end) continue;
 
           const loja = pedido.loja || pedido.store || '';
