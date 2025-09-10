@@ -576,11 +576,13 @@
     if (!str) return new Date('');
     const parts = str.split(/[\/\-]/);
     if (parts.length === 3) {
-      if (str.includes('-') && parts[0].length === 4) {
-        return new Date(str); // formato ISO yyyy-mm-dd
+      let y, m, d;
+      if (parts[0].length === 4) {
+        [y, m, d] = parts.map(Number); // formato ISO yyyy-mm-dd
+      } else {
+        [d, m, y] = parts.map(Number); // formato dd/mm/yyyy
       }
-      const [d, m, y] = parts;
-      return new Date(`${y}-${m}-${d}`);
+      return new Date(y, (m || 1) - 1, d || 1);
     }
     return new Date(str);
   }
@@ -598,7 +600,7 @@
 
   // CORRIGIDO: intervalo das 15:30 do dia anterior até 15:00 do dia vigente
   const now = new Date();
-  const end = new Date(now.toISOString().split('T')[0] + 'T15:00:00');
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 0, 0, 0);
   const start = new Date(end);
   start.setDate(start.getDate() - 1);
   start.setHours(15, 30, 0, 0); // dia anterior 15:30
