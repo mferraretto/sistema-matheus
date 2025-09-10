@@ -26,26 +26,29 @@
       overflow: hidden;
       box-shadow: 0 2px 16px rgba(0,0,0,0.08);
     }
-    .progress-bar-fill {
-      background: linear-gradient(90deg, #14B8A6 0%, #6366F1 100%);
-      height: 100%;
-      border-radius: 9999px 0 0 9999px;
-      transition: width 0.3s cubic-bezier(.4,0,.2,1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      background-size: 200% 100%;
-      animation: progress-animation 2s linear infinite;
-    }
+      .progress-bar-fill {
+        background: linear-gradient(90deg, #14B8A6 0%, #6366F1 100%);
+        height: 100%;
+        border-radius: 9999px 0 0 9999px;
+        transition: width 0.3s cubic-bezier(.4,0,.2,1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background-size: 200% 100%;
+        animation: progress-animation 2s linear infinite;
+      }
     @keyframes progress-animation {
       0% { background-position: 0% 0; }
       100% { background-position: -200% 0; }
     }
-    #timerText {
-      font-size: 0.875rem;
-      color: #374151;
-    }
+      #timerText {
+        font-size: 0.875rem;
+        color: #374151;
+        font-weight: 500;
+      }
     /* Card Glassmorphism */
     .glass-card {
       background: rgba(255, 255, 255, 0.85);
@@ -488,6 +491,21 @@ firebase.auth().onAuthStateChanged(async u => {
       return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
+    function updateProgress(current, total, startTime, progressFill, progressText, timerText) {
+      const progress = Math.round((current / total) * 100);
+      progressFill.style.width = progress + "%";
+      if (current > 0) {
+        progressText.textContent = `Processando página ${current} de ${total} (${progress}%)`;
+        const elapsed = (Date.now() - startTime) / 1000;
+        const avg = elapsed / current;
+        const remaining = Math.max(0, Math.round(avg * (total - current)));
+        timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
+      } else {
+        progressText.textContent = `Preparando (${total} páginas)...`;
+        timerText.textContent = "";
+      }
+    }
+
     async function uploadPdfToFirebase(blob, fileName, items) {
       if (!currentUser) {
         await savePrintedSkuQuantities(items);
@@ -544,32 +562,26 @@ firebase.auth().onAuthStateChanged(async u => {
   }
 
   status.textContent = "📸 Lendo PDF...";
-  const arrayBuffer = await pdfFile.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const novoPdf = await PDFLib.PDFDocument.create();
-  // Fonte para escrever o rodapé textual (SKU + Quantidade) no PDF
-  const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
-  const canvas = document.getElementById("pdfCanvas");
-  const ctx = canvas.getContext("2d");
-  canvas.style.display = "block";
+    const arrayBuffer = await pdfFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const novoPdf = await PDFLib.PDFDocument.create();
+    // Fonte para escrever o rodapé textual (SKU + Quantidade) no PDF
+    const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+    const canvas = document.getElementById("pdfCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.style.display = "block";
+    updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-  for (let i = 0; i < pdf.numPages; i++) {
-    const progress = Math.round((i / pdf.numPages) * 100);
-    progressFill.style.width = progress + "%";
-    progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-    const elapsed = (Date.now() - startTime) / 1000;
-    const avg = elapsed / (i + 1);
-    const remaining = Math.max(0, Math.round(avg * (pdf.numPages - (i + 1))));
-    timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
+    for (let i = 0; i < pdf.numPages; i++) {
+      const page = await pdf.getPage(i + 1);
+      const scale = 7;
+      const viewport = page.getViewport({ scale });
 
-    const page = await pdf.getPage(i + 1);
-    const scale = 7;
-    const viewport = page.getViewport({ scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    await page.render({ canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
 
     const largura = canvas.width;
     const altura = canvas.height;
@@ -742,12 +754,13 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
     }
   }
 
-  progressFill.style.width = "100%";
-  progressText.textContent = "✅ Concluído!";
-  timerText.textContent = "Tempo restante: 00:00";
-  setTimeout(() => {
-    progressBar.style.display = "none";
-  }, 2000);
+    progressFill.style.width = "100%";
+    progressText.textContent = "✅ Concluído!";
+    const totalTime = Math.round((Date.now() - startTime) / 1000);
+    timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
+    setTimeout(() => {
+      progressBar.style.display = "none";
+    }, 2000);
   const pdfFinal = await novoPdf.save();
   const blob = new Blob([pdfFinal], { type: "application/pdf" });
   const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
@@ -793,28 +806,24 @@ completoCtx.drawImage(etCanvas, paddingX, 0);
       const ctx = canvas.getContext("2d");
       canvas.style.display = "block";
       const allItems = [];
+      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
       for (let i = 0; i < pdf.numPages; i++) {
-        const progress = Math.round((i / pdf.numPages) * 100);
-        progressFill.style.width = progress + "%";
-        progressText.textContent = `Processando página ${i + 1} de ${pdf.numPages}...`;
-        const elapsed = (Date.now() - startTime) / 1000;
-        const avg = elapsed / (i + 1);
-        const remaining = Math.max(0, Math.round(avg * (pdf.numPages - (i + 1))));
-        timerText.textContent = `Tempo restante: ${formatTime(remaining)}`;
         const page = await pdf.getPage(i + 1);
         const scale = 3;
         const viewport = page.getViewport({ scale });
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         await page.render({ canvasContext: ctx, viewport }).promise;
+        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
         const data = await extractMercadoLivreData(canvas);
         if (data.sku) allItems.push(data);
       }
 
       progressFill.style.width = "100%";
       progressText.textContent = "✅ Concluído!";
-      timerText.textContent = "Tempo restante: 00:00";
+      const totalTime = Math.round((Date.now() - startTime) / 1000);
+      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
       setTimeout(() => { progressBar.style.display = "none"; }, 2000);
 
       if (currentUser) {
