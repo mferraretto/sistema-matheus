@@ -36,6 +36,7 @@
         <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
         <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-users"></i><span>Equipe</span></button>
         <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-box-open"></i><span>Sobras</span></button>
+        <button id="checklistBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-clipboard-list"></i><span>Checklist</span></button>
       </div>
       <div id="dailyTotal" class="text-lg font-semibold"></div>
       <div id="statusFilters" class="flex flex-wrap gap-2">
@@ -87,6 +88,21 @@
           <option value="">Selecione responsável</option>
         </select>
         <button id="enviarSobrasBtn" class="btn btn-primary">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="checklistModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white w-full max-w-2xl p-4 rounded shadow-lg relative">
+      <button id="closeChecklistModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
+      <h2 class="text-lg font-semibold mb-2">Checklist do dia</h2>
+      <div class="overflow-y-auto max-h-96">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr><th class="p-2 border">SKU</th><th class="p-2 border">Quantidade</th><th class="p-2 border">Usuário</th></tr>
+          </thead>
+          <tbody id="checklistBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -179,6 +195,10 @@
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
+    const checklistBtn = document.getElementById('checklistBtn');
+    const checklistModal = document.getElementById('checklistModal');
+    const closeChecklistModal = document.getElementById('closeChecklistModal');
+    const checklistBody = document.getElementById('checklistBody');
     
     if (uploadManualBtn) {
       uploadManualBtn.addEventListener('click', () => {
@@ -212,6 +232,16 @@
       sobrasBtn.addEventListener('click', () => {
         sobrasModal.classList.remove('hidden');
       });
+    }
+    if (checklistBtn && checklistModal) {
+      checklistBtn.addEventListener('click', async () => {
+        await carregarChecklist();
+        checklistModal.classList.remove('hidden');
+      });
+    }
+    if (closeChecklistModal && checklistModal) {
+      closeChecklistModal.addEventListener('click', () => checklistModal.classList.add('hidden'));
+      checklistModal.addEventListener('click', e => { if (e.target === checklistModal) checklistModal.classList.add('hidden'); });
     }
     if (closeSobrasModal && sobrasModal) {
       closeSobrasModal.addEventListener('click', () => sobrasModal.classList.add('hidden'));
@@ -465,6 +495,49 @@
         }
       }
       totalEl.textContent = `Pedidos a enviar hoje: ${total}`;
+    }
+
+    async function carregarChecklist() {
+      if (!checklistBody) return;
+      checklistBody.innerHTML = '';
+      const now = new Date();
+      const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
+      const start = new Date(end);
+      start.setDate(start.getDate() - 1);
+      start.setHours(17, 0, 0, 0);
+      try {
+        const q = db
+          .collectionGroup('skuimpressos')
+          .where('createdAt', '>=', start)
+          .where('createdAt', '<=', end);
+        const snap = await q.get();
+        const seen = new Set();
+        const rows = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          const createdAt = data.createdAt?.toDate?.();
+          if (!createdAt) return;
+          const key = `${data.userUid}_${data.sku}_${createdAt.getTime()}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          rows.push({
+            sku: data.sku || '',
+            quantidade: data.quantidade || 0,
+            usuario: data.userEmail || ''
+          });
+        });
+        rows.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.quantidade}</td><td class="p-2 border">${r.usuario}</td>`;
+          checklistBody.appendChild(tr);
+        });
+        if (!rows.length) {
+          checklistBody.innerHTML = '<tr><td class="p-2 text-center text-gray-500" colspan="3">Nenhum registro</td></tr>';
+        }
+      } catch (e) {
+        console.error('Erro ao carregar checklist:', e);
+        checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="3">Erro ao carregar</td></tr>';
+      }
     }
 
     async function carregarEtiquetas() {
