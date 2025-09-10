@@ -97,6 +97,7 @@
     <div class="bg-white w-full max-w-2xl p-4 rounded shadow-lg relative">
       <button id="closeChecklistModal" class="absolute top-2 right-2 text-gray-600"><i class="fas fa-times"></i></button>
       <h2 class="text-lg font-semibold mb-2">Checklist do dia</h2>
+      <div id="checklistTotals" class="mb-2 text-sm font-medium"></div>
       <div class="flex justify-end mb-2">
         <button id="exportChecklistBtn" class="btn btn-primary">Exportar</button>
       </div>
@@ -207,6 +208,7 @@
     const closeChecklistModal = document.getElementById('closeChecklistModal');
     const checklistBody = document.getElementById('checklistBody');
     const exportChecklistBtn = document.getElementById('exportChecklistBtn');
+    const checklistTotals = document.getElementById('checklistTotals');
     
     if (uploadManualBtn) {
       uploadManualBtn.addEventListener('click', () => {
@@ -568,6 +570,7 @@
         if (!checklistBody || !currentUser) return;
         checklistBody.innerHTML = '';
         checklistRows = [];
+        if (checklistTotals) checklistTotals.textContent = '';
         function parseDate(str) {
           if (!str) return new Date('');
           const parts = str.split(/[\/\-]/);
@@ -619,6 +622,7 @@
             return userCache.get(uid);
           }
           const rows = [];
+          const storeTotals = {};
           for (const uid of allowedUsers) {
             if (!uid) continue; // Evita erros com UID indefinido
             const pass = getPassphrase() || `chave-${uid}`;
@@ -646,6 +650,7 @@
                 if (isNaN(data) || data < start || data > end) continue;
                 const loja = pedido.loja || pedido.store || '';
                 const usuario = await getNome(uid);
+                storeTotals[loja] = (storeTotals[loja] || 0) + 1;
                 if (Array.isArray(pedido.itens) && pedido.itens.length) {
                   pedido.itens.forEach(item => {
                     const sku = item.sku || '';
@@ -669,12 +674,17 @@
             tr.innerHTML = `<td class="p-2 border">${r.id}</td><td class="p-2 border">${r.loja}</td><td class="p-2 border">${r.sku}</td><td class="p-2 border">${r.data.toLocaleString('pt-BR')}</td><td class="p-2 border">${r.usuario}</td>`;
             checklistBody.appendChild(tr);
           });
+          if (checklistTotals) {
+            const entries = Object.entries(storeTotals).map(([loja, count]) => `${loja || 'Sem loja'}: ${count}`);
+            checklistTotals.textContent = entries.length ? entries.join(' | ') : 'Nenhum pedido';
+          }
           if (!rows.length) {
             checklistBody.innerHTML = '<tr><td class="p-2 text-center text-gray-500" colspan="5">Nenhum registro</td></tr>';
           }
         } catch (e) {
           console.error('Erro ao carregar checklist:', e);
           checklistBody.innerHTML = '<tr><td class="p-2 text-center text-red-500" colspan="5">Erro ao carregar</td></tr>';
+          if (checklistTotals) checklistTotals.textContent = 'Erro ao carregar';
         }
       }
 
