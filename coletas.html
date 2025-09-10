@@ -148,6 +148,30 @@
         batch.set(docRef, { ...o, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       });
       await batch.commit();
+      await marcarPedidosTinyColetados(orders);
+    }
+
+    // Marca pedidos correspondentes em pedidostiny como coletados
+    async function marcarPedidosTinyColetados(orders) {
+      if (!currentUser) return;
+      const tinyCol = db.collection('usuarios').doc(currentUser.uid).collection('pedidostiny');
+      for (const o of orders) {
+        try {
+          const docRef = tinyCol.doc(o.numeroPedido);
+          const docSnap = await docRef.get();
+          if (docSnap.exists) {
+            await docRef.set({ coletado: true }, { merge: true });
+            continue;
+          }
+          const qSnap = await tinyCol.where('idPedido', '==', o.numeroPedido).limit(1).get();
+          if (!qSnap.empty) {
+            const foundRef = tinyCol.doc(qSnap.docs[0].id);
+            await foundRef.set({ coletado: true }, { merge: true });
+          }
+        } catch (err) {
+          console.error('Erro ao marcar pedido coletado no Tiny:', o.numeroPedido, err);
+        }
+      }
     }
 
     // Fluxo completo de importação
