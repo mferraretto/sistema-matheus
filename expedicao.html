@@ -499,7 +499,7 @@
     }
 
     async function carregarChecklist() {
-      if (!checklistBody) return;
+      if (!checklistBody || !currentUser) return;
       checklistBody.innerHTML = '';
       const now = new Date();
       const end = new Date(now.toISOString().split('T')[0] + 'T13:00:00');
@@ -507,7 +507,7 @@
       start.setDate(start.getDate() - 1);
       start.setHours(17, 0, 0, 0);
       try {
-        const seen = new Set();
+       const seen = new Set();
         const rows = new Map();
 
         const addRow = (sku, quantidade, usuario, uid, createdAt) => {
