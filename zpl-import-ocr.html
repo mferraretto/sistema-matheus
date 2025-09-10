@@ -436,29 +436,23 @@
   }
   async function savePrintedItems(items, meta){
     console.log('[savePrintedItems] items:', items, 'meta:', meta);
-    // Salva em uid/{uid}/skuimpressos
-    const base = db.collection('uid').doc(currentUser.uid).collection('skuimpressos');
     const batch = db.batch();
-    const now = new Date();
+    const userDoc = db.collection('uid').doc(currentUser.uid);
+    const respDoc = meta.responsavelUid ? db.collection('uid').doc(meta.responsavelUid) : null;
     items.forEach(it=>{
-      const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null };
-      const doc = base.doc(); batch.set(doc, data, { merge:true });
+      const data = {
+        sku: it.sku,
+        quantidade: it.quantidade,
+        loja: meta.loja || '',
+        userUid: currentUser.uid,
+        userEmail: currentUser.email,
+        data: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
+      if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
     });
     await batch.commit();
     console.log('[savePrintedItems] saved for current user');
-
-    // Se houver responsável, tenta salvar no UID dele também
-    if(meta.responsavelUid){
-      const base2 = db.collection('uid').doc(meta.responsavelUid).collection('skuimpressos');
-      const batch2 = db.batch();
-      const now2 = new Date();
-      items.forEach(it=>{
-        const data = { sku: it.sku, quantidade: it.quantidade, loja: meta.loja||null, dataHora: now2.toISOString(), numeroSequencial: meta.labelNumber||null, pdfPath: meta.storagePath||null, origemUid: currentUser.uid };
-        const doc = base2.doc(); batch2.set(doc, data, { merge:true });
-      });
-      await batch2.commit();
-      console.log('[savePrintedItems] saved for responsavel', meta.responsavelUid);
-    }
   }
 
   async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario){

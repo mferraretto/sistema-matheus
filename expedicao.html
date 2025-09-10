@@ -844,10 +844,10 @@
           loja: loja || '',
           userUid: currentUser.uid,
           userEmail: currentUser.email,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          data: firebase.firestore.FieldValue.serverTimestamp()
         };
-        batch.set(userDoc.collection('skuimpressos').doc(), data);
-        if (respDoc) batch.set(respDoc.collection('skuimpressos').doc(), data);
+        batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
+        if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
       });
       await batch.commit();
     }
@@ -899,9 +899,9 @@
       const uid = currentUser.uid;
       const userDoc = db.collection('uid').doc(uid);
       const snap = await userDoc
-        .collection('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collection('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
       const resumo = {};
       snap.forEach(d => {
@@ -935,9 +935,9 @@
 
     async function gerarRelatorioDiaPorUsuario(inicio, fim, diaDados) {
       const snap = await db
-        .collectionGroup('skuimpressos')
-        .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(inicio))
-        .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(fim))
+        .collectionGroup('etiquetasimpressas')
+        .where('data', '>=', firebase.firestore.Timestamp.fromDate(inicio))
+        .where('data', '<', firebase.firestore.Timestamp.fromDate(fim))
         .get();
       const resumo = {};
       snap.forEach(d => {
