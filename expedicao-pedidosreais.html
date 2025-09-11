@@ -137,36 +137,25 @@
         const { decryptString } = await import('./crypto.js');
         const pedidosRef = db.collection('uid').doc(user.uid).collection('pedidosreais');
         const datasSnap = await pedidosRef.get();
-        todosPedidos = [];
-        const candidates = [getPassphrase(), user?.email, `chave-${user.uid}`, user.uid];
-        for (const dataDoc of datasSnap.docs) {
-          const listaSnap = await dataDoc.ref.collection('lista').get();
-          for (const doc of listaSnap.docs) {
-            let d = doc.data();
-            if (d.encrypted) {
-              let txt;
-              for (const p of candidates) {
-                if (!p) continue;
+          todosPedidos = [];
+          const pass = getPassphrase() || user.uid;
+          for (const dataDoc of datasSnap.docs) {
+            const listaSnap = await dataDoc.ref.collection('lista').get();
+            for (const doc of listaSnap.docs) {
+              let d = doc.data();
+              if (d.encrypted) {
                 try {
-                  txt = await decryptString(d.encrypted, p);
-                  if (txt) break;
-                } catch (_) {}
+                  const txt = await decryptString(d.encrypted, pass);
+                  d = JSON.parse(txt);
+                } catch (e) {
+                  console.error('Erro ao descriptografar pedido', e);
+                  continue;
+                }
               }
-              if (!txt) {
-                console.error('Erro ao descriptografar pedido');
-                continue;
-              }
-              try {
-                d = JSON.parse(txt);
-              } catch (e) {
-                console.error('JSON inválido no pedido', e);
-                continue;
-              }
+              d.pedidoId = d.pedidoId || doc.id;
+              todosPedidos.push(d);
             }
-            d.pedidoId = d.pedidoId || doc.id;
-            todosPedidos.push(d);
           }
-        }
         todosPedidos.sort((a, b) => {
           const da = parseDate(a.data);
           const db = parseDate(b.data);
