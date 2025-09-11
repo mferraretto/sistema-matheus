@@ -263,6 +263,10 @@
       try {
         let rows = [];
         const nomeLoja = document.getElementById('importNomeLoja').value.trim();
+        if (!nomeLoja) {
+          alert('Informe o nome da loja');
+          return;
+        }
         if (file.name.toLowerCase().endsWith('.csv')) {
           const texto = await file.text();
           const workbook = XLSX.read(texto, { type: 'string' });
@@ -288,9 +292,12 @@
             const d = new Date(data);
             if (!isNaN(d)) data = d.toISOString().split('T')[0];
           }
-          const lojaHeader = headers.find(h => h.toLowerCase().includes('loja'));
           const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
+          const statusRaw = statusHeader ? String(row[statusHeader]).trim() : '';
+          const status = statusRaw.toLowerCase();
+          if (status.includes('cancelado') || status.includes('não pago')) continue;
+          if (!pedidoId || !data) continue;
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
           const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
           const cupom = parseFloat(row['Cupom do vendedor']) || 0;
@@ -302,9 +309,9 @@
             pedidoId,
             data,
             horaPagamento,
-            loja: nomeLoja || (lojaHeader ? row[lojaHeader] : ''),
+            loja: nomeLoja,
             sku: skuHeader ? row[skuHeader] : '',
-            status: statusHeader ? row[statusHeader] : '',
+            status: statusRaw,
             subtotal,
             taxas,
             liquido,
@@ -316,7 +323,6 @@
         let atualizados = 0;
         let novos = 0;
         for (const p of pedidos) {
-          if (!p.pedidoId || !p.data) continue;
           let docRef;
           let snap;
           const dupSnap = await db.collectionGroup('lista')
