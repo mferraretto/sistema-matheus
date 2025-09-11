@@ -282,6 +282,8 @@
           const dataHeader = headers.find(h => h.toLowerCase().includes('data') && !h.toLowerCase().includes('hora'));
           let horaPagamento = horaPagHeader ? String(row[horaPagHeader]).trim() : '';
           let data = dataHeader ? row[dataHeader] : '';
+          const dataPrevHeader = headers.find(h => h.toLowerCase().includes('data prevista') && h.toLowerCase().includes('envio'));
+          let dataPrevistaEnvio = dataPrevHeader ? row[dataPrevHeader] : '';
           if (horaPagamento) {
             const d = new Date(horaPagamento);
             if (!data && !isNaN(d)) data = d.toISOString().split('T')[0];
@@ -289,6 +291,14 @@
           if (data) {
             const d = new Date(data);
             if (!isNaN(d)) data = d.toISOString().split('T')[0];
+          }
+          if (dataPrevistaEnvio) {
+            const dPrev = new Date(dataPrevistaEnvio);
+            if (!isNaN(dPrev)) {
+              dataPrevistaEnvio = dPrev.toISOString().split('T')[0];
+            } else if (typeof dataPrevistaEnvio === 'string') {
+              dataPrevistaEnvio = dataPrevistaEnvio.split(' ')[0];
+            }
           }
           const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
@@ -306,6 +316,7 @@
             loja: nomeLoja,
             data,
             horaPagamento,
+            dataPrevistaEnvio,
             subtotal,
             taxas,
             liquido,
