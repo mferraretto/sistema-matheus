@@ -144,6 +144,42 @@
     const selectedStatuses = new Set();
     let etiquetaEstado = '';
     document.getElementById('filtroEtiqueta').indeterminate = true;
+    let responsavelFinanceiro = null;
+    let responsavelExpedicao = null;
+
+    async function buscarResponsaveis(user) {
+      try {
+        const userDoc = await db.collection('usuarios').doc(user.uid).get();
+        let data = userDoc.data() || {};
+        let respEmail = data.responsavelFinanceiroEmail || '';
+        if (!respEmail) {
+          const altDoc = await db.collection('uid').doc(user.uid).get();
+          if (altDoc.exists) respEmail = altDoc.data().responsavelFinanceiroEmail || '';
+        }
+        if (respEmail) {
+          const snap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+          if (!snap.empty) responsavelFinanceiro = { uid: snap.docs[0].id, email: respEmail };
+        }
+        let gestorEmail = Array.isArray(data.gestoresExpedicaoEmails)
+          ? data.gestoresExpedicaoEmails[0]
+          : data.responsavelExpedicaoEmail || '';
+        if (!gestorEmail) {
+          const altDoc2 = await db.collection('uid').doc(user.uid).get();
+          if (altDoc2.exists) {
+            const altData = altDoc2.data() || {};
+            gestorEmail = Array.isArray(altData.gestoresExpedicaoEmails)
+              ? altData.gestoresExpedicaoEmails[0]
+              : altData.responsavelExpedicaoEmail || '';
+          }
+        }
+        if (gestorEmail) {
+          const snap2 = await db.collection('usuarios').where('email', '==', gestorEmail).limit(1).get();
+          if (!snap2.empty) responsavelExpedicao = { uid: snap2.docs[0].id, email: gestorEmail };
+        }
+      } catch (e) {
+        console.error('Erro ao buscar responsáveis:', e);
+      }
+    }
 
     function parseDate(str) {
       if (!str) return null;
@@ -230,6 +266,7 @@
         return;
       }
       usuarioAtual = user;
+      await buscarResponsaveis(user);
       await carregarPedidos(user);
       aplicarFiltros();
     });
@@ -508,6 +545,36 @@
           if (precisaAtualizar) {
             const enc = await encryptString(JSON.stringify(p), pass);
             await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
+            try {
+              if (responsavelFinanceiro?.uid && responsavelFinanceiro.uid !== usuarioAtual.uid) {
+                const encFin = await encryptString(JSON.stringify(p), responsavelFinanceiro.email);
+                await db
+                  .collection('uid')
+                  .doc(responsavelFinanceiro.uid)
+                  .collection('uid')
+                  .doc(usuarioAtual.uid)
+                  .collection('pedidosreais')
+                  .doc(p.data)
+                  .collection('lista')
+                  .doc(p.pedidoId)
+                  .set({ encrypted: encFin, uid: usuarioAtual.uid });
+              }
+              if (responsavelExpedicao?.uid && responsavelExpedicao.uid !== usuarioAtual.uid) {
+                const encExp = await encryptString(JSON.stringify(p), responsavelExpedicao.email);
+                await db
+                  .collection('uid')
+                  .doc(responsavelExpedicao.uid)
+                  .collection('uid')
+                  .doc(usuarioAtual.uid)
+                  .collection('pedidosreais')
+                  .doc(p.data)
+                  .collection('lista')
+                  .doc(p.pedidoId)
+                  .set({ encrypted: encExp, uid: usuarioAtual.uid });
+              }
+            } catch (err) {
+              console.error('Erro ao copiar pedido para responsáveis', err);
+            }
             if (snap.exists) atualizados++;
           }
           const percent = Math.round(((i + 1) / pedidos.length) * 100);
