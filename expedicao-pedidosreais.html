@@ -283,14 +283,15 @@
         todosPedidos = [];
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
         for (const doc of listaSnap.docs) {
-          if (!doc.ref.path.includes('/pedidosreais/')) continue;
+          const path = doc.ref.path;
+          if (!path.startsWith(`uid/${user.uid}/pedidosreais/`)) continue;
           let d = doc.data();
           if (d.encrypted) {
             try {
               const txt = await decryptString(d.encrypted, pass);
               d = JSON.parse(txt);
             } catch (e) {
-              console.error('Erro ao descriptografar pedido', e);
+              console.error('Erro ao descriptografar pedido', doc.id, e);
               continue;
             }
           }
@@ -314,7 +315,8 @@
         const vistos = new Set();
         const duplicados = [];
         for (const doc of listaSnap.docs) {
-          if (!doc.ref.path.includes('/pedidosreais/')) continue;
+          const path = doc.ref.path;
+          if (!path.startsWith(`uid/${usuarioAtual.uid}/pedidosreais/`)) continue;
           if (vistos.has(doc.id)) {
             duplicados.push(doc.ref);
           } else {
