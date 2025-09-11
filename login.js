@@ -285,10 +285,8 @@ async function showUserArea(user) {
     // 1) aplica restrições de UI
     applyPerfilRestrictions(perfil);
 
-    // 2) se for expedição, executa fluxo especial
-    if (perfil === 'expedicao') {
-      await checkExpedicao(user);
-    }
+    // 2) verifica associação com expedição (gestor ou responsável)
+    await checkExpedicao(user);
 
     // 3) localiza responsável financeiro do usuário, se houver
     try {
