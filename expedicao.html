@@ -652,7 +652,13 @@
 
     for (const uid of allowedUsers) {
       if (!uid) continue;
-      const pass = getPassphrase() || `chave-${uid}`;
+      const passes = [
+        getPassphrase(),
+        `chave-${uid}`,
+        uid,
+        currentUser?.uid,
+        currentUser?.email
+      ].filter(Boolean);
 
       const coletados = new Set();
       try {
@@ -674,13 +680,19 @@
           if (!docu.ref.path.includes('/pedidosreais/')) continue;
           let d = docu.data();
           if (d.encrypted) {
-            try {
-              const plaintext = await decryptString(d.encrypted, pass);
-              d = JSON.parse(plaintext);
-            } catch (err) {
-              console.warn('Erro ao descriptografar pedido', docu.id, err);
+            let decrypted = null;
+            for (const key of passes) {
+              try {
+                const plaintext = await decryptString(d.encrypted, key);
+                decrypted = JSON.parse(plaintext);
+                break;
+              } catch (err) {}
+            }
+            if (!decrypted) {
+              console.warn('Erro ao descriptografar pedido', docu.id);
               continue;
             }
+            d = decrypted;
           }
           const status = (d.status || '').toUpperCase();
           if (status !== 'A ENVIAR') continue;
