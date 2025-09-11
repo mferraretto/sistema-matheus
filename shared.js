@@ -488,6 +488,8 @@ function setupMobileSidebar() {
 document.addEventListener('navbarLoaded', setupMobileSidebar);
 document.addEventListener('sidebarLoaded', setupMobileSidebar);
 document.addEventListener('DOMContentLoaded', setupMobileSidebar);
+// Ensure mobile sidebar listeners are applied even if partials load before these events are registered
+setupMobileSidebar();
 
 let userMenuClickRegistered = false;
 document.addEventListener('navbarLoaded', () => {
