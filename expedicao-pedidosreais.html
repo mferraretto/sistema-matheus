@@ -159,20 +159,26 @@
     async function carregarPedidos(user) {
       try {
         const { decryptString } = await import('./crypto.js');
-        const pass = getPassphrase() || user.uid;
+        const passCandidates = [getPassphrase(), user.email, `chave-${user.uid}`, user.uid].filter(Boolean);
         todosPedidos = [];
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
         for (const doc of listaSnap.docs) {
           if (!doc.ref.path.includes('/pedidosreais/')) continue;
           let d = doc.data();
           if (d.encrypted) {
-            try {
-              const txt = await decryptString(d.encrypted, pass);
-              d = JSON.parse(txt);
-            } catch (e) {
-              console.error('Erro ao descriptografar pedido', e);
+            let dec = null;
+            for (const pass of passCandidates) {
+              try {
+                const txt = await decryptString(d.encrypted, pass);
+                dec = JSON.parse(txt);
+                break;
+              } catch (_) {}
+            }
+            if (!dec) {
+              console.error('Erro ao descriptografar pedido');
               continue;
             }
+            d = dec;
           }
           d.pedidoId = d.pedidoId || doc.id;
           todosPedidos.push(d);
@@ -332,22 +338,10 @@
             .collection('lista').doc(p.pedidoId);
           const snap = await docRef.get();
           if (!snap.exists) {
-            // Verifica duplicados em outras datas
-            const dupQuery = await db.collectionGroup('lista')
-              .where('uid', '==', usuarioAtual.uid)
-              .where(firebase.firestore.FieldPath.documentId(), '==', p.pedidoId)
-              .limit(1).get();
-            if (!dupQuery.empty) {
-              const encDup = await encryptString(JSON.stringify(p), pass);
-              await dupQuery.docs[0].ref.set({ encrypted: encDup, uid: usuarioAtual.uid });
-              atualizados++;
-              continue;
-            } else {
-              const encNovo = await encryptString(JSON.stringify(p), pass);
-              await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
-              novos++;
-              continue;
-            }
+            const encNovo = await encryptString(JSON.stringify(p), pass);
+            await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
+            novos++;
+            continue;
           }
           let existente = {};
           const dados = snap.data();
