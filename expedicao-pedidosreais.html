@@ -247,8 +247,26 @@
       const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
       const prevEnvioEnd = prevEnvioFim ? new Date(prevEnvioFim) : null;
 
+      const anyFilter =
+        dataStart ||
+        dataEnd ||
+        prevEnvioStart ||
+        prevEnvioEnd ||
+        loja ||
+        statuses.length ||
+        filtroEtiqueta;
+
       const filtrados = todosPedidos.filter(p => {
         const dataPedido = parseDate(p.data);
+
+        if (!anyFilter) {
+          const doisDiasAtras = new Date();
+          doisDiasAtras.setDate(doisDiasAtras.getDate() - 2);
+          const recente = dataPedido && dataPedido >= doisDiasAtras;
+          const aEnviar = (p.status || '').toLowerCase() === 'a enviar';
+          return recente || aEnviar;
+        }
+
         if (dataStart && (!dataPedido || dataPedido < dataStart)) return false;
         if (dataEnd && (!dataPedido || dataPedido > dataEnd)) return false;
         const dataPrevEnvio = parseDate(p.dataPrevistaEnvio);
