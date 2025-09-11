@@ -337,30 +337,43 @@ function hideUserArea() {
 }
 
 function applyExpedicaoSidebar() {
-  const hideLinks = () => {
+  const filter = () => {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
-    sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      if (!href.includes('expedicao.html')) {
-        link.classList.add('hidden');
+
+    const expLink = document.getElementById('menu-expedicao');
+    const expLi = expLink ? expLink.closest('li') : null;
+
+    sidebar.querySelectorAll('li').forEach(li => {
+      if (expLi && (li === expLi || expLi.contains(li))) {
+        li.classList.remove('hidden');
+        li.style.display = '';
+      } else {
+        li.classList.add('hidden');
       }
     });
+
+    const submenu = document.getElementById('menuExpedicao');
+    if (submenu) {
+      submenu.style.maxHeight = submenu.scrollHeight + 'px';
+    }
   };
-  hideLinks();
-  document.addEventListener('sidebarLoaded', hideLinks);
+
+  filter();
+  document.addEventListener('sidebarLoaded', filter);
 }
 
 function restoreSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-    link.classList.remove('hidden');
+  sidebar.querySelectorAll('li, a.sidebar-link').forEach(el => {
+    el.classList.remove('hidden');
+    if (el.style) el.style.display = '';
   });
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase().trim();
-  if (!currentPerfil) return;
+  if (!currentPerfil || currentPerfil === 'expedicao') return;
   document.querySelectorAll('[data-perfil]').forEach(el => {
     const allowed = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
