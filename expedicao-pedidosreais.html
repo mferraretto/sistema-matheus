@@ -136,7 +136,7 @@
       try {
         const pass = getPassphrase() || user.uid;
         const { decryptString } = await import('./crypto.js');
-        const snap = await db.collection('uid').doc(user.uid).collection('pedidosreais').orderBy('data', 'desc').get();
+        const snap = await db.collection('uid').doc(user.uid).collection('pedidosreais').get();
         todosPedidos = [];
         for (const doc of snap.docs) {
           let d = doc.data();
@@ -151,6 +151,11 @@
           }
           todosPedidos.push(d);
         }
+        todosPedidos.sort((a, b) => {
+          const da = parseDate(a.data);
+          const db = parseDate(b.data);
+          return db - da;
+        });
       } catch (e) {
         console.error('Erro ao carregar pedidos:', e);
       }
