@@ -669,54 +669,35 @@
       }
 
       try {
-        const snap = await db.collection(`usuarios/${uid}/pedidostiny`).get();
-        for (const docu of snap.docs) {
-          let docData = docu.data();
-          let pedido = null;
-
-          // ✅ Agora aceita tanto criptografado quanto aberto
-          if (docData && (docData.encrypted || docData.encryptedData)) {
+        const listaSnap = await db.collectionGroup('lista').where('uid', '==', uid).get();
+        for (const docu of listaSnap.docs) {
+          if (!docu.ref.path.includes('/pedidosreais/')) continue;
+          let d = docu.data();
+          if (d.encrypted) {
             try {
-              let jsonStr = docData.encrypted || docData.encryptedData;
-              if (typeof jsonStr !== 'string') jsonStr = JSON.stringify(jsonStr);
-              const plaintext = await decryptString(jsonStr, pass);
-              pedido = JSON.parse(plaintext);
+              const plaintext = await decryptString(d.encrypted, pass);
+              d = JSON.parse(plaintext);
             } catch (err) {
               console.warn('Erro ao descriptografar pedido', docu.id, err);
               continue;
             }
-          } else {
-            pedido = docData; // já está aberto
           }
+          const status = (d.status || '').toUpperCase();
+          if (status !== 'A ENVIAR') continue;
+          if (!d.numeroRastreamento) continue;
 
-          if (!pedido) continue;
-
-          const id = pedido.idPedido || docu.id;
-          let data;
-          if (pedido.timestamp) {
-            try {
-              data = typeof pedido.timestamp.toDate === 'function'
-                ? pedido.timestamp.toDate()
-                : new Date(pedido.timestamp);
-            } catch (err) {
-              console.warn('Erro ao interpretar timestamp', pedido.timestamp, err);
-            }
-          }
-          if (!data || isNaN(data)) {
-            const dataStr = [
-              pedido.data || pedido.dataPedido || pedido.date || '',
-              pedido.hora || pedido.time || ''
-            ]
-              .join(' ')
-              .trim();
-            data = parseDateTime(dataStr);
+          const id = d.pedidoId || docu.id;
+          let data = parseDate(d.dataPrevistaEnvio || d.data || '');
+          if (isNaN(data)) {
+            data = parseDateTime(`${d.data || ''} ${d.horaPagamento || ''}`.trim());
           }
           if (isNaN(data) || data < start || data > end) continue;
 
-          const loja = pedido.loja || pedido.store || '';
+          const loja = d.loja || '';
+          const sku = d.sku || '';
           const usuario = await getNome(uid);
 
-          if (pedido && (pedido.coletado || coletados.has(id))) {
+          if (d.coletado || coletados.has(id)) {
             enviados++;
           } else {
             pendentes++;
@@ -724,19 +705,9 @@
 
           storeTotals[loja] = (storeTotals[loja] || 0) + 1;
 
-          if (Array.isArray(pedido.itens) && pedido.itens.length) {
-            pedido.itens.forEach(item => {
-              const sku = item.sku || '';
-              const row = { id, loja, sku, data, usuario };
-              rows.push(row);
-              checklistRows.push(row);
-            });
-          } else {
-            const sku = pedido.sku || '';
-            const row = { id, loja, sku, data, usuario };
-            rows.push(row);
-            checklistRows.push(row);
-          }
+          const row = { id, loja, sku, data, usuario };
+          rows.push(row);
+          checklistRows.push(row);
         }
       } catch (err) {
         console.error(`Erro ao carregar pedidos do usuário ${uid}:`, err);
