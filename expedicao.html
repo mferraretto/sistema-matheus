@@ -677,7 +677,13 @@
       try {
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', uid).get();
         for (const docu of listaSnap.docs) {
-          if (!docu.ref.path.includes('/pedidosreais/')) continue;
+          const path = docu.ref.path;
+          if (!path.includes('/pedidosreais/')) continue;
+          if (uid === currentUser.uid) {
+            if (!path.startsWith(`uid/${uid}/pedidosreais/`)) continue;
+          } else {
+            if (!path.startsWith(`uid/${currentUser.uid}/uid/${uid}/pedidosreais/`)) continue;
+          }
           let d = docu.data();
           if (d.encrypted) {
             let decrypted = null;
