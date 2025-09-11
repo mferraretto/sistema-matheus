@@ -21,27 +21,8 @@
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Pedidos Reais</h1>
     <div class="mb-4 bg-white p-4 rounded shadow">
-      <div class="flex flex-wrap gap-4 items-end">
-        <div>
-          <label for="filtroData" class="block text-sm font-medium">Período</label>
-          <input type="date" id="filtroData" class="mt-1 border p-2 rounded" />
-        </div>
-        <div class="flex flex-col">
-          <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
-          <div class="relative">
-            <span class="absolute left-2 top-2 text-gray-400"><i class="fas fa-store"></i></span>
-            <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded pl-8" placeholder="Buscar loja" />
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Status do pedido</label>
-          <div id="statusChips" class="flex flex-wrap gap-2">
-            <button type="button" data-status="cancelado" class="px-3 py-1 rounded-full border">Cancelado</button>
-            <button type="button" data-status="não pago" class="px-3 py-1 rounded-full border">Não pago</button>
-            <button type="button" data-status="enviado" class="px-3 py-1 rounded-full border">Enviado</button>
-            <button type="button" data-status="a enviar" class="px-3 py-1 rounded-full border">A Enviar</button>
-          </div>
-        </div>
+      <div class="flex justify-between items-start mb-4">
+        <h2 class="text-lg font-semibold flex items-center gap-2"><i class="fas fa-search"></i> Filtros</h2>
         <div>
           <label class="block text-sm font-medium mb-1">Status da etiqueta</label>
           <div class="flex items-center gap-2">
@@ -55,26 +36,46 @@
             <span id="labelEtiqueta" class="sr-only">Todos</span>
           </div>
         </div>
-        <div class="flex gap-2 ml-auto">
-          <button id="limparBtn" class="px-3 py-2 border rounded">Limpar</button>
-          <button id="aplicarBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Aplicar</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="space-y-4">
+          <div>
+            <label for="filtroDataInicio" class="block text-sm font-medium">Período</label>
+            <div class="flex gap-2">
+              <input type="date" id="filtroDataInicio" class="mt-1 border p-2 rounded w-full" />
+              <input type="date" id="filtroDataFim" class="mt-1 border p-2 rounded w-full" />
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
+            <div class="relative">
+              <span class="absolute left-2 top-2 text-gray-400"><i class="fas fa-store"></i></span>
+              <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded pl-8" placeholder="Buscar loja" />
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label for="filtroPrevEnvioInicio" class="block text-sm font-medium">Prev. Envio</label>
+            <div class="flex gap-2">
+              <input type="date" id="filtroPrevEnvioInicio" class="mt-1 border p-2 rounded w-full" />
+              <input type="date" id="filtroPrevEnvioFim" class="mt-1 border p-2 rounded w-full" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Status do pedido</label>
+            <div id="statusChips" class="flex flex-wrap gap-2">
+              <button type="button" data-status="cancelado" class="px-3 py-1 rounded-full border">Cancelado</button>
+              <button type="button" data-status="não pago" class="px-3 py-1 rounded-full border">Não pago</button>
+              <button type="button" data-status="enviado" class="px-3 py-1 rounded-full border">Enviado</button>
+              <button type="button" data-status="a enviar" class="px-3 py-1 rounded-full border">A Enviar</button>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="mt-4">
-        <button id="toggleAvancado" class="text-blue-600 flex items-center gap-1" type="button">
-          <span>Avançado</span>
-          <i class="fas fa-chevron-down transition-transform transform"></i>
-        </button>
-        <div id="avancado" class="mt-2 hidden flex gap-4 flex-wrap">
-          <div>
-            <label for="filtroPrevEnvioInicio" class="block text-sm font-medium">Prev. envio início</label>
-            <input type="date" id="filtroPrevEnvioInicio" class="mt-1 border p-2 rounded" />
-          </div>
-          <div>
-            <label for="filtroPrevEnvioFim" class="block text-sm font-medium">Prev. envio fim</label>
-            <input type="date" id="filtroPrevEnvioFim" class="mt-1 border p-2 rounded" />
-          </div>
-        </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="limparBtn" class="px-3 py-2 border rounded">Limpar</button>
+        <button id="aplicarBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Aplicar</button>
       </div>
     </div>
     <div class="flex justify-between items-center mb-2">
@@ -233,19 +234,22 @@
     }
 
     function aplicarFiltros() {
-      const data = document.getElementById('filtroData').value;
+      const dataInicio = document.getElementById('filtroDataInicio').value;
+      const dataFim = document.getElementById('filtroDataFim').value;
       const prevEnvioInicio = document.getElementById('filtroPrevEnvioInicio').value;
       const prevEnvioFim = document.getElementById('filtroPrevEnvioFim').value;
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
       const statuses = Array.from(selectedStatuses);
       const filtroEtiqueta = etiquetaEstado;
-      const dataDate = data ? new Date(data) : null;
+      const dataStart = dataInicio ? new Date(dataInicio) : null;
+      const dataEnd = dataFim ? new Date(dataFim) : null;
       const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
       const prevEnvioEnd = prevEnvioFim ? new Date(prevEnvioFim) : null;
 
       const filtrados = todosPedidos.filter(p => {
         const dataPedido = parseDate(p.data);
-        if (dataDate && (!dataPedido || dataPedido.toISOString().split('T')[0] !== data)) return false;
+        if (dataStart && (!dataPedido || dataPedido < dataStart)) return false;
+        if (dataEnd && (!dataPedido || dataPedido > dataEnd)) return false;
         const dataPrevEnvio = parseDate(p.dataPrevistaEnvio);
         if (prevEnvioStart && (!dataPrevEnvio || dataPrevEnvio < prevEnvioStart)) return false;
         if (prevEnvioEnd && (!dataPrevEnvio || dataPrevEnvio > prevEnvioEnd)) return false;
@@ -331,12 +335,13 @@
       }
     }
 
-    ['filtroData','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
+    ['filtroDataInicio','filtroDataFim','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
     document.getElementById('aplicarBtn').addEventListener('click', aplicarFiltros);
     document.getElementById('limparBtn').addEventListener('click', () => {
-      document.getElementById('filtroData').value = '';
+      document.getElementById('filtroDataInicio').value = '';
+      document.getElementById('filtroDataFim').value = '';
       document.getElementById('filtroLoja').value = '';
       document.getElementById('filtroPrevEnvioInicio').value = '';
       document.getElementById('filtroPrevEnvioFim').value = '';
@@ -385,12 +390,6 @@
         etiquetaLabel.textContent = 'Todos';
       }
       aplicarFiltros();
-    });
-
-    document.getElementById('toggleAvancado').addEventListener('click', () => {
-      const adv = document.getElementById('avancado');
-      adv.classList.toggle('hidden');
-      document.querySelector('#toggleAvancado i').classList.toggle('rotate-180');
     });
 
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
