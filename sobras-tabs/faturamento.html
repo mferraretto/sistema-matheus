@@ -46,6 +46,10 @@ exporte <strong>um único dia</strong> por vez. Em seguida selecione
   <div class="space-y-6">
     <div class="card">
       <h3 class="text-lg font-semibold mb-4">Progresso</h3>
+      <div id="progressContainer" class="hidden mb-4">
+        <div class="progress"><div id="faturamentoProgressBar" class="progress-bar"></div></div>
+        <span id="faturamentoProgressText" class="text-sm text-gray-600 mt-2 block text-center">0%</span>
+      </div>
       <ol class="space-y-2 text-sm text-gray-700">
         <li class="flex items-center gap-2"><span class="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-medium">1</span> Importar arquivo de vendas</li>
         <li class="flex items-center gap-2"><span class="w-5 h-5 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 text-xs font-medium">2</span> Exibir pré-visualização</li>
