@@ -13,9 +13,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-</head>
-<body class="bg-gray-100">
+  </head>
+  <body class="bg-gray-100">
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <div class="main-content p-4">
@@ -501,7 +500,10 @@
     });
 
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
-    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+    document.getElementById('importBtn').addEventListener('click', async () => {
+      await import('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      document.getElementById('importFileInput').click();
+    });
     document.getElementById('importFileInput').addEventListener('change', e => {
       selectedFile = e.target.files[0];
       if (selectedFile) {
