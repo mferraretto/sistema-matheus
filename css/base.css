@@ -1,0 +1,36 @@
+:root {
+  /* VendedorPro brand color palette */
+  --primary: #6366F1;
+  --primary-hover: #818CF8;
+  --primary-dark: #4F46E5;
+  --primary-light: #A5B4FC;
+  --primary-active: #D95449;
+  --secondary: #F3F4F6;
+  --nav-bg: var(--primary);
+  --success: #4CAF50;
+  --error: #F44336;
+  --background: #FFFFFF;
+  --border: #e5e7eb;
+  --gray: #6B7280;
+  --text: #0F172A;
+  --text-light: var(--gray);
+  --highlight: #14B8A6;
+  --highlight-hover: #0D9488;
+  --transition: all 0.3s ease;
+  --navbar-height: 64px;
+  --sidebar-width: 16rem;
+  --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  --success-accent: #10b981;
+  --success-accent-dark: #065f46;
+  --success-bg: #ecfdf5;
+  --warning: #f97316;
+  --warning-dark: #9a3412;
+  --warning-bg: #fff7ed;
+  --info-bg: #eef2ff;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
+  background-color: var(--background);
+}
