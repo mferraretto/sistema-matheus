@@ -148,6 +148,18 @@
     document.getElementById('filtroEtiqueta').indeterminate = true;
     let responsavelFinanceiro = null;
     let responsavelExpedicao = null;
+    const PAGE_SIZE = 50;
+    const BATCH_SIZE = 50;
+    let currentOffset = 0;
+
+    window.addEventListener('scroll', () => {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        if (currentOffset + PAGE_SIZE < listaFiltrada.length) {
+          currentOffset += PAGE_SIZE;
+          renderPedidos(listaFiltrada, currentOffset, PAGE_SIZE);
+        }
+      }
+    });
 
     async function buscarResponsaveis(user) {
       try {
@@ -201,37 +213,53 @@
       return match ? match[0] : '';
     }
 
-    function renderPedidos(lista) {
+    function renderPedidos(lista, offset = 0, limit = PAGE_SIZE) {
       const tbody = document.getElementById('pedidosTable');
-      tbody.innerHTML = '';
-      if (!lista.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="13">Sem registros.</td>';
-        tbody.appendChild(tr);
-        return;
+      if (offset === 0) {
+        tbody.innerHTML = '';
+        if (!lista.length) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="13">Sem registros.</td>';
+          tbody.appendChild(tr);
+          return;
+        }
       }
       const fmt = n => `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-      for (const d of lista) {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b';
-        const etiqueta = d.etiquetaImpressa || !!d.numeroRastreamento;
-        tr.innerHTML = `
-          <td class="p-2">${d.pedidoId || ''}</td>
-          <td class="p-2">${d.data || ''}</td>
-          <td class="p-2">${d.horaPagamento || ''}</td>
-          <td class="p-2">${d.dataPrevistaEnvio || ''}</td>
-          <td class="p-2">${d.loja || ''}</td>
-          <td class="p-2">${d.sku || ''}</td>
-          <td class="p-2">${d.numeroRastreamento || ''}</td>
-          <td class="p-2">${etiqueta ? 'Impressa' : 'Não impressa'}</td>
-          <td class="p-2">${d.status || ''}</td>
-          <td class="p-2">${fmt(d.subtotal)}</td>
-          <td class="p-2">${fmt(d.taxas)}</td>
-          <td class="p-2">${fmt(d.liquido)}</td>
-          <td class="p-2">${fmt(d.reembolso)}</td>
-        `;
-        tbody.appendChild(tr);
+      const end = Math.min(offset + limit, lista.length);
+      let index = offset;
+      function processBatch() {
+        const fragment = document.createDocumentFragment();
+        let count = 0;
+        while (index < end && count < BATCH_SIZE) {
+          const d = lista[index];
+          const tr = document.createElement('tr');
+          tr.className = 'border-b';
+          const etiqueta = d.etiquetaImpressa || !!d.numeroRastreamento;
+          tr.innerHTML = `
+            <td class="p-2">${d.pedidoId || ''}</td>
+            <td class="p-2">${d.data || ''}</td>
+            <td class="p-2">${d.horaPagamento || ''}</td>
+            <td class="p-2">${d.dataPrevistaEnvio || ''}</td>
+            <td class="p-2">${d.loja || ''}</td>
+            <td class="p-2">${d.sku || ''}</td>
+            <td class="p-2">${d.numeroRastreamento || ''}</td>
+            <td class="p-2">${etiqueta ? 'Impressa' : 'Não impressa'}</td>
+            <td class="p-2">${d.status || ''}</td>
+            <td class="p-2">${fmt(d.subtotal)}</td>
+            <td class="p-2">${fmt(d.taxas)}</td>
+            <td class="p-2">${fmt(d.liquido)}</td>
+            <td class="p-2">${fmt(d.reembolso)}</td>
+          `;
+          fragment.appendChild(tr);
+          index++;
+          count++;
+        }
+        tbody.appendChild(fragment);
+        if (index < end) {
+          requestAnimationFrame(processBatch);
+        }
       }
+      requestAnimationFrame(processBatch);
     }
 
     function aplicarFiltros() {
@@ -279,7 +307,8 @@
         return true;
       });
       listaFiltrada = filtrados;
-      renderPedidos(filtrados);
+      currentOffset = 0;
+      renderPedidos(filtrados, currentOffset, PAGE_SIZE);
       atualizarResumo(filtrados);
     }
 
