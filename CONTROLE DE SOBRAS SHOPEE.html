@@ -1479,6 +1479,20 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
             }
           }
 
+          const gestorEmail = Array.isArray(dadosUsuario.gestoresExpedicaoEmails)
+            ? dadosUsuario.gestoresExpedicaoEmails[0]
+            : dadosUsuario.responsavelExpedicaoEmail || null;
+          let baseExp = null;
+          if (gestorEmail) {
+            const expSnap = await db.collection('usuarios').where('email', '==', gestorEmail).limit(1).get();
+            if (!expSnap.empty) {
+              const expDoc = expSnap.docs[0];
+              const expData = expDoc.data() || {};
+              const gestorUid = expData.uid || expDoc.id;
+              baseExp = db.collection('uid').doc(gestorUid).collection('uid').doc(usuarioLogado.uid);
+            }
+          }
+
 const dataInput = document.getElementById("dataFaturamento");
           const lojaInput = document.getElementById("lojaFaturamento");
           const dataReferencia = dataInput?.value;
@@ -1636,8 +1650,47 @@ const dataInput = document.getElementById("dataFaturamento");
                 .set({ encrypted: encSku, uid: usuarioLogado.uid });
             }
           }
-
+          
           const pass = getPassphrase() || usuarioLogado.uid;
+
+          const pedidosRef = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais');
+          for (const row of rows) {
+            const statusPedido = row['Status do pedido'] || '';
+            const headersPedido = Object.keys(row);
+            const headerSku = headersPedido.find(h => h.trim() === 'Número de referência SKU');
+            const skuPedido = headerSku ? row[headerSku] : null;
+            const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
+            const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
+            const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
+            const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
+            const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
+            const comissaoPedido = parseFloat(row['Taxa de comissão']) || 0;
+            const servicoPedido = parseFloat(row['Taxa de serviço']) || 0;
+            const taxasPedido = cupomPedido + comissaoPedido + servicoPedido;
+            const liquidoPedido = subtotalPedido + reembolsoPedido - taxasPedido;
+            if (!pedidoId) continue;
+            const pedidoPayload = {
+              pedidoId,
+              status: statusPedido,
+              sku: skuPedido,
+              loja,
+              data: dataReferencia,
+              subtotal: subtotalPedido,
+              taxas: taxasPedido,
+              liquido: liquidoPedido,
+              reembolso: reembolsoPedido
+            };
+            const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
+            await pedidosRef.add({ encrypted: encPedido, uid: usuarioLogado.uid });
+            if (baseResp && respEmail) {
+              const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
+              await baseResp.collection('pedidosreais').add({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+            }
+            if (baseExp && gestorEmail) {
+              const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
+              await baseExp.collection('pedidosreais').add({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+            }
+          }
 
           const lojaPayload = {
             valorBruto: bruto,
