@@ -51,6 +51,7 @@
           <input type="text" id="importNomeLoja" placeholder="Nome da loja" class="border p-1 rounded" />
           <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar Planilha</button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
+        <button id="verificarDuplicadosBtn" class="px-3 py-1 bg-red-600 text-white rounded">Verificar Duplicados</button>
       </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
@@ -186,6 +187,35 @@
       }
     }
 
+    async function verificarDuplicados() {
+      if (!usuarioAtual) return;
+      try {
+        const listaSnap = await db.collectionGroup('lista').where('uid', '==', usuarioAtual.uid).get();
+        const vistos = new Set();
+        const duplicados = [];
+        for (const doc of listaSnap.docs) {
+          if (!doc.ref.path.includes('/pedidosreais/')) continue;
+          if (vistos.has(doc.id)) {
+            duplicados.push(doc.ref);
+          } else {
+            vistos.add(doc.id);
+          }
+        }
+        if (duplicados.length) {
+          const batch = db.batch();
+          duplicados.forEach(ref => batch.delete(ref));
+          await batch.commit();
+          await carregarPedidos(usuarioAtual);
+          aplicarFiltros();
+          alert(`${duplicados.length} pedidos duplicados removidos.`);
+        } else {
+          alert('Nenhum pedido duplicado encontrado.');
+        }
+      } catch (e) {
+        console.error('Erro ao verificar duplicados:', e);
+      }
+    }
+
     ['filtroDataInicio','filtroDataFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
@@ -193,6 +223,7 @@
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
     document.getElementById('importFileInput').addEventListener('change', e => importarCSV(e.target.files[0]));
+    document.getElementById('verificarDuplicadosBtn').addEventListener('click', verificarDuplicados);
 
     function atualizarResumo(lista) {
       const total = lista.length;
