@@ -43,8 +43,7 @@
       </div>
       <div>
         <label for="filtroStatus" class="block text-sm font-medium">Status</label>
-        <select id="filtroStatus" class="mt-1 border p-2 rounded">
-          <option value="">Todos</option>
+        <select id="filtroStatus" class="mt-1 border p-2 rounded" multiple size="5">
           <option value="cancelado">Cancelado</option>
           <option value="não pago">Não pago</option>
           <option value="enviado">Enviado</option>
@@ -96,6 +95,8 @@
     let todosPedidos = [];
     let listaFiltrada = [];
     let usuarioAtual = null;
+
+    document.getElementById('filtroStatus').selectedIndex = -1;
 
     function parseDate(str) {
       if (!str) return null;
@@ -154,7 +155,8 @@
       const prevEnvioInicio = document.getElementById('filtroPrevEnvioInicio').value;
       const prevEnvioFim = document.getElementById('filtroPrevEnvioFim').value;
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
-      const status = document.getElementById('filtroStatus').value.trim().toLowerCase();
+      const statusSelect = document.getElementById('filtroStatus');
+      const statuses = Array.from(statusSelect.selectedOptions).map(o => o.value.trim().toLowerCase());
       const startDate = inicio ? new Date(inicio) : null;
       const endDate = fim ? new Date(fim) : null;
       const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
@@ -168,7 +170,7 @@
         if (prevEnvioStart && (!dataPrevEnvio || dataPrevEnvio < prevEnvioStart)) return false;
         if (prevEnvioEnd && (!dataPrevEnvio || dataPrevEnvio > prevEnvioEnd)) return false;
         if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
-        if (status && (p.status || '').toLowerCase() !== status) return false;
+        if (statuses.length && !statuses.includes((p.status || '').toLowerCase())) return false;
         return true;
       });
       listaFiltrada = filtrados;
