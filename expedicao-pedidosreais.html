@@ -159,26 +159,20 @@
     async function carregarPedidos(user) {
       try {
         const { decryptString } = await import('./crypto.js');
-        const passCandidates = [getPassphrase(), user.email, `chave-${user.uid}`, user.uid].filter(Boolean);
+        const pass = getPassphrase() || user.uid;
         todosPedidos = [];
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
         for (const doc of listaSnap.docs) {
           if (!doc.ref.path.includes('/pedidosreais/')) continue;
           let d = doc.data();
           if (d.encrypted) {
-            let dec = null;
-            for (const pass of passCandidates) {
-              try {
-                const txt = await decryptString(d.encrypted, pass);
-                dec = JSON.parse(txt);
-                break;
-              } catch (_) {}
-            }
-            if (!dec) {
-              console.error('Erro ao descriptografar pedido');
+            try {
+              const txt = await decryptString(d.encrypted, pass);
+              d = JSON.parse(txt);
+            } catch (e) {
+              console.error('Erro ao descriptografar pedido', e);
               continue;
             }
-            d = dec;
           }
           d.pedidoId = d.pedidoId || doc.id;
           todosPedidos.push(d);
