@@ -20,43 +20,61 @@
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Pedidos Reais</h1>
-    <div class="mb-4 flex flex-wrap gap-4 items-end">
-      <div>
-        <label for="filtroDataInicio" class="block text-sm font-medium">Data inicial</label>
-        <input type="date" id="filtroDataInicio" class="mt-1 border p-2 rounded" />
+    <div class="mb-4 bg-white p-4 rounded shadow">
+      <div class="flex flex-wrap gap-4 items-end">
+        <div>
+          <label for="filtroData" class="block text-sm font-medium">Período</label>
+          <input type="date" id="filtroData" class="mt-1 border p-2 rounded" />
+        </div>
+        <div class="flex flex-col">
+          <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
+          <div class="relative">
+            <span class="absolute left-2 top-2 text-gray-400"><i class="fas fa-store"></i></span>
+            <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded pl-8" placeholder="Buscar loja" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Status do pedido</label>
+          <div id="statusChips" class="flex flex-wrap gap-2">
+            <button type="button" data-status="cancelado" class="px-3 py-1 rounded-full border">Cancelado</button>
+            <button type="button" data-status="não pago" class="px-3 py-1 rounded-full border">Não pago</button>
+            <button type="button" data-status="enviado" class="px-3 py-1 rounded-full border">Enviado</button>
+            <button type="button" data-status="a enviar" class="px-3 py-1 rounded-full border">A Enviar</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Status da etiqueta</label>
+          <div class="flex items-center gap-2">
+            <span class="text-sm">Não impressa</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="filtroEtiqueta" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-blue-600"></div>
+              <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition peer-checked:translate-x-5"></div>
+            </label>
+            <span class="text-sm">Impressa</span>
+            <span id="labelEtiqueta" class="sr-only">Todos</span>
+          </div>
+        </div>
+        <div class="flex gap-2 ml-auto">
+          <button id="limparBtn" class="px-3 py-2 border rounded">Limpar</button>
+          <button id="aplicarBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Aplicar</button>
+        </div>
       </div>
-      <div>
-        <label for="filtroDataFim" class="block text-sm font-medium">Data final</label>
-        <input type="date" id="filtroDataFim" class="mt-1 border p-2 rounded" />
-      </div>
-      <div>
-        <label for="filtroPrevEnvioInicio" class="block text-sm font-medium">Prev. envio início</label>
-        <input type="date" id="filtroPrevEnvioInicio" class="mt-1 border p-2 rounded" />
-      </div>
-      <div>
-        <label for="filtroPrevEnvioFim" class="block text-sm font-medium">Prev. envio fim</label>
-        <input type="date" id="filtroPrevEnvioFim" class="mt-1 border p-2 rounded" />
-      </div>
-      <div>
-        <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
-        <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded" placeholder="Loja" />
-      </div>
-      <div>
-        <label for="filtroStatus" class="block text-sm font-medium">Status</label>
-        <select id="filtroStatus" class="mt-1 border p-2 rounded" multiple size="5">
-          <option value="cancelado">Cancelado</option>
-          <option value="não pago">Não pago</option>
-          <option value="enviado">Enviado</option>
-          <option value="a enviar">A Enviar</option>
-        </select>
-      </div>
-      <div>
-        <label for="filtroEtiqueta" class="block text-sm font-medium">Status Etiqueta</label>
-        <select id="filtroEtiqueta" class="mt-1 border p-2 rounded">
-          <option value="">Todos</option>
-          <option value="nao">Não impressa</option>
-          <option value="sim">Impressa</option>
-        </select>
+      <div class="mt-4">
+        <button id="toggleAvancado" class="text-blue-600 flex items-center gap-1" type="button">
+          <span>Avançado</span>
+          <i class="fas fa-chevron-down transition-transform transform"></i>
+        </button>
+        <div id="avancado" class="mt-2 hidden flex gap-4 flex-wrap">
+          <div>
+            <label for="filtroPrevEnvioInicio" class="block text-sm font-medium">Prev. envio início</label>
+            <input type="date" id="filtroPrevEnvioInicio" class="mt-1 border p-2 rounded" />
+          </div>
+          <div>
+            <label for="filtroPrevEnvioFim" class="block text-sm font-medium">Prev. envio fim</label>
+            <input type="date" id="filtroPrevEnvioFim" class="mt-1 border p-2 rounded" />
+          </div>
+        </div>
       </div>
     </div>
     <div class="flex justify-between items-center mb-2">
@@ -123,9 +141,9 @@
     let listaFiltrada = [];
     let usuarioAtual = null;
     let selectedFile = null;
-
-    document.getElementById('filtroStatus').selectedIndex = -1;
-    document.getElementById('filtroEtiqueta').value = '';
+    const selectedStatuses = new Set();
+    let etiquetaEstado = '';
+    document.getElementById('filtroEtiqueta').indeterminate = true;
 
     function parseDate(str) {
       if (!str) return null;
@@ -179,23 +197,19 @@
     }
 
     function aplicarFiltros() {
-      const inicio = document.getElementById('filtroDataInicio').value;
-      const fim = document.getElementById('filtroDataFim').value;
+      const data = document.getElementById('filtroData').value;
       const prevEnvioInicio = document.getElementById('filtroPrevEnvioInicio').value;
       const prevEnvioFim = document.getElementById('filtroPrevEnvioFim').value;
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
-      const statusSelect = document.getElementById('filtroStatus');
-      const statuses = Array.from(statusSelect.selectedOptions).map(o => o.value.trim().toLowerCase());
-      const filtroEtiqueta = document.getElementById('filtroEtiqueta').value;
-      const startDate = inicio ? new Date(inicio) : null;
-      const endDate = fim ? new Date(fim) : null;
+      const statuses = Array.from(selectedStatuses);
+      const filtroEtiqueta = etiquetaEstado;
+      const dataDate = data ? new Date(data) : null;
       const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
       const prevEnvioEnd = prevEnvioFim ? new Date(prevEnvioFim) : null;
 
       const filtrados = todosPedidos.filter(p => {
         const dataPedido = parseDate(p.data);
-        if (startDate && (!dataPedido || dataPedido < startDate)) return false;
-        if (endDate && (!dataPedido || dataPedido > endDate)) return false;
+        if (dataDate && (!dataPedido || dataPedido.toISOString().split('T')[0] !== data)) return false;
         const dataPrevEnvio = parseDate(p.dataPrevistaEnvio);
         if (prevEnvioStart && (!dataPrevEnvio || dataPrevEnvio < prevEnvioStart)) return false;
         if (prevEnvioEnd && (!dataPrevEnvio || dataPrevEnvio > prevEnvioEnd)) return false;
@@ -280,11 +294,68 @@
       }
     }
 
-    ['filtroDataInicio','filtroDataFim','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
+    ['filtroData','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
-    document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtroEtiqueta').addEventListener('change', aplicarFiltros);
+    document.getElementById('aplicarBtn').addEventListener('click', aplicarFiltros);
+    document.getElementById('limparBtn').addEventListener('click', () => {
+      document.getElementById('filtroData').value = '';
+      document.getElementById('filtroLoja').value = '';
+      document.getElementById('filtroPrevEnvioInicio').value = '';
+      document.getElementById('filtroPrevEnvioFim').value = '';
+      selectedStatuses.clear();
+      document.querySelectorAll('#statusChips button').forEach(b => b.classList.remove('bg-blue-600','text-white'));
+      etiquetaEstado = '';
+      const et = document.getElementById('filtroEtiqueta');
+      et.checked = false;
+      et.indeterminate = true;
+      document.getElementById('labelEtiqueta').textContent = 'Todos';
+      aplicarFiltros();
+    });
+
+    const statusChips = document.querySelectorAll('#statusChips button');
+    statusChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const val = chip.dataset.status.toLowerCase();
+        if (selectedStatuses.has(val)) {
+          selectedStatuses.delete(val);
+          chip.classList.remove('bg-blue-600','text-white');
+        } else {
+          selectedStatuses.add(val);
+          chip.classList.add('bg-blue-600','text-white');
+        }
+        aplicarFiltros();
+      });
+    });
+
+    const etiquetaInput = document.getElementById('filtroEtiqueta');
+    const etiquetaLabel = document.getElementById('labelEtiqueta');
+    etiquetaInput.addEventListener('click', () => {
+      if (etiquetaEstado === '') {
+        etiquetaEstado = 'sim';
+        etiquetaInput.checked = true;
+        etiquetaInput.indeterminate = false;
+        etiquetaLabel.textContent = 'Impressa';
+      } else if (etiquetaEstado === 'sim') {
+        etiquetaEstado = 'nao';
+        etiquetaInput.checked = false;
+        etiquetaInput.indeterminate = false;
+        etiquetaLabel.textContent = 'Não impressa';
+      } else {
+        etiquetaEstado = '';
+        etiquetaInput.checked = false;
+        etiquetaInput.indeterminate = true;
+        etiquetaLabel.textContent = 'Todos';
+      }
+      aplicarFiltros();
+    });
+
+    document.getElementById('toggleAvancado').addEventListener('click', () => {
+      const adv = document.getElementById('avancado');
+      adv.classList.toggle('hidden');
+      document.querySelector('#toggleAvancado i').classList.toggle('rotate-180');
+    });
+
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
     document.getElementById('importFileInput').addEventListener('change', e => {
