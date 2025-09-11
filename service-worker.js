@@ -31,20 +31,24 @@ self.addEventListener('activate', (event) => {
         ),
       ),
   );
+
 });
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+workbox.precaching.cleanupOutdatedCaches();
 
-  // Skip cross-origin requests so API calls bypass the service worker
-  if (url.origin !== self.location.origin) {
-    return;
-  }
+workbox.routing.registerRoute(
+  ({request}) => request.mode === 'navigate',
+  new workbox.strategies.NetworkFirst({
+    cacheName: 'pages-cache',
+  })
+);
 
-  if (url.pathname.includes('/partials/') && url.pathname.endsWith('.html')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+workbox.routing.registerRoute(
+  ({request}) => ['style', 'script', 'image'].includes(request.destination),
+  new workbox.strategies.StaleWhileRevalidate({
+    cacheName: 'assets-cache',
+  })
+);
 
   event.respondWith(
     caches
@@ -53,4 +57,5 @@ self.addEventListener('fetch', (event) => {
         (response) => response || fetch(event.request).catch(() => response),
       ),
   );
+
 });
