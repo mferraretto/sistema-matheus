@@ -113,6 +113,7 @@
         <tbody id="pedidosTable"></tbody>
       </table>
     </div>
+    <button id="loadMoreBtn" class="px-4 py-2 bg-blue-600 text-white rounded mt-4 hidden">Carregar mais</button>
   </div>
 
   <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
@@ -140,6 +141,7 @@
     }
     const db = firebase.firestore();
     let todosPedidos = [];
+    let ultimoDoc = null;
     let listaFiltrada = [];
     let usuarioAtual = null;
     let selectedFile = null;
@@ -294,15 +296,22 @@
       aplicarFiltros();
     });
 
-    async function carregarPedidos(user) {
+    async function carregarPedidos(user, append = false) {
       try {
         const { decryptString } = await import('./crypto.js');
         const pass = getPassphrase() || user.uid;
-        todosPedidos = [];
-        const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
+        if (!append) {
+          todosPedidos = [];
+          ultimoDoc = null;
+        }
+        let query = db
+          .collection('uid')
+          .doc(user.uid)
+          .collection('pedidosreais')
+          .orderBy('data', 'desc');
+        if (ultimoDoc) query = query.startAfter(ultimoDoc);
+        const listaSnap = await query.limit(100).get();
         for (const doc of listaSnap.docs) {
-          const path = doc.ref.path;
-          if (!path.startsWith(`uid/${user.uid}/pedidosreais/`)) continue;
           let d = doc.data();
           if (d.encrypted) {
             try {
@@ -316,11 +325,8 @@
           d.pedidoId = d.pedidoId || doc.id;
           todosPedidos.push(d);
         }
-        todosPedidos.sort((a, b) => {
-          const da = parseDate(a.data);
-          const db = parseDate(b.data);
-          return db - da;
-        });
+        ultimoDoc = listaSnap.docs[listaSnap.docs.length - 1] || ultimoDoc;
+        document.getElementById('loadMoreBtn').classList.toggle('hidden', listaSnap.size < 100);
       } catch (e) {
         console.error('Erro ao carregar pedidos:', e);
       }
@@ -487,6 +493,12 @@
       if (selectedFile && nome) {
         document.getElementById('progressContainer').classList.remove('hidden');
         importarCSV(selectedFile, nome);
+      }
+    });
+    document.getElementById('loadMoreBtn').addEventListener('click', async () => {
+      if (usuarioAtual) {
+        await carregarPedidos(usuarioAtual, true);
+        aplicarFiltros();
       }
     });
 
