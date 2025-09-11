@@ -33,11 +33,13 @@ let notifUnsub = null;
 let expNotifUnsub = null;
 let updNotifUnsub = null;
 let selectedRole = null;
-window.isFinanceiroResponsavel = false;
-window.responsavelFinanceiro = null;
+let isFinanceiroResponsavel = false;
+let responsavelFinanceiro = null;
+let userPerfil = '';
+export const sistema = {};
 
 
-window.savePassphrase = () => {
+export function savePassphrase() {
   const input = document.getElementById('passphraseInput');
   const pass = input.value.trim();
   if (pass) {
@@ -48,9 +50,9 @@ window.savePassphrase = () => {
   } else {
     showToast('Digite uma senha', 'warning');
   }
-};
+}
 
-window.saveDisplayName = async () => {
+export async function saveDisplayName() {
   const input = document.getElementById('displayNameInput');
   const nome = input.value.trim();
   const user = auth.currentUser;
@@ -96,9 +98,9 @@ window.saveDisplayName = async () => {
     console.error('Erro ao salvar nome:', e);
     showToast('Erro ao salvar nome', 'error');
   }
-};
+}
 
-window.openModal = (id) => {
+export function openModal(id) {
   const el = document.getElementById(id);
   if (el) {
     if (id === 'loginModal') {
@@ -108,15 +110,15 @@ window.openModal = (id) => {
     }
     el.style.display = 'flex';
   }
-};
+}
 
-window.selectRole = (role) => {
+export function selectRole(role) {
   selectedRole = role;
   document.getElementById('roleSelection')?.classList.add('hidden');
   document.getElementById('loginForm')?.classList.remove('hidden');
-};
+}
 
-window.closeModal = (id) => {
+export function closeModal(id) {
   const el = document.getElementById(id);
   if (el) {
     el.style.display = 'none';
@@ -126,14 +128,14 @@ window.closeModal = (id) => {
       selectedRole = null;
     }
   }
-};
+}
 
-window.openRecoverModal = () => {
+export function openRecoverModal() {
   closeModal('loginModal');
   openModal('recoverModal');
-};
+}
 
-window.login = () => {
+export function login() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
@@ -155,14 +157,14 @@ window.login = () => {
       }
     })
     .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
-};
+}
 
-window.logout = () => {
+export function logout() {
   explicitLogout = true;
   signOut(auth).catch(err => showToast('Erro ao sair: ' + err.message, 'error'));
-};
+}
 
-window.sendRecovery = () => {
+export function sendRecovery() {
   const email = document.getElementById('recoverEmail').value;
   if (!email.includes('@')) {
     showToast('E-mail inválido!', 'warning');
@@ -174,7 +176,7 @@ window.sendRecovery = () => {
       closeModal('recoverModal');
     })
     .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
-};
+}
 
 
 async function showUserArea(user) {
@@ -188,8 +190,7 @@ async function showUserArea(user) {
   // Exibe o botão de logout apenas se estiver presente na navbar
   document.getElementById('logoutBtn')?.classList.remove('hidden');
 
-  window.sistema = window.sistema || {};
-  window.sistema.uid = user.uid;
+  sistema.uid = user.uid;
   const senha = getPassphrase();
   if (!senha) {
     const jaExibiuModal = localStorage.getItem('passphraseModalShown');
@@ -230,7 +231,7 @@ async function showUserArea(user) {
     } else {
       perfil = perfilFallback || 'usuario';
     }
-    window.userPerfil = perfil;
+    userPerfil = perfil;
 
     if (perfil === 'gestor') {
       const path = window.location.pathname.toLowerCase();
@@ -262,7 +263,7 @@ async function showUserArea(user) {
         const respDocs = await getDocs(respQuery);
         if (!respDocs.empty) {
           const d = respDocs.docs[0];
-          window.responsavelFinanceiro = { uid: d.id, ...d.data() };
+          responsavelFinanceiro = { uid: d.id, ...d.data() };
         }
       }
     } catch (e) {
@@ -272,7 +273,7 @@ async function showUserArea(user) {
     // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
       const respUsuarios = await fetchResponsavelFinanceiroUsuarios(db, user.email);
-      window.isFinanceiroResponsavel = respUsuarios.length > 0;
+      isFinanceiroResponsavel = respUsuarios.length > 0;
       ensureFinanceiroMenu();
     } catch (e) {
       console.error('Erro ao verificar responsável financeiro:', e);
@@ -288,7 +289,7 @@ function hideUserArea() {
   nameEl.onclick = null;
   // Oculta o botão de logout apenas se ele existir
   document.getElementById('logoutBtn')?.classList.add('hidden');
-  if (window.sistema) delete window.sistema.uid;
+  delete sistema.uid;
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
   localStorage.removeItem('passphraseModalShown');
@@ -351,9 +352,9 @@ function ensureFinanceiroMenu() {
   const menu = document.getElementById('menu-vendas');
   if (!menu) return;
   if (
-    window.isFinanceiroResponsavel ||
-    window.userPerfil === 'responsavel' ||
-    window.userPerfil === 'gestor financeiro'
+    isFinanceiroResponsavel ||
+    userPerfil === 'responsavel' ||
+    userPerfil === 'gestor financeiro'
   ) {
     menu.classList.remove('hidden');
   }
@@ -378,14 +379,14 @@ async function checkExpedicao(user) {
   }
 }
 
-window.requireLogin = (event) => {
+export function requireLogin(event) {
   if (!auth.currentUser) {
     event.preventDefault();
     openModal('loginModal');
     return false;
   }
   return true;
-};
+}
 
 function initNotificationListener(uid) {
   const btn = document.getElementById('notificationBtn');
@@ -524,8 +525,15 @@ function checkLogin() {
   });
 
 document.addEventListener('sidebarLoaded', () => {
-  if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
+  if (userPerfil) applyPerfilRestrictions(userPerfil);
   ensureFinanceiroMenu();
 });
 
 checkLogin();
+
+export {
+  isFinanceiroResponsavel,
+  responsavelFinanceiro,
+  userPerfil,
+  sistema
+};
