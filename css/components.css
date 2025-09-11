@@ -16,7 +16,7 @@
   border-radius: 0.75rem;
   background-color: var(--highlight);
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--white);
   font-weight: 500;
   transition: background-color .2s;
 }
@@ -160,7 +160,7 @@
   height: 3.5rem;
   border-radius: 9999px;
   background-color: var(--primary);
-  color: #ffffff;
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;

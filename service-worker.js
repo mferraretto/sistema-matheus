@@ -8,6 +8,7 @@ const URLS_TO_CACHE = [
   'financeiro.js',
   `css/styles.css?v=${CACHE_VERSION}`,
   'css/components.css',
+  'css/utilities.css',
   'icons/icon-192.png',
   'icons/icon-512.png',
 ];

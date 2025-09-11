@@ -27,6 +27,22 @@
   --warning-dark: #9a3412;
   --warning-bg: #fff7ed;
   --info-bg: #eef2ff;
+  --white: #ffffff;
+  --gray-200: #edf2f7;
+  --gray-500: #718096;
+  --gray-600: #4a5568;
+  --gray-700: #2d3748;
+  --green-600: #38a169;
+  --blue-100: #ebf8ff;
+  --blue-500: #4299e1;
+  --blue-600: #3182ce;
+  --blue-800: #2b6cb0;
+  --red-500: #f56565;
+  --red-600: #e53e3e;
+  --gray-300: #d1d5db;
+  --gray-400: #999999;
+  --gray-800: #333333;
+  --orange-500: #ff6600;
 }
 
 body {
