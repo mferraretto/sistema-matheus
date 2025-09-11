@@ -550,6 +550,23 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildExpedicaoSidebarLayout() {
+    const menu = document.querySelector('#sidebar .sidebar-menu');
+    if (!menu) return;
+
+    const expLi = document.getElementById('menu-expedicao')?.closest('li');
+    if (!expLi) return;
+
+    expLi.classList.remove('hidden');
+    expLi.querySelectorAll('.hidden').forEach(el => el.classList.remove('hidden'));
+    expLi.querySelectorAll('li').forEach(li => li.style.display = '');
+
+    menu.innerHTML = '';
+    menu.appendChild(expLi);
+  }
+
+  window.buildExpedicaoSidebarLayout = buildExpedicaoSidebarLayout;
+
   function buildGestorSidebarLayout() {
     const menu = document.querySelector('#sidebar .sidebar-menu');
     if (!menu) return;
@@ -615,6 +632,34 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildClienteSidebarLayout() {
+    const menu = document.querySelector('#sidebar .sidebar-menu');
+    if (!menu) return;
+
+    const getLi = id => document.getElementById(id)?.closest('li') || null;
+
+    const precificacao = getLi('menu-precificacao');
+    const marketing = getLi('menu-marketing');
+    const gestaoContas = getLi('menu-gestao-contas');
+    const acompanhamento = getLi('menu-acompanhamento');
+    const anunciosUl = document.getElementById('menuAnuncios');
+    const outrosUl = document.getElementById('menuOutros');
+
+    if (anunciosUl) {
+      if (precificacao) precificacao.querySelectorAll('ul li').forEach(li => anunciosUl.appendChild(li));
+      if (marketing) marketing.querySelectorAll('ul li').forEach(li => anunciosUl.appendChild(li));
+    }
+    if (precificacao) precificacao.remove();
+    if (marketing) marketing.remove();
+
+    if (outrosUl) {
+      if (gestaoContas) gestaoContas.querySelectorAll('ul li').forEach(li => outrosUl.appendChild(li));
+      if (acompanhamento) acompanhamento.querySelectorAll('ul li').forEach(li => outrosUl.appendChild(li));
+    }
+    if (gestaoContas) gestaoContas.remove();
+    if (acompanhamento) acompanhamento.remove();
+  }
+
   async function applySidebarPermissions(uid) {
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
@@ -622,6 +667,7 @@ document.addEventListener('sidebarLoaded', async () => {
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
       const isGestor = ['gestor', 'mentor', 'responsavel', 'gestor financeiro', 'responsavel financeiro'].includes(perfil);
+      const isExpedicaoGestor = ['expedicao', 'gestor expedicao', 'responsavel expedicao'].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
       if (isADM || isGestor) {
@@ -630,12 +676,15 @@ document.addEventListener('sidebarLoaded', async () => {
           hideIds(["menu-sku-associado"]);
         }
         buildGestorSidebarLayout();
+      } else if (isExpedicaoGestor) {
+        buildExpedicaoSidebarLayout();
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
         document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
           const li = a.closest('li') || a.parentElement;
           if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id)) li.style.display = '';
         });
+        buildClienteSidebarLayout();
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
