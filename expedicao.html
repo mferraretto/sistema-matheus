@@ -613,12 +613,6 @@
     return dt;
   }
 
-  // CORRIGIDO: intervalo das 15:30 do dia anterior até 15:00 do dia vigente
-  const now = new Date();
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 15, 0, 0, 0);
-  const start = new Date(end);
-  start.setDate(start.getDate() - 1);
-  start.setHours(15, 30, 0, 0); // dia anterior 15:30
 
   try {
     let allowedUsers = [currentUser.uid];
@@ -648,8 +642,6 @@
     const rows = [];
     const storeTotals = {};
 
-    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-
     for (const uid of allowedUsers) {
       if (!uid) continue;
       const passes = [
@@ -659,20 +651,6 @@
         currentUser?.uid,
         currentUser?.email
       ].filter(Boolean);
-
-      const coletados = new Set();
-      try {
-        const coletasSnap = await db
-          .collection('uid')
-          .doc(uid)
-          .collection('coletas')
-          .doc(todayStr)
-          .collection('pedidos')
-          .get();
-        coletasSnap.forEach(d => coletados.add(d.id));
-      } catch (err) {
-        console.error(`Erro ao carregar coletas do usuário ${uid}:`, err);
-      }
 
       try {
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', uid).get();
@@ -709,13 +687,13 @@
           if (isNaN(data)) {
             data = parseDateTime(`${d.data || ''} ${d.horaPagamento || ''}`.trim());
           }
-          if (isNaN(data) || data < start || data > end) continue;
+          if (isNaN(data)) continue;
 
           const loja = d.loja || '';
           const sku = d.sku || '';
           const usuario = await getNome(uid);
 
-          if (d.coletado || coletados.has(id)) {
+          if (d.coletado) {
             enviados++;
           } else {
             pendentes++;
