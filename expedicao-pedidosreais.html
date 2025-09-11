@@ -10,9 +10,10 @@
   <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="css/mobile.css">
   <link rel="stylesheet" href="css/components.css">
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100">
   <div id="sidebar-container"></div>
@@ -46,8 +47,8 @@
     <div class="flex justify-between items-center mb-2">
       <div id="resumoPedidos" class="font-medium"></div>
       <div class="flex items-center gap-2">
-        <input type="file" id="importFileInput" accept=".csv" class="hidden" />
-        <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar CSV</button>
+          <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" class="hidden" />
+          <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar Planilha</button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
       </div>
     </div>
@@ -228,27 +229,47 @@
     async function importarCSV(file) {
       if (!file || !usuarioAtual) return;
       try {
-        const texto = await file.text();
-        const linhas = texto.trim().split(/\r?\n/);
-        const headers = linhas.shift().split(';').map(h => h.trim());
+        let rows = [];
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const texto = await file.text();
+          const workbook = XLSX.read(texto, { type: 'string' });
+          rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        } else {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        }
         const pedidos = [];
-        for (const linha of linhas) {
-          if (!linha.trim()) continue;
-          const cols = linha.split(';');
-          const obj = {};
-          headers.forEach((h, i) => obj[h] = cols[i] ? cols[i].trim() : '');
-          const p = {
-            pedidoId: obj['Pedido'],
-            data: obj['Data'],
-            loja: obj['Loja'],
-            sku: obj['SKU'],
-            status: obj['Status'],
-            subtotal: parseFloat(obj['Subtotal']) || 0,
-            taxas: parseFloat(obj['Taxas']) || 0,
-            liquido: parseFloat(obj['Líquido']) || 0,
-            reembolso: parseFloat(obj['Reembolso']) || 0
-          };
-          pedidos.push(p);
+        for (const row of rows) {
+          const headers = Object.keys(row);
+          const pedidoId = row[headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'))] || '';
+          const dataHeader = headers.find(h => h.toLowerCase().includes('data'));
+          let data = dataHeader ? row[dataHeader] : '';
+          if (data) {
+            const d = new Date(data);
+            if (!isNaN(d)) data = d.toISOString().split('T')[0];
+          }
+          const lojaHeader = headers.find(h => h.toLowerCase().includes('loja'));
+          const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
+          const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
+          const subtotal = parseFloat(row['Subtotal do produto']) || 0;
+          const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
+          const cupom = parseFloat(row['Cupom do vendedor']) || 0;
+          const comissao = parseFloat(row['Taxa de comissão']) || 0;
+          const servico = parseFloat(row['Taxa de serviço']) || 0;
+          const taxas = cupom + comissao + servico;
+          const liquido = subtotal + reembolso - taxas;
+          pedidos.push({
+            pedidoId,
+            data,
+            loja: lojaHeader ? row[lojaHeader] : '',
+            sku: skuHeader ? row[skuHeader] : '',
+            status: statusHeader ? row[statusHeader] : '',
+            subtotal,
+            taxas,
+            liquido,
+            reembolso
+          });
         }
         const { encryptString, decryptString } = await import('./crypto.js');
         const pass = getPassphrase() || usuarioAtual.uid;
