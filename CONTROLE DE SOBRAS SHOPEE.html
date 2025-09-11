@@ -1523,15 +1523,38 @@ const dataInput = document.getElementById("dataFaturamento");
             const skusVendidos = {};
             const pedidosErrados = [];
 
-            rows.forEach((row) => {
-            const status = (row["Status do pedido"] || "").toLowerCase();
-            if (status.includes("cancelado") || status.includes("não pago")) return;
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('faturamentoProgressBar');
+            const progressText = document.getElementById('faturamentoProgressText');
+            if (progressContainer && progressBar && progressText) {
+              progressContainer.classList.remove('hidden');
+              progressBar.style.width = '0%';
+              progressText.textContent = '0%';
+            }
+            const totalRows = rows.length;
+            let processedRows = 0;
+            const updateProgress = async () => {
+              if (progressBar && progressText) {
+                const pct = Math.round((processedRows / totalRows) * 100);
+                progressBar.style.width = pct + '%';
+                progressText.textContent = pct + '%';
+                if (processedRows % 50 === 0) await new Promise(r => setTimeout(r, 0));
+              }
+            };
 
-            const subtotal = parseFloat(row["Subtotal do produto"]) || 0;
-            const reembolso = parseFloat(row["Reembolso Shopee"]) || 0;
-            const cupom = parseFloat(row["Cupom do vendedor"]) || 0;
-            const comissao = parseFloat(row["Taxa de comissão"]) || 0;
-            const servico = parseFloat(row["Taxa de serviço"]) || 0;
+            for (const row of rows) {
+            const status = (row['Status do pedido'] || '').toLowerCase();
+            if (status.includes('cancelado') || status.includes('não pago')) {
+              processedRows++;
+              await updateProgress();
+              continue;
+            }
+
+            const subtotal = parseFloat(row['Subtotal do produto']) || 0;
+            const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
+            const cupom = parseFloat(row['Cupom do vendedor']) || 0;
+            const comissao = parseFloat(row['Taxa de comissão']) || 0;
+            const servico = parseFloat(row['Taxa de serviço']) || 0;
 
             const liquidoLinha = subtotal + reembolso - cupom - comissao - servico;
 
@@ -1540,9 +1563,13 @@ const dataInput = document.getElementById("dataFaturamento");
             qtdVendas++;
 
               const headers = Object.keys(row);
-              const headerSKU = headers.find(h => h.trim() === "Número de referência SKU"); // pega o nome exato
+              const headerSKU = headers.find(h => h.trim() === 'Número de referência SKU'); // pega o nome exato
               const sku = headerSKU ? row[headerSKU] : null;
-              if (!sku) return;
+              if (!sku) {
+                processedRows++;
+                await updateProgress();
+                continue;
+              }
 
               if (!skusVendidos[sku]) skusVendidos[sku] = { total: 0, valorLiquido: 0 };
               skusVendidos[sku].total++;
@@ -1571,8 +1598,14 @@ const dataInput = document.getElementById("dataFaturamento");
                   critico: true
                 });
               }
-            });
 
+              processedRows++;
+              await updateProgress();
+            }
+            if (progressBar && progressText) {
+              progressBar.style.width = '100%';
+              progressText.textContent = '100%';
+            }
             if (pedidosErrados.length) {
               const errRef = db
                 .collection('uid')
