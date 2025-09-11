@@ -12,7 +12,7 @@
   <div class="w-full max-w-sm p-6 rounded shadow" style="background-color: var(--secondary);">
     <h1 class="mb-4 text-2xl font-bold text-center" style="color: var(--text);">Login</h1>
     <div id="offlineNotice" class="hidden mb-4 text-center text-red-600">Sem conexão com o servidor.</div>
-      <form onsubmit="login(); return false;">
+      <form id="loginForm">
         <input id="loginEmail" type="email" placeholder="E-mail" class="w-full p-2 mb-3 border rounded">
         <input id="loginPassword" type="password" placeholder="Senha" class="w-full p-2 mb-3 border rounded">
         <input id="loginPassphrase" type="password" placeholder="Passphrase (opcional)" class="w-full p-2 mb-3 border rounded">
@@ -32,9 +32,13 @@
       </form>
       <div id="toastContainer" class="mt-4"></div>
     </div>
-  <script type="module" src="login.js"></script>
   <script type="module">
+    import { login } from './login.js';
     import { checkBackend } from './utils.js';
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      login();
+    });
     checkBackend().then(ok => {
       if (!ok) document.getElementById('offlineNotice').classList.remove('hidden');
     });

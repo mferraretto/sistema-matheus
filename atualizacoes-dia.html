@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/styles.css?v=20240826" />
 </head>
 <body class="bg-gray-100">
-  <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false">☰</button>
+  <button class="mobile-menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
   <div id="sidebar-container"></div>
   <div id="navbar-container"></div>
   <main class="main-content p-4 space-y-4">
@@ -24,7 +24,7 @@
     window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
     window.CUSTOM_NAVBAR_PATH  = '/partials/navbar.html';
   </script>
-  <script src="shared.js"></script>
+  <script type="module" src="shared.js"></script>
 </body>
 </html>
 
