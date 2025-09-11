@@ -21,7 +21,7 @@
     </div>
 
     <div class="flex items-center space-x-5">
-      <button id="loginBtn" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition flex items-center">
+      <button id="loginBtn" onclick="openModal('loginModal')" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition flex items-center">
         <i class="fas fa-sign-in-alt mr-2"></i> Login
       </button>
 
@@ -202,10 +202,6 @@
     </div>
   </div>
   </div>
-<script type="module" src="shared.js"></script>
-<script type="module">
-  import { openModal } from './login.js';
-  document.getElementById('loginBtn')?.addEventListener('click', () => openModal('loginModal'));
-</script>
+  <script src="shared.js"></script>
 </body>
 </html>

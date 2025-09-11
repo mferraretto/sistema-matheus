@@ -1,6 +1,6 @@
 <div id="loginModal" class="modal">
   <div class="modal-content">
-    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" data-close="loginModal">&times;</span>
+    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('loginModal')">&times;</span>
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
@@ -15,12 +15,12 @@
     <div id="roleSelection" class="space-y-6 text-center">
       <p class="text-gray-600">Escolha o tipo de acesso</p>
       <div class="flex justify-center space-x-4">
-        <button data-role="usuario" class="btn-primary px-4 py-2">Usuário</button>
-        <button data-role="gestor" class="btn-primary px-4 py-2">Gestor</button>
+        <button onclick="selectRole('usuario')" class="btn-primary px-4 py-2">Usuário</button>
+        <button onclick="selectRole('gestor')" class="btn-primary px-4 py-2">Gestor</button>
       </div>
     </div>
 
-    <form id="loginForm" class="space-y-6 hidden">
+    <form id="loginForm" class="space-y-6 hidden" onsubmit="login(); return false;">
       <div>
         <label class="block text-sm font-medium mb-2 text-gray-700">E-mail</label>
         <div class="relative">
@@ -63,7 +63,7 @@
       </button>
 
       <div class="text-center pt-4">
-        <a href="#recover" id="openRecoverLink" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+        <a href="#recover" onclick="openRecoverModal()" class="text-sm text-orange-600 hover:text-orange-800 font-medium">
           Esqueci minha senha
         </a>
         <div class="mt-2">
@@ -76,7 +76,7 @@
 
 <div id="recoverModal" class="modal">
   <div class="modal-content">
-    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" data-close="recoverModal">&times;</span>
+    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('recoverModal')">&times;</span>
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <button id="sendRecoveryBtn" class="btn-primary w-full py-3.5">
+      <button onclick="sendRecovery()" class="btn-primary w-full py-3.5">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125C9.884 5.046 16.028 8.076 21.486 12c-5.458 3.924-11.602 6.954-18.217 8.876L6 12Zm0 0h7.5"/>
       </svg> Enviar Link de Recuperação
@@ -111,7 +111,7 @@
 </div>
 <div id="passphraseModal" class="modal">
   <div class="modal-content">
-    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" data-close="passphraseModal">&times;</span>
+    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('passphraseModal')">&times;</span>
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
@@ -123,7 +123,7 @@
       <p class="text-gray-600 mt-2">Digite a senha para acessar dados criptografados</p>
     </div>
 
-    <form id="passphraseForm" class="space-y-6">
+    <form class="space-y-6" onsubmit="savePassphrase(); return false;">
       <input type="password" id="passphraseInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="••••••••" autocomplete="new-password">
       <button type="submit" class="btn-primary w-full py-3.5">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
@@ -136,7 +136,7 @@
 
 <div id="displayNameModal" class="modal">
   <div class="modal-content">
-    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" data-close="displayNameModal">&times;</span>
+    <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('displayNameModal')">&times;</span>
 
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4">
@@ -150,7 +150,7 @@
 
     <div class="space-y-6">
       <input type="text" id="displayNameInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="Seu nome">
-      <button id="saveDisplayNameBtn" class="btn-primary w-full py-3.5">
+      <button onclick="saveDisplayName()" class="btn-primary w-full py-3.5">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75 10.5 18.75 19.5 5.25"/>
       </svg> Salvar
@@ -160,41 +160,3 @@
 </div>
 
 <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
-<script type="module">
-  import {
-    login,
-    selectRole,
-    openRecoverModal,
-    sendRecovery,
-    savePassphrase,
-    saveDisplayName,
-    closeModal
-  } from './login.js';
-
-  document.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => closeModal(el.dataset.close));
-  });
-
-  document.querySelectorAll('[data-role]').forEach(btn => {
-    btn.addEventListener('click', () => selectRole(btn.dataset.role));
-  });
-
-  document.getElementById('loginForm')?.addEventListener('submit', e => {
-    e.preventDefault();
-    login();
-  });
-
-  document.getElementById('openRecoverLink')?.addEventListener('click', e => {
-    e.preventDefault();
-    openRecoverModal();
-  });
-
-  document.getElementById('sendRecoveryBtn')?.addEventListener('click', sendRecovery);
-
-  document.getElementById('passphraseForm')?.addEventListener('submit', e => {
-    e.preventDefault();
-    savePassphrase();
-  });
-
-  document.getElementById('saveDisplayNameBtn')?.addEventListener('click', saveDisplayName);
-</script>
