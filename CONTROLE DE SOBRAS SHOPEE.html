@@ -1721,7 +1721,22 @@ const dataInput = document.getElementById("dataFaturamento");
               .doc(dataReferencia)
               .collection('lista')
               .doc(pedidoId);
-            const pedidoDoc = await pedidoDocRef.get();
+            let docRef = pedidoDocRef;
+            let pedidoDoc = await pedidoDocRef.get();
+            let dataDocAtual = dataReferencia;
+            if (!pedidoDoc.exists) {
+              const existenteSnap = await db
+                .collectionGroup('lista')
+                .where('uid', '==', usuarioLogado.uid)
+                .where('loja', '==', loja)
+                .where(firebase.firestore.FieldPath.documentId(), '==', pedidoId)
+                .get();
+              if (!existenteSnap.empty) {
+                pedidoDoc = existenteSnap.docs[0];
+                docRef = pedidoDoc.ref;
+                dataDocAtual = docRef.parent.parent.id;
+              }
+            }
             let needsUpdate = true;
             if (pedidoDoc.exists) {
               try {
@@ -1738,24 +1753,24 @@ const dataInput = document.getElementById("dataFaturamento");
             if (!needsUpdate) continue;
 
             const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
-            await pedidoDocRef.set({ encrypted: encPedido, uid: usuarioLogado.uid });
+            await docRef.set({ encrypted: encPedido, uid: usuarioLogado.uid, loja }, { merge: true });
             if (baseResp && respEmail) {
               const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
               await baseResp
                 .collection('pedidosreais')
-                .doc(dataReferencia)
+                .doc(dataDocAtual)
                 .collection('lista')
                 .doc(pedidoId)
-                .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+                .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid, loja }, { merge: true });
             }
             if (baseExp && gestorEmail) {
               const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
               await baseExp
                 .collection('pedidosreais')
-                .doc(dataReferencia)
+                .doc(dataDocAtual)
                 .collection('lista')
                 .doc(pedidoId)
-                .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+                .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid, loja }, { merge: true });
             }
           }
 
