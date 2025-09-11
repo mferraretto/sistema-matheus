@@ -105,6 +105,14 @@
       return new Date(str);
     }
 
+    function normalizeDate(value) {
+      if (!value) return '';
+      const d = new Date(value);
+      if (!isNaN(d)) return d.toISOString().split('T')[0];
+      const match = String(value).match(/\d{4}-\d{2}-\d{2}/);
+      return match ? match[0] : '';
+    }
+
     function renderPedidos(lista) {
       const tbody = document.getElementById('pedidosTable');
       tbody.innerHTML = '';
@@ -306,18 +314,8 @@
             const d = new Date(horaPagamento);
             if (!data && !isNaN(d)) data = d.toISOString().split('T')[0];
           }
-          if (data) {
-            const d = new Date(data);
-            if (!isNaN(d)) data = d.toISOString().split('T')[0];
-          }
-          if (dataPrevistaEnvio) {
-            const dPrev = new Date(dataPrevistaEnvio);
-            if (!isNaN(dPrev)) {
-              dataPrevistaEnvio = dPrev.toISOString().split('T')[0];
-            } else if (typeof dataPrevistaEnvio === 'string') {
-              dataPrevistaEnvio = dataPrevistaEnvio.split(' ')[0];
-            }
-          }
+          data = normalizeDate(data);
+          dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
           const skuHeader = headers.find(h => h.trim() === 'Número de referência SKU');
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
