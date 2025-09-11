@@ -571,6 +571,23 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildExpedicaoSidebarLayout() {
+    const menu = document.querySelector('#sidebar .sidebar-menu');
+    if (!menu) return;
+
+    const expLi = document.getElementById('menu-expedicao')?.closest('li');
+    if (!expLi) return;
+
+    expLi.classList.remove('hidden');
+    expLi.querySelectorAll('.hidden').forEach(el => el.classList.remove('hidden'));
+    expLi.querySelectorAll('li').forEach(li => li.style.display = '');
+
+    menu.innerHTML = '';
+    menu.appendChild(expLi);
+  }
+
+  window.buildExpedicaoSidebarLayout = buildExpedicaoSidebarLayout;
+
   function buildGestorSidebarLayout() {
     const menu = document.querySelector('#sidebar .sidebar-menu');
     if (!menu) return;
@@ -671,6 +688,7 @@ document.addEventListener('sidebarLoaded', async () => {
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
       const isGestor = ['gestor', 'mentor', 'responsavel', 'gestor financeiro', 'responsavel financeiro'].includes(perfil);
+      const isExpedicaoGestor = ['expedicao', 'gestor expedicao', 'responsavel expedicao'].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
       if (isADM || isGestor) {
@@ -679,6 +697,8 @@ document.addEventListener('sidebarLoaded', async () => {
           hideIds(["menu-sku-associado"]);
         }
         buildGestorSidebarLayout();
+      } else if (isExpedicaoGestor) {
+        buildExpedicaoSidebarLayout();
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
         document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
