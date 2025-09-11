@@ -1681,14 +1681,28 @@ const dataInput = document.getElementById("dataFaturamento");
               reembolso: reembolsoPedido
             };
             const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
-            await pedidosRef.add({ encrypted: encPedido, uid: usuarioLogado.uid });
+            await pedidosRef
+              .doc(dataReferencia)
+              .collection('lista')
+              .doc(pedidoId)
+              .set({ encrypted: encPedido, uid: usuarioLogado.uid });
             if (baseResp && respEmail) {
               const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
-              await baseResp.collection('pedidosreais').add({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+              await baseResp
+                .collection('pedidosreais')
+                .doc(dataReferencia)
+                .collection('lista')
+                .doc(pedidoId)
+                .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
             }
             if (baseExp && gestorEmail) {
               const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
-              await baseExp.collection('pedidosreais').add({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+              await baseExp
+                .collection('pedidosreais')
+                .doc(dataReferencia)
+                .collection('lista')
+                .doc(pedidoId)
+                .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
             }
           }
 
