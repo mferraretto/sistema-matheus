@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pedidos Reais</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v=20240826">
+  <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-gray-100">
+  <div id="sidebar-container"></div>
+  <div id="navbar-container"></div>
+  <div class="main-content p-4">
+    <h1 class="text-2xl font-bold mb-4">Pedidos Reais</h1>
+    <div class="bg-white rounded shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead>
+          <tr class="bg-gray-200 text-left">
+            <th class="p-2">Pedido</th>
+            <th class="p-2">Data</th>
+            <th class="p-2">Loja</th>
+            <th class="p-2">SKU</th>
+            <th class="p-2">Status</th>
+            <th class="p-2">Subtotal</th>
+            <th class="p-2">Taxas</th>
+            <th class="p-2">Líquido</th>
+            <th class="p-2">Reembolso</th>
+          </tr>
+        </thead>
+        <tbody id="pedidosTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseConfig, getPassphrase } from './firebase-config.js';
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = 'index.html?login=1';
+        return;
+      }
+      carregarPedidos(user);
+    });
+
+    async function carregarPedidos(user) {
+      const tbody = document.getElementById('pedidosTable');
+      tbody.innerHTML = '';
+      try {
+        const pass = getPassphrase() || user.uid;
+        const { decryptString } = await import('./crypto.js');
+        const snap = await db.collection('uid').doc(user.uid).collection('pedidosreais').orderBy('data', 'desc').get();
+        if (snap.empty) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="9">Sem registros.</td>';
+          tbody.appendChild(tr);
+          return;
+        }
+        for (const doc of snap.docs) {
+          let d = doc.data();
+          if (d.encrypted) {
+            try {
+              const txt = await decryptString(d.encrypted, pass);
+              d = JSON.parse(txt);
+            } catch (e) {
+              console.error('Erro ao descriptografar pedido', e);
+              continue;
+            }
+          }
+          const fmt = n => `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+          const tr = document.createElement('tr');
+          tr.className = 'border-b';
+          tr.innerHTML = `
+            <td class="p-2">${d.pedidoId || ''}</td>
+            <td class="p-2">${d.data || ''}</td>
+            <td class="p-2">${d.loja || ''}</td>
+            <td class="p-2">${d.sku || ''}</td>
+            <td class="p-2">${d.status || ''}</td>
+            <td class="p-2">${fmt(d.subtotal)}</td>
+            <td class="p-2">${fmt(d.taxas)}</td>
+            <td class="p-2">${fmt(d.liquido)}</td>
+            <td class="p-2">${fmt(d.reembolso)}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      } catch (e) {
+        console.error('Erro ao carregar pedidos:', e);
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td class="p-2 text-center text-red-500" colspan="9">Erro ao carregar pedidos</td>';
+        tbody.appendChild(tr);
+      }
+    }
+  </script>
+</body>
+</html>
+
