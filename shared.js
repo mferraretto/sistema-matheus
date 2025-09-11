@@ -636,6 +636,34 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildClienteSidebarLayout() {
+    const menu = document.querySelector('#sidebar .sidebar-menu');
+    if (!menu) return;
+
+    const getLi = id => document.getElementById(id)?.closest('li') || null;
+
+    const precificacao = getLi('menu-precificacao');
+    const marketing = getLi('menu-marketing');
+    const gestaoContas = getLi('menu-gestao-contas');
+    const acompanhamento = getLi('menu-acompanhamento');
+    const anunciosUl = document.getElementById('menuAnuncios');
+    const outrosUl = document.getElementById('menuOutros');
+
+    if (anunciosUl) {
+      if (precificacao) precificacao.querySelectorAll('ul li').forEach(li => anunciosUl.appendChild(li));
+      if (marketing) marketing.querySelectorAll('ul li').forEach(li => anunciosUl.appendChild(li));
+    }
+    if (precificacao) precificacao.remove();
+    if (marketing) marketing.remove();
+
+    if (outrosUl) {
+      if (gestaoContas) gestaoContas.querySelectorAll('ul li').forEach(li => outrosUl.appendChild(li));
+      if (acompanhamento) acompanhamento.querySelectorAll('ul li').forEach(li => outrosUl.appendChild(li));
+    }
+    if (gestaoContas) gestaoContas.remove();
+    if (acompanhamento) acompanhamento.remove();
+  }
+
   async function applySidebarPermissions(uid) {
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
@@ -657,6 +685,7 @@ document.addEventListener('sidebarLoaded', async () => {
           const li = a.closest('li') || a.parentElement;
           if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id)) li.style.display = '';
         });
+        buildClienteSidebarLayout();
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
