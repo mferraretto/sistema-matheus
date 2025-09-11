@@ -1,5 +1,5 @@
 import { db, collection, doc, setDoc } from './firebase-init.js';
-import { encryptString } from './crypto.js';
+import { encryptString } from '../crypto.js';
 
 chrome.runtime.onMessage.addListener(async (msg) => {
   if (msg.tipo === "salvarPedidos") {
