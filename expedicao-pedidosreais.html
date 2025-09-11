@@ -34,7 +34,13 @@
       </div>
       <div>
         <label for="filtroStatus" class="block text-sm font-medium">Status</label>
-        <input type="text" id="filtroStatus" class="mt-1 border p-2 rounded" placeholder="Status" />
+        <select id="filtroStatus" class="mt-1 border p-2 rounded">
+          <option value="">Todos</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="não pago">Não pago</option>
+          <option value="enviado">Enviado</option>
+          <option value="a enviar">A Enviar</option>
+        </select>
       </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
@@ -117,7 +123,7 @@
         if (startDate && (!dataPedido || dataPedido < startDate)) return false;
         if (endDate && (!dataPedido || dataPedido > endDate)) return false;
         if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
-        if (status && !(p.status || '').toLowerCase().includes(status)) return false;
+        if (status && (p.status || '').toLowerCase() !== status) return false;
         return true;
       });
       renderPedidos(filtrados);
@@ -163,10 +169,12 @@
       }
     }
 
-    ['filtroDataInicio','filtroDataFim','filtroLoja','filtroStatus'].forEach(id => {
+    ['filtroDataInicio','filtroDataFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
+    document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
   </script>
+  <script src="shared.js"></script>
 </body>
 </html>
 
