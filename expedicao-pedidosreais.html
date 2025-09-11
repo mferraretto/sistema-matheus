@@ -30,6 +30,10 @@
         <input type="date" id="filtroDataFim" class="mt-1 border p-2 rounded" />
       </div>
       <div>
+        <label for="filtroPrevEnvio" class="block text-sm font-medium">Prev. envio</label>
+        <input type="date" id="filtroPrevEnvio" class="mt-1 border p-2 rounded" />
+      </div>
+      <div>
         <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
         <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded" placeholder="Loja" />
       </div>
@@ -130,15 +134,19 @@
     function aplicarFiltros() {
       const inicio = document.getElementById('filtroDataInicio').value;
       const fim = document.getElementById('filtroDataFim').value;
+      const prevEnvio = document.getElementById('filtroPrevEnvio').value;
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
       const status = document.getElementById('filtroStatus').value.trim().toLowerCase();
       const startDate = inicio ? new Date(inicio) : null;
       const endDate = fim ? new Date(fim) : null;
+      const prevEnvioDate = prevEnvio ? new Date(prevEnvio) : null;
 
       const filtrados = todosPedidos.filter(p => {
         const dataPedido = parseDate(p.data);
         if (startDate && (!dataPedido || dataPedido < startDate)) return false;
         if (endDate && (!dataPedido || dataPedido > endDate)) return false;
+        const dataPrevEnvio = parseDate(p.dataPrevistaEnvio);
+        if (prevEnvioDate && (!dataPrevEnvio || dataPrevEnvio.toDateString() !== prevEnvioDate.toDateString())) return false;
         if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
         if (status && (p.status || '').toLowerCase() !== status) return false;
         return true;
@@ -218,7 +226,7 @@
       }
     }
 
-    ['filtroDataInicio','filtroDataFim','filtroLoja'].forEach(id => {
+    ['filtroDataInicio','filtroDataFim','filtroPrevEnvio','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
