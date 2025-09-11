@@ -311,7 +311,7 @@
               dataPrevistaEnvio = dataPrevistaEnvio.split(' ')[0];
             }
           }
-          const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
+          const skuHeader = headers.find(h => h.trim() === 'Número de referência SKU');
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
           const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
