@@ -528,15 +528,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-desempenho',
   ];
 
-  const CLIENTE_HIDDEN_MENU_IDS = [
-    ...ADMIN_GESTOR_MENU_IDS.filter(id => id !== 'menu-comunicacao'),
-    'menu-inicio',
-    'menu-etiquetas',
-    'menu-precificacao',
-    'menu-marketing',
-    'menu-gestao-contas',
-    'menu-acompanhamento'
-  ];
+  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(id => id !== 'menu-comunicacao');
 
   function showOnly(ids) {
     document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
