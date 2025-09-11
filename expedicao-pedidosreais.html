@@ -111,6 +111,10 @@
         </thead>
         <tbody id="pedidosTable"></tbody>
       </table>
+      <div id="loadingSpinner" class="text-center py-4 hidden">
+        <i class="fas fa-spinner fa-spin mr-2"></i>
+        <span id="loadingText">Carregando pedidos...</span>
+      </div>
     </div>
   </div>
 
@@ -150,6 +154,8 @@
     const PAGE_SIZE = 50;
     const BATCH_SIZE = 50;
     let currentOffset = 0;
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const loadingText = document.getElementById('loadingText');
 
     window.addEventListener('scroll', () => {
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
@@ -328,21 +334,32 @@
         const pass = getPassphrase() || user.uid;
         todosPedidos = [];
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
-        for (const doc of listaSnap.docs) {
-          const path = doc.ref.path;
-          if (!path.startsWith(`uid/${user.uid}/pedidosreais/`)) continue;
-          let d = doc.data();
-          if (d.encrypted) {
-            try {
-              const txt = await decryptString(d.encrypted, pass);
-              d = JSON.parse(txt);
-            } catch (e) {
-              console.error('Erro ao descriptografar pedido', doc.id, e);
-              continue;
+        loadingSpinner?.classList.remove('hidden');
+        const docs = listaSnap.docs;
+        const CHUNK_SIZE = 100;
+        for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+          const chunk = docs.slice(i, i + CHUNK_SIZE);
+          for (const doc of chunk) {
+            const path = doc.ref.path;
+            if (!path.startsWith(`uid/${user.uid}/pedidosreais/`)) continue;
+            let d = doc.data();
+            if (d.encrypted) {
+              try {
+                const txt = await decryptString(d.encrypted, pass);
+                d = JSON.parse(txt);
+              } catch (e) {
+                console.error('Erro ao descriptografar pedido', doc.id, e);
+                continue;
+              }
             }
+            d.pedidoId = d.pedidoId || doc.id;
+            todosPedidos.push(d);
           }
-          d.pedidoId = d.pedidoId || doc.id;
-          todosPedidos.push(d);
+          if (loadingText) {
+            const percent = Math.round(((i + chunk.length) / docs.length) * 100);
+            loadingText.textContent = `Carregando pedidos... ${percent}%`;
+          }
+          await new Promise(r => setTimeout(r));
         }
         todosPedidos.sort((a, b) => {
           const da = parseDate(a.data);
@@ -351,6 +368,9 @@
         });
       } catch (e) {
         console.error('Erro ao carregar pedidos:', e);
+      } finally {
+        loadingSpinner?.classList.add('hidden');
+        if (loadingText) loadingText.textContent = 'Carregando pedidos...';
       }
     }
 
@@ -583,7 +603,12 @@
           rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
         }
         const pedidos = [];
-        for (const row of rows) {
+        const importProgress = document.getElementById('importProgress');
+        const totalSteps = rows.length * 2;
+        let processed = 0;
+        const CHUNK_READ = 500;
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
           const headers = Object.keys(row);
           const pedidoId = String(row[
             headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'))
@@ -601,37 +626,41 @@
           data = normalizeDate(data);
           dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
           const skuHeader = headers.find(h => h.trim() === 'Número de referência SKU');
-        const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
-        const rastreamentoHeader = headers.find(h => h.toLowerCase().includes('rastreamento'));
+          const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
+          const rastreamentoHeader = headers.find(h => h.toLowerCase().includes('rastreamento'));
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
           const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
           const cupom = parseFloat(row['Cupom do vendedor']) || 0;
           const comissao = parseFloat(row['Taxa de comissão']) || 0;
           const servico = parseFloat(row['Taxa de serviço']) || 0;
           const taxas = cupom + comissao + servico;
-        const liquido = subtotal + reembolso - taxas;
-        const numeroRastreamento = rastreamentoHeader ? String(row[rastreamentoHeader]).trim() : '';
-        const pedido = {
-          pedidoId,
-          status: statusHeader ? row[statusHeader] : '',
-          sku: skuHeader ? row[skuHeader] : '',
-          loja: nomeLoja,
-          data,
-          horaPagamento,
-          dataPrevistaEnvio,
-          subtotal,
-          taxas,
-          liquido,
-          reembolso,
-          numeroRastreamento
-        };
-        if (numeroRastreamento) pedido.etiquetaImpressa = true;
-        pedidos.push(pedido);
+          const liquido = subtotal + reembolso - taxas;
+          const numeroRastreamento = rastreamentoHeader ? String(row[rastreamentoHeader]).trim() : '';
+          const pedido = {
+            pedidoId,
+            status: statusHeader ? row[statusHeader] : '',
+            sku: skuHeader ? row[skuHeader] : '',
+            loja: nomeLoja,
+            data,
+            horaPagamento,
+            dataPrevistaEnvio,
+            subtotal,
+            taxas,
+            liquido,
+            reembolso,
+            numeroRastreamento
+          };
+          if (numeroRastreamento) pedido.etiquetaImpressa = true;
+          pedidos.push(pedido);
+          processed++;
+          importProgress.style.width = Math.round((processed / totalSteps) * 100) + '%';
+          if (processed % CHUNK_READ === 0) await new Promise(r => setTimeout(r));
         }
         const { encryptString, decryptString } = await import('./crypto.js');
         const pass = getPassphrase() || usuarioAtual.uid;
         let atualizados = 0;
         let novos = 0;
+        const CHUNK_SAVE = 20;
         for (let i = 0; i < pedidos.length; i++) {
           const p = pedidos[i];
           if (!p.pedidoId || !p.data) continue;
@@ -687,13 +716,15 @@
             }
             if (snap.exists) atualizados++;
           }
-          const percent = Math.round(((i + 1) / pedidos.length) * 100);
-          document.getElementById('importProgress').style.width = percent + '%';
+          processed++;
+          importProgress.style.width = Math.round((processed / totalSteps) * 100) + '%';
+          if ((i + 1) % CHUNK_SAVE === 0) await new Promise(r => setTimeout(r));
         }
         if (atualizados || novos) {
           await carregarPedidos(usuarioAtual);
           aplicarFiltros();
         }
+        importProgress.style.width = '100%';
         alert(`${atualizados} pedidos atualizados, ${novos} novos pedidos registrados`);
       } catch (e) {
         console.error('Erro ao importar CSV', e);
