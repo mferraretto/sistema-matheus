@@ -1604,7 +1604,7 @@ const dataInput = document.getElementById("dataFaturamento");
               .set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
           }
 
-          const { encryptString } = await import('./crypto.js');
+          const { encryptString, decryptString } = await import('./crypto.js');
           for (const [sku, dadosSku] of Object.entries(skusVendidos)) {
             const skuId = String(sku).replace(/[.#$\/\[\]]/g, "_");
  const docRef = db
@@ -1680,12 +1680,29 @@ const dataInput = document.getElementById("dataFaturamento");
               liquido: liquidoPedido,
               reembolso: reembolsoPedido
             };
-            const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
-            await pedidosRef
+
+            const pedidoDocRef = pedidosRef
               .doc(dataReferencia)
               .collection('lista')
-              .doc(pedidoId)
-              .set({ encrypted: encPedido, uid: usuarioLogado.uid });
+              .doc(pedidoId);
+            const pedidoDoc = await pedidoDocRef.get();
+            let needsUpdate = true;
+            if (pedidoDoc.exists) {
+              try {
+                const atual = JSON.parse(
+                  await decryptString(pedidoDoc.data().encrypted, pass)
+                );
+                if (JSON.stringify(atual) === JSON.stringify(pedidoPayload)) {
+                  needsUpdate = false;
+                }
+              } catch (e) {
+                console.error('Erro ao comparar pedido existente', e);
+              }
+            }
+            if (!needsUpdate) continue;
+
+            const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
+            await pedidoDocRef.set({ encrypted: encPedido, uid: usuarioLogado.uid });
             if (baseResp && respEmail) {
               const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
               await baseResp
