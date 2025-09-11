@@ -284,7 +284,9 @@ window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html
 
 // Pages related to Expedição or Etiquetas use a specific navbar
 const _path = decodeURIComponent(window.location.pathname.toLowerCase());
-if (/(expedicao|etiquet|zpl)/.test(_path)) {
+if (_path.includes('anuncios-tabs') || _path.includes('gerenciamento de anuncios e desempenho')) {
+  window.CUSTOM_NAVBAR_PATH = 'partials/navbar-anuncios.html';
+} else if (/(expedicao|etiquet|zpl)/.test(_path)) {
   window.CUSTOM_NAVBAR_PATH = 'partials/navbar-expedicao.html';
 } else if (/(vendas|sobras|faturamento|saques|anuncio|ads|promoc|marketing|precifica|lista-precos|custeio)/.test(_path)) {
   window.CUSTOM_NAVBAR_PATH = 'partials/navbar-grupos.html';
