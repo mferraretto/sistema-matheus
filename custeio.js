@@ -1,17 +1,5 @@
 import { encryptString, decryptString } from './crypto.js';
 
-function toggleSidebar() {
-  const sidebar =
-    document.getElementById('sidebar') || document.querySelector('.sidebar');
-  if (sidebar) {
-    const isActive = sidebar.classList.toggle('active');
-    const btn = document.querySelector('.mobile-menu-btn');
-    if (btn) {
-      btn.setAttribute('aria-expanded', isActive ? 'true' : 'false');
-    }
-  }
-}
-
 // Corrigido cálculo da área do cilindro (2 bases + lateral)
 function areaCilindro(h, d) {
   const pi = Math.PI;
