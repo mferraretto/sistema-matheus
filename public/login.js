@@ -218,10 +218,8 @@ async function showUserArea(user) {
     // 1) aplica restrições de UI
     applyPerfilRestrictions(perfil);
 
-    // 2) se for expedição, executa fluxo especial
-    if (perfil === 'expedicao') {
-      await checkExpedicao(user);
-    }
+    // 2) verifica associação com expedição (gestor ou responsável)
+    await checkExpedicao(user);
   } catch (e) {
     console.error('Erro ao carregar perfil do usuário:', e);
   }
@@ -249,33 +247,47 @@ function hideUserArea() {
 }
 
 function applyExpedicaoSidebar() {
-  const hideLinks = () => {
+  const filter = () => {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
-    sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-      const href = link.getAttribute('href') || '';
-      if (!href.includes('expedicao.html')) {
-        link.parentElement.classList.add('hidden');
+
+    const expLink = document.getElementById('menu-expedicao');
+    const expLi = expLink ? expLink.closest('li') : null;
+
+    sidebar.querySelectorAll('li').forEach(li => {
+      if (expLi && (li === expLi || expLi.contains(li))) {
+        li.classList.remove('hidden');
+        li.style.display = '';
+      } else {
+        li.classList.add('hidden');
       }
     });
+
+    const submenu = document.getElementById('menuExpedicao');
+    if (submenu) {
+      submenu.style.maxHeight = submenu.scrollHeight + 'px';
+    }
   };
-  hideLinks();
-  document.addEventListener('sidebarLoaded', hideLinks);
+
+  filter();
+  document.addEventListener('sidebarLoaded', filter);
 }
 
 function restoreSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-    link.parentElement.classList.remove('hidden');
+  sidebar.querySelectorAll('li, a.sidebar-link').forEach(el => {
+    el.classList.remove('hidden');
+    if (el.style) el.style.display = '';
   });
 }
 
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase();
+  if (currentPerfil === 'expedicao') return;
   const elements = document.querySelectorAll('[data-perfil]');
   if (!elements || elements.length === 0) return;
-  
+
   elements.forEach(el => {
     if (!el) return;
     const allowed = (el.getAttribute('data-perfil') || '')
