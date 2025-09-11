@@ -146,6 +146,14 @@ let graficoBarras, graficoPizza, graficoPrevisao;
 let previsaoDados = {};
 let initialTab = null;
 const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek';
+
+function normalizeDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (!isNaN(d)) return d.toISOString().split('T')[0];
+  const match = String(value).match(/\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : '';
+}
    const tabIds = ['importar','metas','graficos','historico','faturamento','registroFaturamento','controleVendas','sobras','previsao','acompanhamento','acompanhamentoGestor'];
       const tabsLoaded = Promise.all(
         tabIds.map(t =>
@@ -1693,20 +1701,13 @@ const dataInput = document.getElementById("dataFaturamento");
             const headersPedido = Object.keys(row);
             const headerSku = headersPedido.find(h => h.trim() === 'Número de referência SKU');
             const skuPedido = headerSku ? row[headerSku] : null;
-            const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
-            const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
+           const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
+           const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
            const headerPagamento = headersPedido.find(h => h.toLowerCase().includes('hora do pagamento'));
            const horaPagamento = headerPagamento ? row[headerPagamento] : null;
            const headerPrevEnvio = headersPedido.find(h => h.toLowerCase().includes('data prevista') && h.toLowerCase().includes('envio'));
            let dataPrevistaEnvio = headerPrevEnvio ? row[headerPrevEnvio] : null;
-           if (dataPrevistaEnvio) {
-             const dPrev = new Date(dataPrevistaEnvio);
-             if (!isNaN(dPrev)) {
-               dataPrevistaEnvio = dPrev.toISOString().split('T')[0];
-             } else if (typeof dataPrevistaEnvio === 'string') {
-               dataPrevistaEnvio = dataPrevistaEnvio.split(' ')[0];
-             }
-           }
+           dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
             const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
             const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
             const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
