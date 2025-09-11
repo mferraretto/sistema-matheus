@@ -1687,6 +1687,7 @@ const dataInput = document.getElementById("dataFaturamento");
           const pass = getPassphrase() || usuarioLogado.uid;
 
           const pedidosRef = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais');
+          const pedidosTinyRef = db.collection('usuarios').doc(usuarioLogado.uid).collection('pedidostiny');
           for (const row of rows) {
             const statusPedido = row['Status do pedido'] || '';
             const headersPedido = Object.keys(row);
@@ -1717,6 +1718,26 @@ const dataInput = document.getElementById("dataFaturamento");
               reembolso: reembolsoPedido
             };
 
+            // Atualiza coleção pedidostiny evitando duplicações
+            const tinyDocRef = pedidosTinyRef.doc(pedidoId);
+            const tinyDoc = await tinyDocRef.get();
+            let updateTiny = true;
+            if (tinyDoc.exists) {
+              let dadosTiny = tinyDoc.data();
+              if (dadosTiny.encrypted) {
+                try {
+                  dadosTiny = JSON.parse(await decryptString(dadosTiny.encrypted, pass));
+                } catch (e) { dadosTiny = null; }
+              }
+              if (dadosTiny && JSON.stringify(dadosTiny) === JSON.stringify(pedidoPayload)) {
+                updateTiny = false;
+              }
+            }
+            if (updateTiny) {
+              const encTiny = await encryptString(JSON.stringify(pedidoPayload), pass);
+              await tinyDocRef.set({ encrypted: encTiny, uid: usuarioLogado.uid });
+            }
+
             const pedidoDocRef = pedidosRef
               .doc(dataReferencia)
               .collection('lista')
@@ -1735,27 +1756,27 @@ const dataInput = document.getElementById("dataFaturamento");
                 console.error('Erro ao comparar pedido existente', e);
               }
             }
-            if (!needsUpdate) continue;
-
-            const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
-            await pedidoDocRef.set({ encrypted: encPedido, uid: usuarioLogado.uid });
-            if (baseResp && respEmail) {
-              const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
-              await baseResp
-                .collection('pedidosreais')
-                .doc(dataReferencia)
-                .collection('lista')
-                .doc(pedidoId)
-                .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
-            }
-            if (baseExp && gestorEmail) {
-              const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
-              await baseExp
-                .collection('pedidosreais')
-                .doc(dataReferencia)
-                .collection('lista')
-                .doc(pedidoId)
-                .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+            if (needsUpdate) {
+              const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
+              await pedidoDocRef.set({ encrypted: encPedido, uid: usuarioLogado.uid });
+              if (baseResp && respEmail) {
+                const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
+                await baseResp
+                  .collection('pedidosreais')
+                  .doc(dataReferencia)
+                  .collection('lista')
+                  .doc(pedidoId)
+                  .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+              }
+              if (baseExp && gestorEmail) {
+                const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
+                await baseExp
+                  .collection('pedidosreais')
+                  .doc(dataReferencia)
+                  .collection('lista')
+                  .doc(pedidoId)
+                  .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+              }
             }
           }
 
