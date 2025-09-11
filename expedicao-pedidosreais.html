@@ -48,6 +48,7 @@
       <div id="resumoPedidos" class="font-medium"></div>
       <div class="flex items-center gap-2">
           <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" class="hidden" />
+          <input type="text" id="importNomeLoja" placeholder="Nome da loja" class="border p-1 rounded" />
           <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar Planilha</button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
       </div>
@@ -230,6 +231,7 @@
       if (!file || !usuarioAtual) return;
       try {
         let rows = [];
+        const nomeLoja = document.getElementById('importNomeLoja').value.trim();
         if (file.name.toLowerCase().endsWith('.csv')) {
           const texto = await file.text();
           const workbook = XLSX.read(texto, { type: 'string' });
@@ -262,7 +264,7 @@
           pedidos.push({
             pedidoId,
             data,
-            loja: lojaHeader ? row[lojaHeader] : '',
+            loja: nomeLoja || (lojaHeader ? row[lojaHeader] : ''),
             sku: skuHeader ? row[skuHeader] : '',
             status: statusHeader ? row[statusHeader] : '',
             subtotal,
