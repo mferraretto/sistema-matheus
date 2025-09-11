@@ -88,6 +88,7 @@
         </button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
         <button id="verificarDuplicadosBtn" class="px-3 py-1 bg-red-600 text-white rounded">Verificar Duplicados</button>
+        <button id="atualizarResponsaveisBtn" class="px-3 py-1 bg-purple-600 text-white rounded">Atualizar Resp./Gestores</button>
       </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
@@ -335,6 +336,60 @@
       }
     }
 
+    async function atualizarResponsaveis() {
+      if (!usuarioAtual) return;
+      if (!responsavelFinanceiro && !responsavelExpedicao) {
+        alert('Nenhum responsável ou gestor configurado.');
+        return;
+      }
+      try {
+        const { encryptString, decryptString } = await import('./crypto.js');
+        let atualizados = 0;
+        let novos = 0;
+        for (const p of todosPedidos) {
+          if (!p.pedidoId || !p.data) continue;
+          async function sincronizar(resp) {
+            const pass = resp.email;
+            const docRef = db
+              .collection('uid')
+              .doc(resp.uid)
+              .collection('uid')
+              .doc(usuarioAtual.uid)
+              .collection('pedidosreais')
+              .doc(p.data)
+              .collection('lista')
+              .doc(p.pedidoId);
+            const snap = await docRef.get();
+            let precisa = true;
+            if (snap.exists) {
+              try {
+                const atual = JSON.parse(await decryptString(snap.data().encrypted, pass));
+                if (JSON.stringify(atual) === JSON.stringify(p)) precisa = false;
+              } catch (e) {
+                console.error('Erro ao comparar pedido existente', e);
+              }
+            } else {
+              novos++;
+            }
+            if (precisa) {
+              const enc = await encryptString(JSON.stringify(p), pass);
+              await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
+              atualizados++;
+            }
+          }
+          if (responsavelFinanceiro?.uid && responsavelFinanceiro.uid !== usuarioAtual.uid) {
+            await sincronizar(responsavelFinanceiro);
+          }
+          if (responsavelExpedicao?.uid && responsavelExpedicao.uid !== usuarioAtual.uid) {
+            await sincronizar(responsavelExpedicao);
+          }
+        }
+        alert(`${atualizados} pedidos atualizados, ${novos} novos pedidos registrados`);
+      } catch (e) {
+        console.error('Erro ao atualizar responsáveis', e);
+      }
+    }
+
     ['filtroDataInicio','filtroDataFim','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
@@ -401,6 +456,7 @@
       }
     });
     document.getElementById('verificarDuplicadosBtn').addEventListener('click', verificarDuplicados);
+    document.getElementById('atualizarResponsaveisBtn').addEventListener('click', atualizarResponsaveis);
     document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
     document.getElementById('confirmImportBtn').addEventListener('click', () => {
       const nome = document.getElementById('modalNomeLoja').value.trim();
