@@ -1,4 +1,5 @@
 import { encryptString, decryptString } from './crypto.js';
+import logger from './logger.js';
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
@@ -55,10 +56,10 @@ const nomeProduto = nomeProdutoRaw
       .map(l => l.split(","))
       .filter(l => l.length === cabecalho.length);
 
-    console.log("📌 Campanha:", nomeProduto);
-    console.log("📆 Data final:", dataFormatada);
-    console.log("📄 Cabeçalho:", cabecalho);
-    console.log("📦 Primeira linha:", dados[0]);
+    logger.log("📌 Campanha:", nomeProduto);
+    logger.log("📆 Data final:", dataFormatada);
+    logger.log("📄 Cabeçalho:", cabecalho);
+    logger.log("📦 Primeira linha:", dados[0]);
 
     const getIndex = (termo) =>
       cabecalho.findIndex(c =>
@@ -136,7 +137,7 @@ for (const linha of dados) {
       },
       { merge: true }
     );
-    console.log("✅ Salvo:", nomeProduto, dataFormatada);
+    logger.log("✅ Salvo:", nomeProduto, dataFormatada);
   } catch (erro) {
     console.error("❌ Erro ao salvar:", erro);
   }

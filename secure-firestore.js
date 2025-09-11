@@ -1,5 +1,6 @@
 import { encryptString, decryptString } from './crypto.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import logger from './logger.js';
 function buildRef(db, collectionPath, id) {
   const segments = collectionPath.split('/').filter(Boolean);
   return doc(db, ...segments, id);
@@ -17,7 +18,7 @@ export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
 
 export async function loadSecureDoc(db, collectionName, id, passphrase) {
  if (!id) {
-    console.warn('⚠️ ID do documento não foi fornecido para a coleção:', collectionName);
+    logger.warn('⚠️ ID do documento não foi fornecido para a coleção:', collectionName);
     return null;
   }
   const ref = buildRef(db, collectionName, id);
@@ -49,8 +50,8 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
       jsonStr = JSON.stringify(payload); // Já é objeto válido
     }
 
-    console.log('📄 Documento:', id);
-    console.log('🧪 JSON para descriptografar:', jsonStr);
+    logger.log('📄 Documento:', id);
+    logger.log('🧪 JSON para descriptografar:', jsonStr);
 
     const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
@@ -58,7 +59,7 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
     if (uid && !data.uid) data.uid = uid;
     return data;
   } catch (err) {
-    console.warn('🔐 Erro ao descriptografar documento:', id, err.message);
+    logger.warn('🔐 Erro ao descriptografar documento:', id, err.message);
     if (Object.keys(rest).length) {
       return { ...rest, ...(uid && { uid }) };
     }
@@ -92,8 +93,8 @@ export async function loadSecureDocFromSnap(docSnap, passphrase) {
       jsonStr = JSON.stringify(payload);
     }
 
-    console.log('📄 Documento:', docSnap.id);
-    console.log('🧪 JSON para descriptografar:', jsonStr);
+    logger.log('📄 Documento:', docSnap.id);
+    logger.log('🧪 JSON para descriptografar:', jsonStr);
 
     const plaintext = await decryptString(jsonStr, passphrase);
     const data = JSON.parse(plaintext);
@@ -101,7 +102,7 @@ export async function loadSecureDocFromSnap(docSnap, passphrase) {
     if (uid && !data.uid) data.uid = uid;
     return data;
   } catch (err) {
-    console.warn('🔐 Erro ao descriptografar documento:', docSnap.id, err.message);
+    logger.warn('🔐 Erro ao descriptografar documento:', docSnap.id, err.message);
     if (Object.keys(rest).length) {
       return { ...rest, ...(uid && { uid }) };
     }

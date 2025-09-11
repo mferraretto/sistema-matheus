@@ -2,6 +2,7 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
+import logger from './logger.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -84,7 +85,7 @@ const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
     atualizarTabelaPedidos(pedidos);
     alert(`${pedidos.length} pedidos importados`);
   } catch (err) {
-   console.warn('Proxy falhou, tentando acesso direto:', err);
+   logger.warn('Proxy falhou, tentando acesso direto:', err);
     try {
       const directUrl = `https://corsproxy.io/https://bling.com.br/Api/v2/pedidos/json/?apikey=${encodeURIComponent(apiKey)}`;
       const res = await fetch(directUrl);

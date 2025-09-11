@@ -2,6 +2,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { encryptString, decryptString } from './crypto.js';
+import logger from './logger.js';
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -81,7 +82,7 @@ async function monitorar() {
     const termo = (dados.nome || '').trim();  // <- CORRIGIDO
     if (!termo) continue;
 
-    console.log("Buscando por:", termo);
+    logger.log("Buscando por:", termo);
 
     const resultados = await buscarShopee(termo);
     if (!resultados.length) continue;

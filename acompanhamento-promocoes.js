@@ -149,7 +149,6 @@ window.importarPlanilhaPromocoes = async function(event) {
   const data = XLSX.utils.sheet_to_json(sheet);
 
   const novoTipo = detectarTipoDePromocao(file.name, data);
-  console.log("Tipo detectado:", novoTipo);
 
   data.forEach((linha, i) => {
     const sku = linha["SKU"] || linha["Product SKU"] || linha["Product Id"];

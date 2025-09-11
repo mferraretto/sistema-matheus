@@ -2,6 +2,7 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.
 import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadUserDoc, loadSecureDoc } from './secure-firestore.js';
+import logger from './logger.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -57,7 +58,7 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
         }
       }
 if (pedido) {
-  console.log('📦 Pedido carregado:', d.id, pedido); // 🔍 mostra no console
+  logger.log('📦 Pedido carregado:', d.id, pedido); // 🔍 mostra no console
   pedidos.push({ id: d.id, ...pedido });
 }
     }
@@ -109,15 +110,15 @@ const variante = await loadUserDoc(db, uid, `anuncios/${anuncioDoc.id}/variantes
         const chave = `${normalizarTexto(nomeAnuncio)}|${normalizarTexto(variante.nomeVariante)}`;
         if (variante.skuVariante) {
  mapa[chave] = variante.skuVariante;
-          console.log(`🔑 Chave gerada no anúncio: "${chave}" → SKU: ${variante.skuVariante}`);
+          logger.log(`🔑 Chave gerada no anúncio: "${chave}" → SKU: ${variante.skuVariante}`);
         }
       }
     }
   } catch (err) {
     console.error('Erro ao carregar anúncios para correlação', err);
   }
-    console.log("📦 Mapa de Anúncios completo:");
-  console.log(mapa);
+    logger.log("📦 Mapa de Anúncios completo:");
+  logger.log(mapa);
   return mapa;
 }
 
@@ -128,9 +129,9 @@ function correlacionarPedidosComAnuncios(pedidos, mapa) {
 const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
       const sku = mapa[chave] || null;
 if (sku) {
-  console.log(`✅ Correlacionado: "${chave}" → SKU: ${sku}`);
+  logger.log(`✅ Correlacionado: "${chave}" → SKU: ${sku}`);
 } else {
-  console.warn(`❌ SKU não encontrado para chave: "${chave}"`);
+  logger.warn(`❌ SKU não encontrado para chave: "${chave}"`);
 }
 
       return { ...item, sku };
