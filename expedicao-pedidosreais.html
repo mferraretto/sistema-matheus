@@ -19,6 +19,24 @@
   <div id="navbar-container"></div>
   <div class="main-content p-4">
     <h1 class="text-2xl font-bold mb-4">Pedidos Reais</h1>
+    <div class="mb-4 flex flex-wrap gap-4 items-end">
+      <div>
+        <label for="filtroDataInicio" class="block text-sm font-medium">Data inicial</label>
+        <input type="date" id="filtroDataInicio" class="mt-1 border p-2 rounded" />
+      </div>
+      <div>
+        <label for="filtroDataFim" class="block text-sm font-medium">Data final</label>
+        <input type="date" id="filtroDataFim" class="mt-1 border p-2 rounded" />
+      </div>
+      <div>
+        <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
+        <input type="text" id="filtroLoja" class="mt-1 border p-2 rounded" placeholder="Loja" />
+      </div>
+      <div>
+        <label for="filtroStatus" class="block text-sm font-medium">Status</label>
+        <input type="text" id="filtroStatus" class="mt-1 border p-2 rounded" placeholder="Status" />
+      </div>
+    </div>
     <div class="bg-white rounded shadow overflow-x-auto">
       <table class="min-w-full">
         <thead>
@@ -46,28 +64,80 @@
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
+    let todosPedidos = [];
+
+    function parseDate(str) {
+      if (!str) return null;
+      if (typeof str.toDate === 'function') return str.toDate();
+      if (str.includes('/')) {
+        const [d, m, y] = str.split('/');
+        return new Date(`${y}-${m}-${d}`);
+      }
+      return new Date(str);
+    }
+
+    function renderPedidos(lista) {
+      const tbody = document.getElementById('pedidosTable');
+      tbody.innerHTML = '';
+      if (!lista.length) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="9">Sem registros.</td>';
+        tbody.appendChild(tr);
+        return;
+      }
+      const fmt = n => `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      for (const d of lista) {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="p-2">${d.pedidoId || ''}</td>
+          <td class="p-2">${d.data || ''}</td>
+          <td class="p-2">${d.loja || ''}</td>
+          <td class="p-2">${d.sku || ''}</td>
+          <td class="p-2">${d.status || ''}</td>
+          <td class="p-2">${fmt(d.subtotal)}</td>
+          <td class="p-2">${fmt(d.taxas)}</td>
+          <td class="p-2">${fmt(d.liquido)}</td>
+          <td class="p-2">${fmt(d.reembolso)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function aplicarFiltros() {
+      const inicio = document.getElementById('filtroDataInicio').value;
+      const fim = document.getElementById('filtroDataFim').value;
+      const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
+      const status = document.getElementById('filtroStatus').value.trim().toLowerCase();
+      const startDate = inicio ? new Date(inicio) : null;
+      const endDate = fim ? new Date(fim) : null;
+
+      const filtrados = todosPedidos.filter(p => {
+        const dataPedido = parseDate(p.data);
+        if (startDate && (!dataPedido || dataPedido < startDate)) return false;
+        if (endDate && (!dataPedido || dataPedido > endDate)) return false;
+        if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
+        if (status && !(p.status || '').toLowerCase().includes(status)) return false;
+        return true;
+      });
+      renderPedidos(filtrados);
+    }
 
     firebase.auth().onAuthStateChanged(async user => {
       if (!user) {
         window.location.href = 'index.html?login=1';
         return;
       }
-      carregarPedidos(user);
+      await carregarPedidos(user);
+      aplicarFiltros();
     });
 
     async function carregarPedidos(user) {
-      const tbody = document.getElementById('pedidosTable');
-      tbody.innerHTML = '';
       try {
         const pass = getPassphrase() || user.uid;
         const { decryptString } = await import('./crypto.js');
         const snap = await db.collection('uid').doc(user.uid).collection('pedidosreais').orderBy('data', 'desc').get();
-        if (snap.empty) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="9">Sem registros.</td>';
-          tbody.appendChild(tr);
-          return;
-        }
+        todosPedidos = [];
         for (const doc of snap.docs) {
           let d = doc.data();
           if (d.encrypted) {
@@ -79,29 +149,16 @@
               continue;
             }
           }
-          const fmt = n => `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-          const tr = document.createElement('tr');
-          tr.className = 'border-b';
-          tr.innerHTML = `
-            <td class="p-2">${d.pedidoId || ''}</td>
-            <td class="p-2">${d.data || ''}</td>
-            <td class="p-2">${d.loja || ''}</td>
-            <td class="p-2">${d.sku || ''}</td>
-            <td class="p-2">${d.status || ''}</td>
-            <td class="p-2">${fmt(d.subtotal)}</td>
-            <td class="p-2">${fmt(d.taxas)}</td>
-            <td class="p-2">${fmt(d.liquido)}</td>
-            <td class="p-2">${fmt(d.reembolso)}</td>
-          `;
-          tbody.appendChild(tr);
+          todosPedidos.push(d);
         }
       } catch (e) {
         console.error('Erro ao carregar pedidos:', e);
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td class="p-2 text-center text-red-500" colspan="9">Erro ao carregar pedidos</td>';
-        tbody.appendChild(tr);
       }
     }
+
+    ['filtroDataInicio','filtroDataFim','filtroLoja','filtroStatus'].forEach(id => {
+      document.getElementById(id).addEventListener('input', aplicarFiltros);
+    });
   </script>
 </body>
 </html>
