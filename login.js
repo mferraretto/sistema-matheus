@@ -386,6 +386,27 @@ function ensureFinanceiroMenu() {
   }
 }
 
+function setupBasicSidebar() {
+  const menu = document.querySelector('#sidebar .sidebar-menu');
+  if (!menu) return;
+  menu.querySelectorAll('a.sidebar-link.hidden').forEach(a => a.closest('li')?.remove());
+  menu.querySelectorAll('.submenu').forEach(ul => ul.remove());
+  menu.querySelectorAll('.submenu-toggle').forEach(btn => {
+    btn.parentElement?.classList.remove('justify-between');
+    btn.remove();
+  });
+  const order = ['menu-vendas','menu-expedicao','menu-anuncios','menu-outros','menu-configuracoes','menu-comunicacao'];
+  order.forEach(id => {
+    const link = document.getElementById(id);
+    const li = link?.closest('li');
+    if (li) menu.appendChild(li);
+  });
+  const introLi = document.getElementById('startSidebarTourBtn')?.closest('li');
+  const darkLi = document.getElementById('darkModeToggle')?.closest('li');
+  if (introLi) menu.appendChild(introLi);
+  if (darkLi) menu.appendChild(darkLi);
+}
+
 async function checkExpedicao(user) {
   try {
     let snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelExpedicaoEmail', '==', user.email)));
@@ -551,7 +572,10 @@ function checkLogin() {
   });
 
 document.addEventListener('sidebarLoaded', () => {
-  if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
+  if (window.userPerfil) {
+    applyPerfilRestrictions(window.userPerfil);
+    if (['usuario', 'cliente'].includes(window.userPerfil)) setupBasicSidebar();
+  }
   ensureFinanceiroMenu();
 });
 
