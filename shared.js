@@ -282,9 +282,11 @@ document.addEventListener('sidebarLoaded', function () {
 window.CUSTOM_SIDEBAR_PATH = window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
 window.CUSTOM_NAVBAR_PATH  = window.CUSTOM_NAVBAR_PATH  || 'partials/navbar.html';
 
-// Pages related to Vendas, Marketing or Precificação use a specialized navbar
+// Pages related to Expedição or Etiquetas use a specific navbar
 const _path = decodeURIComponent(window.location.pathname.toLowerCase());
-if (/(vendas|sobras|faturamento|saques|anuncio|ads|promoc|marketing|precifica|lista-precos|custeio)/.test(_path)) {
+if (/(expedicao|etiquet|zpl)/.test(_path)) {
+  window.CUSTOM_NAVBAR_PATH = 'partials/navbar-expedicao.html';
+} else if (/(vendas|sobras|faturamento|saques|anuncio|ads|promoc|marketing|precifica|lista-precos|custeio)/.test(_path)) {
   window.CUSTOM_NAVBAR_PATH = 'partials/navbar-grupos.html';
 }
 const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
