@@ -1,26 +1,7 @@
+@import url("base.css");
+@import url("components.css");
 
-:root {
-  /* VendedorPro brand color palette */
-  --primary: #6366F1;
-  --primary-hover: #818CF8;
-  --primary-dark: #4F46E5;
-  --primary-light: #A5B4FC;
-  --secondary: #F3F4F6;
-  --nav-bg: var(--primary);
-  --success: #4CAF50;
-  --error: #F44336;
-  --background: #FFFFFF;
-  --border: #e5e7eb;
-  --gray: #6B7280;
-  --text: #0F172A;
-  --text-light: var(--gray);
-  --highlight: #14B8A6;
-  --highlight-hover: #0D9488;
-  --transition: all 0.3s ease;
-  --navbar-height: 64px;
-  --sidebar-width: 16rem;
-  --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
+
 
 
 .text-brand {
@@ -32,9 +13,6 @@
 }
 
 
-  body {
-  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
 
 #sidebar-container {
   position: fixed;
@@ -1672,71 +1650,6 @@ input:checked + .toggle-slider:before {
   padding-right: 1rem;
 }
 @media print {
-  body {
-    font-family: "Inter", sans-serif;
-    margin: 0;
-    padding: 2cm;
-    background: white;
-    color: #000;
-  }
-
-  /* Oculta elementos de navegação e botões */
-  .sidebar,
-  .navbar,
-  .tab-btn,
-  .btn,
-  .connection-status,
-  .no-print {
-    display: none !important;
-  }
-
-  /* Exibe apenas a aba ativa */
-  .tab-content {
-    display: none !important;
-  }
-
-  .tab-content.active {
-    display: block !important;
-  }
-
-  /* Formata a tabela */
-  #tabelaAcompanhamento {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-
-  #tabelaAcompanhamento th,
-  #tabelaAcompanhamento td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    font-size: 14px;
-    text-align: left;
-  }
-
-  #tabelaAcompanhamento th {
-    background: #f0f0f0;
-  }
-#tabelaAcompanhamento tr.abaixo-meta {
-    background-color: #ffe5e5;
-  }
-
-  #resumoAcompanhamento {
-    margin-top: 20px;
-    font-size: 15px;
-  }
-  
-  .resumo-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-  }
-
-  .resumo-card {
-    border: 1px solid #ccc;
-    border-radius: 0.375rem;
-    padding: 10px;
-  }
-}
 
 /* Unified sidebar appearance across pages */
 .sidebar {
@@ -1827,3 +1740,157 @@ body.dark .sidebar-link.active {
 }
 
 
+/* Mobile-specific styles extracted from styles.css and components.css */
+
+/* Allow sidebar text to remain visible on small screens */
+@media (max-width:768px) {
+  .sidebar {
+    width: var(--sidebar-width);
+  }
+  .sidebar .link-text {
+    display: inline;
+  }
+  .sidebar-link {
+    justify-content: flex-start;
+  }
+  .sidebar-link .mr-3 {
+    margin-right: 0.75rem;
+  }
+}
+
+@media (max-width:768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .card.metric-card {
+    min-width: 150px;
+    padding: 2rem;
+  }
+  .card.metric-card .metric-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width:768px) {
+  .tab-btn {
+    padding: .6rem 1rem;
+    font-size: .9rem
+  }
+    /* Ensure form inputs remain side by side on smaller screens */
+  .form-row {
+ flex-direction: row;
+    flex-wrap: wrap;
+    gap: .8rem;
+  }
+  .chart-container {
+    padding: 1rem
+  }
+  td,
+  th {
+    padding: .8rem;
+    font-size: .9rem
+  }
+}
+
+@media (max-width:576px) {
+  .page-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .8rem
+  }
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center
+  }
+  .btn {
+    width: 100%;
+    margin-bottom: .5rem
+  }
+}
+
+@media (max-width:992px) {
+  .navbar {
+    left: 0;
+    justify-content: space-between;
+  }
+  .main-content {
+    margin-left: 0;
+  }
+  .menu-toggle {
+    display: block
+  }
+}
+
+@media (max-width:768px) {
+  /* Sidebar visibility handled by container; remove legacy transforms */
+  .content-wrapper,
+  body.has-sidebar .content-wrapper {
+    margin-left: 0;
+  }
+}
+
+@media (max-width:768px) {
+  .tabs {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+}
+
+@media (max-width:768px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  .modal-content {
+    width: 95%;
+    margin: 10px auto;
+  }
+  .navbar {
+    left: 0;
+    padding: 0 1rem;
+  }
+  .navbar .menu-item {
+    display: none;
+  }
+  .navbar .hamburger {
+    display: block;
+  }
+  .main-content {
+    margin-left: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: var(--navbar-height);
+  }
+}
+
+@media (max-width: 640px) {
+  .faturamento-header,
+  .faturamento-dia {
+    width: 130px;
+  }
+}
+
+/* Mobile adjustments for cards and tables */
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+  }
+  .data-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  #resumoTotais .card {
+    padding: 0.5rem;
+  }
+}

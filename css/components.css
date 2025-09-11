@@ -21,7 +21,7 @@
   transition: background-color .2s;
 }
 .btn-primary:hover { background-color: var(--highlight-hover); }
-.btn-primary:active { background-color: #D95449; }
+.btn-primary:active { background-color: var(--primary-active); }
 .btn-primary:disabled { opacity: .5; }
 
 
@@ -111,30 +111,30 @@
   border-top: 4px solid var(--primary);
 }
 .card-blue .card-header {
-  background-color: #eef2ff;
+  background-color: var(--info-bg);
 }
 .card-blue .card-header h2 {
   color: var(--primary-dark);
 }
 
 .card-green {
-  border-top: 4px solid #10b981;
+  border-top: 4px solid var(--success-accent);
 }
 .card-green .card-header {
-  background-color: #ecfdf5;
+  background-color: var(--success-bg);
 }
 .card-green .card-header h2 {
-  color: #065f46;
+  color: var(--success-accent-dark);
 }
 
 .card-orange {
-  border-top: 4px solid #f97316;
+  border-top: 4px solid var(--warning);
 }
 .card-orange .card-header {
-  background-color: #fff7ed;
+  background-color: var(--warning-bg);
 }
 .card-orange .card-header h2 {
-  color: #9a3412;
+  color: var(--warning-dark);
 }
 
 .progress {
