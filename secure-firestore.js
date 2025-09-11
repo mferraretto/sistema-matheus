@@ -1,8 +1,16 @@
 import { encryptString, decryptString } from './crypto.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+/**
+ * Build a document reference from a path string.
+ * Accepts both modular and compat Firestore instances by unwrapping
+ * the internal `_delegate` used by compat.
+ */
 function buildRef(db, collectionPath, id) {
   const segments = collectionPath.split('/').filter(Boolean);
-  return doc(db, ...segments, id);
+  // Firestore compat stores the real instance in `_delegate`.
+  const firestore = db._delegate || db;
+  return doc(firestore, ...segments, id);
 }
 
 export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
