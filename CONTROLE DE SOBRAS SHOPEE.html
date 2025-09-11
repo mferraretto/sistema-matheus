@@ -1708,6 +1708,8 @@ const dataInput = document.getElementById("dataFaturamento");
            const headerPrevEnvio = headersPedido.find(h => h.toLowerCase().includes('data prevista') && h.toLowerCase().includes('envio'));
            let dataPrevistaEnvio = headerPrevEnvio ? row[headerPrevEnvio] : null;
            dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
+           const headerRastreamento = headersPedido.find(h => h.toLowerCase().includes('rastreamento'));
+           const numeroRastreamento = headerRastreamento ? String(row[headerRastreamento]).trim() : '';
             const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
             const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
             const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
@@ -1729,6 +1731,10 @@ const dataInput = document.getElementById("dataFaturamento");
               reembolso: reembolsoPedido
             };
             if (dataPrevistaEnvio) pedidoPayload.dataPrevistaEnvio = dataPrevistaEnvio;
+            if (numeroRastreamento) {
+              pedidoPayload.numeroRastreamento = numeroRastreamento;
+              pedidoPayload.etiquetaImpressa = true;
+            }
 
             // Atualiza coleção pedidostiny evitando duplicações
             const tinyDocRef = pedidosTinyRef.doc(pedidoId);
