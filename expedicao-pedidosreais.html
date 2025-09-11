@@ -279,26 +279,20 @@
     async function carregarPedidos(user) {
       try {
         const { decryptString } = await import('./crypto.js');
+        const pass = getPassphrase() || user.uid;
         todosPedidos = [];
-        const passCandidates = [getPassphrase(), user.email, `chave-${user.uid}`, user.uid];
         const listaSnap = await db.collectionGroup('lista').where('uid', '==', user.uid).get();
         for (const doc of listaSnap.docs) {
           if (!doc.ref.path.includes('/pedidosreais/')) continue;
           let d = doc.data();
           if (d.encrypted) {
-            let txt;
-            for (const p of passCandidates) {
-              if (!p) continue;
-              try {
-                txt = await decryptString(d.encrypted, p);
-                if (txt) break;
-              } catch (_) {}
-            }
-            if (!txt) {
-              console.error('Erro ao descriptografar pedido', doc.id);
+            try {
+              const txt = await decryptString(d.encrypted, pass);
+              d = JSON.parse(txt);
+            } catch (e) {
+              console.error('Erro ao descriptografar pedido', e);
               continue;
             }
-            d = JSON.parse(txt);
           }
           d.pedidoId = d.pedidoId || doc.id;
           todosPedidos.push(d);
@@ -584,8 +578,7 @@
         pedidos.push(pedido);
         }
         const { encryptString, decryptString } = await import('./crypto.js');
-        const pass = getPassphrase() || usuarioAtual.email || `chave-${usuarioAtual.uid}` || usuarioAtual.uid;
-        const decryptCandidates = [getPassphrase(), usuarioAtual.email, `chave-${usuarioAtual.uid}`, usuarioAtual.uid];
+        const pass = getPassphrase() || usuarioAtual.uid;
         let atualizados = 0;
         let novos = 0;
         for (let i = 0; i < pedidos.length; i++) {
@@ -598,19 +591,9 @@
           let precisaAtualizar = true;
           if (snap.exists) {
             try {
-              let txt;
-              for (const cand of decryptCandidates) {
-                if (!cand) continue;
-                try {
-                  txt = await decryptString(snap.data().encrypted, cand);
-                  if (txt) break;
-                } catch (_) {}
-              }
-              if (txt) {
-                const atual = JSON.parse(txt);
-                if (JSON.stringify(atual) === JSON.stringify(p)) {
-                  precisaAtualizar = false;
-                }
+              const atual = JSON.parse(await decryptString(snap.data().encrypted, pass));
+              if (JSON.stringify(atual) === JSON.stringify(p)) {
+                precisaAtualizar = false;
               }
             } catch (e) {
               console.error('Erro ao comparar pedido existente', e);
