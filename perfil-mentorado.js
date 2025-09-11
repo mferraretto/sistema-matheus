@@ -13,21 +13,43 @@ const singleUid = urlParams.get('uid');
 function createPerfilCard(uid, email, data = {}) {
   const card = document.createElement('div');
   card.className = 'border p-4 rounded space-y-2';
-  card.innerHTML = `
-    <h3 class="font-bold">${email}</h3>
-    <input class="form-control" placeholder="Nome" value="${data.nome || ''}" data-field="nome">
-    <input class="form-control" placeholder="Loja" value="${data.loja || ''}" data-field="loja">
-    <input class="form-control" placeholder="Segmento" value="${data.segmento || ''}" data-field="segmento">
-    <input class="form-control" placeholder="Tempo de operação" value="${data.tempoOperacao || ''}" data-field="tempoOperacao">
-    <input class="form-control" placeholder="Link Shopee" value="${data.links?.shopee || ''}" data-field="shopee">
-    <input class="form-control" placeholder="Link Mercado Livre" value="${data.links?.mercadoLivre || ''}" data-field="mercadoLivre">
-    <input class="form-control" placeholder="Site próprio" value="${data.links?.site || ''}" data-field="site">
-    <input class="form-control" placeholder="Instagram" value="${data.links?.instagram || ''}" data-field="instagram">
-    <textarea class="form-control" placeholder="Objetivos">${data.objetivos || ''}</textarea>
-    <button class="btn btn-primary salvar">Salvar</button>
-  `;
+  const titulo = document.createElement('h3');
+  titulo.className = 'font-bold';
+  titulo.textContent = email;
+  card.appendChild(titulo);
 
-  card.querySelector('.salvar').addEventListener('click', async () => {
+  const campos = [
+    { field: 'nome', placeholder: 'Nome', value: data.nome || '' },
+    { field: 'loja', placeholder: 'Loja', value: data.loja || '' },
+    { field: 'segmento', placeholder: 'Segmento', value: data.segmento || '' },
+    { field: 'tempoOperacao', placeholder: 'Tempo de operação', value: data.tempoOperacao || '' },
+    { field: 'shopee', placeholder: 'Link Shopee', value: data.links?.shopee || '' },
+    { field: 'mercadoLivre', placeholder: 'Link Mercado Livre', value: data.links?.mercadoLivre || '' },
+    { field: 'site', placeholder: 'Site próprio', value: data.links?.site || '' },
+    { field: 'instagram', placeholder: 'Instagram', value: data.links?.instagram || '' }
+  ];
+
+  campos.forEach(c => {
+    const input = document.createElement('input');
+    input.className = 'form-control';
+    input.placeholder = c.placeholder;
+    input.value = c.value;
+    input.dataset.field = c.field;
+    card.appendChild(input);
+  });
+
+  const objetivos = document.createElement('textarea');
+  objetivos.className = 'form-control';
+  objetivos.placeholder = 'Objetivos';
+  objetivos.textContent = data.objetivos || '';
+  card.appendChild(objetivos);
+
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-primary salvar';
+  btn.textContent = 'Salvar';
+  card.appendChild(btn);
+
+  btn.addEventListener('click', async () => {
     const getVal = (field) => card.querySelector(`[data-field="${field}"]`).value.trim();
     const payload = {
       nome: getVal('nome'),
@@ -40,7 +62,7 @@ function createPerfilCard(uid, email, data = {}) {
         site: getVal('site'),
         instagram: getVal('instagram')
       },
-      objetivos: card.querySelector('textarea').value.trim()
+      objetivos: objetivos.value.trim()
     };
     try {
       await setDoc(doc(db, 'perfilMentorado', uid), payload, { merge: true });
@@ -55,13 +77,16 @@ function createPerfilCard(uid, email, data = {}) {
 
 async function carregarPerfis() {
   const list = document.getElementById('perfilMentoradoList');
-  list.innerHTML = '';
+  list.textContent = '';
 
   if (singleUid) {
     try {
       const userDoc = await getDoc(doc(db, 'usuarios', singleUid));
       if (!userDoc.exists()) {
-        list.innerHTML = '<p class="text-sm text-gray-500">Usuário não encontrado.</p>';
+        const p = document.createElement('p');
+        p.className = 'text-sm text-gray-500';
+        p.textContent = 'Usuário não encontrado.';
+        list.appendChild(p);
         return;
       }
       const email = userDoc.data().email || singleUid;
@@ -77,7 +102,10 @@ async function carregarPerfis() {
       list.appendChild(createPerfilCard(singleUid, email, perfilData));
     } catch (e) {
       console.error('Erro ao carregar usuário:', e);
-      list.innerHTML = '<p class="text-sm text-red-500">Erro ao carregar usuário.</p>';
+      const p = document.createElement('p');
+      p.className = 'text-sm text-red-500';
+      p.textContent = 'Erro ao carregar usuário.';
+      list.appendChild(p);
     }
     return;
   }
