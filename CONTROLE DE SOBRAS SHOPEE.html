@@ -1661,6 +1661,8 @@ const dataInput = document.getElementById("dataFaturamento");
             const skuPedido = headerSku ? row[headerSku] : null;
             const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
             const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
+           const headerPagamento = headersPedido.find(h => h.toLowerCase().includes('hora do pagamento'));
+           const horaPagamento = headerPagamento ? row[headerPagamento] : null;
             const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
             const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
             const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
@@ -1675,6 +1677,7 @@ const dataInput = document.getElementById("dataFaturamento");
               sku: skuPedido,
               loja,
               data: dataReferencia,
+              horaPagamento,
               subtotal: subtotalPedido,
               taxas: taxasPedido,
               liquido: liquidoPedido,

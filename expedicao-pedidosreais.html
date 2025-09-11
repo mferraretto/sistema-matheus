@@ -53,6 +53,7 @@
           <tr class="bg-gray-200 text-left">
             <th class="p-2">Pedido</th>
             <th class="p-2">Data</th>
+            <th class="p-2">Pagamento</th>
             <th class="p-2">Loja</th>
             <th class="p-2">SKU</th>
             <th class="p-2">Status</th>
@@ -92,7 +93,7 @@
       tbody.innerHTML = '';
       if (!lista.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="9">Sem registros.</td>';
+        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="10">Sem registros.</td>';
         tbody.appendChild(tr);
         return;
       }
@@ -103,6 +104,7 @@
         tr.innerHTML = `
           <td class="p-2">${d.pedidoId || ''}</td>
           <td class="p-2">${d.data || ''}</td>
+          <td class="p-2">${d.horaPagamento || ''}</td>
           <td class="p-2">${d.loja || ''}</td>
           <td class="p-2">${d.sku || ''}</td>
           <td class="p-2">${d.status || ''}</td>
@@ -192,10 +194,11 @@
 
     function exportarCSV(lista) {
       if (!lista.length) return;
-      const headers = ['Pedido','Data','Loja','SKU','Status','Subtotal','Taxas','Líquido','Reembolso'];
+      const headers = ['Pedido','Data','Pagamento','Loja','SKU','Status','Subtotal','Taxas','Líquido','Reembolso'];
       const rows = lista.map(d => [
         d.pedidoId || '',
         d.data || '',
+        d.horaPagamento || '',
         d.loja || '',
         d.sku || '',
         d.status || '',
