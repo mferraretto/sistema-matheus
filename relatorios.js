@@ -1,12 +1,25 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, query, where, Timestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+  Timestamp,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -20,10 +33,15 @@ async function verificarGestorExpedicao() {
   if (!user) return;
   try {
     const snap = await getDocs(
-      query(collection(db, 'usuarios'), where('gestoresExpedicaoEmails', 'array-contains', user.email))
+      query(
+        collection(db, 'usuarios'),
+        where('gestoresExpedicaoEmails', 'array-contains', user.email),
+      ),
     );
     if (!snap.empty) {
-      document.getElementById('exportarRelatorioGestorBtn')?.classList.remove('hidden');
+      document
+        .getElementById('exportarRelatorioGestorBtn')
+        ?.classList.remove('hidden');
     }
   } catch (err) {
     console.error('Erro ao verificar gestores de expedição:', err);
@@ -43,12 +61,12 @@ async function carregarSobras() {
   const q = query(
     collection(db, `uid/${uid}/diasExpedicao`),
     where('inicio', '>=', Timestamp.fromDate(inicio)),
-    where('inicio', '<', Timestamp.fromDate(fim))
+    where('inicio', '<', Timestamp.fromDate(fim)),
   );
   const snap = await getDocs(q);
   const lista = document.getElementById('sobrasList');
   lista.innerHTML = '';
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const dados = doc.data();
     if (dados.sobrasQuantidade || dados.sobrasMotivo) {
       const p = document.createElement('p');
@@ -75,31 +93,36 @@ export async function exportarSkuImpressos() {
   const q = query(
     collection(db, `uid/${uid}/etiquetasimpressas`),
     where('data', '>=', Timestamp.fromDate(inicio)),
-    where('data', '<', Timestamp.fromDate(fim))
+    where('data', '<', Timestamp.fromDate(fim)),
   );
   const snap = await getDocs(q);
   const linhas = [];
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const dados = doc.data();
     const sku = dados.sku || 'sem-sku';
     const quantidade = Number(dados.quantidade) || 0;
     const loja = dados.loja || '';
-    const data = dados.data && dados.data.toDate
-      ? dados.data.toDate().toLocaleDateString('pt-BR')
-      : '';
+    const data =
+      dados.data && dados.data.toDate
+        ? dados.data.toDate().toLocaleDateString('pt-BR')
+        : '';
     linhas.push({ SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
   });
   const sobras = [];
   const qSobras = query(
     collection(db, `uid/${uid}/diasExpedicao`),
     where('inicio', '>=', Timestamp.fromDate(inicio)),
-    where('inicio', '<', Timestamp.fromDate(fim))
+    where('inicio', '<', Timestamp.fromDate(fim)),
   );
   const sobrasSnap = await getDocs(qSobras);
-  sobrasSnap.forEach(d => {
+  sobrasSnap.forEach((d) => {
     const dados = d.data();
     if (dados.sobrasQuantidade || dados.sobrasMotivo) {
-      sobras.push({ Data: d.id, Quantidade: dados.sobrasQuantidade || 0, Motivo: dados.sobrasMotivo || '' });
+      sobras.push({
+        Data: d.id,
+        Quantidade: dados.sobrasQuantidade || 0,
+        Motivo: dados.sobrasMotivo || '',
+      });
     }
   });
 
@@ -113,7 +136,10 @@ export async function exportarSkuImpressos() {
     acc[SKU] = (acc[SKU] || 0) + Quantidade;
     return acc;
   }, {});
-  const resumo = Object.keys(resumoMap).map(sku => ({ SKU: sku, Quantidade: resumoMap[sku] }));
+  const resumo = Object.keys(resumoMap).map((sku) => ({
+    SKU: sku,
+    Quantidade: resumoMap[sku],
+  }));
   const wsResumo = XLSX.utils.json_to_sheet(resumo);
 
   const wb = XLSX.utils.book_new();
@@ -124,7 +150,9 @@ export async function exportarSkuImpressos() {
     XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
   }
 
-  const mesStr = filtroMes || `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
+  const mesStr =
+    filtroMes ||
+    `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
   XLSX.writeFile(wb, `sku_impressos_${mesStr}.xlsx`);
 }
 
@@ -139,48 +167,63 @@ export async function exportarSkuImpressosGestor() {
   fim.setMonth(fim.getMonth() + 1);
 
   const usuariosSnap = await getDocs(
-    query(collection(db, 'usuarios'), where('gestoresExpedicaoEmails', 'array-contains', user.email))
+    query(
+      collection(db, 'usuarios'),
+      where('gestoresExpedicaoEmails', 'array-contains', user.email),
+    ),
   );
 
   const linhas = [];
   const sobras = [];
   const promessas = [];
-  usuariosSnap.forEach(u => {
+  usuariosSnap.forEach((u) => {
     const uid = u.id;
     const emailUsuario = u.data().email || 'sem-email';
     const q = query(
       collection(db, `uid/${uid}/etiquetasimpressas`),
       where('data', '>=', Timestamp.fromDate(inicio)),
-      where('data', '<', Timestamp.fromDate(fim))
+      where('data', '<', Timestamp.fromDate(fim)),
     );
     promessas.push(
-      getDocs(q).then(snap => {
-        snap.forEach(doc => {
+      getDocs(q).then((snap) => {
+        snap.forEach((doc) => {
           const dados = doc.data();
           const sku = dados.sku || 'sem-sku';
           const quantidade = dados.quantidade || 0;
           const loja = dados.loja || '';
-          const data = dados.data && dados.data.toDate
-            ? dados.data.toDate().toLocaleDateString('pt-BR')
-            : '';
-          linhas.push({ Usuario: emailUsuario, SKU: sku, Quantidade: quantidade, Loja: loja, Data: data });
+          const data =
+            dados.data && dados.data.toDate
+              ? dados.data.toDate().toLocaleDateString('pt-BR')
+              : '';
+          linhas.push({
+            Usuario: emailUsuario,
+            SKU: sku,
+            Quantidade: quantidade,
+            Loja: loja,
+            Data: data,
+          });
         });
-      })
+      }),
     );
     const qSobras = query(
       collection(db, `uid/${uid}/diasExpedicao`),
       where('inicio', '>=', Timestamp.fromDate(inicio)),
-      where('inicio', '<', Timestamp.fromDate(fim))
+      where('inicio', '<', Timestamp.fromDate(fim)),
     );
     promessas.push(
-      getDocs(qSobras).then(snapSobras => {
-        snapSobras.forEach(diaDoc => {
+      getDocs(qSobras).then((snapSobras) => {
+        snapSobras.forEach((diaDoc) => {
           const dados = diaDoc.data();
           if (dados.sobrasQuantidade || dados.sobrasMotivo) {
-            sobras.push({ Usuario: emailUsuario, Data: diaDoc.id, Quantidade: dados.sobrasQuantidade || 0, Motivo: dados.sobrasMotivo || '' });
+            sobras.push({
+              Usuario: emailUsuario,
+              Data: diaDoc.id,
+              Quantidade: dados.sobrasQuantidade || 0,
+              Motivo: dados.sobrasMotivo || '',
+            });
           }
         });
-      })
+      }),
     );
   });
 
@@ -197,10 +240,18 @@ export async function exportarSkuImpressosGestor() {
     const wsSobras = XLSX.utils.json_to_sheet(sobras);
     XLSX.utils.book_append_sheet(wb, wsSobras, 'Sobras');
   }
-  const mesStr = filtroMes || `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
+  const mesStr =
+    filtroMes ||
+    `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}`;
   XLSX.writeFile(wb, `sku_impressos_equipe_${mesStr}.xlsx`);
 }
 
-document.getElementById('exportarRelatorioBtn')?.addEventListener('click', exportarSkuImpressos);
-document.getElementById('exportarRelatorioGestorBtn')?.addEventListener('click', exportarSkuImpressosGestor);
-document.getElementById('filtroMesRelatorio')?.addEventListener('change', carregarSobras);
+document
+  .getElementById('exportarRelatorioBtn')
+  ?.addEventListener('click', exportarSkuImpressos);
+document
+  .getElementById('exportarRelatorioGestorBtn')
+  ?.addEventListener('click', exportarSkuImpressosGestor);
+document
+  .getElementById('filtroMesRelatorio')
+  ?.addEventListener('change', carregarSobras);

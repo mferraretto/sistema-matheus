@@ -6,15 +6,23 @@ import {
   setDoc,
   deleteDoc,
   getDoc,
-  onSnapshot
+  onSnapshot,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { anoMesBR, calcularResumo } from './comissoes-utils.js';
 
-export async function registrarSaque({ db, uid, dataISO, valor, percentualPago, origem }) {
+export async function registrarSaque({
+  db,
+  uid,
+  dataISO,
+  valor,
+  percentualPago,
+  origem,
+}) {
   if (!uid) throw new Error('uid obrigatório');
   if (!dataISO) throw new Error('dataISO obrigatório');
   if (typeof valor !== 'number') throw new Error('valor inválido');
-  if (![0, 0.03, 0.04, 0.05].includes(percentualPago)) throw new Error('percentualPago inválido');
+  if (![0, 0.03, 0.04, 0.05].includes(percentualPago))
+    throw new Error('percentualPago inválido');
 
   const anoMes = anoMesBR(new Date(dataISO));
   const col = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'saques');
@@ -24,7 +32,7 @@ export async function registrarSaque({ db, uid, dataISO, valor, percentualPago, 
     valor,
     percentualPago,
     comissaoPaga,
-    ...(origem ? { origem } : {})
+    ...(origem ? { origem } : {}),
   });
   await recalcularResumoMes({ db, uid, anoMes });
 }
@@ -38,12 +46,21 @@ export async function registrarComissaoRecebida({ db, uid, dataISO, valor }) {
   const col = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'recebidas');
   await addDoc(col, {
     data: dataISO,
-    valor
+    valor,
   });
   await recalcularResumoMes({ db, uid, anoMes });
 }
 
-export async function atualizarSaque({ db, uid, anoMes, saqueId, dataISO, valor, percentualPago, origem }) {
+export async function atualizarSaque({
+  db,
+  uid,
+  anoMes,
+  saqueId,
+  dataISO,
+  valor,
+  percentualPago,
+  origem,
+}) {
   if (!uid) throw new Error('uid obrigatório');
   if (!anoMes) throw new Error('anoMes obrigatório');
   if (!saqueId) throw new Error('saqueId obrigatório');
@@ -56,29 +73,43 @@ export async function atualizarSaque({ db, uid, anoMes, saqueId, dataISO, valor,
       valor,
       percentualPago,
       comissaoPaga,
-      ...(origem ? { origem } : {})
+      ...(origem ? { origem } : {}),
     },
-    { merge: true }
+    { merge: true },
   );
   await recalcularResumoMes({ db, uid, anoMes });
 }
 
 export async function recalcularResumoMes({ db, uid, anoMes }) {
-  const colSaques = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'saques');
-  const colRecebidas = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'recebidas');
+  const colSaques = collection(
+    db,
+    'usuarios',
+    uid,
+    'comissoes',
+    anoMes,
+    'saques',
+  );
+  const colRecebidas = collection(
+    db,
+    'usuarios',
+    uid,
+    'comissoes',
+    anoMes,
+    'recebidas',
+  );
   const [snapSaques, snapRecebidas] = await Promise.all([
     getDocs(colSaques),
-    getDocs(colRecebidas)
+    getDocs(colRecebidas),
   ]);
-  const saques = snapSaques.docs.map(d => d.data());
-  const recebidas = snapRecebidas.docs.map(d => d.data());
+  const saques = snapSaques.docs.map((d) => d.data());
+  const recebidas = snapRecebidas.docs.map((d) => d.data());
   const resumo = calcularResumo(saques);
   const comissaoRecebida = recebidas.reduce((s, x) => s + (x.valor || 0), 0);
   const ref = doc(db, 'usuarios', uid, 'comissoes', anoMes);
   await setDoc(ref, {
     ...resumo,
     comissaoRecebida,
-    atualizadoEm: new Date().toISOString()
+    atualizadoEm: new Date().toISOString(),
   });
 }
 
@@ -94,11 +125,18 @@ export async function fecharMes({ db, uid, anoMes }) {
   if (!snap.exists()) return null;
   const dados = snap.data();
   if ((dados.ajusteFinal || 0) > 0) {
-    const ajustesCol = collection(db, 'usuarios', uid, 'comissoes', anoMes, 'ajustes');
+    const ajustesCol = collection(
+      db,
+      'usuarios',
+      uid,
+      'comissoes',
+      anoMes,
+      'ajustes',
+    );
     const ajuste = {
       data: new Date().toISOString(),
       valorAjuste: dados.ajusteFinal,
-      taxaFinalAplicada: dados.taxaFinal
+      taxaFinalAplicada: dados.taxaFinal,
     };
     const docRef = await addDoc(ajustesCol, ajuste);
     return docRef.id;
@@ -108,7 +146,7 @@ export async function fecharMes({ db, uid, anoMes }) {
 
 export function watchResumoMes({ db, uid, anoMes, onChange }) {
   const ref = doc(db, 'usuarios', uid, 'comissoes', anoMes);
-  return onSnapshot(ref, snap => {
+  return onSnapshot(ref, (snap) => {
     onChange(snap.exists() ? snap.data() : null);
   });
 }

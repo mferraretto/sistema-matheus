@@ -1,6 +1,16 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -13,18 +23,27 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">Carregando...</td></tr>';
+  tbody.innerHTML =
+    '<tr><td colspan="9" class="text-center py-4">Carregando...</td></tr>';
 
   try {
-        const pass = getPassphrase() || `chave-${user.uid}`;
+    const pass = getPassphrase() || `chave-${user.uid}`;
     const campanhasSnap = await getDocs(collection(db, `uid/${user.uid}/ads`));
     tbody.innerHTML = '';
 
     for (const campDoc of campanhasSnap.docs) {
-     const dadosCampanha = await loadUserDoc(db, user.uid, 'ads', campDoc.id, pass);
+      const dadosCampanha = await loadUserDoc(
+        db,
+        user.uid,
+        'ads',
+        campDoc.id,
+        pass,
+      );
       if (!dadosCampanha) continue;
 
-      const desempenhoSnap = await getDocs(collection(db, `uid/${user.uid}/ads/${campDoc.id}/desempenho`));
+      const desempenhoSnap = await getDocs(
+        collection(db, `uid/${user.uid}/ads/${campDoc.id}/desempenho`),
+      );
       for (const docSnap of desempenhoSnap.docs) {
         const enc = docSnap.data().encrypted;
         if (!enc) continue;
@@ -41,16 +60,16 @@ onAuthStateChanged(auth, async (user) => {
           <td class="px-4 py-2">${d.vendas || 0}</td>
           <td class="px-4 py-2">${(parseFloat(d.roas) || 0).toFixed(2)}</td>`;
         tbody.appendChild(tr);
-   }
+      }
     }
 
     if (tbody.innerHTML === '') {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhum dado encontrado</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhum dado encontrado</td></tr>';
     }
-
   } catch (e) {
     console.error('Erro ao carregar ads', e);
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-red-500 py-4">Erro ao carregar dados</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="9" class="text-center text-red-500 py-4">Erro ao carregar dados</td></tr>';
   }
 });
-

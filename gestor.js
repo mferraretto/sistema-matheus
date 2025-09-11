@@ -1,7 +1,28 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, doc, query, where, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  query,
+  where,
+  onSnapshot,
+  serverTimestamp,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -21,7 +42,7 @@ function carregarGestoresDropdown() {
   const render = () => {
     const set = new Set([...docEmails, ...teamEmails]);
     select.innerHTML = '';
-    Array.from(set).forEach(email => {
+    Array.from(set).forEach((email) => {
       const opt = document.createElement('option');
       opt.value = email;
       opt.textContent = email;
@@ -29,10 +50,10 @@ function carregarGestoresDropdown() {
     });
   };
 
-  onSnapshot(doc(db, 'uid', currentUser.uid), snap => {
+  onSnapshot(doc(db, 'uid', currentUser.uid), (snap) => {
     const data = snap.data() || {};
     if (Array.isArray(data.gestoresExpedicaoEmails)) {
-      docEmails = data.gestoresExpedicaoEmails.filter(e => e);
+      docEmails = data.gestoresExpedicaoEmails.filter((e) => e);
     } else if (data.responsavelExpedicaoEmail) {
       docEmails = [data.responsavelExpedicaoEmail];
     } else {
@@ -42,9 +63,9 @@ function carregarGestoresDropdown() {
   });
 
   const colRef = collection(db, 'uid', currentUser.uid, 'expedicaoTeam');
-  onSnapshot(colRef, snap => {
+  onSnapshot(colRef, (snap) => {
     teamEmails = [];
-    snap.forEach(docu => {
+    snap.forEach((docu) => {
       const d = docu.data();
       if ((d.cargo || '').toLowerCase() === 'gestor' && d.email) {
         teamEmails.push(d.email);
@@ -72,7 +93,9 @@ async function enviarRelatorio(e) {
   const tipo = document.getElementById('relTipo').value.trim();
   const inicio = document.getElementById('relInicio').value;
   const fim = document.getElementById('relFim').value;
-  const gestores = Array.from(document.getElementById('relGestores').selectedOptions).map(o => o.value);
+  const gestores = Array.from(
+    document.getElementById('relGestores').selectedOptions,
+  ).map((o) => o.value);
   if (!gestores.includes(currentUser.email)) {
     gestores.push(currentUser.email);
   }
@@ -99,7 +122,7 @@ async function enviarRelatorio(e) {
       autorUid: currentUser.uid,
       autorNome: currentUser.displayName || currentUser.email,
       createdAt: serverTimestamp(),
-      anexos: []
+      anexos: [],
     });
 
     const anexos = [];
@@ -120,7 +143,9 @@ async function enviarRelatorio(e) {
     document.getElementById('relFim').value = '';
     document.getElementById('relMensagem').value = '';
     document.getElementById('relArquivos').value = '';
-    Array.from(document.getElementById('relGestores').options).forEach(o => o.selected = false);
+    Array.from(document.getElementById('relGestores').options).forEach(
+      (o) => (o.selected = false),
+    );
     if (statusEl) {
       statusEl.textContent = 'Relatório enviado com sucesso!';
       statusEl.classList.add('text-green-500');
@@ -136,15 +161,20 @@ async function enviarRelatorio(e) {
 
 function renderRelatorioCard(id, data, isGestor) {
   const statusColors = {
-    'enviado': 'bg-gray-400',
+    enviado: 'bg-gray-400',
     'em-analise': 'bg-yellow-500',
-    'aprovado': 'bg-green-500',
-    'reprovado': 'bg-red-500',
-    'ajustes': 'bg-purple-500'
+    aprovado: 'bg-green-500',
+    reprovado: 'bg-red-500',
+    ajustes: 'bg-purple-500',
   };
   const card = document.createElement('div');
   card.className = 'card';
-  const anexosHtml = (data.anexos || []).map(a => `<a href="${a.url}" target="_blank" class="text-blue-500 underline block">${a.nome}</a>`).join('');
+  const anexosHtml = (data.anexos || [])
+    .map(
+      (a) =>
+        `<a href="${a.url}" target="_blank" class="text-blue-500 underline block">${a.nome}</a>`,
+    )
+    .join('');
   card.innerHTML = `
     <div class="card-header flex justify-between items-center">
       <h3 class="font-bold">${data.titulo || 'Sem título'}</h3>
@@ -155,7 +185,9 @@ function renderRelatorioCard(id, data, isGestor) {
       <p class="text-sm">Período: ${data.inicio || ''} - ${data.fim || ''}</p>
       <p class="text-sm">${data.mensagem || ''}</p>
       <div class="space-y-1">${anexosHtml}</div>
-      ${isGestor ? `
+      ${
+        isGestor
+          ? `
       <div class="flex flex-wrap gap-2 mt-2">
         <button class="btnStatus btn btn-secondary" data-id="${id}" data-s="em-analise">Em análise</button>
         <button class="btnStatus btn btn-secondary" data-id="${id}" data-s="aprovado">Aprovado</button>
@@ -165,18 +197,23 @@ function renderRelatorioCard(id, data, isGestor) {
       <div class="mt-2">
         <textarea class="form-control mb-2" data-coment="${id}" placeholder="Comentário"></textarea>
         <button class="enviarComent btn btn-primary" data-id="${id}">Enviar comentário</button>
-      </div>` : ''}
+      </div>`
+          : ''
+      }
     </div>
   `;
   return card;
 }
 
 function listenMinhasSubmissoes() {
-  const q = query(collection(db, 'relatorios'), where('autorUid', '==', currentUser.uid));
-  onSnapshot(q, snap => {
+  const q = query(
+    collection(db, 'relatorios'),
+    where('autorUid', '==', currentUser.uid),
+  );
+  onSnapshot(q, (snap) => {
     const list = document.getElementById('listaMeusRelatorios');
     list.innerHTML = '';
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       list.appendChild(renderRelatorioCard(docSnap.id, docSnap.data(), false));
     });
   });
@@ -185,13 +222,20 @@ function listenMinhasSubmissoes() {
 function listenCaixaGestor() {
   const wrap = document.getElementById('caixaGestor');
   wrap.classList.remove('hidden');
-  const isGestor = ['gestor', 'adm'].includes((window.userPerfil || '').toLowerCase());
-  const q = query(collection(db, 'relatorios'), where('gestores', 'array-contains', currentUser.email));
-  onSnapshot(q, snap => {
+  const isGestor = ['gestor', 'adm'].includes(
+    (window.userPerfil || '').toLowerCase(),
+  );
+  const q = query(
+    collection(db, 'relatorios'),
+    where('gestores', 'array-contains', currentUser.email),
+  );
+  onSnapshot(q, (snap) => {
     const list = document.getElementById('listaCaixaGestor');
     list.innerHTML = '';
-    snap.forEach(docSnap => {
-      list.appendChild(renderRelatorioCard(docSnap.id, docSnap.data(), isGestor));
+    snap.forEach((docSnap) => {
+      list.appendChild(
+        renderRelatorioCard(docSnap.id, docSnap.data(), isGestor),
+      );
     });
   });
 }
@@ -204,11 +248,11 @@ async function enviarComentario(id, texto) {
   await addDoc(collection(db, 'relatorios', id, 'comentarios'), {
     autorUid: currentUser.uid,
     texto,
-    createdAt: serverTimestamp()
+    createdAt: serverTimestamp(),
   });
 }
 
-document.addEventListener('click', async e => {
+document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.btnStatus');
   if (btn) {
     await atualizarStatus(btn.dataset.id, btn.dataset.s);
@@ -226,8 +270,10 @@ document.addEventListener('click', async e => {
 });
 
 function initAbaGestor() {
-  document.getElementById('btnEnviarRelatorio').addEventListener('click', enviarRelatorio);
-  onAuthStateChanged(auth, async user => {
+  document
+    .getElementById('btnEnviarRelatorio')
+    .addEventListener('click', enviarRelatorio);
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUser = user;
       await carregarGestoresDropdown();

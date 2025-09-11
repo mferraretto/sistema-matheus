@@ -1,7 +1,30 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getFirestore, collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  serverTimestamp,
+  onSnapshot,
+  orderBy,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 
@@ -11,7 +34,11 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 const teamListEl = document.getElementById('teamList');
-const selectEls = [document.getElementById('fileRecipients'), document.getElementById('messageRecipients'), document.getElementById('alertRecipients')];
+const selectEls = [
+  document.getElementById('fileRecipients'),
+  document.getElementById('messageRecipients'),
+  document.getElementById('alertRecipients'),
+];
 const commsListEl = document.getElementById('commsList');
 
 const usersMap = {};
@@ -26,7 +53,7 @@ function addUserOption(user) {
   li.addEventListener('click', () => openChat(user));
   teamListEl.appendChild(li);
   usersMap[user.id] = user;
-  selectEls.forEach(sel => {
+  selectEls.forEach((sel) => {
     const opt = document.createElement('option');
     opt.value = user.id;
     opt.textContent = user.nome || user.email || user.id;
@@ -76,11 +103,11 @@ function openChat(userInfo) {
       collection(db, 'comunicacao'),
       where('tipo', '==', 'mensagem'),
       where('conversa', '==', cid),
-      orderBy('timestamp')
+      orderBy('timestamp'),
     );
-    const unsub = onSnapshot(q, snap => {
+    const unsub = onSnapshot(q, (snap) => {
       messagesEl.innerHTML = '';
-      snap.forEach(d => renderChatMessage(messagesEl, d.data()));
+      snap.forEach((d) => renderChatMessage(messagesEl, d.data()));
       messagesEl.scrollTop = messagesEl.scrollHeight;
     });
     sendBtn.addEventListener('click', async () => {
@@ -93,11 +120,13 @@ function openChat(userInfo) {
         remetente: auth.currentUser.uid,
         destinatarios: participantes,
         conversa: cid,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
       });
       inputEl.value = '';
     });
-    inputEl.addEventListener('keyup', e => { if (e.key === 'Enter') sendBtn.click(); });
+    inputEl.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
     closeBtn.addEventListener('click', () => {
       if (chatWindows[cid].unsub) chatWindows[cid].unsub();
       clone.remove();
@@ -111,37 +140,48 @@ function openChat(userInfo) {
   }
 }
 
-  async function loadTeam(user, perfil, data) {
-    let members = [];
-    if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
-      const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
-      members = lista.map(u => ({ id: u.uid, email: u.email || '', nome: u.nome || u.email || u.uid }));
-    } else {
-      const emails = [];
-      if (data.responsavelFinanceiroEmail) emails.push(data.responsavelFinanceiroEmail);
-      if (Array.isArray(data.gestoresFinanceirosEmails)) emails.push(...data.gestoresFinanceirosEmails);
-      for (const email of emails) {
-        const snap = await getDocs(query(collection(db, 'usuarios'), where('email', '==', email)));
-        snap.forEach(d => members.push({ id: d.id, email: email, nome: d.data().nome || email }));
-      }
+async function loadTeam(user, perfil, data) {
+  let members = [];
+  if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
+    const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+    members = lista.map((u) => ({
+      id: u.uid,
+      email: u.email || '',
+      nome: u.nome || u.email || u.uid,
+    }));
+  } else {
+    const emails = [];
+    if (data.responsavelFinanceiroEmail)
+      emails.push(data.responsavelFinanceiroEmail);
+    if (Array.isArray(data.gestoresFinanceirosEmails))
+      emails.push(...data.gestoresFinanceirosEmails);
+    for (const email of emails) {
+      const snap = await getDocs(
+        query(collection(db, 'usuarios'), where('email', '==', email)),
+      );
+      snap.forEach((d) =>
+        members.push({ id: d.id, email: email, nome: d.data().nome || email }),
+      );
     }
-    members.forEach(addUserOption);
   }
+  members.forEach(addUserOption);
+}
 
 async function loadComms(uid) {
   const snap = await getDocs(collection(db, 'comunicacao'));
-  snap.forEach(docSnap => {
+  snap.forEach((docSnap) => {
     const c = docSnap.data();
     if (
       c.tipo !== 'mensagem' &&
-      ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) || c.remetente === uid)
+      ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) ||
+        c.remetente === uid)
     ) {
       renderComm(c);
     }
   });
 }
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) return;
   const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
   const data = userSnap.exists() ? userSnap.data() : {};
@@ -154,10 +194,10 @@ onAuthStateChanged(auth, async user => {
       collection(db, 'comunicacao'),
       where('tipo', '==', 'mensagem'),
       where('destinatarios', 'array-contains', user.uid),
-      orderBy('timestamp')
+      orderBy('timestamp'),
     ),
-    snap => {
-      snap.docChanges().forEach(change => {
+    (snap) => {
+      snap.docChanges().forEach((change) => {
         if (change.type !== 'added') return;
         const msg = change.doc.data();
         const otherId = msg.remetente;
@@ -166,22 +206,31 @@ onAuthStateChanged(auth, async user => {
         if (usersMap[otherId]) {
           openChat(usersMap[otherId]);
         } else {
-          getDoc(doc(db, 'usuarios', otherId)).then(ds => {
+          getDoc(doc(db, 'usuarios', otherId)).then((ds) => {
             if (!ds.exists()) return;
-            const u = { id: otherId, nome: ds.data().nome || ds.data().email || otherId, email: ds.data().email || '' };
+            const u = {
+              id: otherId,
+              nome: ds.data().nome || ds.data().email || otherId,
+              email: ds.data().email || '',
+            };
             usersMap[otherId] = u;
             openChat(u);
           });
         }
       });
-    }
+    },
   );
 
   document.getElementById('sendFileBtn').addEventListener('click', async () => {
     const file = document.getElementById('fileInput').files[0];
-    const dest = Array.from(document.getElementById('fileRecipients').selectedOptions).map(o => o.value);
+    const dest = Array.from(
+      document.getElementById('fileRecipients').selectedOptions,
+    ).map((o) => o.value);
     if (!file || dest.length === 0) return;
-    const storageRef = ref(storage, `comunicacao/${user.uid}/${Date.now()}_${file.name}`);
+    const storageRef = ref(
+      storage,
+      `comunicacao/${user.uid}/${Date.now()}_${file.name}`,
+    );
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
     await addDoc(collection(db, 'comunicacao'), {
@@ -190,42 +239,50 @@ onAuthStateChanged(auth, async user => {
       arquivoUrl: url,
       remetente: user.uid,
       destinatarios: dest,
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
     });
     document.getElementById('fileInput').value = '';
   });
 
-  document.getElementById('sendMessageBtn').addEventListener('click', async () => {
-    const texto = document.getElementById('messageText').value.trim();
-    const dest = Array.from(document.getElementById('messageRecipients').selectedOptions).map(o => o.value);
-    if (!texto || dest.length === 0) return;
-    for (const d of dest) {
-      const conversa = getConversationId(user.uid, d);
-      const participantes = [user.uid, d];
+  document
+    .getElementById('sendMessageBtn')
+    .addEventListener('click', async () => {
+      const texto = document.getElementById('messageText').value.trim();
+      const dest = Array.from(
+        document.getElementById('messageRecipients').selectedOptions,
+      ).map((o) => o.value);
+      if (!texto || dest.length === 0) return;
+      for (const d of dest) {
+        const conversa = getConversationId(user.uid, d);
+        const participantes = [user.uid, d];
+        await addDoc(collection(db, 'comunicacao'), {
+          tipo: 'mensagem',
+          texto,
+          remetente: user.uid,
+          destinatarios: participantes,
+          conversa,
+          timestamp: serverTimestamp(),
+        });
+        if (usersMap[d]) openChat(usersMap[d]);
+      }
+      document.getElementById('messageText').value = '';
+    });
+
+  document
+    .getElementById('sendAlertBtn')
+    .addEventListener('click', async () => {
+      const texto = document.getElementById('alertText').value.trim();
+      const dest = Array.from(
+        document.getElementById('alertRecipients').selectedOptions,
+      ).map((o) => o.value);
+      if (!texto || dest.length === 0) return;
       await addDoc(collection(db, 'comunicacao'), {
-        tipo: 'mensagem',
+        tipo: 'alerta',
         texto,
         remetente: user.uid,
-        destinatarios: participantes,
-        conversa,
-        timestamp: serverTimestamp()
+        destinatarios: dest,
+        timestamp: serverTimestamp(),
       });
-      if (usersMap[d]) openChat(usersMap[d]);
-    }
-    document.getElementById('messageText').value = '';
-  });
-
-  document.getElementById('sendAlertBtn').addEventListener('click', async () => {
-    const texto = document.getElementById('alertText').value.trim();
-    const dest = Array.from(document.getElementById('alertRecipients').selectedOptions).map(o => o.value);
-    if (!texto || dest.length === 0) return;
-    await addDoc(collection(db, 'comunicacao'), {
-      tipo: 'alerta',
-      texto,
-      remetente: user.uid,
-      destinatarios: dest,
-      timestamp: serverTimestamp()
+      document.getElementById('alertText').value = '';
     });
-    document.getElementById('alertText').value = '';
-  });
 });

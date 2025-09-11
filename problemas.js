@@ -1,6 +1,17 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 import { setDocWithCopy } from './secure-firestore.js';
 
@@ -13,7 +24,7 @@ let pecasCache = [];
 let pecasFiltradas = [];
 let pecasColRef = null;
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -24,25 +35,35 @@ onAuthStateChanged(auth, user => {
   const dataRInput = document.getElementById('dataR');
   if (dataRInput) dataRInput.value = new Date().toISOString().split('T')[0];
   document.getElementById('pecasForm')?.addEventListener('submit', salvarPeca);
-  document.getElementById('reembolsosForm')?.addEventListener('submit', salvarReembolso);
-  document.getElementById('filtroData')?.addEventListener('change', renderPecas);
-  document.getElementById('filtroStatus')?.addEventListener('change', renderPecas);
-  document.getElementById('searchPecas')?.addEventListener('input', renderPecas);
-  document.getElementById('limparReembolsos')?.addEventListener('click', ev => {
-    ev.preventDefault();
-    const form = document.getElementById('reembolsosForm');
-    form?.reset();
-    const di = document.getElementById('dataR');
-    if (di) di.value = new Date().toISOString().split('T')[0];
-  });
-  document.getElementById('limparPecas')?.addEventListener('click', ev => {
+  document
+    .getElementById('reembolsosForm')
+    ?.addEventListener('submit', salvarReembolso);
+  document
+    .getElementById('filtroData')
+    ?.addEventListener('change', renderPecas);
+  document
+    .getElementById('filtroStatus')
+    ?.addEventListener('change', renderPecas);
+  document
+    .getElementById('searchPecas')
+    ?.addEventListener('input', renderPecas);
+  document
+    .getElementById('limparReembolsos')
+    ?.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const form = document.getElementById('reembolsosForm');
+      form?.reset();
+      const di = document.getElementById('dataR');
+      if (di) di.value = new Date().toISOString().split('T')[0];
+    });
+  document.getElementById('limparPecas')?.addEventListener('click', (ev) => {
     ev.preventDefault();
     const form = document.getElementById('pecasForm');
     form?.reset();
     const di = document.getElementById('data');
     if (di) di.value = new Date().toISOString().split('T')[0];
   });
-  document.getElementById('limparFiltros')?.addEventListener('click', ev => {
+  document.getElementById('limparFiltros')?.addEventListener('click', (ev) => {
     ev.preventDefault();
     const fd = document.getElementById('filtroData');
     const fs = document.getElementById('filtroStatus');
@@ -69,7 +90,7 @@ async function salvarPeca(ev) {
     loja: form.loja.value.trim(),
     peca: form.peca.value.trim(),
     valorGasto: 0,
-    status: 'NÃO FEITO'
+    status: 'NÃO FEITO',
   };
   if (!registro.data || !registro.numero || !registro.peca) {
     alert('Preencha os campos obrigatórios.');
@@ -91,7 +112,7 @@ async function carregarPecas() {
   pecasColRef = collection(baseDoc, 'itens');
   const snap = await getDocs(pecasColRef);
   pecasCache = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map((d) => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   renderPecas();
 }
@@ -102,16 +123,20 @@ function renderPecas() {
   tbody.innerHTML = '';
   const filtroData = document.getElementById('filtroData')?.value;
   const filtroStatus = document.getElementById('filtroStatus')?.value;
-  const busca = document.getElementById('searchPecas')?.value.toLowerCase() || '';
-  pecasFiltradas = pecasCache.filter(d => {
+  const busca =
+    document.getElementById('searchPecas')?.value.toLowerCase() || '';
+  pecasFiltradas = pecasCache.filter((d) => {
     const dataOk = filtroData ? d.data === filtroData : true;
     const statusOk = filtroStatus ? d.status === filtroStatus : true;
-    const searchOk = busca ? Object.values(d).some(v => String(v).toLowerCase().includes(busca)) : true;
+    const searchOk = busca
+      ? Object.values(d).some((v) => String(v).toLowerCase().includes(busca))
+      : true;
     return dataOk && statusOk && searchOk;
   });
-  pecasFiltradas.forEach(d => {
+  pecasFiltradas.forEach((d) => {
     const tr = document.createElement('tr');
-    tr.className = 'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
+    tr.className =
+      'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
       <td class="p-2"><input type="text" class="nome-input w-full rounded-xl border-slate-300 p-1 focus:border-violet-500 focus:ring-violet-500" data-id="${d.id}" value="${d.nomeCliente || ''}"></td>
@@ -138,7 +163,11 @@ function renderPecas() {
     select.addEventListener('change', async (ev) => {
       const newStatus = ev.target.value;
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(pecasColRef, id), { ...rest, status: newStatus }, uidAtual);
+      await setDocWithCopy(
+        doc(pecasColRef, id),
+        { ...rest, status: newStatus },
+        uidAtual,
+      );
       d.status = newStatus;
       aplicarCorStatus(select, newStatus);
     });
@@ -147,7 +176,11 @@ function renderPecas() {
     nomeInput.addEventListener('change', async (ev) => {
       const newNome = ev.target.value.trim();
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(pecasColRef, id), { ...rest, nomeCliente: newNome }, uidAtual);
+      await setDocWithCopy(
+        doc(pecasColRef, id),
+        { ...rest, nomeCliente: newNome },
+        uidAtual,
+      );
       d.nomeCliente = newNome;
     });
 
@@ -155,7 +188,11 @@ function renderPecas() {
     valorInput.addEventListener('change', async (ev) => {
       const newValor = parseFloat(ev.target.value) || 0;
       const { id, ...rest } = d;
-      await setDocWithCopy(doc(pecasColRef, id), { ...rest, valorGasto: newValor }, uidAtual);
+      await setDocWithCopy(
+        doc(pecasColRef, id),
+        { ...rest, valorGasto: newValor },
+        uidAtual,
+      );
       d.valorGasto = newValor;
       ev.target.value = newValor.toFixed(2);
     });
@@ -165,8 +202,18 @@ function renderPecas() {
 
 function exportarCsv() {
   if (!pecasFiltradas.length) return;
-  const header = ['Data','Nome do Comprador','Apelido','Número','Loja','Peça Faltante','NF','Valor Gasto','Status'];
-  const rows = pecasFiltradas.map(d => [
+  const header = [
+    'Data',
+    'Nome do Comprador',
+    'Apelido',
+    'Número',
+    'Loja',
+    'Peça Faltante',
+    'NF',
+    'Valor Gasto',
+    'Status',
+  ];
+  const rows = pecasFiltradas.map((d) => [
     formatarData(d.data),
     d.nomeCliente || '',
     d.apelido || '',
@@ -175,9 +222,9 @@ function exportarCsv() {
     d.peca || '',
     d.nf || '',
     (Number(d.valorGasto) || 0).toFixed(2).replace('.', ','),
-    d.status || ''
+    d.status || '',
   ]);
-  const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+  const csv = [header, ...rows].map((r) => r.join(';')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -197,7 +244,7 @@ async function salvarReembolso(ev) {
     nf: form.nf.value.trim(),
     loja: form.loja.value.trim(),
     problema: form.problema.value.trim(),
-    valor: parseFloat(form.valor.value) || 0
+    valor: parseFloat(form.valor.value) || 0,
   };
   if (!registro.data || !registro.numero || !registro.problema) {
     alert('Preencha os campos obrigatórios.');
@@ -221,11 +268,12 @@ async function carregarReembolsos() {
   const colRef = collection(baseDoc, 'itens');
   const snap = await getDocs(colRef);
   const dados = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map((d) => ({ id: d.id, ...d.data() }))
     .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
-  dados.forEach(d => {
+  dados.forEach((d) => {
     const tr = document.createElement('tr');
-    tr.className = 'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
+    tr.className =
+      'border-t border-slate-100 hover:bg-slate-50 odd:bg-white even:bg-slate-50';
     tr.innerHTML = `
       <td class="p-2">${formatarData(d.data)}</td>
       <td class="p-2">${d.numero || ''}</td>
@@ -240,13 +288,38 @@ async function carregarReembolsos() {
 }
 
 function aplicarCorStatus(el, status) {
-  el.classList.remove('bg-amber-50','text-amber-700','border-amber-200','bg-blue-50','text-blue-700','border-blue-200','bg-emerald-50','text-emerald-700','border-emerald-200');
+  el.classList.remove(
+    'bg-amber-50',
+    'text-amber-700',
+    'border-amber-200',
+    'bg-blue-50',
+    'text-blue-700',
+    'border-blue-200',
+    'bg-emerald-50',
+    'text-emerald-700',
+    'border-emerald-200',
+  );
   if (status === 'RESOLVIDO') {
-    el.classList.add('bg-emerald-50','text-emerald-700','border','border-emerald-200');
+    el.classList.add(
+      'bg-emerald-50',
+      'text-emerald-700',
+      'border',
+      'border-emerald-200',
+    );
   } else if (status === 'EM ANDAMENTO') {
-    el.classList.add('bg-blue-50','text-blue-700','border','border-blue-200');
+    el.classList.add(
+      'bg-blue-50',
+      'text-blue-700',
+      'border',
+      'border-blue-200',
+    );
   } else {
-    el.classList.add('bg-amber-50','text-amber-700','border','border-amber-200');
+    el.classList.add(
+      'bg-amber-50',
+      'text-amber-700',
+      'border',
+      'border-amber-200',
+    );
   }
 }
 
@@ -259,13 +332,15 @@ function formatarData(str) {
 // Tabs
 for (const btn of document.querySelectorAll('.tab-btn')) {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.remove('border-violet-600','text-violet-600');
-      b.classList.add('border-transparent','text-slate-500');
+    document.querySelectorAll('.tab-btn').forEach((b) => {
+      b.classList.remove('border-violet-600', 'text-violet-600');
+      b.classList.add('border-transparent', 'text-slate-500');
     });
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    btn.classList.add('border-violet-600','text-violet-600');
-    btn.classList.remove('border-transparent','text-slate-500');
+    document
+      .querySelectorAll('.tab-panel')
+      .forEach((p) => p.classList.add('hidden'));
+    btn.classList.add('border-violet-600', 'text-violet-600');
+    btn.classList.remove('border-transparent', 'text-slate-500');
     document.getElementById(btn.dataset.tab).classList.remove('hidden');
   });
 }

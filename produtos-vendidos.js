@@ -1,6 +1,16 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDocFromSnap } from './secure-firestore.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
@@ -12,13 +22,14 @@ const auth = getAuth(app);
 let usuariosCache = [];
 let ultimoResumo = {};
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
   try {
-    const { usuarios, isGestor, isResponsavelFinanceiro, perfil } = await carregarUsuariosFinanceiros(db, user);
+    const { usuarios, isGestor, isResponsavelFinanceiro, perfil } =
+      await carregarUsuariosFinanceiros(db, user);
     if (!isGestor && !isResponsavelFinanceiro && perfil !== 'mentor') {
       window.location.href = 'index.html';
       return;
@@ -36,8 +47,12 @@ function setupFiltro() {
   const inicioEl = document.getElementById('inicioFiltro');
   const fimEl = document.getElementById('fimFiltro');
   const hoje = new Date();
-  const inicioPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-  const fimPadrao = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().split('T')[0];
+  const inicioPadrao = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+    .toISOString()
+    .split('T')[0];
+  const fimPadrao = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)
+    .toISOString()
+    .split('T')[0];
   if (inicioEl) inicioEl.value = inicioPadrao;
   if (fimEl) fimEl.value = fimPadrao;
   document.getElementById('btnAplicar')?.addEventListener('click', carregar);
@@ -77,30 +92,41 @@ async function carregarSkus(usuarios, inicio, fim) {
   // Carrega associações de SKU para agrupar os itens
   const mapaAssociados = {};
   const assocSnap = await getDocs(collection(db, 'skuAssociado'));
-  assocSnap.forEach(docSnap => {
+  assocSnap.forEach((docSnap) => {
     const data = docSnap.data();
     const principal = data.skuPrincipal || docSnap.id;
     mapaAssociados[principal] = principal;
-    (data.associados || []).forEach(sku => {
+    (data.associados || []).forEach((sku) => {
       mapaAssociados[sku] = principal;
     });
   });
 
   for (const usuario of usuarios) {
     const pass = getPassphrase() || `chave-${usuario.uid}`;
-    const snap = await getDocs(collection(db, `usuarios/${usuario.uid}/pedidostiny`));
+    const snap = await getDocs(
+      collection(db, `usuarios/${usuario.uid}/pedidostiny`),
+    );
     for (const docSnap of snap.docs) {
       const pedido = await loadSecureDocFromSnap(docSnap, pass);
       if (!pedido) continue;
 
-      const dataPedido = parseDate(pedido.data || pedido.dataPedido || pedido.date);
-      if (isNaN(dataPedido) || dataPedido < inicioDate || dataPedido > fimDate) continue;
+      const dataPedido = parseDate(
+        pedido.data || pedido.dataPedido || pedido.date,
+      );
+      if (isNaN(dataPedido) || dataPedido < inicioDate || dataPedido > fimDate)
+        continue;
 
-      const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
-      itens.forEach(item => {
+      const itens =
+        Array.isArray(pedido.itens) && pedido.itens.length
+          ? pedido.itens
+          : [pedido];
+      itens.forEach((item) => {
         const skuOriginal = item.sku || pedido.sku || 'sem-sku';
         const sku = mapaAssociados[skuOriginal] || skuOriginal;
-        const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
+        const qtd =
+          Number(
+            item.quantidade || item.qtd || item.quantity || item.total || 1,
+          ) || 1;
         resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
       });
     }
@@ -116,11 +142,12 @@ function renderLista(resumo) {
 
   const entries = Object.entries(resumo);
   if (!entries.length) {
-    lista.innerHTML = '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
+    lista.innerHTML =
+      '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
     return;
   }
 
-  const renderTabela = sortBy => {
+  const renderTabela = (sortBy) => {
     const items = [...entries];
     if (sortBy === 'sku') {
       items.sort((a, b) => a[0].localeCompare(b[0]));
@@ -128,7 +155,8 @@ function renderLista(resumo) {
       items.sort((a, b) => b[1] - a[1]);
     }
 
-    let html = '<table class="min-w-full text-sm"><thead><tr>' +
+    let html =
+      '<table class="min-w-full text-sm"><thead><tr>' +
       '<th></th>' +
       '<th id="thSku" class="text-left cursor-pointer">SKU</th>' +
       '<th id="thQtd" class="text-left cursor-pointer">Quantidade</th>' +
@@ -141,8 +169,12 @@ function renderLista(resumo) {
     html += '</tbody></table>';
     lista.innerHTML = html;
 
-    document.getElementById('thSku')?.addEventListener('click', () => renderTabela('sku'));
-    document.getElementById('thQtd')?.addEventListener('click', () => renderTabela('qtd'));
+    document
+      .getElementById('thSku')
+      ?.addEventListener('click', () => renderTabela('sku'));
+    document
+      .getElementById('thQtd')
+      ?.addEventListener('click', () => renderTabela('qtd'));
   };
 
   renderTabela('qtd');
@@ -151,7 +183,7 @@ function renderLista(resumo) {
 function mostrarSomaSelecionada() {
   const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
   let soma = 0;
-  checkboxes.forEach(cb => {
+  checkboxes.forEach((cb) => {
     soma += Number(cb.getAttribute('data-qtd')) || 0;
   });
 
@@ -171,7 +203,10 @@ function exportarExcel() {
     alert('Nenhum dado para exportar.');
     return;
   }
-  const dados = Object.entries(ultimoResumo).map(([sku, qtd]) => ({ SKU: sku, Quantidade: qtd }));
+  const dados = Object.entries(ultimoResumo).map(([sku, qtd]) => ({
+    SKU: sku,
+    Quantidade: qtd,
+  }));
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
@@ -181,8 +216,15 @@ function exportarExcel() {
   XLSX.writeFile(wb, nome);
 }
 
-document.getElementById('btnVerSoma')?.addEventListener('click', mostrarSomaSelecionada);
-document.getElementById('modalFechar')?.addEventListener('click', fecharModalSoma);
-document.getElementById('modalSoma')?.addEventListener('click', e => { if (e.target === e.currentTarget) fecharModalSoma(); });
-document.getElementById('btnExportarExcel')?.addEventListener('click', exportarExcel);
-
+document
+  .getElementById('btnVerSoma')
+  ?.addEventListener('click', mostrarSomaSelecionada);
+document
+  .getElementById('modalFechar')
+  ?.addEventListener('click', fecharModalSoma);
+document.getElementById('modalSoma')?.addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) fecharModalSoma();
+});
+document
+  .getElementById('btnExportarExcel')
+  ?.addEventListener('click', exportarExcel);

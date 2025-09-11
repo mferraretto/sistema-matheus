@@ -1,20 +1,33 @@
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, getDocs, addDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  collectionGroup,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
 import { encryptString, decryptString } from './crypto.js';
 import logger from './logger.js';
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 let isAdmin = false;
 
-onAuthStateChanged(auth, async user => {
-
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
-     return;
+    return;
   }
   try {
     const snap = await getDoc(doc(db, 'uid', user.uid));
@@ -28,8 +41,8 @@ onAuthStateChanged(auth, async user => {
 
 async function buscarShopee(term) {
   try {
-const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComponent(term)}`;
-    const res = await fetch(url, { method: "GET" });
+    const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComponent(term)}`;
+    const res = await fetch(url, { method: 'GET' });
 
     if (!res.ok) {
       console.error('Erro ao buscar Shopee:', res.status);
@@ -44,17 +57,21 @@ const url = `https://proxyshopeesearch-g6u4niudyq-uc.a.run.app?q=${encodeURIComp
   }
 }
 
-
 async function registrarHistorico(uid, id, dadosAntigos, dadosNovos) {
   const payload = {
     id,
     dataHora: new Date().toISOString(),
     dadosAntigos,
     dadosNovos,
-  uid
+    uid,
   };
-  const encrypted = await encryptString(JSON.stringify(payload), getPassphrase());
- await addDoc(collection(db, `uid/${uid}/monitoramento_historico`), { encrypted });;
+  const encrypted = await encryptString(
+    JSON.stringify(payload),
+    getPassphrase(),
+  );
+  await addDoc(collection(db, `uid/${uid}/monitoramento_historico`), {
+    encrypted,
+  });
 }
 
 async function monitorar() {
@@ -64,25 +81,31 @@ async function monitorar() {
     return;
   }
 
-   let snap;
+  let snap;
 
   if (!isAdmin) {
     qAnuncios = query(qAnuncios, where('uid', '==', user.uid));
-      snap = await getDocs(collection(db, `uid/${user.uid}/anuncios`));
+    snap = await getDocs(collection(db, `uid/${user.uid}/anuncios`));
   } else {
     snap = await getDocs(collectionGroup(db, 'anuncios'));
   }
 
   for (const docSnap of snap.docs) {
-  const ownerUid = docSnap.ref.parent.parent.id;
-    const dados = await loadSecureDoc(db, `uid/${ownerUid}/anuncios`, docSnap.id, getPassphrase()) || {};
+    const ownerUid = docSnap.ref.parent.parent.id;
+    const dados =
+      (await loadSecureDoc(
+        db,
+        `uid/${ownerUid}/anuncios`,
+        docSnap.id,
+        getPassphrase(),
+      )) || {};
     if (!isAdmin && ownerUid !== user.uid) {
       continue;
     }
-    const termo = (dados.nome || '').trim();  // <- CORRIGIDO
+    const termo = (dados.nome || '').trim(); // <- CORRIGIDO
     if (!termo) continue;
 
-    logger.log("Buscando por:", termo);
+    logger.log('Buscando por:', termo);
 
     const resultados = await buscarShopee(termo);
     if (!resultados.length) continue;
@@ -90,7 +113,7 @@ async function monitorar() {
     const item = resultados[0];
     const ref = doc(db, 'uid', ownerUid, 'monitoramento', docSnap.id);
     const antigaSnap = await getDoc(ref);
- let antigos = {};
+    let antigos = {};
     if (antigaSnap.exists()) {
       const enc = antigaSnap.data().encrypted;
       if (enc) {
@@ -104,24 +127,37 @@ async function monitorar() {
       vendas: item.sold,
       shopId: item.shopid,
       itemId: item.itemid,
-      imagem: item.image
+      imagem: item.image,
     };
 
     if (antigaSnap.exists()) {
-      const mudou = Object.keys(dadosNovos).some(k => dadosNovos[k] !== antigos[k]);
+      const mudou = Object.keys(dadosNovos).some(
+        (k) => dadosNovos[k] !== antigos[k],
+      );
       if (mudou) {
-         await saveSecureDoc(db, `uid/${ownerUid}/monitoramento`, docSnap.id, dadosNovos, getPassphrase());
+        await saveSecureDoc(
+          db,
+          `uid/${ownerUid}/monitoramento`,
+          docSnap.id,
+          dadosNovos,
+          getPassphrase(),
+        );
         await registrarHistorico(ownerUid, docSnap.id, antigos, dadosNovos);
       }
     } else {
-      await saveSecureDoc(db, `uid/${ownerUid}/monitoramento`, docSnap.id, dadosNovos, getPassphrase());
+      await saveSecureDoc(
+        db,
+        `uid/${ownerUid}/monitoramento`,
+        docSnap.id,
+        dadosNovos,
+        getPassphrase(),
+      );
       await registrarHistorico(ownerUid, docSnap.id, {}, dadosNovos);
     }
   }
 
   alert('Monitoramento concluído');
 }
-
 
 window.executarMonitoramento = monitorar;
 async function pesquisarShopee() {
@@ -135,12 +171,15 @@ async function pesquisarShopee() {
   container.innerHTML = '<div class="text-center">Carregando...</div>';
   const resultados = await buscarShopee(termo);
   if (!resultados.length) {
-    container.innerHTML = '<div class="text-center">Nenhum resultado encontrado.</div>';
+    container.innerHTML =
+      '<div class="text-center">Nenhum resultado encontrado.</div>';
     return;
   }
-  const linhas = resultados.map(r => {
-    return `<tr><td>${r.name}</td><td>R$ ${r.price}</td><td>${r.sold}</td></tr>`;
-  }).join('');
+  const linhas = resultados
+    .map((r) => {
+      return `<tr><td>${r.name}</td><td>R$ ${r.price}</td><td>${r.sold}</td></tr>`;
+    })
+    .join('');
   container.innerHTML = `<table class="w-full text-sm"><thead><tr><th>Nome</th><th>Preço</th><th>Vendas</th></tr></thead><tbody>${linhas}</tbody></table>`;
 }
 
@@ -163,22 +202,26 @@ async function carregarHistorico() {
   const user = auth.currentUser;
   let snap;
   if (!isAdmin) {
-    snap = await getDocs(collection(db, `uid/${user.uid}/monitoramento_historico`));
+    snap = await getDocs(
+      collection(db, `uid/${user.uid}/monitoramento_historico`),
+    );
   } else {
     snap = await getDocs(collectionGroup(db, 'monitoramento_historico'));
   }
-    const registros = [];
+  const registros = [];
   for (const d of snap.docs) {
     const enc = d.data().encrypted;
     if (!enc) continue;
     const txt = await decryptString(enc, getPassphrase());
-const obj = JSON.parse(txt);
+    const obj = JSON.parse(txt);
     if (isAdmin) obj.uid = d.ref.parent.parent.id;
     registros.push(obj);
   }
-  const linhas = registros.map(r => {
-    return `<tr><td>${r.id}</td><td>${new Date(r.dataHora).toLocaleDateString()}</td><td>R$ ${r.dadosNovos.preco}</td><td>${r.dadosNovos.vendas}</td></tr>`;
-  }).join('');
+  const linhas = registros
+    .map((r) => {
+      return `<tr><td>${r.id}</td><td>${new Date(r.dataHora).toLocaleDateString()}</td><td>R$ ${r.dadosNovos.preco}</td><td>${r.dadosNovos.vendas}</td></tr>`;
+    })
+    .join('');
   container.innerHTML = `<table class="w-full text-sm"><thead><tr><th>ID</th><th>Data</th><th>Preço</th><th>Vendas</th></tr></thead><tbody>${linhas}</tbody></table>`;
 }
 

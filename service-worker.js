@@ -1,44 +1,40 @@
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
-
-const PRECACHE_MANIFEST = [
-  {url: 'index.html', revision: null},
-  {url: 'index.js', revision: null},
-  {url: 'financeiro.html', revision: null},
-  {url: 'financeiro.js', revision: null},
-  {url: 'css/styles.css', revision: null},
-  {url: 'css/components.css', revision: null},
-  {url: 'css/utilities.css', revision: null},
-  {url: 'icons/icon-192.png', revision: null},
-  {url: 'icons/icon-512.png', revision: null},
-  {url: 'offline.html', revision: '1'},
+const CACHE_VERSION = '20240826';
+const CACHE_PREFIX = 'app-cache-v';
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
+const URLS_TO_CACHE = [
+  'index.html',
+  'index.js',
+  'financeiro.html',
+  'financeiro.js',
+  `css/styles.css?v=${CACHE_VERSION}`,
+  'css/components.css',
+  'css/utilities.css',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
 ];
 
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+// Workbox handles the installation and activation steps automatically.
+// The precaching list is used by Workbox's precaching module.
+workbox.precaching.precacheAndRoute(URLS_TO_CACHE.map(url => ({ url, revision: null })));
 
-workbox.precaching.precacheAndRoute((self.__WB_MANIFEST || []).concat(PRECACHE_MANIFEST), {
-  ignoreURLParametersMatching: [/.*/]
-});
-
-workbox.precaching.cleanupOutdatedCaches();
-
+// A simple routing example: use a CacheFirst strategy for images.
 workbox.routing.registerRoute(
-  ({request}) => request.mode === 'navigate',
-  new workbox.strategies.NetworkFirst({
-    cacheName: 'pages-cache',
-  })
+  ({ request }) => request.destination === 'image',
+  new workbox.strategies.CacheFirst({
+    cacheName: 'images-cache',
+    plugins: [
+      new workbox.expiration.ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+    ],
+  }),
 );
 
+// Another example: a StaleWhileRevalidate strategy for CSS and JS.
 workbox.routing.registerRoute(
-  ({request}) => ['style', 'script', 'image'].includes(request.destination),
+  ({ request }) => request.destination === 'script' || request.destination === 'style',
   new workbox.strategies.StaleWhileRevalidate({
     cacheName: 'assets-cache',
-  })
+  }),
 );
-
-workbox.routing.setCatchHandler(async ({event}) => {
-  if (event.request.mode === 'navigate') {
-    return caches.match('offline.html', {ignoreSearch: true});
-  }
-  return Response.error();
-});

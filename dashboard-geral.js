@@ -1,6 +1,20 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc, query, where } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 
@@ -12,18 +26,28 @@ const opts = {
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
   plugins: {
-    legend: { position: 'top', labels: { boxWidth: 12, color: '#0f172a', font: { size: 12 } } },
+    legend: {
+      position: 'top',
+      labels: { boxWidth: 12, color: '#0f172a', font: { size: 12 } },
+    },
     tooltip: {
       callbacks: {
-        label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-      }
-    }
+        label: (ctx) =>
+          `${ctx.dataset.label}: R$ ${ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      },
+    },
   },
   scales: {
-    x: { grid: { display: false }, ticks: { color: '#334155', font: { size: 12 } } },
-    y: { grid: { color: 'rgba(148,163,184,0.2)' }, ticks: { color: '#334155', font: { size: 12 } } }
+    x: {
+      grid: { display: false },
+      ticks: { color: '#334155', font: { size: 12 } },
+    },
+    y: {
+      grid: { color: 'rgba(148,163,184,0.2)' },
+      ticks: { color: '#334155', font: { size: 12 } },
+    },
   },
-  elements: { line: { tension: 0.35 }, point: { radius: 0, hoverRadius: 4 } }
+  elements: { line: { tension: 0.35 }, point: { radius: 0, hoverRadius: 4 } },
 };
 let dashboardData = {};
 
@@ -37,16 +61,25 @@ function initChart(ctx, config) {
 function toNumber(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = v
+      .replace(/[R$\s]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
     return parseFloat(n) || 0;
   }
   return 0;
 }
 async function carregarDashboard(user, mesSelecionado) {
   const uid = user.uid;
-  const baseDate = mesSelecionado ? new Date(mesSelecionado + '-01') : new Date();
+  const baseDate = mesSelecionado
+    ? new Date(mesSelecionado + '-01')
+    : new Date();
   const mesAtual = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
-  const totalDiasMes = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate();
+  const totalDiasMes = new Date(
+    baseDate.getFullYear(),
+    baseDate.getMonth() + 1,
+    0,
+  ).getDate();
 
   let totalBruto = 0;
   let totalLiquido = 0;
@@ -58,16 +91,20 @@ async function carregarDashboard(user, mesSelecionado) {
   const mesesComparativos = [];
   for (let i = 0; i < 3; i++) {
     const dt = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
-    mesesComparativos.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`);
+    mesesComparativos.push(
+      `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`,
+    );
   }
   const comparativo = {};
-  mesesComparativos.forEach(m => comparativo[m] = 0);
+  mesesComparativos.forEach((m) => (comparativo[m] = 0));
 
   const snap = await getDocs(collection(db, `uid/${uid}/faturamento`));
   for (const docSnap of snap.docs) {
-    const mesDoc = docSnap.id.slice(0,7);
+    const mesDoc = docSnap.id.slice(0, 7);
     if (!mesesComparativos.includes(mesDoc)) continue;
-    const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`));
+    const lojasSnap = await getDocs(
+      collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`),
+    );
     for (const lojaDoc of lojasSnap.docs) {
       let dados = lojaDoc.data();
       if (dados.encrypted) {
@@ -76,7 +113,9 @@ async function carregarDashboard(user, mesSelecionado) {
         try {
           txt = await decryptString(dados.encrypted, pass);
         } catch (e) {
-          try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+          try {
+            txt = await decryptString(dados.encrypted, uid);
+          } catch (_) {}
         }
         if (txt) dados = JSON.parse(txt);
       }
@@ -93,7 +132,8 @@ async function carregarDashboard(user, mesSelecionado) {
         porLoja[lojaDoc.id] = (porLoja[lojaDoc.id] || 0) + liquido;
         const cancel = toNumber(dados.valorCancelado);
         const cancelAlt = toNumber(dados.cancelado);
-        cancelamentosDiario[docSnap.id] = (cancelamentosDiario[docSnap.id] || 0) + (cancel || cancelAlt);
+        cancelamentosDiario[docSnap.id] =
+          (cancelamentosDiario[docSnap.id] || 0) + (cancel || cancelAlt);
       }
     }
   }
@@ -102,7 +142,9 @@ async function carregarDashboard(user, mesSelecionado) {
 
   let meta = 0;
   try {
-    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesAtual));
+    const metaDoc = await getDoc(
+      doc(db, `uid/${uid}/metasFaturamento`, mesAtual),
+    );
     if (metaDoc.exists()) meta = toNumber(metaDoc.data().valor);
   } catch (err) {
     console.error('Erro ao buscar meta:', err);
@@ -111,14 +153,16 @@ async function carregarDashboard(user, mesSelecionado) {
   const metaDiaria = meta / totalDiasMes;
   let diasAcima = 0;
   let diasAbaixo = 0;
-  Object.keys(diarioLiquido).forEach(dia => {
+  Object.keys(diarioLiquido).forEach((dia) => {
     if (diarioLiquido[dia] >= metaDiaria) diasAcima++;
     else diasAbaixo++;
   });
 
   let totalSaques = 0;
   try {
-    const resumoDoc = await getDoc(doc(db, 'usuarios', uid, 'comissoes', mesAtual));
+    const resumoDoc = await getDoc(
+      doc(db, 'usuarios', uid, 'comissoes', mesAtual),
+    );
     if (resumoDoc.exists()) {
       totalSaques = toNumber(resumoDoc.data().totalSacado);
     }
@@ -150,16 +194,27 @@ async function carregarDashboard(user, mesSelecionado) {
       if (d.encrypted) {
         const pass = getPassphrase() || `chave-${uid}`;
         let txt;
-        try { txt = await decryptString(d.encrypted, pass); }
-        catch (e) {
-          try { txt = await decryptString(d.encrypted, uid); } catch (_) {}
+        try {
+          txt = await decryptString(d.encrypted, pass);
+        } catch (e) {
+          try {
+            txt = await decryptString(d.encrypted, uid);
+          } catch (_) {}
         }
         if (txt) d = JSON.parse(txt);
       }
-      arr.push({ nome: d.nome || p.id, sku: d.sku || p.id, vendas: toNumber(d.vendas), estoque: toNumber(d.estoque) });
+      arr.push({
+        nome: d.nome || p.id,
+        sku: d.sku || p.id,
+        vendas: toNumber(d.vendas),
+        estoque: toNumber(d.estoque),
+      });
     }
-    topProdutos = arr.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas).slice(0, 10);
-    produtosCriticos = arr.filter(p => p.estoque > 0 && p.vendas === 0);
+    topProdutos = arr
+      .filter((p) => p.vendas > 0)
+      .sort((a, b) => b.vendas - a.vendas)
+      .slice(0, 10);
+    produtosCriticos = arr.filter((p) => p.estoque > 0 && p.vendas === 0);
   } catch (err) {
     console.error('Erro ao carregar produtos', err);
   }
@@ -171,9 +226,12 @@ async function carregarDashboard(user, mesSelecionado) {
     const mapa = {};
     for (const docSnap of skusSnap.docs) {
       if (!docSnap.id.includes(mesAtual)) continue;
-      const listaRef = collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`);
+      const listaRef = collection(
+        db,
+        `uid/${uid}/skusVendidos/${docSnap.id}/lista`,
+      );
       const listaSnap = await getDocs(listaRef);
-      listaSnap.forEach(item => {
+      listaSnap.forEach((item) => {
         const d = item.data();
         const sku = d.sku || item.id;
         const qtd = toNumber(d.total || d.quantidade);
@@ -224,22 +282,46 @@ async function carregarDashboard(user, mesSelecionado) {
     produtosCriticos,
     topSkus,
     rentabilidade,
-    topRentaveis
+    topRentaveis,
   };
   window.dashboardData = dashboardData;
 
-  renderKpis(totalBruto, totalLiquido, totalUnidades, ticketMedio, meta, diasAcima, diasAbaixo, totalSaques);
+  renderKpis(
+    totalBruto,
+    totalLiquido,
+    totalUnidades,
+    ticketMedio,
+    meta,
+    diasAcima,
+    diasAbaixo,
+    totalSaques,
+  );
   renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja);
   renderTopSkus(topSkus);
   renderRentabilidade(rentabilidade, topRentaveis);
   renderTopSkusComparativo(topSkus, rentabilidade);
-  renderComparativoMeta(totalLiquido, meta, diarioLiquido, totalDiasMes, mesAtual);
+  renderComparativoMeta(
+    totalLiquido,
+    meta,
+    diarioLiquido,
+    totalDiasMes,
+    mesAtual,
+  );
   await carregarPrevisaoDashboard(uid, baseDate);
   setupTabs();
   setupSubTabs();
 }
 
-function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaixo, saques) {
+function renderKpis(
+  bruto,
+  liquido,
+  unidades,
+  ticket,
+  meta,
+  diasAcima,
+  diasAbaixo,
+  saques,
+) {
   const pctBruto = meta ? (bruto / meta) * 100 : 0;
   const pctLiquido = meta ? (liquido / meta) * 100 : 0;
   const kpis = document.getElementById('kpis');
@@ -256,40 +338,60 @@ function renderKpis(bruto, liquido, unidades, ticket, meta, diasAcima, diasAbaix
     card('Faturamento Bruto', `R$ ${bruto.toLocaleString('pt-BR')}`) +
     card('Faturamento Líquido', `R$ ${liquido.toLocaleString('pt-BR')}`) +
     card('Unidades Vendidas', `${unidades}`) +
-    card('Ticket Médio', `R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`) +
-    card('% Meta Atingida Bruto', `${pctBruto.toFixed(1)}%`, 'Meta atingida (bruto)') +
-    card('% Meta Atingida Líquido', `${pctLiquido.toFixed(1)}%`, 'Meta atingida (líquido)') +
+    card(
+      'Ticket Médio',
+      `R$ ${ticket.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    ) +
+    card(
+      '% Meta Atingida Bruto',
+      `${pctBruto.toFixed(1)}%`,
+      'Meta atingida (bruto)',
+    ) +
+    card(
+      '% Meta Atingida Líquido',
+      `${pctLiquido.toFixed(1)}%`,
+      'Meta atingida (líquido)',
+    ) +
     card('Dias Acima da Meta', `${diasAcima}`) +
     card('Dias Abaixo da Meta', `${diasAbaixo}`) +
-    card('Total Saques', `R$ ${saques.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    card(
+      'Total Saques',
+      `R$ ${saques.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    );
 }
 
-function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja) {
+function renderCharts(
+  diarioBruto,
+  diarioLiquido,
+  diasAcima,
+  diasAbaixo,
+  porLoja,
+) {
   const dias = Object.keys(diarioBruto).sort();
   const ctxLinhas = document.getElementById('evolucaoChart');
   if (ctxLinhas) {
     initChart(ctxLinhas, {
       type: 'line',
       data: {
-        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
+        labels: dias.map((d) => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
           {
             label: 'Bruto',
-            data: dias.map(d => diarioBruto[d]),
+            data: dias.map((d) => diarioBruto[d]),
             borderColor: 'var(--primary)',
             backgroundColor: 'rgba(99,102,241,0.2)',
-            tension: 0.3
+            tension: 0.3,
           },
           {
             label: 'Líquido',
-            data: dias.map(d => diarioLiquido[d]),
+            data: dias.map((d) => diarioLiquido[d]),
             borderColor: '#f97316',
             backgroundColor: 'rgba(249,115,22,0.2)',
-            tension: 0.3
-          }
-        ]
+            tension: 0.3,
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 
@@ -299,12 +401,14 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'bar',
       data: {
         labels: ['Acima da Meta', 'Abaixo da Meta'],
-        datasets: [{
-          data: [diasAcima, diasAbaixo],
-          backgroundColor: ['#86efac', '#fca5a5']
-        }]
+        datasets: [
+          {
+            data: [diasAcima, diasAbaixo],
+            backgroundColor: ['#86efac', '#fca5a5'],
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 
@@ -315,18 +419,27 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
       type: 'pie',
       data: {
         labels: lojas,
-        datasets: [{
-          data: lojas.map(l => porLoja[l]),
-          backgroundColor: ['var(--primary-light)','var(--highlight)','var(--primary)','var(--success)','#f59e0b','#ef4444']
-        }]
+        datasets: [
+          {
+            data: lojas.map((l) => porLoja[l]),
+            backgroundColor: [
+              'var(--primary-light)',
+              'var(--highlight)',
+              'var(--primary)',
+              'var(--success)',
+              '#f59e0b',
+              '#ef4444',
+            ],
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 
   const ctxMargem = document.getElementById('margemChart');
   if (ctxMargem) {
-    const margens = dias.map(d => {
+    const margens = dias.map((d) => {
       const bruto = diarioBruto[d] || 0;
       const liquido = diarioLiquido[d] || 0;
       return bruto ? (liquido / bruto) * 100 : 0;
@@ -334,16 +447,18 @@ function renderCharts(diarioBruto, diarioLiquido, diasAcima, diasAbaixo, porLoja
     initChart(ctxMargem, {
       type: 'line',
       data: {
-        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
-        datasets: [{
-          label: 'Margem (%)',
-          data: margens,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16,185,129,0.2)',
-          tension: 0.3
-        }]
+        labels: dias.map((d) => new Date(d).toLocaleDateString('pt-BR')),
+        datasets: [
+          {
+            label: 'Margem (%)',
+            data: margens,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.2)',
+            tension: 0.3,
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 }
@@ -353,11 +468,11 @@ function renderTopSkus(lista, root = document) {
   if (!el) return;
   el.innerHTML = lista
     .map(
-      p =>
+      (p) =>
         `<li style="display:flex;justify-content:space-between;">
           <span>${p.sku}</span>
           <span>${p.vendas.toLocaleString('pt-BR')}</span>
-        </li>`
+        </li>`,
     )
     .join('');
 }
@@ -365,10 +480,10 @@ function renderTopSkus(lista, root = document) {
 function renderTopSkusComparativo(lista, rentabilidade, root = document) {
   const ctx = root.querySelector('#topSkusMargemChart');
   if (!ctx) return;
-  const labels = lista.map(p => p.sku);
-  const vendas = lista.map(p => p.vendas);
-  const margens = lista.map(p => {
-    const r = rentabilidade.find(x => x.sku === p.sku);
+  const labels = lista.map((p) => p.sku);
+  const vendas = lista.map((p) => p.vendas);
+  const margens = lista.map((p) => {
+    const r = rentabilidade.find((x) => x.sku === p.sku);
     if (!r) return 0;
     return r.margem > 1 ? r.margem : r.margem * 100;
   });
@@ -376,18 +491,42 @@ function renderTopSkusComparativo(lista, rentabilidade, root = document) {
     data: {
       labels,
       datasets: [
-        { type: 'bar', label: 'Vendas', data: vendas, backgroundColor: 'var(--primary)', yAxisID: 'y' },
-        { type: 'line', label: 'Margem (%)', data: margens, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.2)', yAxisID: 'y1', tension: 0.3 }
-      ]
+        {
+          type: 'bar',
+          label: 'Vendas',
+          data: vendas,
+          backgroundColor: 'var(--primary)',
+          yAxisID: 'y',
+        },
+        {
+          type: 'line',
+          label: 'Margem (%)',
+          data: margens,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.2)',
+          yAxisID: 'y1',
+          tension: 0.3,
+        },
+      ],
     },
     options: {
       ...opts,
       scales: {
         ...opts.scales,
-        y: { beginAtZero: true, position: 'left', ticks: { font: { size: 10 } } },
-        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%', font: { size: 10 } }, suggestedMax: 100 }
-      }
-    }
+        y: {
+          beginAtZero: true,
+          position: 'left',
+          ticks: { font: { size: 10 } },
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { callback: (v) => v + '%', font: { size: 10 } },
+          suggestedMax: 100,
+        },
+      },
+    },
   });
 }
 
@@ -395,45 +534,55 @@ function renderRentabilidade(lista, top5, root = document) {
   const tbody = root.querySelector('#tabelaRentabilidade');
   if (tbody) {
     tbody.innerHTML = lista
-      .map(p => `
+      .map(
+        (p) => `
         <tr>
           <td>${p.sku}</td>
-          <td style="text-align:right">R$ ${p.receita.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td style="text-align:right">R$ ${p.custo.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-          <td style="text-align:right">R$ ${p.lucro.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td style="text-align:right">R$ ${p.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="text-align:right">R$ ${p.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="text-align:right">R$ ${p.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           <td style="text-align:right">${p.margem.toFixed(1)}%</td>
       </tr>
-      `)
+      `,
+      )
       .join('');
   }
   const topEl = root.querySelector('#topRentaveis');
   if (topEl) {
     topEl.innerHTML = top5
       .map(
-        p =>
+        (p) =>
           `<li style="display:flex;justify-content:space-between;">
             <span>${p.sku}</span>
             <span>R$ ${p.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </li>`
+          </li>`,
       )
       .join('');
   }
 }
 
-function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAtual) {
+function renderComparativoMeta(
+  liquido,
+  meta,
+  diarioLiquido,
+  totalDiasMes,
+  mesAtual,
+) {
   const barCtx = document.getElementById('metaComparativoChart');
   if (barCtx) {
     initChart(barCtx, {
       type: 'bar',
       data: {
         labels: ['Meta', 'Realizado'],
-        datasets: [{
-          label: 'Valor (R$)',
-          data: [meta, liquido],
-          backgroundColor: ['#9ca3af', 'var(--primary)']
-        }]
+        datasets: [
+          {
+            label: 'Valor (R$)',
+            data: [meta, liquido],
+            backgroundColor: ['#9ca3af', 'var(--primary)'],
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 
@@ -466,18 +615,18 @@ function renderComparativoMeta(liquido, meta, diarioLiquido, totalDiasMes, mesAt
             data: realAcum,
             borderColor: 'var(--primary)',
             backgroundColor: 'rgba(99,102,241,0.2)',
-            tension: 0.3
+            tension: 0.3,
           },
           {
             label: 'Meta',
             data: metaAcum,
             borderColor: '#9ca3af',
             backgroundColor: 'rgba(156,163,175,0.2)',
-            tension: 0.3
-          }
-        ]
+            tension: 0.3,
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 }
@@ -487,17 +636,17 @@ function setupTabs() {
   const tabs = {
     overview: document.getElementById('tab-overview'),
     meta: document.getElementById('tab-meta'),
-    estrategica: document.getElementById('tab-estrategica')
+    estrategica: document.getElementById('tab-estrategica'),
   };
-  buttons.forEach(btn => {
+  buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => {
+      buttons.forEach((b) => {
         b.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
         b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
       });
       btn.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
       btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
-      Object.values(tabs).forEach(t => t.classList.add('hidden'));
+      Object.values(tabs).forEach((t) => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.tab];
       if (alvo) alvo.classList.remove('hidden');
     });
@@ -509,17 +658,17 @@ function setupSubTabs() {
   const tabs = {
     resumo: document.getElementById('subtab-resumo'),
     desempenho: document.getElementById('subtab-desempenho'),
-    previsao: document.getElementById('subtab-previsao')
+    previsao: document.getElementById('subtab-previsao'),
   };
-  buttons.forEach(btn => {
+  buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      buttons.forEach(b => {
+      buttons.forEach((b) => {
         b.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
         b.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
       });
       btn.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
       btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
-      Object.values(tabs).forEach(t => t.classList.add('hidden'));
+      Object.values(tabs).forEach((t) => t.classList.add('hidden'));
       const alvo = tabs[btn.dataset.subtab];
       if (alvo) alvo.classList.remove('hidden');
     });
@@ -540,7 +689,8 @@ async function carregarPrevisaoDashboard(uid, baseDate = new Date()) {
   try {
     const docSnap = await getDoc(doc(db, `uid/${uid}/previsoes`, anoMes));
     if (!docSnap.exists()) {
-      cards.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+      cards.innerHTML =
+        '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
       return;
     }
     const previsao = docSnap.data() || {};
@@ -564,9 +714,12 @@ async function carregarProdutosEMetas(uid) {
       if (d.encrypted) {
         const pass = getPassphrase() || `chave-${uid}`;
         let txt;
-        try { txt = await decryptString(d.encrypted, pass); }
-        catch (e) {
-          try { txt = await decryptString(d.encrypted, uid); } catch (_) {}
+        try {
+          txt = await decryptString(d.encrypted, pass);
+        } catch (e) {
+          try {
+            txt = await decryptString(d.encrypted, uid);
+          } catch (_) {}
         }
         if (txt) d = JSON.parse(txt);
       }
@@ -581,15 +734,15 @@ async function carregarProdutosEMetas(uid) {
   try {
     const q = query(collection(db, 'metasSKU'), where('uid', '==', uid));
     const metasSnap = await getDocs(q);
-    metasSnap.forEach(m => {
-      const originalSku = m.id.replaceAll('__','/');
+    metasSnap.forEach((m) => {
+      const originalSku = m.id.replaceAll('__', '/');
       metas[originalSku] = toNumber(m.data().valor);
     });
   } catch (err) {
     console.error('Erro ao carregar metasSKU', err);
   }
 
-  Object.keys(precos).forEach(sku => {
+  Object.keys(precos).forEach((sku) => {
     if (metas[sku] === undefined) metas[sku] = precos[sku];
   });
   return { precos, metas };
@@ -620,23 +773,26 @@ function renderPrevisaoChart(canvas, previsao) {
     type: 'bar',
     data: {
       labels: ['Pessimista', 'Base', 'Otimista'],
-      datasets: [{
-        label: 'Projeção',
-        data: [pess, base, otm],
-        backgroundColor: ['#ec4899', '#60a5fa', '#34d399']
-      }]
+      datasets: [
+        {
+          label: 'Projeção',
+          data: [pess, base, otm],
+          backgroundColor: ['#ec4899', '#60a5fa', '#34d399'],
+        },
+      ],
     },
     options: {
       ...opts,
-      plugins: { ...opts.plugins, legend: { display: false } }
-    }
+      plugins: { ...opts.plugins, legend: { display: false } },
+    },
   });
 }
 
 function renderPrevisaoTopSkus(container, previsao, precos, metas) {
   const dadosSkus = Object.entries(previsao.skus || {});
   if (!dadosSkus.length) {
-    container.innerHTML = '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
+    container.innerHTML =
+      '<p class="text-gray-500">Nenhuma previsão disponível.</p>';
     return;
   }
 
@@ -653,13 +809,13 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
   const cenarios = [
     { titulo: 'Pessimista', fator: 0.85 },
     { titulo: 'Base', fator: 1 },
-    { titulo: 'Otimista', fator: 1.15 }
+    { titulo: 'Otimista', fator: 1.15 },
   ];
 
   const tabelas = cenarios
-    .map(c => {
+    .map((c) => {
       const linhas = baseLista
-        .map(item => {
+        .map((item) => {
           const quantidade = item.quantidade * c.fator;
           const bruto = item.bruto * c.fator;
           return `
@@ -693,7 +849,9 @@ function renderPrevisaoTopSkus(container, previsao, precos, metas) {
   container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">${tabelas}</div>`;
 }
 
-document.getElementById('imprimirFechamentoBtn')?.addEventListener('click', exportarFechamentoMes);
+document
+  .getElementById('imprimirFechamentoBtn')
+  ?.addEventListener('click', exportarFechamentoMes);
 
 // Expose function globally in case the button is rendered dynamically
 window.exportarFechamentoMes = exportarFechamentoMes;
@@ -722,29 +880,36 @@ async function exportarFechamentoMes() {
     initChart(diarioCtx, {
       type: 'line',
       data: {
-        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
+        labels: dias.map((d) => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
           {
             label: 'Bruto',
-            data: dias.map(d => dashboardData.diarioBruto[d] || 0),
+            data: dias.map((d) => dashboardData.diarioBruto[d] || 0),
             borderColor: 'var(--primary-dark)',
             backgroundColor: 'rgba(79,70,229,0.15)',
             fill: false,
-            tension: 0.3
+            tension: 0.3,
           },
           {
             label: 'Líquido',
-            data: dias.map(d => dashboardData.diarioLiquido[d] || 0),
+            data: dias.map((d) => dashboardData.diarioLiquido[d] || 0),
             borderColor: 'var(--primary)',
             backgroundColor: 'rgba(99,102,241,0.15)',
             fill: false,
-            tension: 0.3
-          }
-        ]
+            tension: 0.3,
+          },
+        ],
       },
       options: {
         ...opts,
-        plugins: { ...opts.plugins, title: { display: true, text: 'Faturamento Diário Bruto vs. Líquido', font: { size: 14 } } },
+        plugins: {
+          ...opts.plugins,
+          title: {
+            display: true,
+            text: 'Faturamento Diário Bruto vs. Líquido',
+            font: { size: 14 },
+          },
+        },
         scales: {
           ...opts.scales,
           x: {
@@ -753,12 +918,12 @@ async function exportarFechamentoMes() {
               maxTicksLimit: 10,
               font: { size: 10 },
               maxRotation: 45,
-              minRotation: 45
-            }
+              minRotation: 45,
+            },
           },
-          y: { ticks: { font: { size: 10 } } }
-        }
-      }
+          y: { ticks: { font: { size: 10 } } },
+        },
+      },
     });
   }
 
@@ -770,34 +935,43 @@ async function exportarFechamentoMes() {
       acumulado[idx] = prev + (dashboardData.diarioLiquido[dia] || 0);
     });
     const metaLinha = dias.map((_, idx) => {
-      return dashboardData.meta ? (dashboardData.meta * (idx + 1)) / dias.length : 0;
+      return dashboardData.meta
+        ? (dashboardData.meta * (idx + 1)) / dias.length
+        : 0;
     });
     initChart(tendenciaCtx, {
       type: 'line',
       data: {
-        labels: dias.map(d => new Date(d).toLocaleDateString('pt-BR')),
+        labels: dias.map((d) => new Date(d).toLocaleDateString('pt-BR')),
         datasets: [
           {
             label: 'Acumulado',
             data: acumulado,
             borderColor: 'var(--primary-dark)',
             backgroundColor: 'rgba(79,70,229,0.2)',
-            tension: 0.3
+            tension: 0.3,
           },
           {
             label: 'Meta',
             data: metaLinha,
             borderColor: '#10b981',
             backgroundColor: 'rgba(16,185,129,0.2)',
-            borderDash: [6,4],
+            borderDash: [6, 4],
             pointRadius: 0,
-            tension: 0.3
-          }
-        ]
+            tension: 0.3,
+          },
+        ],
       },
       options: {
         ...opts,
-        plugins: { ...opts.plugins, title: { display: true, text: 'Faturamento Acumulado vs. Meta', font: { size: 14 } } },
+        plugins: {
+          ...opts.plugins,
+          title: {
+            display: true,
+            text: 'Faturamento Acumulado vs. Meta',
+            font: { size: 14 },
+          },
+        },
         scales: {
           ...opts.scales,
           x: {
@@ -806,27 +980,31 @@ async function exportarFechamentoMes() {
               maxTicksLimit: 10,
               font: { size: 10 },
               maxRotation: 45,
-              minRotation: 45
-            }
+              minRotation: 45,
+            },
           },
-          y: { ticks: { font: { size: 10 } } }
-        }
-      }
+          y: { ticks: { font: { size: 10 } } },
+        },
+      },
     });
   }
 
   const metaGaugeCtx = container.querySelector('#metaGaugeChart');
   if (metaGaugeCtx) {
-    const pct = dashboardData.meta ? (dashboardData.totalLiquido / dashboardData.meta) * 100 : 0;
+    const pct = dashboardData.meta
+      ? (dashboardData.totalLiquido / dashboardData.meta) * 100
+      : 0;
     initChart(metaGaugeCtx, {
       type: 'doughnut',
       data: {
         labels: ['Atingido', 'Restante'],
-        datasets: [{
-          data: [pct, Math.max(100 - pct, 0)],
-          backgroundColor: ['var(--primary-dark)', '#e5e7eb'],
-          borderWidth: 0
-        }]
+        datasets: [
+          {
+            data: [pct, Math.max(100 - pct, 0)],
+            backgroundColor: ['var(--primary-dark)', '#e5e7eb'],
+            borderWidth: 0,
+          },
+        ],
       },
       options: {
         ...opts,
@@ -837,9 +1015,13 @@ async function exportarFechamentoMes() {
           ...opts.plugins,
           legend: { display: false },
           tooltip: { enabled: false },
-          title: { display: true, text: `Progresso da Meta (${pct.toFixed(1)}%)`, font: { size: 14 } }
-        }
-      }
+          title: {
+            display: true,
+            text: `Progresso da Meta (${pct.toFixed(1)}%)`,
+            font: { size: 14 },
+          },
+        },
+      },
     });
   }
 
@@ -849,19 +1031,29 @@ async function exportarFechamentoMes() {
       type: 'doughnut',
       data: {
         labels: ['Bruto', 'Líquido'],
-        datasets: [{
-          data: [dashboardData.totalBruto, dashboardData.totalLiquido],
-          backgroundColor: ['var(--primary-dark)', 'var(--primary)']
-        }]
+        datasets: [
+          {
+            data: [dashboardData.totalBruto, dashboardData.totalLiquido],
+            backgroundColor: ['var(--primary-dark)', 'var(--primary)'],
+          },
+        ],
       },
-      options: opts
+      options: opts,
     });
   }
 
   // Secção Desempenho & Rentabilidade
-  renderTopSkusComparativo(dashboardData.topSkus, dashboardData.rentabilidade, container);
+  renderTopSkusComparativo(
+    dashboardData.topSkus,
+    dashboardData.rentabilidade,
+    container,
+  );
   renderTopSkus(dashboardData.topSkus, container);
-  renderRentabilidade(dashboardData.rentabilidade, dashboardData.topRentaveis, container);
+  renderRentabilidade(
+    dashboardData.rentabilidade,
+    dashboardData.topRentaveis,
+    container,
+  );
 
   // Secção Projeção & Previsão
   if (dashboardData.previsao) {
@@ -878,24 +1070,41 @@ async function exportarFechamentoMes() {
       `;
     }
     renderPrevisaoChart(container.querySelector('#previsaoChart'), prev.dados);
-    renderPrevisaoTopSkus(container.querySelector('#topSkusPrevisao'), prev.dados, prev.precos, prev.metas);
+    renderPrevisaoTopSkus(
+      container.querySelector('#topSkusPrevisao'),
+      prev.dados,
+      prev.precos,
+      prev.metas,
+    );
   }
 
   setTimeout(() => {
-    html2pdf().set({
-      margin: 10,
-      filename: `fechamento-${dashboardData.mesAtual}.pdf`,
-      pagebreak: { mode: ['css', 'legacy'] },
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#fff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: false }
-    }).from(container).save().then(() => container.remove());
+    html2pdf()
+      .set({
+        margin: 10,
+        filename: `fechamento-${dashboardData.mesAtual}.pdf`,
+        pagebreak: { mode: ['css', 'legacy'] },
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#fff' },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+          compress: false,
+        },
+      })
+      .from(container)
+      .save()
+      .then(() => container.remove());
   }, 1000);
 }
 
 function gerarHTMLFechamento() {
   const d = dashboardData;
-  const mesBR = new Date(d.mesAtual + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const mesBR = new Date(d.mesAtual + '-01').toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
   const mesTitle = mesBR.charAt(0).toUpperCase() + mesBR.slice(1);
   const pctMeta = d.meta ? ((d.totalLiquido / d.meta) * 100).toFixed(1) : '0';
 
@@ -903,8 +1112,10 @@ function gerarHTMLFechamento() {
   const idxAtual = meses.indexOf(d.mesAtual);
   const mesAnterior = idxAtual > 0 ? meses[idxAtual - 1] : null;
   const liquidoAnterior = mesAnterior ? d.comparativo[mesAnterior] : null;
-  const variacaoLiquido = liquidoAnterior !== null ? d.totalLiquido - liquidoAnterior : 0;
-  const iconLiquido = variacaoLiquido >= 0 ? 'bx-up-arrow-alt' : 'bx-down-arrow-alt';
+  const variacaoLiquido =
+    liquidoAnterior !== null ? d.totalLiquido - liquidoAnterior : 0;
+  const iconLiquido =
+    variacaoLiquido >= 0 ? 'bx-up-arrow-alt' : 'bx-down-arrow-alt';
   const classeLiquido = variacaoLiquido >= 0 ? 'trend-up' : 'trend-down';
 
   return `
@@ -1043,12 +1254,12 @@ function gerarHTMLFechamento() {
           <div class="card">
             <div class="icon"><i class='bx bx-money'></i></div>
             <div class="label">Faturamento Bruto</div>
-            <div class="value">R$ ${d.totalBruto.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div class="value">R$ ${d.totalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
           <div class="card">
             <div class="icon"><i class='bx bx-wallet'></i></div>
             <div class="label">Faturamento Líquido</div>
-            <div class="value">R$ ${d.totalLiquido.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} <i class='bx ${iconLiquido} ${classeLiquido}'></i></div>
+            <div class="value">R$ ${d.totalLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <i class='bx ${iconLiquido} ${classeLiquido}'></i></div>
           </div>
           <div class="card">
             <div class="icon"><i class='bx bx-package'></i></div>
@@ -1058,7 +1269,7 @@ function gerarHTMLFechamento() {
           <div class="card">
             <div class="icon"><i class='bx bx-stats'></i></div>
             <div class="label">Ticket Médio</div>
-            <div class="value">R$ ${d.ticketMedio.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div class="value">R$ ${d.ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         </div>
         <div class="meta-wrapper">
@@ -1105,7 +1316,7 @@ if (filtroMes) {
   filtroMes.value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
     const mesInicial = filtroMes?.value;
     carregarDashboard(user, mesInicial);
@@ -1114,4 +1325,3 @@ onAuthStateChanged(auth, user => {
     });
   }
 });
-

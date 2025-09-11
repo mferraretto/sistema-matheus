@@ -1,6 +1,19 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  deleteDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -10,14 +23,17 @@ const auth = getAuth(app);
 let editId = null;
 
 function parseAssociados(value) {
-  return value.split(',').map(s => s.trim()).filter(Boolean);
+  return value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 async function carregarSkus() {
   const tbody = document.querySelector('#skuTable tbody');
   tbody.innerHTML = '';
   const snap = await getDocs(collection(db, 'skuAssociado'));
-  snap.forEach(docSnap => {
+  snap.forEach((docSnap) => {
     const data = docSnap.data();
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -45,7 +61,10 @@ async function salvarSku() {
   if (editId && editId !== skuPrincipal) {
     await deleteDoc(doc(db, 'skuAssociado', editId));
   }
-  await setDoc(doc(db, 'skuAssociado', skuPrincipal), { skuPrincipal, associados });
+  await setDoc(doc(db, 'skuAssociado', skuPrincipal), {
+    skuPrincipal,
+    associados,
+  });
   principalEl.value = '';
   associadosEl.value = '';
   editId = null;
@@ -54,29 +73,33 @@ async function salvarSku() {
 
 function preencherFormulario(id, data) {
   document.getElementById('skuPrincipal').value = data.skuPrincipal || id;
-  document.getElementById('skuAssociados').value = (data.associados || []).join(', ');
+  document.getElementById('skuAssociados').value = (data.associados || []).join(
+    ', ',
+  );
   editId = id;
 }
 
 function registrarEventos() {
   document.getElementById('salvarSku').addEventListener('click', salvarSku);
-  document.querySelector('#skuTable tbody').addEventListener('click', async (e) => {
-    const idEdit = e.target.getAttribute('data-edit');
-    const idDel = e.target.getAttribute('data-del');
-    if (idEdit) {
-      const snap = await getDocs(collection(db, 'skuAssociado'));
-      const docSnap = snap.docs.find(d => d.id === idEdit);
-      if (docSnap) preencherFormulario(docSnap.id, docSnap.data());
-    } else if (idDel) {
-      if (confirm('Excluir este registro?')) {
-        await deleteDoc(doc(db, 'skuAssociado', idDel));
-        await carregarSkus();
+  document
+    .querySelector('#skuTable tbody')
+    .addEventListener('click', async (e) => {
+      const idEdit = e.target.getAttribute('data-edit');
+      const idDel = e.target.getAttribute('data-del');
+      if (idEdit) {
+        const snap = await getDocs(collection(db, 'skuAssociado'));
+        const docSnap = snap.docs.find((d) => d.id === idEdit);
+        if (docSnap) preencherFormulario(docSnap.id, docSnap.data());
+      } else if (idDel) {
+        if (confirm('Excluir este registro?')) {
+          await deleteDoc(doc(db, 'skuAssociado', idDel));
+          await carregarSkus();
+        }
       }
-    }
-  });
+    });
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
     carregarSkus();
     registrarEventos();

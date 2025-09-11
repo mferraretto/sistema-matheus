@@ -15,7 +15,7 @@ const logger = {
   },
   warn: (...args) => {
     if (!isProd) console.warn(...args);
-  }
+  },
 };
 
 if (isProd) {

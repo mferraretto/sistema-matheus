@@ -1,6 +1,20 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  doc,
+  getDoc,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
@@ -16,7 +30,7 @@ let filtradosAtuais = [];
 let paginaAtual = 1;
 const pedidosPorPagina = 20;
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -35,38 +49,51 @@ onAuthStateChanged(auth, async user => {
 export async function carregarPedidosTiny() {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Carregando...</td></tr>';
+  tbody.innerHTML =
+    '<tr><td colspan="7" class="text-center py-4">Carregando...</td></tr>';
   try {
     todosPedidos = [];
     custosProdutos = {};
     filtradosAtuais = [];
     await Promise.all(
-      usuariosCache.map(async u => {
+      usuariosCache.map(async (u) => {
         const pass = getPassphrase() || `chave-${u.uid}`;
         const [snap, produtosSnap] = await Promise.all([
           getDocs(collection(db, `usuarios/${u.uid}/pedidostiny`)),
-          getDocs(collection(db, `uid/${u.uid}/produtos`))
+          getDocs(collection(db, `uid/${u.uid}/produtos`)),
         ]);
-        produtosSnap.forEach(p => {
+        produtosSnap.forEach((p) => {
           const dados = p.data();
           const chave = (dados.sku || p.id || '').toLowerCase();
           custosProdutos[chave] = Number(dados.custo || 0);
         });
         for (const d of snap.docs) {
-          let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
+          let pedido = await loadSecureDoc(
+            db,
+            `usuarios/${u.uid}/pedidostiny`,
+            d.id,
+            pass,
+          );
           if (!pedido) {
             const raw = d.data();
             if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
           }
-          if (pedido) todosPedidos.push({ id: d.id, uid: u.uid, usuario: u.nome, ...pedido });
+          if (pedido)
+            todosPedidos.push({
+              id: d.id,
+              uid: u.uid,
+              usuario: u.nome,
+              ...pedido,
+            });
         }
-      })
+      }),
     );
     preencherFiltroLoja(todosPedidos);
     aplicarFiltros(true);
   } catch (err) {
     console.error('Erro ao carregar pedidos', err);
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
   }
 }
 
@@ -75,7 +102,7 @@ function setupUsuariosFiltro(usuarios) {
   const grupo = document.getElementById('grupoUsuario');
   if (!select) return;
   select.innerHTML = '<option value="todos">Todos</option>';
-  usuarios.forEach(u => {
+  usuarios.forEach((u) => {
     const opt = document.createElement('option');
     opt.value = u.uid;
     opt.textContent = u.nome;
@@ -89,8 +116,10 @@ function preencherFiltroLoja(pedidos) {
   const select = document.getElementById('filtroLoja');
   if (!select) return;
   select.innerHTML = '<option value="">Todas</option>';
-  const lojas = [...new Set(pedidos.map(p => p.loja || p.store || '').filter(Boolean))].sort();
-  lojas.forEach(loja => {
+  const lojas = [
+    ...new Set(pedidos.map((p) => p.loja || p.store || '').filter(Boolean)),
+  ].sort();
+  lojas.forEach((loja) => {
     const opt = document.createElement('option');
     opt.value = loja;
     opt.textContent = loja;
@@ -118,20 +147,30 @@ function parseDate(str) {
 }
 
 function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function toNumber(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = v
+      .replace(/[R$\s]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
     return parseFloat(n) || 0;
   }
   return 0;
 }
 
 function formatCurrency(v) {
-  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(v || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
 
 function calcularLiquido(p) {
@@ -140,7 +179,7 @@ function calcularLiquido(p) {
   let taxa = 0;
   if (loja.includes('shopee')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         const comissao = Math.min(v * 0.22, 100);
         taxa += comissao + 4.0;
@@ -151,7 +190,7 @@ function calcularLiquido(p) {
     }
   } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         let fixo = 0;
         if (v < 12.5) fixo = v / 2;
@@ -176,7 +215,10 @@ function calcularLiquido(p) {
 function atualizarResumo(pedidos) {
   const resumo = document.getElementById('resumoPedidosTiny');
   if (!resumo) return;
-  const totalBruto = pedidos.reduce((s, p) => s + toNumber(p.valor || p.total || 0), 0);
+  const totalBruto = pedidos.reduce(
+    (s, p) => s + toNumber(p.valor || p.total || 0),
+    0,
+  );
   const totalLiquido = pedidos.reduce((s, p) => s + calcularLiquido(p), 0);
   const quantidade = pedidos.length;
   resumo.innerHTML = `
@@ -193,7 +235,7 @@ export function aplicarFiltros(resetPage = false) {
   let filtrados = [...todosPedidos];
   const usuarioSel = document.getElementById('usuarioFiltro')?.value;
   if (usuarioSel && usuarioSel !== 'todos') {
-    filtrados = filtrados.filter(p => p.uid === usuarioSel);
+    filtrados = filtrados.filter((p) => p.uid === usuarioSel);
   }
   const tipo = document.getElementById('tipoData')?.value;
   const dia = document.getElementById('dataDia')?.value;
@@ -203,7 +245,7 @@ export function aplicarFiltros(resetPage = false) {
   const loja = document.getElementById('filtroLoja')?.value;
   const skuFiltro = document.getElementById('filtroSku')?.value?.toLowerCase();
 
-  filtrados = filtrados.filter(p => {
+  filtrados = filtrados.filter((p) => {
     const dataStr = p.data || p.dataPedido || p.date || '';
     const data = parseDate(dataStr);
     if (tipo === 'dia' && dia) {
@@ -211,7 +253,11 @@ export function aplicarFiltros(resetPage = false) {
       if (!sameDay(data, d)) return false;
     } else if (tipo === 'mes' && mes) {
       const m = parseDate(`${mes}-01`);
-      if (data.getFullYear() !== m.getFullYear() || data.getMonth() !== m.getMonth()) return false;
+      if (
+        data.getFullYear() !== m.getFullYear() ||
+        data.getMonth() !== m.getMonth()
+      )
+        return false;
     } else if (tipo === 'personalizado' && inicio && fim) {
       const i = parseDate(inicio);
       const f = parseDate(fim);
@@ -221,29 +267,38 @@ export function aplicarFiltros(resetPage = false) {
     const lojaPedido = (p.loja || p.store || '').toLowerCase();
     if (loja && lojaPedido !== loja.toLowerCase()) return false;
 
-    const sku = (p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '')).toLowerCase();
+    const sku = (
+      p.sku ||
+      (Array.isArray(p.itens) ? p.itens.map((i) => i.sku).join(', ') : '')
+    ).toLowerCase();
     if (skuFiltro && !sku.includes(skuFiltro)) return false;
     return true;
   });
 
   filtradosAtuais = [];
   filtradosAtuais.push(...filtrados);
-  const totalPaginas = Math.ceil(filtradosAtuais.length / pedidosPorPagina) || 1;
+  const totalPaginas =
+    Math.ceil(filtradosAtuais.length / pedidosPorPagina) || 1;
   if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
   const inicioPaginacao = (paginaAtual - 1) * pedidosPorPagina;
-  const paginaPedidos = filtradosAtuais.slice(inicioPaginacao, inicioPaginacao + pedidosPorPagina);
+  const paginaPedidos = filtradosAtuais.slice(
+    inicioPaginacao,
+    inicioPaginacao + pedidosPorPagina,
+  );
 
   tbody.innerHTML = '';
-  paginaPedidos.forEach(p => {
+  paginaPedidos.forEach((p) => {
     const tr = document.createElement('tr');
     const data = p.data || p.dataPedido || p.date || '';
     const lojaPedido = p.loja || p.store || '';
-    const sku = p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '');
+    const sku =
+      p.sku ||
+      (Array.isArray(p.itens) ? p.itens.map((i) => i.sku).join(', ') : '');
     const valorBruto = toNumber(p.valor || p.total || 0);
     const liquido = calcularLiquido(p);
     let custoTotal = 0;
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const skuItem = (i.sku || '').toLowerCase();
         const qtd = Number(i.quantidade || i.qtd || i.quantity || 1) || 1;
         const c = custosProdutos[skuItem] || 0;
@@ -265,11 +320,13 @@ export function aplicarFiltros(resetPage = false) {
         <td data-label="Valor">${formatCurrency(valorBruto)}</td>
         <td data-label="Líquido">${formatCurrency(liquido)}</td>
       `;
-    if (custoTotal && liquido < custoTotal * 0.9) tr.classList.add('bg-red-100');
+    if (custoTotal && liquido < custoTotal * 0.9)
+      tr.classList.add('bg-red-100');
     tbody.appendChild(tr);
   });
   if (!tbody.children.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="7" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
   }
   atualizarResumo(filtradosAtuais);
   atualizarPaginacao(totalPaginas);
@@ -313,22 +370,39 @@ function atualizarPaginacao(totalPaginas) {
 
 function atualizarTipoData() {
   const tipo = document.getElementById('tipoData')?.value;
-  document.getElementById('grupoDia')?.classList.toggle('hidden', tipo !== 'dia');
-  document.getElementById('grupoMes')?.classList.toggle('hidden', tipo !== 'mes');
+  document
+    .getElementById('grupoDia')
+    ?.classList.toggle('hidden', tipo !== 'dia');
+  document
+    .getElementById('grupoMes')
+    ?.classList.toggle('hidden', tipo !== 'mes');
   const perso = tipo !== 'personalizado';
   document.getElementById('grupoInicio')?.classList.toggle('hidden', perso);
   document.getElementById('grupoFim')?.classList.toggle('hidden', perso);
 }
 
-document.getElementById('aplicarFiltros')?.addEventListener('click', e => {
+document.getElementById('aplicarFiltros')?.addEventListener('click', (e) => {
   e.preventDefault();
   aplicarFiltros(true);
 });
-['tipoData', 'dataDia', 'dataMes', 'dataInicio', 'dataFim', 'filtroLoja'].forEach(id => {
-  document.getElementById(id)?.addEventListener('change', () => aplicarFiltros(true));
+[
+  'tipoData',
+  'dataDia',
+  'dataMes',
+  'dataInicio',
+  'dataFim',
+  'filtroLoja',
+].forEach((id) => {
+  document
+    .getElementById(id)
+    ?.addEventListener('change', () => aplicarFiltros(true));
 });
-document.getElementById('filtroSku')?.addEventListener('input', () => aplicarFiltros(true));
-document.getElementById('tipoData')?.addEventListener('change', atualizarTipoData);
+document
+  .getElementById('filtroSku')
+  ?.addEventListener('input', () => aplicarFiltros(true));
+document
+  .getElementById('tipoData')
+  ?.addEventListener('change', atualizarTipoData);
 
 atualizarTipoData();
 

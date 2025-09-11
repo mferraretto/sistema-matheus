@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+npx eslint "*.js"
+npx prettier --check "*.js" "css/*.css"

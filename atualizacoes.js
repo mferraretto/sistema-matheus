@@ -1,7 +1,32 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc, updateDoc, doc, getDocs, getDoc, query, where, onSnapshot, orderBy, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  getDocs,
+  getDoc,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  serverTimestamp,
+  limit,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
@@ -18,9 +43,13 @@ let usuariosResponsaveis = [];
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
   notification.className = `fixed bottom-4 right-4 px-4 py-4 rounded-lg shadow-lg text-white ${
-    type === 'success' ? 'bg-green-500' :
-    type === 'error' ? 'bg-red-500' :
-    type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+    type === 'success'
+      ? 'bg-green-500'
+      : type === 'error'
+        ? 'bg-red-500'
+        : type === 'warning'
+          ? 'bg-yellow-500'
+          : 'bg-blue-500'
   }`;
   notification.innerHTML = `
     <div class="flex items-center">
@@ -32,7 +61,7 @@ function showNotification(message, type = 'info') {
   setTimeout(() => notification.remove(), 5000);
 }
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -50,45 +79,64 @@ async function carregarUsuarios() {
   if (select) select.innerHTML = '';
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
-    try {
-      const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(db, currentUser.email);
-      if (!listaUsuarios.length) {
-        card?.classList.add('hidden');
-        return;
-      }
-      card?.classList.remove('hidden');
-      listaUsuarios.forEach(u => {
-        usuariosResponsaveis.push({ uid: u.uid, nome: u.nome });
-        if (select) {
-          const opt = document.createElement('option');
-          opt.value = u.uid;
-          opt.textContent = u.nome;
-          select.appendChild(opt);
-        }
-        if (lista) {
-          const li = document.createElement('li');
-          li.className = 'flex items-center gap-2';
-          const avatar = `<div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-medium">${(u.nome || '?').charAt(0).toUpperCase()}</div>`;
-          li.innerHTML = `${avatar}<span>${u.nome}</span>`;
-          lista.appendChild(li);
-        }
-      });
-      carregarHistoricoFaturamento();
-      carregarTotais();
-    } catch (err) {
-      console.error('Erro ao carregar usuários:', err);
+  try {
+    const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(
+      db,
+      currentUser.email,
+    );
+    if (!listaUsuarios.length) {
+      card?.classList.add('hidden');
+      return;
     }
+    card?.classList.remove('hidden');
+    listaUsuarios.forEach((u) => {
+      usuariosResponsaveis.push({ uid: u.uid, nome: u.nome });
+      if (select) {
+        const opt = document.createElement('option');
+        opt.value = u.uid;
+        opt.textContent = u.nome;
+        select.appendChild(opt);
+      }
+      if (lista) {
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-2';
+        const avatar = `<div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-medium">${(u.nome || '?').charAt(0).toUpperCase()}</div>`;
+        li.innerHTML = `${avatar}<span>${u.nome}</span>`;
+        lista.appendChild(li);
+      }
+    });
+    carregarHistoricoFaturamento();
+    carregarTotais();
+  } catch (err) {
+    console.error('Erro ao carregar usuários:', err);
+  }
 }
 
 async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
-  const lojasSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia, 'lojas'));
+  const lojasSnap = await getDocs(
+    collection(
+      db,
+      'uid',
+      responsavelUid,
+      'uid',
+      uid,
+      'faturamento',
+      dia,
+      'lojas',
+    ),
+  );
   let liquido = 0;
   let bruto = 0;
   for (const lojaDoc of lojasSnap.docs) {
     let dados = lojaDoc.data();
     if (dados.encrypted) {
       let txt;
-      const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
+      const candidates = [
+        getPassphrase(),
+        currentUser?.email,
+        `chave-${uid}`,
+        uid,
+      ];
       for (const p of candidates) {
         if (!p) continue;
         try {
@@ -106,13 +154,29 @@ async function calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia) {
 
 async function calcularVendasDia(responsavelUid, uid, dia) {
   try {
-    const lojasSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento', dia, 'lojas'));
+    const lojasSnap = await getDocs(
+      collection(
+        db,
+        'uid',
+        responsavelUid,
+        'uid',
+        uid,
+        'faturamento',
+        dia,
+        'lojas',
+      ),
+    );
     let total = 0;
     for (const lojaDoc of lojasSnap.docs) {
       let dados = lojaDoc.data();
       if (dados.encrypted) {
         let txt;
-        const candidates = [getPassphrase(), currentUser?.email, `chave-${uid}`, uid];
+        const candidates = [
+          getPassphrase(),
+          currentUser?.email,
+          `chave-${uid}`,
+          uid,
+        ];
         for (const p of candidates) {
           if (!p) continue;
           try {
@@ -134,7 +198,20 @@ async function calcularVendasDia(responsavelUid, uid, dia) {
 function formatarData(str) {
   const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(str);
   if (!m) return str;
-  const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const meses = [
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez',
+  ];
   return `${m[3]}/${meses[Number(m[2]) - 1]}`;
 }
 
@@ -148,20 +225,35 @@ async function carregarHistoricoFaturamento() {
     return;
   }
   card.classList.remove('hidden');
-  const mesAtual = new Date().toISOString().slice(0,7);
+  const mesAtual = new Date().toISOString().slice(0, 7);
   const ano = new Date().getFullYear();
   const mesNum = new Date().getMonth() + 1;
   const totalDiasMes = new Date(ano, mesNum, 0).getDate();
   for (const u of usuariosResponsaveis) {
     let metaMensal = 0;
     try {
-      const metaDoc = await getDoc(doc(db, 'uid', currentUser.uid, 'uid', u.uid, 'metasFaturamento', mesAtual));
+      const metaDoc = await getDoc(
+        doc(
+          db,
+          'uid',
+          currentUser.uid,
+          'uid',
+          u.uid,
+          'metasFaturamento',
+          mesAtual,
+        ),
+      );
       if (metaDoc.exists()) metaMensal = Number(metaDoc.data().valor) || 0;
     } catch (_) {}
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
 
-    const fatSnap = await getDocs(collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'));
-    const dias = fatSnap.docs.map(d => d.id).sort().slice(-1);
+    const fatSnap = await getDocs(
+      collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'),
+    );
+    const dias = fatSnap.docs
+      .map((d) => d.id)
+      .sort()
+      .slice(-1);
 
     const col = document.createElement('div');
     col.className = 'faturamento-col';
@@ -169,11 +261,17 @@ async function carregarHistoricoFaturamento() {
     const header = document.createElement('div');
     header.className = 'faturamento-header cursor-pointer';
     header.innerHTML = `<div>${u.nome}</div><div>META R$ ${metaMensal.toLocaleString('pt-BR')}</div>`;
-    header.addEventListener('click', () => toggleFaturamentoMensal(col, currentUser.uid, u.uid));
+    header.addEventListener('click', () =>
+      toggleFaturamentoMensal(col, currentUser.uid, u.uid),
+    );
     col.appendChild(header);
 
     for (const dia of dias) {
-      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, dia);
+      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(
+        currentUser.uid,
+        u.uid,
+        dia,
+      );
       const vendas = await calcularVendasDia(currentUser.uid, u.uid, dia);
       const diff = metaDiaria - liquido;
       const atingido = diff <= 0;
@@ -187,10 +285,10 @@ async function carregarHistoricoFaturamento() {
         <div class="resultado ${atingido ? 'positivo' : 'negativo'}">${atingido ? 'POSITIVO' : 'NEGATIVO'}${diff ? ` R$ ${Math.abs(diff).toLocaleString('pt-BR')}` : ''}</div>
       `;
       col.appendChild(day);
-  }
+    }
 
-  container.appendChild(col);
-}
+    container.appendChild(col);
+  }
 }
 
 async function toggleFaturamentoMensal(container, responsavelUid, uid) {
@@ -199,17 +297,27 @@ async function toggleFaturamentoMensal(container, responsavelUid, uid) {
     tabela.remove();
     return;
   }
-  const mesAtual = new Date().toISOString().slice(0,7);
-  const fatSnap = await getDocs(collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento'));
-  const dias = fatSnap.docs.map(d => d.id).filter(id => id.startsWith(mesAtual)).sort();
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const fatSnap = await getDocs(
+    collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento'),
+  );
+  const dias = fatSnap.docs
+    .map((d) => d.id)
+    .filter((id) => id.startsWith(mesAtual))
+    .sort();
   tabela = document.createElement('table');
   tabela.className = 'mt-2 w-full text-sm border-collapse';
   const thead = document.createElement('thead');
-  thead.innerHTML = `<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th></tr>`;
+  thead.innerHTML =
+    '<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th></tr>';
   tabela.appendChild(thead);
   const tbody = document.createElement('tbody');
   for (const dia of dias) {
-    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(responsavelUid, uid, dia);
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(
+      responsavelUid,
+      uid,
+      dia,
+    );
     const vendas = await calcularVendasDia(responsavelUid, uid, dia);
     const tr = document.createElement('tr');
     tr.innerHTML = `<td class="border px-2 py-1">${dia}</td><td class="border px-2 py-1">R$ ${bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">R$ ${liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">${vendas}</td>`;
@@ -224,22 +332,48 @@ async function carregarTotais() {
   if (!container) return;
   container.innerHTML = '';
   if (!usuariosResponsaveis.length) return;
-  let totalBruto = 0, totalLiquido = 0, totalPedidos = 0, totalMeta = 0;
+  let totalBruto = 0,
+    totalLiquido = 0,
+    totalPedidos = 0,
+    totalMeta = 0;
   const hoje = new Date();
-  const mesAtual = hoje.toISOString().slice(0,7);
-  const totalDiasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+  const mesAtual = hoje.toISOString().slice(0, 7);
+  const totalDiasMes = new Date(
+    hoje.getFullYear(),
+    hoje.getMonth() + 1,
+    0,
+  ).getDate();
   for (const u of usuariosResponsaveis) {
-    const fatSnap = await getDocs(collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'));
-    const dias = fatSnap.docs.map(d => d.id).sort().slice(-1);
+    const fatSnap = await getDocs(
+      collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'),
+    );
+    const dias = fatSnap.docs
+      .map((d) => d.id)
+      .sort()
+      .slice(-1);
     if (!dias.length) continue;
     const dia = dias[0];
-    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(currentUser.uid, u.uid, dia);
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(
+      currentUser.uid,
+      u.uid,
+      dia,
+    );
     const pedidos = await calcularVendasDia(currentUser.uid, u.uid, dia);
     totalBruto += bruto;
     totalLiquido += liquido;
     totalPedidos += pedidos;
     try {
-      const metaDoc = await getDoc(doc(db, 'uid', currentUser.uid, 'uid', u.uid, 'metasFaturamento', mesAtual));
+      const metaDoc = await getDoc(
+        doc(
+          db,
+          'uid',
+          currentUser.uid,
+          'uid',
+          u.uid,
+          'metasFaturamento',
+          mesAtual,
+        ),
+      );
       if (metaDoc.exists()) {
         const metaMensal = Number(metaDoc.data().valor) || 0;
         totalMeta += totalDiasMes ? metaMensal / totalDiasMes : 0;
@@ -247,12 +381,21 @@ async function carregarTotais() {
     } catch (_) {}
   }
   const cards = [
-    { label: 'Bruto', valor: `R$ ${totalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
-    { label: 'Líquido', valor: `R$ ${totalLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` },
+    {
+      label: 'Bruto',
+      valor: `R$ ${totalBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      label: 'Líquido',
+      valor: `R$ ${totalLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    },
     { label: 'Pedidos', valor: totalPedidos.toLocaleString('pt-BR') },
-    { label: 'Meta', valor: `R$ ${totalMeta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` }
+    {
+      label: 'Meta',
+      valor: `R$ ${totalMeta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    },
   ];
-  cards.forEach(c => {
+  cards.forEach((c) => {
     const div = document.createElement('div');
     div.className = 'card text-center';
     div.innerHTML = `
@@ -271,37 +414,55 @@ async function carregarExpedicao() {
   const limiteData = new Date();
   limiteData.setDate(limiteData.getDate() - 3);
   try {
-    const q = query(collection(db, 'expedicaoMensagens'), orderBy('createdAt', 'desc'), limit(100));
+    const q = query(
+      collection(db, 'expedicaoMensagens'),
+      orderBy('createdAt', 'desc'),
+      limit(100),
+    );
     const snap = await getDocs(q);
     let count = 0;
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       const dados = docSnap.data();
       const dests = dados.destinatarios || [];
-      if (currentUser && !dests.includes(currentUser.uid) && dados.gestorUid !== currentUser.uid) return;
-      const dataHora = dados.createdAt?.toDate ? dados.createdAt.toDate() : null;
+      if (
+        currentUser &&
+        !dests.includes(currentUser.uid) &&
+        dados.gestorUid !== currentUser.uid
+      )
+        return;
+      const dataHora = dados.createdAt?.toDate
+        ? dados.createdAt.toDate()
+        : null;
       if (!dataHora || dataHora < limiteData) return;
       const item = document.createElement('div');
       item.className = 'p-2 border rounded';
-      item.innerHTML = `<div>Qtd não expedida: ${dados.quantidade}</div>` +
+      item.innerHTML =
+        `<div>Qtd não expedida: ${dados.quantidade}</div>` +
         `${dados.motivo ? `<div>Motivo: ${dados.motivo}</div>` : ''}` +
         `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
       container.appendChild(item);
       count++;
     });
-    if (count) card.classList.remove('hidden'); else card.classList.add('hidden');
+    if (count) card.classList.remove('hidden');
+    else card.classList.add('hidden');
   } catch (e) {
     console.error('Erro ao carregar expedição:', e);
   }
 }
 
-document.getElementById('formAtualizacao')?.addEventListener('submit', enviarAtualizacao);
+document
+  .getElementById('formAtualizacao')
+  ?.addEventListener('submit', enviarAtualizacao);
 
 async function enviarAtualizacao(e) {
   e.preventDefault();
   if (!currentUser) return;
   const descricao = document.getElementById('descricao').value.trim();
-  const destinatarios = Array.from(document.getElementById('destinatarios').selectedOptions).map(o => o.value);
-  if (!destinatarios.includes(currentUser.uid)) destinatarios.push(currentUser.uid);
+  const destinatarios = Array.from(
+    document.getElementById('destinatarios').selectedOptions,
+  ).map((o) => o.value);
+  if (!destinatarios.includes(currentUser.uid))
+    destinatarios.push(currentUser.uid);
   const arquivos = document.getElementById('arquivos').files;
   const docRef = await addDoc(collection(db, 'financeiroAtualizacoes'), {
     descricao,
@@ -310,7 +471,7 @@ async function enviarAtualizacao(e) {
     destinatarios,
     tipo: 'atualizacao',
     createdAt: serverTimestamp(),
-    anexos: []
+    anexos: [],
   });
   const anexos = [];
   for (const file of arquivos) {
@@ -324,7 +485,9 @@ async function enviarAtualizacao(e) {
     await updateDoc(docRef, { anexos });
   }
   document.getElementById('descricao').value = '';
-  Array.from(document.getElementById('destinatarios').options).forEach(o => o.selected = false);
+  Array.from(document.getElementById('destinatarios').options).forEach(
+    (o) => (o.selected = false),
+  );
   document.getElementById('arquivos').value = '';
 }
 
@@ -333,23 +496,28 @@ function carregarAtualizacoes() {
   if (!lista) return;
   const colRef = collection(db, 'financeiroAtualizacoes');
   const q = query(colRef, orderBy('createdAt', 'desc'));
-  onSnapshot(q, snap => {
+  onSnapshot(q, (snap) => {
     if (!initialLoad) {
-      snap.docChanges().forEach(change => {
+      snap.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const data = change.doc.data();
           const dests = data.destinatarios || [];
-          if (data.autorUid !== currentUser.uid && dests.includes(currentUser.uid) && data.tipo === 'faturamento') {
+          if (
+            data.autorUid !== currentUser.uid &&
+            dests.includes(currentUser.uid) &&
+            data.tipo === 'faturamento'
+          ) {
             showNotification(data.descricao || 'Novo faturamento registrado');
           }
         }
       });
     }
     lista.innerHTML = '';
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       const data = docSnap.data();
       const dests = data.destinatarios || [];
-      if (data.autorUid !== currentUser.uid && !dests.includes(currentUser.uid)) return;
+      if (data.autorUid !== currentUser.uid && !dests.includes(currentUser.uid))
+        return;
       lista.appendChild(renderCard(docSnap.id, data));
     });
     initialLoad = false;
@@ -359,8 +527,15 @@ function carregarAtualizacoes() {
 function renderCard(id, data) {
   const card = document.createElement('div');
   card.className = 'card p-4';
-  const dataStr = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString('pt-BR') : '';
-  const anexosHtml = (data.anexos || []).map(a => `<a href="${a.url}" target="_blank" class="text-blue-500 underline block">${a.nome}</a>`).join('');
+  const dataStr = data.createdAt?.toDate
+    ? data.createdAt.toDate().toLocaleString('pt-BR')
+    : '';
+  const anexosHtml = (data.anexos || [])
+    .map(
+      (a) =>
+        `<a href="${a.url}" target="_blank" class="text-blue-500 underline block">${a.nome}</a>`,
+    )
+    .join('');
   card.innerHTML = `
     <p class="text-sm text-gray-500">${dataStr}</p>
     <p class="font-medium">${data.autorNome || ''}</p>
