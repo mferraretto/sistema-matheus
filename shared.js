@@ -549,7 +549,15 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-desempenho',
   ];
 
-  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(id => id !== 'menu-comunicacao');
+  const CLIENTE_MENU_IDS = [
+    'menu-vendas',
+    'menu-expedicao',
+    'menu-anuncios',
+    'menu-outros',
+    'menu-configuracoes',
+    'menu-comunicacao',
+    'startSidebarTourBtn',
+  ];
 
   function showOnly(ids) {
     document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
@@ -652,11 +660,7 @@ document.addEventListener('sidebarLoaded', async () => {
         }
         buildGestorSidebarLayout();
       } else if (isCliente) {
-        hideIds(CLIENTE_HIDDEN_MENU_IDS);
-        document.querySelectorAll('#sidebar .sidebar-link').forEach(a => {
-          const li = a.closest('li') || a.parentElement;
-          if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id)) li.style.display = '';
-        });
+        showOnly(CLIENTE_MENU_IDS);
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
