@@ -50,21 +50,9 @@
                   <button onclick="testBlingConnection()" class="btn-outline">
                     Testar Conexão
                   </button>
-    </div>
-  </div>
-</div>
-<script type="module">
-  import { closeModal } from '../login.js';
-  document.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => closeModal(el.dataset.close));
-  });
-</script>
-<script type="module">
-  import { closeModal } from '../login.js';
-  document.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => closeModal(el.dataset.close));
-  });
-</script>
+                </div>
+              </div>
+            </div>
             
             <div class="mt-6">
               <button onclick="saveApiConfig()" class="btn-primary">
@@ -138,7 +126,7 @@
   <!-- Modal de Adicionar Usuário -->
     <div id="addUserModal" class="modal">
       <div class="modal-content">
-        <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" data-close="addUserModal">&times;</span>
+        <span class="btn-close float-right text-gray-500 hover:text-gray-700 cursor-pointer text-2xl" onclick="closeModal('addUserModal')">&times;</span>
         <h3 class="text-xl font-bold mb-4">Adicionar Usuário</h3>
         <div class="space-y-4">
           <input type="text" id="newUserName" class="w-full p-2 border rounded" placeholder="Nome">
@@ -155,9 +143,3 @@
         </div>
       </div>
     </div>
-<script type="module">
-  import { closeModal } from '../login.js';
-  document.querySelectorAll('[data-close]').forEach(el => {
-    el.addEventListener('click', () => closeModal(el.dataset.close));
-  });
-</script>

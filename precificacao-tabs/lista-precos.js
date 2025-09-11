@@ -157,8 +157,6 @@ function renderLista(lista) {
   }
 }
 
-import { openModal, closeModal } from '../login.js';
-
 function verDetalhes(id) {
   const prod = produtos.find(p => p.id === id);
   if (!prod) return;
@@ -179,7 +177,11 @@ function verDetalhes(id) {
   `;
     // Utilize global modal helpers to ensure proper display
   document.getElementById('detalhesModal').classList.remove('hidden');
-  openModal('detalhesModal');
+  if (typeof openModal === 'function') {
+    openModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'flex';
+  }
 }
 
 let editId = null;
@@ -200,7 +202,11 @@ function editarProduto(id) {
   `;
   document.getElementById('saveBtn').classList.remove('hidden');
   document.getElementById('detalhesModal').classList.remove('hidden');
-  openModal('detalhesModal');
+  if (typeof openModal === 'function') {
+    openModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'flex';
+  }
 }
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
@@ -283,7 +289,11 @@ await Promise.all(
   carregarProdutos();
 }
 function fecharModal() {
-  closeModal('detalhesModal');
+  if (typeof closeModal === 'function') {
+    closeModal('detalhesModal');
+  } else {
+    document.getElementById('detalhesModal').style.display = 'none';
+  }
   document.getElementById('detalhesModal').classList.add('hidden');
   editId = null;
 }
