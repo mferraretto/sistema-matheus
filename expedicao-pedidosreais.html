@@ -45,7 +45,11 @@
     </div>
     <div class="flex justify-between items-center mb-2">
       <div id="resumoPedidos" class="font-medium"></div>
-      <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
+      <div class="flex items-center gap-2">
+        <input type="file" id="importFileInput" accept=".csv" class="hidden" />
+        <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar CSV</button>
+        <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
+      </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
       <table class="min-w-full">
@@ -76,6 +80,7 @@
     const db = firebase.firestore();
     let todosPedidos = [];
     let listaFiltrada = [];
+    let usuarioAtual = null;
 
     function parseDate(str) {
       if (!str) return null;
@@ -141,6 +146,7 @@
         window.location.href = 'index.html?login=1';
         return;
       }
+      usuarioAtual = user;
       await carregarPedidos(user);
       aplicarFiltros();
     });
@@ -181,6 +187,8 @@
     });
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
+    document.getElementById('importFileInput').addEventListener('change', e => importarCSV(e.target.files[0]));
 
     function atualizarResumo(lista) {
       const total = lista.length;
@@ -212,6 +220,76 @@
       a.download = 'pedidos.csv';
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    async function importarCSV(file) {
+      if (!file || !usuarioAtual) return;
+      try {
+        const texto = await file.text();
+        const linhas = texto.trim().split(/\r?\n/);
+        const headers = linhas.shift().split(';').map(h => h.trim());
+        const pedidos = [];
+        for (const linha of linhas) {
+          if (!linha.trim()) continue;
+          const cols = linha.split(';');
+          const obj = {};
+          headers.forEach((h, i) => obj[h] = cols[i] ? cols[i].trim() : '');
+          const p = {
+            pedidoId: obj['Pedido'],
+            data: obj['Data'],
+            loja: obj['Loja'],
+            sku: obj['SKU'],
+            status: obj['Status'],
+            subtotal: parseFloat(obj['Subtotal']) || 0,
+            taxas: parseFloat(obj['Taxas']) || 0,
+            liquido: parseFloat(obj['Líquido']) || 0,
+            reembolso: parseFloat(obj['Reembolso']) || 0
+          };
+          pedidos.push(p);
+        }
+        const { encryptString, decryptString } = await import('./crypto.js');
+        const pass = getPassphrase() || usuarioAtual.uid;
+        let atualizados = 0;
+        for (const p of pedidos) {
+          if (!p.pedidoId || !p.data) continue;
+          const docRef = db.collection('uid').doc(usuarioAtual.uid)
+            .collection('pedidosreais').doc(p.data)
+            .collection('lista').doc(p.pedidoId);
+          const snap = await docRef.get();
+          if (!snap.exists) continue;
+          let existente = {};
+          const dados = snap.data();
+          if (dados.encrypted) {
+            try {
+              const txt = await decryptString(dados.encrypted, pass);
+              existente = JSON.parse(txt);
+            } catch (e) {
+              console.error('Erro ao descriptografar', e);
+              continue;
+            }
+          }
+          const campos = ['pedidoId','data','loja','sku','status','subtotal','taxas','liquido','reembolso'];
+          let diferente = false;
+          for (const c of campos) {
+            if ((existente[c] ?? '') != (p[c] ?? '')) {
+              diferente = true;
+              break;
+            }
+          }
+          if (diferente) {
+            const enc = await encryptString(JSON.stringify(p), pass);
+            await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
+            atualizados++;
+          }
+        }
+        if (atualizados) {
+          await carregarPedidos(usuarioAtual);
+          aplicarFiltros();
+        }
+        alert(`${atualizados} pedidos atualizados`);
+      } catch (e) {
+        console.error('Erro ao importar CSV', e);
+      }
     }
   </script>
   <script src="shared.js"></script>
