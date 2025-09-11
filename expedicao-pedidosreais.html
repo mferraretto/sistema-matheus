@@ -135,32 +135,36 @@
     async function carregarPedidos(user) {
       try {
         const { decryptString } = await import('./crypto.js');
-        const snap = await db.collection('uid').doc(user.uid).collection('pedidosreais').get();
+        const rootSnap = await db.collection('uid').doc(user.uid).collection('pedidosreais').get();
         todosPedidos = [];
         const candidates = [getPassphrase(), user?.email, `chave-${user.uid}`, user.uid];
-        for (const doc of snap.docs) {
-          let d = doc.data();
-          if (d.encrypted) {
-            let txt;
-            for (const p of candidates) {
-              if (!p) continue;
+        for (const dataDoc of rootSnap.docs) {
+          const listaSnap = await dataDoc.ref.collection('lista').get();
+          for (const doc of listaSnap.docs) {
+            let d = doc.data();
+            if (d.encrypted) {
+              let txt;
+              for (const p of candidates) {
+                if (!p) continue;
+                try {
+                  txt = await decryptString(d.encrypted, p);
+                  if (txt) break;
+                } catch (_) {}
+              }
+              if (!txt) {
+                console.error('Erro ao descriptografar pedido');
+                continue;
+              }
               try {
-                txt = await decryptString(d.encrypted, p);
-                if (txt) break;
-              } catch (_) {}
+                d = JSON.parse(txt);
+              } catch (e) {
+                console.error('JSON inválido no pedido', e);
+                continue;
+              }
             }
-            if (!txt) {
-              console.error('Erro ao descriptografar pedido');
-              continue;
-            }
-            try {
-              d = JSON.parse(txt);
-            } catch (e) {
-              console.error('JSON inválido no pedido', e);
-              continue;
-            }
+            if (!d.pedidoId) d.pedidoId = doc.id;
+            todosPedidos.push(d);
           }
-          todosPedidos.push(d);
         }
         todosPedidos.sort((a, b) => {
           const da = parseDate(a.data);

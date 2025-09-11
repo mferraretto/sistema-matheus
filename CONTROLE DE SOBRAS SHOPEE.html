@@ -1653,7 +1653,29 @@ const dataInput = document.getElementById("dataFaturamento");
           
           const pass = getPassphrase() || usuarioLogado.uid;
 
-          const pedidosRef = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais');
+          const pedidosDataRef = db
+            .collection('uid')
+            .doc(usuarioLogado.uid)
+            .collection('pedidosreais')
+            .doc(dataReferencia);
+          await pedidosDataRef.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+          const pedidosRef = pedidosDataRef.collection('lista');
+          let pedidosRespRef = null;
+          if (baseResp && respEmail) {
+            pedidosRespRef = baseResp
+              .collection('pedidosreais')
+              .doc(dataReferencia);
+            await pedidosRespRef.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+            pedidosRespRef = pedidosRespRef.collection('lista');
+          }
+          let pedidosExpRef = null;
+          if (baseExp && gestorEmail) {
+            pedidosExpRef = baseExp
+              .collection('pedidosreais')
+              .doc(dataReferencia);
+            await pedidosExpRef.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+            pedidosExpRef = pedidosExpRef.collection('lista');
+          }
           for (const row of rows) {
             const statusPedido = row['Status do pedido'] || '';
             const headersPedido = Object.keys(row);
@@ -1681,14 +1703,14 @@ const dataInput = document.getElementById("dataFaturamento");
               reembolso: reembolsoPedido
             };
             const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
-            await pedidosRef.add({ encrypted: encPedido, uid: usuarioLogado.uid });
-            if (baseResp && respEmail) {
+            await pedidosRef.doc(String(pedidoId)).set({ encrypted: encPedido, uid: usuarioLogado.uid });
+            if (pedidosRespRef) {
               const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
-              await baseResp.collection('pedidosreais').add({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+              await pedidosRespRef.doc(String(pedidoId)).set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
             }
-            if (baseExp && gestorEmail) {
+            if (pedidosExpRef) {
               const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
-              await baseExp.collection('pedidosreais').add({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+              await pedidosExpRef.doc(String(pedidoId)).set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
             }
           }
 
