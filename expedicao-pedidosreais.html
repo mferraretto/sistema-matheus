@@ -29,10 +29,10 @@
             <span class="text-sm">Não impressa</span>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="filtroEtiqueta" class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-blue-600"></div>
+              <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-green-600"></div>
               <div class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition peer-checked:translate-x-5"></div>
             </label>
-            <span class="text-sm">Impressa</span>
+            <span class="text-sm" id="impressaLabel">Impressa</span>
             <span id="labelEtiqueta" class="sr-only">Todos</span>
           </div>
         </div>
@@ -372,22 +372,26 @@
 
     const etiquetaInput = document.getElementById('filtroEtiqueta');
     const etiquetaLabel = document.getElementById('labelEtiqueta');
+    const impressaSpan = document.getElementById('impressaLabel');
     etiquetaInput.addEventListener('click', () => {
       if (etiquetaEstado === '') {
         etiquetaEstado = 'sim';
         etiquetaInput.checked = true;
         etiquetaInput.indeterminate = false;
         etiquetaLabel.textContent = 'Impressa';
+        impressaSpan.classList.add('text-green-600');
       } else if (etiquetaEstado === 'sim') {
         etiquetaEstado = 'nao';
         etiquetaInput.checked = false;
         etiquetaInput.indeterminate = false;
         etiquetaLabel.textContent = 'Não impressa';
+        impressaSpan.classList.remove('text-green-600');
       } else {
         etiquetaEstado = '';
         etiquetaInput.checked = false;
         etiquetaInput.indeterminate = true;
         etiquetaLabel.textContent = 'Todos';
+        impressaSpan.classList.remove('text-green-600');
       }
       aplicarFiltros();
     });
