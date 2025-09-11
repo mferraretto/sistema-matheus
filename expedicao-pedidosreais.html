@@ -59,6 +59,7 @@
 
   <script type="module">
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
+    import { loadSecureDocFromSnap } from './secure-firestore.js';
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -134,37 +135,26 @@
 
     async function carregarPedidos(user) {
       try {
-        const { decryptString } = await import('./crypto.js');
         const pedidosRef = db.collection('uid').doc(user.uid).collection('pedidosreais');
         const datasSnap = await pedidosRef.get();
         todosPedidos = [];
-        const candidates = [getPassphrase(), user?.email, `chave-${user.uid}`, user.uid];
+        const passCandidates = [getPassphrase(), `chave-${user.uid}`, user.uid, user?.email].filter(Boolean);
         for (const dataDoc of datasSnap.docs) {
           const listaSnap = await dataDoc.ref.collection('lista').get();
-          for (const doc of listaSnap.docs) {
-            let d = doc.data();
-            if (d.encrypted) {
-              let txt;
-              for (const p of candidates) {
-                if (!p) continue;
-                try {
-                  txt = await decryptString(d.encrypted, p);
-                  if (txt) break;
-                } catch (_) {}
-              }
-              if (!txt) {
-                console.error('Erro ao descriptografar pedido');
-                continue;
-              }
+          for (const docSnap of listaSnap.docs) {
+            let pedido = null;
+            for (const pass of passCandidates) {
               try {
-                d = JSON.parse(txt);
-              } catch (e) {
-                console.error('JSON inválido no pedido', e);
-                continue;
-              }
+                pedido = await loadSecureDocFromSnap(docSnap, pass);
+              } catch (_) {}
+              if (pedido) break;
             }
-            d.pedidoId = d.pedidoId || doc.id;
-            todosPedidos.push(d);
+            if (!pedido) {
+              console.error('Erro ao descriptografar pedido');
+              continue;
+            }
+            pedido.pedidoId = pedido.pedidoId || docSnap.id;
+            todosPedidos.push(pedido);
           }
         }
         todosPedidos.sort((a, b) => {
