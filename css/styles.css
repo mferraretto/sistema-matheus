@@ -1238,8 +1238,10 @@ body.dark-mode .data-table th {
   align-items: center;
   justify-content: center;
   height: 2.5rem;
-  width: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0 0.75rem;
   border-radius: 0.5rem;
+  white-space: nowrap;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 .navbar .menu-item:hover {
