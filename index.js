@@ -4,7 +4,7 @@ import { decryptString } from './crypto.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
-import { checkBackend } from './login.js';
+import { checkBackend } from './utils.js';
 import logger from './logger.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
