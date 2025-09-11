@@ -12,6 +12,13 @@ const URLS_TO_CACHE = [
   'icons/icon-512.png',
 ];
 
+const LEGACY_URLS = {
+  '/CONTROLE DE SOBRAS SHOPEE.html': '/controle-sobras-shopee.html',
+  '/Gerenciamento de ANUNCIOS E DESEMPENHO.html': '/gerenciamento-anuncios-desempenho.html',
+  '/SISTEMA DE CUSTEIO DE PRODUÇÃO E PRODUTOS.html': '/sistema-custeio-producao.html',
+  '/Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html': '/sistema-precificacao-importacao-planilha-promocoes-shopee.html'
+};
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
@@ -33,6 +40,12 @@ self.addEventListener('fetch', (event) => {
 
   // Skip cross-origin requests so API calls bypass the service worker
   if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  const pathname = decodeURI(url.pathname);
+  if (LEGACY_URLS[pathname]) {
+    event.respondWith(Response.redirect(LEGACY_URLS[pathname], 301));
     return;
   }
 
