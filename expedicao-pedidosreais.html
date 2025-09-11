@@ -287,16 +287,7 @@
           let d = doc.data();
           if (d.encrypted) {
             try {
-              let payload = d.encrypted;
-              if (typeof payload !== 'string') {
-                payload = JSON.stringify(payload);
-              } else {
-                payload = payload.trim();
-                if (payload.startsWith('"') && payload.endsWith('"')) {
-                  payload = JSON.parse(payload);
-                }
-              }
-              const txt = await decryptString(payload, pass);
+              const txt = await decryptString(d.encrypted, pass);
               d = JSON.parse(txt);
             } catch (e) {
               console.error('Erro ao descriptografar pedido', e);
