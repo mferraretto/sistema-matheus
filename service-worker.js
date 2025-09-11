@@ -13,49 +13,28 @@ const URLS_TO_CACHE = [
   'icons/icon-512.png',
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE)),
-  );
-});
+// Workbox handles the installation and activation steps automatically.
+// The precaching list is used by Workbox's precaching module.
+workbox.precaching.precacheAndRoute(URLS_TO_CACHE.map(url => ({ url, revision: null })));
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
-        ),
-      ),
-  );
-
-});
-
-workbox.precaching.cleanupOutdatedCaches();
-
+// A simple routing example: use a CacheFirst strategy for images.
 workbox.routing.registerRoute(
-  ({request}) => request.mode === 'navigate',
-  new workbox.strategies.NetworkFirst({
-    cacheName: 'pages-cache',
-  })
+  ({ request }) => request.destination === 'image',
+  new workbox.strategies.CacheFirst({
+    cacheName: 'images-cache',
+    plugins: [
+      new workbox.expiration.ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+      }),
+    ],
+  }),
 );
 
+// Another example: a StaleWhileRevalidate strategy for CSS and JS.
 workbox.routing.registerRoute(
-  ({request}) => ['style', 'script', 'image'].includes(request.destination),
+  ({ request }) => request.destination === 'script' || request.destination === 'style',
   new workbox.strategies.StaleWhileRevalidate({
     cacheName: 'assets-cache',
-  })
+  }),
 );
-
-  event.respondWith(
-    caches
-      .match(event.request)
-      .then(
-        (response) => response || fetch(event.request).catch(() => response),
-      ),
-  );
-
-});
