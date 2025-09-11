@@ -54,9 +54,11 @@
     <div class="flex justify-between items-center mb-2">
       <div id="resumoPedidos" class="font-medium"></div>
       <div class="flex items-center gap-2">
-          <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" class="hidden" />
-          <input type="text" id="importNomeLoja" placeholder="Nome da loja" class="border p-1 rounded" />
-          <button id="importBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar Planilha</button>
+        <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" class="hidden" />
+        <button id="importBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700">
+          <i class="fas fa-file-import"></i>
+          Importar Planilha
+        </button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
         <button id="verificarDuplicadosBtn" class="px-3 py-1 bg-red-600 text-white rounded">Verificar Duplicados</button>
       </div>
@@ -85,6 +87,23 @@
     </div>
   </div>
 
+  <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded shadow-lg w-80">
+      <h2 class="text-lg font-semibold mb-4">Importar Pedidos</h2>
+      <label for="modalNomeLoja" class="block text-sm font-medium mb-1">Nome da loja</label>
+      <input type="text" id="modalNomeLoja" class="border p-2 w-full rounded mb-4" />
+      <div id="progressContainer" class="hidden mb-4">
+        <div class="w-full bg-gray-200 h-2 rounded">
+          <div id="importProgress" class="bg-blue-600 h-2 rounded" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button id="cancelImportBtn" class="px-3 py-1 rounded border">Cancelar</button>
+        <button id="confirmImportBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Importar</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { firebaseConfig, getPassphrase } from './firebase-config.js';
 
@@ -95,6 +114,7 @@
     let todosPedidos = [];
     let listaFiltrada = [];
     let usuarioAtual = null;
+    let selectedFile = null;
 
     document.getElementById('filtroStatus').selectedIndex = -1;
 
@@ -254,8 +274,21 @@
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
-    document.getElementById('importFileInput').addEventListener('change', e => importarCSV(e.target.files[0]));
+    document.getElementById('importFileInput').addEventListener('change', e => {
+      selectedFile = e.target.files[0];
+      if (selectedFile) {
+        document.getElementById('importModal').classList.remove('hidden');
+      }
+    });
     document.getElementById('verificarDuplicadosBtn').addEventListener('click', verificarDuplicados);
+    document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
+    document.getElementById('confirmImportBtn').addEventListener('click', () => {
+      const nome = document.getElementById('modalNomeLoja').value.trim();
+      if (selectedFile && nome) {
+        document.getElementById('progressContainer').classList.remove('hidden');
+        importarCSV(selectedFile, nome);
+      }
+    });
 
     function atualizarResumo(lista) {
       const total = lista.length;
@@ -296,11 +329,19 @@
       URL.revokeObjectURL(url);
     }
 
-    async function importarCSV(file) {
+    function closeImportModal() {
+      document.getElementById('importModal').classList.add('hidden');
+      document.getElementById('modalNomeLoja').value = '';
+      document.getElementById('progressContainer').classList.add('hidden');
+      document.getElementById('importProgress').style.width = '0%';
+      document.getElementById('importFileInput').value = '';
+      selectedFile = null;
+    }
+
+    async function importarCSV(file, nomeLoja) {
       if (!file || !usuarioAtual) return;
       try {
         let rows = [];
-        const nomeLoja = document.getElementById('importNomeLoja').value.trim();
         if (file.name.toLowerCase().endsWith('.csv')) {
           const texto = await file.text();
           const workbook = XLSX.read(texto, { type: 'string' });
@@ -360,7 +401,8 @@
         const pass = getPassphrase() || usuarioAtual.uid;
         let atualizados = 0;
         let novos = 0;
-        for (const p of pedidos) {
+        for (let i = 0; i < pedidos.length; i++) {
+          const p = pedidos[i];
           if (!p.pedidoId || !p.data) continue;
           const docRef = db.collection('uid').doc(usuarioAtual.uid)
             .collection('pedidosreais').doc(p.data)
@@ -384,6 +426,8 @@
             await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
             if (snap.exists) atualizados++;
           }
+          const percent = Math.round(((i + 1) / pedidos.length) * 100);
+          document.getElementById('importProgress').style.width = percent + '%';
         }
         if (atualizados || novos) {
           await carregarPedidos(usuarioAtual);
@@ -392,6 +436,8 @@
         alert(`${atualizados} pedidos atualizados, ${novos} novos pedidos registrados`);
       } catch (e) {
         console.error('Erro ao importar CSV', e);
+      } finally {
+        closeImportModal();
       }
     }
   </script>
