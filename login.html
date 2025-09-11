@@ -34,7 +34,7 @@
     </div>
   <script type="module" src="login.js"></script>
   <script type="module">
-    import { checkBackend } from './login.js';
+    import { checkBackend } from './utils.js';
     checkBackend().then(ok => {
       if (!ok) document.getElementById('offlineNotice').classList.remove('hidden');
     });
