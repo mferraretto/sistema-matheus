@@ -331,30 +331,22 @@ const API_URL = 'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepS
     
     function mostrarSucesso(mensagem) {
       const alerta = document.getElementById('alertSuccess');
-      const conteudo = alerta?.querySelector('.alert-content');
-      if (alerta && conteudo) {
-        conteudo.textContent = mensagem;
-        alerta.style.display = 'flex';
-        setTimeout(() => {
-          alerta.style.display = 'none';
-        }, 5000);
-      } else {
-        Swal.fire('Sucesso', mensagem, 'success');
-      }
+      alerta.querySelector('.alert-content').textContent = mensagem;
+      alerta.style.display = 'flex';
+      
+      setTimeout(() => {
+        alerta.style.display = 'none';
+      }, 5000);
     }
 
     function mostrarErro(mensagem) {
       const alerta = document.getElementById('alertError');
-      const conteudo = alerta?.querySelector('.alert-content');
-      if (alerta && conteudo) {
-        conteudo.textContent = mensagem;
-        alerta.style.display = 'flex';
-        setTimeout(() => {
-          alerta.style.display = 'none';
-        }, 5000);
-      } else {
-        Swal.fire('Erro', mensagem, 'error');
-      }
+      alerta.querySelector('.alert-content').textContent = mensagem;
+      alerta.style.display = 'flex';
+      
+      setTimeout(() => {
+        alerta.style.display = 'none';
+      }, 5000);
     }
 
     function toggleLoading(botao, texto) {
