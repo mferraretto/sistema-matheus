@@ -275,29 +275,13 @@
         const pedidos = [];
         for (const row of rows) {
           const headers = Object.keys(row);
-          const pedidoIdHeader = headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
-          const pedidoId = pedidoIdHeader ? String(row[pedidoIdHeader]).trim() : '';
-
-          // Captura da data e hora de pagamento
-          const horaPagHeader = headers.find(h => h.toLowerCase().includes('hora') && h.toLowerCase().includes('pagamento'));
-          let data = '';
-          let horaPagamento = '';
-          if (horaPagHeader && row[horaPagHeader]) {
-            const val = row[horaPagHeader].toString().replace(' ', 'T');
-            const d = new Date(val);
-            if (!isNaN(d)) {
-              data = d.toISOString().split('T')[0];
-              horaPagamento = d.toISOString().replace('T', ' ').slice(0, 16);
-            }
-          } else {
-            const dataHeader = headers.find(h => h.toLowerCase().includes('data'));
-            data = dataHeader ? row[dataHeader] : '';
-            if (data) {
-              const d = new Date(data);
-              if (!isNaN(d)) data = d.toISOString().split('T')[0];
-            }
+          const pedidoId = row[headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'))] || '';
+          const dataHeader = headers.find(h => h.toLowerCase().includes('data'));
+          let data = dataHeader ? row[dataHeader] : '';
+          if (data) {
+            const d = new Date(data);
+            if (!isNaN(d)) data = d.toISOString().split('T')[0];
           }
-
           const lojaHeader = headers.find(h => h.toLowerCase().includes('loja'));
           const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
@@ -311,7 +295,6 @@
           pedidos.push({
             pedidoId,
             data,
-            horaPagamento,
             loja: nomeLoja || (lojaHeader ? row[lojaHeader] : ''),
             sku: skuHeader ? row[skuHeader] : '',
             status: statusHeader ? row[statusHeader] : '',
@@ -332,22 +315,10 @@
             .collection('lista').doc(p.pedidoId);
           const snap = await docRef.get();
           if (!snap.exists) {
-            // Verifica duplicados em outras datas
-            const dupQuery = await db.collectionGroup('lista')
-              .where('uid', '==', usuarioAtual.uid)
-              .where(firebase.firestore.FieldPath.documentId(), '==', p.pedidoId)
-              .limit(1).get();
-            if (!dupQuery.empty) {
-              const encDup = await encryptString(JSON.stringify(p), pass);
-              await dupQuery.docs[0].ref.set({ encrypted: encDup, uid: usuarioAtual.uid });
-              atualizados++;
-              continue;
-            } else {
-              const encNovo = await encryptString(JSON.stringify(p), pass);
-              await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
-              novos++;
-              continue;
-            }
+            const encNovo = await encryptString(JSON.stringify(p), pass);
+            await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
+            novos++;
+            continue;
           }
           let existente = {};
           const dados = snap.data();
@@ -360,7 +331,7 @@
               continue;
             }
           }
-          const campos = ['pedidoId','data','horaPagamento','loja','sku','status','subtotal','taxas','liquido','reembolso'];
+          const campos = ['pedidoId','data','loja','sku','status','subtotal','taxas','liquido','reembolso'];
           let diferente = false;
           for (const c of campos) {
             if ((existente[c] ?? '') != (p[c] ?? '')) {
