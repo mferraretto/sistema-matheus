@@ -286,7 +286,7 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) se for expedição, executa fluxo especial
-    if (['expedicao', 'gestor expedicao', 'responsavel expedicao'].includes(perfil)) {
+    if (perfil === 'expedicao') {
       await checkExpedicao(user);
     }
 
@@ -337,28 +337,25 @@ function hideUserArea() {
 }
 
 function applyExpedicaoSidebar() {
-  const applyLayout = () => {
-    if (typeof window.buildExpedicaoSidebarLayout === 'function') {
-      window.buildExpedicaoSidebarLayout();
-      return;
-    }
+  const hideLinks = () => {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
     sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
-      const li = link.closest('li');
-      const keep = link.id === 'menu-expedicao' || link.closest('#menuExpedicao');
-      if (li) li.classList.toggle('hidden', !keep);
+      const href = link.getAttribute('href') || '';
+      if (!href.includes('expedicao.html')) {
+        link.classList.add('hidden');
+      }
     });
   };
-  applyLayout();
-  document.addEventListener('sidebarLoaded', applyLayout);
+  hideLinks();
+  document.addEventListener('sidebarLoaded', hideLinks);
 }
 
 function restoreSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  sidebar.querySelectorAll('li.hidden, a.sidebar-link.hidden').forEach(el => {
-    el.classList.remove('hidden');
+  sidebar.querySelectorAll('a.sidebar-link').forEach(link => {
+    link.classList.remove('hidden');
   });
 }
 function applyPerfilRestrictions(perfil) {
