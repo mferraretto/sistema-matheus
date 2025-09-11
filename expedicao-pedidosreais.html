@@ -307,13 +307,19 @@
         const { encryptString, decryptString } = await import('./crypto.js');
         const pass = getPassphrase() || usuarioAtual.uid;
         let atualizados = 0;
+        let novos = 0;
         for (const p of pedidos) {
           if (!p.pedidoId || !p.data) continue;
           const docRef = db.collection('uid').doc(usuarioAtual.uid)
             .collection('pedidosreais').doc(p.data)
             .collection('lista').doc(p.pedidoId);
           const snap = await docRef.get();
-          if (!snap.exists) continue;
+          if (!snap.exists) {
+            const encNovo = await encryptString(JSON.stringify(p), pass);
+            await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
+            novos++;
+            continue;
+          }
           let existente = {};
           const dados = snap.data();
           if (dados.encrypted) {
@@ -339,11 +345,11 @@
             atualizados++;
           }
         }
-        if (atualizados) {
+        if (atualizados || novos) {
           await carregarPedidos(usuarioAtual);
           aplicarFiltros();
         }
-        alert(`${atualizados} pedidos atualizados`);
+        alert(`${atualizados} pedidos atualizados, ${novos} novos pedidos registrados`);
       } catch (e) {
         console.error('Erro ao importar CSV', e);
       }
