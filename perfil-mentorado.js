@@ -1,6 +1,21 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -22,14 +37,34 @@ function createPerfilCard(uid, email, data = {}) {
     { field: 'nome', placeholder: 'Nome', value: data.nome || '' },
     { field: 'loja', placeholder: 'Loja', value: data.loja || '' },
     { field: 'segmento', placeholder: 'Segmento', value: data.segmento || '' },
-    { field: 'tempoOperacao', placeholder: 'Tempo de operação', value: data.tempoOperacao || '' },
-    { field: 'shopee', placeholder: 'Link Shopee', value: data.links?.shopee || '' },
-    { field: 'mercadoLivre', placeholder: 'Link Mercado Livre', value: data.links?.mercadoLivre || '' },
-    { field: 'site', placeholder: 'Site próprio', value: data.links?.site || '' },
-    { field: 'instagram', placeholder: 'Instagram', value: data.links?.instagram || '' }
+    {
+      field: 'tempoOperacao',
+      placeholder: 'Tempo de operação',
+      value: data.tempoOperacao || '',
+    },
+    {
+      field: 'shopee',
+      placeholder: 'Link Shopee',
+      value: data.links?.shopee || '',
+    },
+    {
+      field: 'mercadoLivre',
+      placeholder: 'Link Mercado Livre',
+      value: data.links?.mercadoLivre || '',
+    },
+    {
+      field: 'site',
+      placeholder: 'Site próprio',
+      value: data.links?.site || '',
+    },
+    {
+      field: 'instagram',
+      placeholder: 'Instagram',
+      value: data.links?.instagram || '',
+    },
   ];
 
-  campos.forEach(c => {
+  campos.forEach((c) => {
     const input = document.createElement('input');
     input.className = 'form-control';
     input.placeholder = c.placeholder;
@@ -50,7 +85,8 @@ function createPerfilCard(uid, email, data = {}) {
   card.appendChild(btn);
 
   btn.addEventListener('click', async () => {
-    const getVal = (field) => card.querySelector(`[data-field="${field}"]`).value.trim();
+    const getVal = (field) =>
+      card.querySelector(`[data-field="${field}"]`).value.trim();
     const payload = {
       nome: getVal('nome'),
       loja: getVal('loja'),
@@ -60,9 +96,9 @@ function createPerfilCard(uid, email, data = {}) {
         shopee: getVal('shopee'),
         mercadoLivre: getVal('mercadoLivre'),
         site: getVal('site'),
-        instagram: getVal('instagram')
+        instagram: getVal('instagram'),
       },
-      objetivos: objetivos.value.trim()
+      objetivos: objetivos.value.trim(),
     };
     try {
       await setDoc(doc(db, 'perfilMentorado', uid), payload, { merge: true });
@@ -129,7 +165,7 @@ async function carregarPerfis() {
 }
 
 function initPerfilMentorado() {
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, (user) => {
     if (user) {
       carregarPerfis();
     }

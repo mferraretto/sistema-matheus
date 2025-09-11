@@ -4,7 +4,7 @@ export async function pingOnline(timeout = 3000) {
     const t = setTimeout(() => ctrl.abort(), timeout);
     const res = await fetch('ping.txt?cb=' + Date.now(), {
       cache: 'no-store',
-      signal: ctrl.signal
+      signal: ctrl.signal,
     });
     clearTimeout(t);
     return res.ok;
@@ -28,10 +28,10 @@ export function showToast(message, type = 'success') {
     type === 'success'
       ? 'bg-green-500'
       : type === 'error'
-      ? 'bg-red-500'
-      : type === 'warning'
-      ? 'bg-yellow-500'
-      : 'bg-blue-500';
+        ? 'bg-red-500'
+        : type === 'warning'
+          ? 'bg-yellow-500'
+          : 'bg-blue-500';
   const toast = document.createElement('div');
   toast.className = `${color} text-white px-4 py-3 rounded shadow-lg flex items-center justify-between min-w-[250px] animate-fadeIn`;
   toast.innerHTML = `<span class="mr-4">${message}</span><button onclick="this.parentElement.remove()" class="text-white font-bold">×</button>`;

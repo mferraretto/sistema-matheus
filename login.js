@@ -1,6 +1,18 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 
-import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  signInWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  updateProfile,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 import {
   getFirestore,
@@ -14,10 +26,15 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
-    onSnapshot,
-    orderBy
-  } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { firebaseConfig, setPassphrase, getPassphrase, clearPassphrase } from './firebase-config.js';
+  onSnapshot,
+  orderBy,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  firebaseConfig,
+  setPassphrase,
+  getPassphrase,
+  clearPassphrase,
+} from './firebase-config.js';
 import { encryptString, decryptString } from './crypto.js';
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 import { showToast } from './utils.js';
@@ -36,12 +53,11 @@ let selectedRole = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
-
 window.savePassphrase = () => {
   const input = document.getElementById('passphraseInput');
   const pass = input.value.trim();
   if (pass) {
-       setPassphrase(pass);
+    setPassphrase(pass);
 
     input.value = '';
     closeModal('passphraseModal');
@@ -78,12 +94,9 @@ window.saveDisplayName = async () => {
         uid: user.uid,
         email: user.email,
         nome,
-        encrypted: await encryptString(
-          JSON.stringify({ perfil }),
-          pass
-        )
+        encrypted: await encryptString(JSON.stringify({ perfil }), pass),
       },
-      { merge: true }
+      { merge: true },
     );
     try {
       await updateProfile(user, { displayName: nome });
@@ -138,7 +151,7 @@ window.login = () => {
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
   const roleInput = document.querySelector('input[name="userRole"]:checked');
-  const role = roleInput ? roleInput.value : (selectedRole || 'usuario');
+  const role = roleInput ? roleInput.value : selectedRole || 'usuario';
 
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
@@ -154,12 +167,16 @@ window.login = () => {
         window.location.href = 'financeiro.html';
       }
     })
-    .catch(err => showToast('Credenciais inválidas! ' + err.message, 'error'));
+    .catch((err) =>
+      showToast('Credenciais inválidas! ' + err.message, 'error'),
+    );
 };
 
 window.logout = () => {
   explicitLogout = true;
-  signOut(auth).catch(err => showToast('Erro ao sair: ' + err.message, 'error'));
+  signOut(auth).catch((err) =>
+    showToast('Erro ao sair: ' + err.message, 'error'),
+  );
 };
 
 window.sendRecovery = () => {
@@ -173,9 +190,10 @@ window.sendRecovery = () => {
       showToast('E-mail de recuperação enviado!', 'success');
       closeModal('recoverModal');
     })
-    .catch(err => showToast('Erro ao enviar recuperação: ' + err.message, 'error'));
+    .catch((err) =>
+      showToast('Erro ao enviar recuperação: ' + err.message, 'error'),
+    );
 };
-
 
 async function showUserArea(user) {
   const nameEl = document.getElementById('currentUser');
@@ -255,10 +273,14 @@ async function showUserArea(user) {
       let respEmail = snap.data()?.responsavelFinanceiroEmail;
       if (!respEmail) {
         const altDoc = await getDoc(doc(db, 'uid', user.uid));
-        if (altDoc.exists()) respEmail = altDoc.data().responsavelFinanceiroEmail;
+        if (altDoc.exists())
+          respEmail = altDoc.data().responsavelFinanceiroEmail;
       }
       if (respEmail) {
-        const respQuery = query(collection(db, 'usuarios'), where('email', '==', respEmail));
+        const respQuery = query(
+          collection(db, 'usuarios'),
+          where('email', '==', respEmail),
+        );
         const respDocs = await getDocs(respQuery);
         if (!respDocs.empty) {
           const d = respDocs.docs[0];
@@ -271,7 +293,10 @@ async function showUserArea(user) {
 
     // 4) verifica se usuário é responsável financeiro e garante acesso às sobras
     try {
-      const respUsuarios = await fetchResponsavelFinanceiroUsuarios(db, user.email);
+      const respUsuarios = await fetchResponsavelFinanceiroUsuarios(
+        db,
+        user.email,
+      );
       window.isFinanceiroResponsavel = respUsuarios.length > 0;
       ensureFinanceiroMenu();
     } catch (e) {
@@ -304,7 +329,7 @@ function applyExpedicaoSidebar() {
     const expLink = document.getElementById('menu-expedicao');
     const expLi = expLink ? expLink.closest('li') : null;
 
-    sidebar.querySelectorAll('li').forEach(li => {
+    sidebar.querySelectorAll('li').forEach((li) => {
       if (expLi && (li === expLi || expLi.contains(li))) {
         li.classList.remove('hidden');
         li.style.display = '';
@@ -326,7 +351,7 @@ function applyExpedicaoSidebar() {
 function restoreSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  sidebar.querySelectorAll('li, a.sidebar-link').forEach(el => {
+  sidebar.querySelectorAll('li, a.sidebar-link').forEach((el) => {
     el.classList.remove('hidden');
     if (el.style) el.style.display = '';
   });
@@ -334,11 +359,11 @@ function restoreSidebar() {
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase().trim();
   if (!currentPerfil || currentPerfil === 'expedicao') return;
-  document.querySelectorAll('[data-perfil]').forEach(el => {
+  document.querySelectorAll('[data-perfil]').forEach((el) => {
     const allowed = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
       .split(',')
-      .map(p => p.trim());
+      .map((p) => p.trim());
     if (!allowed.includes(currentPerfil)) {
       el.classList.add('hidden');
     } else {
@@ -361,9 +386,19 @@ function ensureFinanceiroMenu() {
 
 async function checkExpedicao(user) {
   try {
-    let snap = await getDocs(query(collection(db, 'usuarios'), where('responsavelExpedicaoEmail', '==', user.email)));
+    let snap = await getDocs(
+      query(
+        collection(db, 'usuarios'),
+        where('responsavelExpedicaoEmail', '==', user.email),
+      ),
+    );
     if (snap.empty) {
-      snap = await getDocs(query(collection(db, 'usuarios'), where('gestoresExpedicaoEmails', 'array-contains', user.email)));
+      snap = await getDocs(
+        query(
+          collection(db, 'usuarios'),
+          where('gestoresExpedicaoEmails', 'array-contains', user.email),
+        ),
+      );
     }
     if (!snap.empty) {
       isExpedicao = true;
@@ -402,9 +437,11 @@ function initNotificationListener(uid) {
 
   const render = () => {
     list.innerHTML = '';
-    const all = [...finNotifs, ...expNotifs, ...updNotifs].sort((a, b) => b.ts - a.ts);
+    const all = [...finNotifs, ...expNotifs, ...updNotifs].sort(
+      (a, b) => b.ts - a.ts,
+    );
     let count = 0;
-    all.forEach(n => {
+    all.forEach((n) => {
       const item = document.createElement('div');
       item.className = 'px-4 py-2 hover:bg-gray-100';
       item.textContent = n.text;
@@ -423,57 +460,81 @@ function initNotificationListener(uid) {
     collection(db, 'financeiroAtualizacoes'),
     where('destinatarios', 'array-contains', uid),
     where('tipo', '==', 'faturamento'),
-    orderBy('createdAt', 'desc')
+    orderBy('createdAt', 'desc'),
   );
-  notifUnsub = onSnapshot(qFin, snap => {
-    finNotifs = [];
-    snap.forEach(docSnap => {
-      const data = docSnap.data();
-      if (data.autorUid === uid) return;
-      const email = data.autorEmail || data.autorNome || '';
-      const dataFat = data.dataFaturamento || (data.createdAt?.toDate?.().toLocaleDateString('pt-BR')) || '';
-      finNotifs.push({ text: `${email} - ${dataFat}` , ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0 });
-    });
-    render();
-  }, err => {
-    console.error('Erro no listener de notificações:', err);
-  });
+  notifUnsub = onSnapshot(
+    qFin,
+    (snap) => {
+      finNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.autorUid === uid) return;
+        const email = data.autorEmail || data.autorNome || '';
+        const dataFat =
+          data.dataFaturamento ||
+          data.createdAt?.toDate?.().toLocaleDateString('pt-BR') ||
+          '';
+        finNotifs.push({
+          text: `${email} - ${dataFat}`,
+          ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações:', err);
+    },
+  );
 
   const qUpd = query(
     collection(db, 'financeiroAtualizacoes'),
     where('destinatarios', 'array-contains', uid),
     where('tipo', '==', 'atualizacao'),
-    orderBy('createdAt', 'desc')
+    orderBy('createdAt', 'desc'),
   );
-  updNotifUnsub = onSnapshot(qUpd, snap => {
-    updNotifs = [];
-    snap.forEach(docSnap => {
-      const d = docSnap.data();
-      if (d.autorUid === uid) return;
-      const texto = `${d.autorNome || d.autorEmail || ''}: ${d.descricao || ''}`;
-      updNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
-    });
-    render();
-  }, err => {
-    console.error('Erro no listener de notificações de atualizações:', err);
-  });
+  updNotifUnsub = onSnapshot(
+    qUpd,
+    (snap) => {
+      updNotifs = [];
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        if (d.autorUid === uid) return;
+        const texto = `${d.autorNome || d.autorEmail || ''}: ${d.descricao || ''}`;
+        updNotifs.push({
+          text: texto,
+          ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0,
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações de atualizações:', err);
+    },
+  );
 
   const qExp = query(
     collection(db, 'expedicaoMensagens'),
     where('destinatarios', 'array-contains', uid),
-    orderBy('createdAt', 'desc')
+    orderBy('createdAt', 'desc'),
   );
-  expNotifUnsub = onSnapshot(qExp, snap => {
-    expNotifs = [];
-    snap.forEach(docSnap => {
-      const d = docSnap.data();
-      const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
-      expNotifs.push({ text: texto, ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0 });
-    });
-    render();
-  }, err => {
-    console.error('Erro no listener de notificações expedição:', err);
-  });
+  expNotifUnsub = onSnapshot(
+    qExp,
+    (snap) => {
+      expNotifs = [];
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
+        expNotifs.push({
+          text: texto,
+          ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0,
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações expedição:', err);
+    },
+  );
 
   btn.addEventListener('click', () => {
     list.classList.toggle('hidden');
@@ -483,7 +544,7 @@ function initNotificationListener(uid) {
 function checkLogin() {
   if (authListenerRegistered) return;
   authListenerRegistered = true;
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, (user) => {
     const path = window.location.pathname.toLowerCase();
     const onLoginPage = path.endsWith('login.html');
     if (user) {
@@ -494,34 +555,43 @@ function checkLogin() {
     } else {
       wasLoggedIn = false;
       hideUserArea();
-      if (notifUnsub) { notifUnsub(); notifUnsub = null; }
-      if (expNotifUnsub) { expNotifUnsub(); expNotifUnsub = null; }
-      if (updNotifUnsub) { updNotifUnsub(); updNotifUnsub = null; }
+      if (notifUnsub) {
+        notifUnsub();
+        notifUnsub = null;
+      }
+      if (expNotifUnsub) {
+        expNotifUnsub();
+        expNotifUnsub = null;
+      }
+      if (updNotifUnsub) {
+        updNotifUnsub();
+        updNotifUnsub = null;
+      }
       if (!onLoginPage) window.location.href = 'login.html';
     }
   });
 }
 
-  document.addEventListener('navbarLoaded', () => {
-    const loginBtn = document.getElementById('loginBtn');
+document.addEventListener('navbarLoaded', () => {
+  const loginBtn = document.getElementById('loginBtn');
 
-    loginBtn?.addEventListener('click', () => {
-      openModal('loginModal');
-    });
-
-    // Garante que o evento de logout só seja registrado se o botão existir
-    document.getElementById('logoutBtn')?.addEventListener('click', logout);
-
-    if (window.location.search.includes('login=1')) {
-      // Espera o estado do Firebase para decidir se deve abrir
-      onAuthStateChanged(auth, (user) => {
-        if (!user) {
-          openModal('loginModal');
-        }
-      });
-    }
-    checkLogin();
+  loginBtn?.addEventListener('click', () => {
+    openModal('loginModal');
   });
+
+  // Garante que o evento de logout só seja registrado se o botão existir
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+  if (window.location.search.includes('login=1')) {
+    // Espera o estado do Firebase para decidir se deve abrir
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        openModal('loginModal');
+      }
+    });
+  }
+  checkLogin();
+});
 
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);

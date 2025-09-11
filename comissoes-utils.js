@@ -1,7 +1,7 @@
 export const TIERS = [
   { limite: 150_000, taxa: 0.03 },
   { limite: 250_000, taxa: 0.04 },
-  { limite: Infinity, taxa: 0.05 }
+  { limite: Infinity, taxa: 0.05 },
 ];
 
 export function taxaFinalPorTotal(total) {
@@ -13,7 +13,7 @@ export function taxaFinalPorTotal(total) {
 export function faltasParaTiers(total) {
   return {
     para4: Math.max(0, 150_000 - total),
-    para5: Math.max(0, 250_000 - total)
+    para5: Math.max(0, 250_000 - total),
   };
 }
 
@@ -29,7 +29,10 @@ export function calcularResumo(saques = []) {
   const totalSacado = saques.reduce((s, x) => s + (x.valor || 0), 0);
   const taxaFinal = taxaFinalPorTotal(totalSacado);
   const comissaoPrevista = totalSacado * taxaFinal;
-  const comissaoJaPaga = saques.reduce((s, x) => s + (x.valor || 0) * (x.percentualPago || 0), 0);
+  const comissaoJaPaga = saques.reduce(
+    (s, x) => s + (x.valor || 0) * (x.percentualPago || 0),
+    0,
+  );
   const ajusteFinal = comissaoPrevista - comissaoJaPaga;
   const { para4, para5 } = faltasParaTiers(totalSacado);
   return {
@@ -39,6 +42,6 @@ export function calcularResumo(saques = []) {
     comissaoJaPaga,
     ajusteFinal,
     faltamPara4: para4,
-    faltamPara5: para5
+    faltamPara5: para5,
   };
 }

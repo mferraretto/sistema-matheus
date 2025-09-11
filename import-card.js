@@ -1,6 +1,6 @@
-(function() {
+(function () {
   // Toggle visibility of the Importar Produtos card on the precificação page
-  window.toggleImportCard = function() {
+  window.toggleImportCard = function () {
     var card = document.getElementById('importarProdutosCard');
     var btn = document.getElementById('toggleImportarBtn');
     if (!card || !btn) return;

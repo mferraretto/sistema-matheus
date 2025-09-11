@@ -1,13 +1,23 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadUserDoc } from './secure-firestore.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -40,22 +50,30 @@ function atualizarTabelaPedidos(pedidos) {
     return;
   }
 
-  pedidos.forEach(pedido => {
+  pedidos.forEach((pedido) => {
     const row = document.createElement('tr');
     const cells = [
       pedido.numero,
-      pedido.itens.map(item => item.sku).join(', '),
+      pedido.itens.map((item) => item.sku).join(', '),
       `R$ ${parseFloat(pedido.valor).toFixed(2)}`,
-      `R$ ${parseFloat(pedido.valorLiquido).toFixed(2)}`
+      `R$ ${parseFloat(pedido.valorLiquido).toFixed(2)}`,
     ];
     cells.forEach((text, idx) => {
       const td = document.createElement('td');
       td.textContent = text;
       switch (idx) {
-        case 0: td.setAttribute('data-label', 'Pedido'); break;
-        case 1: td.setAttribute('data-label', 'SKU'); break;
-        case 2: td.setAttribute('data-label', 'Valor Pago'); break;
-        case 3: td.setAttribute('data-label', 'Valor Líquido'); break;
+        case 0:
+          td.setAttribute('data-label', 'Pedido');
+          break;
+        case 1:
+          td.setAttribute('data-label', 'SKU');
+          break;
+        case 2:
+          td.setAttribute('data-label', 'Valor Pago');
+          break;
+        case 3:
+          td.setAttribute('data-label', 'Valor Líquido');
+          break;
       }
       row.appendChild(td);
     });
@@ -71,10 +89,10 @@ export async function carregarPedidos() {
   if (!tbody) return;
   setTbodyMessage(tbody, 'Carregando...');
   try {
- const uid = auth.currentUser.uid;
+    const uid = auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
     const snap = await getDocs(collection(db, `uid/${uid}/pedidosBling`));
-const pedidos = [];
+    const pedidos = [];
     for (const d of snap.docs) {
       const pedido = await loadUserDoc(db, uid, 'pedidosBling', d.id, pass);
       if (pedido) pedidos.push(pedido);

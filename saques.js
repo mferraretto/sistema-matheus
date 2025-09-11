@@ -1,6 +1,18 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 import {
   registrarSaque as registrarSaqueSvc,
@@ -8,9 +20,13 @@ import {
   atualizarSaque as atualizarSaqueSvc,
   fecharMes as fecharMesSvc,
   watchResumoMes as watchResumoMesSvc,
-  registrarComissaoRecebida as registrarComissaoRecebidaSvc
+  registrarComissaoRecebida as registrarComissaoRecebidaSvc,
 } from './comissoes-service.js';
-import { anoMesBR, calcularResumo, taxaFinalPorTotal } from './comissoes-utils.js';
+import {
+  anoMesBR,
+  calcularResumo,
+  taxaFinalPorTotal,
+} from './comissoes-utils.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -22,7 +38,7 @@ let editandoId = null;
 let saquesCache = {};
 let selecionados = new Set();
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -45,7 +61,9 @@ onAuthStateChanged(auth, user => {
 export async function registrarSaque() {
   const dataISO = document.getElementById('dataSaque').value;
   const valor = parseFloat(document.getElementById('valorSaque').value);
-  const percentual = parseFloat(document.getElementById('percentualSaque').value);
+  const percentual = parseFloat(
+    document.getElementById('percentualSaque').value,
+  );
   const origem = document.getElementById('lojaSaque').value.trim();
   if (!dataISO || isNaN(valor) || valor <= 0) {
     alert('Preencha data e valor corretamente.');
@@ -53,9 +71,25 @@ export async function registrarSaque() {
   }
   if (editandoId) {
     const anoMes = document.getElementById('filtroMes').value || anoMesBR();
-    await atualizarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: editandoId, dataISO, valor, percentualPago: percentual, origem });
+    await atualizarSaqueSvc({
+      db,
+      uid: uidAtual,
+      anoMes,
+      saqueId: editandoId,
+      dataISO,
+      valor,
+      percentualPago: percentual,
+      origem,
+    });
   } else {
-    await registrarSaqueSvc({ db, uid: uidAtual, dataISO, valor, percentualPago: percentual, origem });
+    await registrarSaqueSvc({
+      db,
+      uid: uidAtual,
+      dataISO,
+      valor,
+      percentualPago: percentual,
+      origem,
+    });
   }
   document.getElementById('valorSaque').value = '';
   document.getElementById('lojaSaque').value = '';
@@ -85,18 +119,25 @@ async function carregarSaques() {
   selecionados.clear();
   atualizarResumoSelecionados();
 
-  const col = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
+  const col = collection(
+    db,
+    'usuarios',
+    uidAtual,
+    'comissoes',
+    anoMes,
+    'saques',
+  );
   const snap = await getDocs(col);
   saquesCache = {};
   const dados = snap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
+    .map((d) => ({ id: d.id, ...d.data() }))
     .sort((a, b) => a.data.localeCompare(b.data));
 
   let totalValor = 0;
   let totalComissao = 0;
   let todosPagos = true;
 
-  dados.forEach(s => {
+  dados.forEach((s) => {
     saquesCache[s.id] = s;
     const dia = (s.data || '').substring(0, 10);
     const pago = s.percentualPago > 0;
@@ -113,9 +154,9 @@ async function carregarSaques() {
       </td>
       <td class="px-4 py-3 text-slate-800">${dia}</td>
       <td class="px-4 py-3 text-slate-600">${s.origem || '-'}</td>
-      <td class="px-4 py-3 text-right font-medium text-slate-900">R$ ${(Number(s.valor)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="px-4 py-3 text-right text-slate-600">${((Number(s.percentualPago)||0) * 100).toFixed(0)}%</td>
-      <td class="px-4 py-3 text-right text-slate-800">R$ ${(Number(s.comissaoPaga)||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-3 text-right font-medium text-slate-900">R$ ${(Number(s.valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      <td class="px-4 py-3 text-right text-slate-600">${((Number(s.percentualPago) || 0) * 100).toFixed(0)}%</td>
+      <td class="px-4 py-3 text-right text-slate-800">R$ ${(Number(s.comissaoPaga) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       <td class="px-4 py-3">
         <span class="inline-flex items-center rounded-full ${pago ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'} px-2 py-0.5 text-xs font-medium">${status}</span>
       </td>
@@ -158,13 +199,14 @@ async function excluirSaque(id) {
 }
 
 function toggleSelecao(id, marcado) {
-  if (marcado) selecionados.add(id); else selecionados.delete(id);
+  if (marcado) selecionados.add(id);
+  else selecionados.delete(id);
   atualizarResumoSelecionados();
 }
 
 function toggleSelecaoTodos(marcado) {
   selecionados.clear();
-  document.querySelectorAll('.saque-select').forEach(cb => {
+  document.querySelectorAll('.saque-select').forEach((cb) => {
     cb.checked = marcado;
     if (marcado) selecionados.add(cb.dataset.id);
   });
@@ -182,7 +224,7 @@ function atualizarResumoSelecionados() {
   }
   let totalValor = 0;
   let totalComissaoSel = 0;
-  selecionados.forEach(id => {
+  selecionados.forEach((id) => {
     const s = saquesCache[id];
     if (s) {
       totalValor += s.valor || 0;
@@ -194,12 +236,23 @@ function atualizarResumoSelecionados() {
 }
 
 async function marcarComoPagoSelecionados() {
-  const perc = parseFloat(document.getElementById('percentualSelecionado')?.value || '0');
+  const perc = parseFloat(
+    document.getElementById('percentualSelecionado')?.value || '0',
+  );
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
   for (const id of selecionados) {
     const s = saquesCache[id];
     if (!s) continue;
-    await atualizarSaqueSvc({ db, uid: uidAtual, anoMes, saqueId: id, dataISO: s.data, valor: s.valor, percentualPago: perc, origem: s.origem });
+    await atualizarSaqueSvc({
+      db,
+      uid: uidAtual,
+      anoMes,
+      saqueId: id,
+      dataISO: s.data,
+      valor: s.valor,
+      percentualPago: perc,
+      origem: s.origem,
+    });
   }
   selecionados.clear();
   carregarSaques();
@@ -214,45 +267,52 @@ function exportarSelecionadosExcel() {
   if (selecionados.size === 0) return;
 
   // Cabeçalho principal
-  const linhas = [['Data', 'Loja', 'Saque', '%', 'Comissão', 'Status'].join(';')];
+  const linhas = [
+    ['Data', 'Loja', 'Saque', '%', 'Comissão', 'Status'].join(';'),
+  ];
   const resumo = {};
 
   // Linhas detalhadas e consolidação por loja
-  selecionados.forEach(id => {
+  selecionados.forEach((id) => {
     const s = saquesCache[id];
     if (!s) return;
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
-    linhas.push([
-      s.data.substring(0, 10),
-      s.origem || '',
-      s.valor.toFixed(2),
-      (s.percentualPago * 100).toFixed(0) + '%',
-      s.comissaoPaga.toFixed(2),
-      status
-    ].join(';'));
+    linhas.push(
+      [
+        s.data.substring(0, 10),
+        s.origem || '',
+        s.valor.toFixed(2),
+        (s.percentualPago * 100).toFixed(0) + '%',
+        s.comissaoPaga.toFixed(2),
+        status,
+      ].join(';'),
+    );
 
     if (!resumo[s.origem || '-']) {
       resumo[s.origem || '-'] = { total: 0, comissao: 0, pagos: true };
     }
     resumo[s.origem || '-'].total += s.valor;
     resumo[s.origem || '-'].comissao += s.comissaoPaga;
-    resumo[s.origem || '-'].pagos = resumo[s.origem || '-'].pagos && s.percentualPago > 0;
+    resumo[s.origem || '-'].pagos =
+      resumo[s.origem || '-'].pagos && s.percentualPago > 0;
   });
 
   // Tabela de resumo
   linhas.push('');
   linhas.push('Resumo Final');
   linhas.push(['Loja', 'Total', '%', 'Comissão Total', 'Status'].join(';'));
-  Object.keys(resumo).forEach(loja => {
+  Object.keys(resumo).forEach((loja) => {
     const r = resumo[loja];
     const perc = r.total > 0 ? (r.comissao / r.total) * 100 : 0;
-    linhas.push([
-      loja,
-      r.total.toFixed(2),
-      perc.toFixed(0) + '%',
-      r.comissao.toFixed(2),
-      r.pagos ? 'PAGO' : 'A PAGAR'
-    ].join(';'));
+    linhas.push(
+      [
+        loja,
+        r.total.toFixed(2),
+        perc.toFixed(0) + '%',
+        r.comissao.toFixed(2),
+        r.pagos ? 'PAGO' : 'A PAGAR',
+      ].join(';'),
+    );
   });
 
   const csv = linhas.join('\n');
@@ -274,7 +334,7 @@ function exportarSelecionadosPDF() {
 
   // Reunir itens selecionados
   const itens = Array.from(selecionados)
-    .map(id => saquesCache[id])
+    .map((id) => saquesCache[id])
     .filter(Boolean);
 
   const totalSaque = itens.reduce((s, x) => s + (Number(x.valor) || 0), 0);
@@ -282,7 +342,7 @@ function exportarSelecionadosPDF() {
   const body = [];
   const resumo = {};
 
-  itens.forEach(s => {
+  itens.forEach((s) => {
     const valor = Number(s.valor || 0);
     const comissaoPrev = valor * taxaFinal;
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
@@ -293,40 +353,41 @@ function exportarSelecionadosPDF() {
       valor.toFixed(2),
       `${(taxaFinal * 100).toFixed(0)}%`,
       comissaoPrev.toFixed(2),
-      status
+      status,
     ]);
 
     if (!resumo[s.origem || '-']) {
       resumo[s.origem || '-'] = { total: 0, pagos: true };
     }
     resumo[s.origem || '-'].total += valor;
-    resumo[s.origem || '-'].pagos = resumo[s.origem || '-'].pagos && s.percentualPago > 0;
+    resumo[s.origem || '-'].pagos =
+      resumo[s.origem || '-'].pagos && s.percentualPago > 0;
   });
 
   doc.autoTable({
     head: [['Data', 'Loja', 'Saque', '%', 'Comissão', 'Status']],
     body,
-    startY: 25
+    startY: 25,
   });
 
   const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 25;
 
   // Resumo por loja
-  const resumoBody = Object.keys(resumo).map(loja => {
+  const resumoBody = Object.keys(resumo).map((loja) => {
     const r = resumo[loja];
     return [
       loja,
       r.total.toFixed(2),
       `${(taxaFinal * 100).toFixed(0)}%`,
       (r.total * taxaFinal).toFixed(2),
-      r.pagos ? 'PAGO' : 'A PAGAR'
+      r.pagos ? 'PAGO' : 'A PAGAR',
     ];
   });
 
   doc.autoTable({
     head: [['Loja', 'Total', '%', 'Comissão Total', 'Status']],
     body: resumoBody,
-    startY: finalY
+    startY: finalY,
   });
 
   const finalY2 = doc.lastAutoTable ? doc.lastAutoTable.finalY : finalY;
@@ -334,8 +395,16 @@ function exportarSelecionadosPDF() {
 
   doc.setFontSize(12);
   doc.text(`Total de Saques: R$ ${totalSaque.toFixed(2)}`, 14, finalY2 + 10);
-  doc.text(`Total de Comissão (${(taxaFinal * 100).toFixed(0)}%): R$ ${totalComissaoPdf.toFixed(2)}`, 14, finalY2 + 20);
-  doc.text(`Percentual Médio: ${(taxaFinal * 100).toFixed(2)}%`, 14, finalY2 + 30);
+  doc.text(
+    `Total de Comissão (${(taxaFinal * 100).toFixed(0)}%): R$ ${totalComissaoPdf.toFixed(2)}`,
+    14,
+    finalY2 + 20,
+  );
+  doc.text(
+    `Percentual Médio: ${(taxaFinal * 100).toFixed(2)}%`,
+    14,
+    finalY2 + 30,
+  );
 
   // Evite acentos no nome de arquivo para compatibilidade
   doc.save('fechamento-comissao.pdf');
@@ -345,7 +414,9 @@ function editarSaque(id) {
   const s = saquesCache[id];
   document.getElementById('dataSaque').value = s.data.substring(0, 10);
   document.getElementById('valorSaque').value = s.valor;
-  document.getElementById('percentualSaque').value = String(s.percentualPago || 0);
+  document.getElementById('percentualSaque').value = String(
+    s.percentualPago || 0,
+  );
   document.getElementById('lojaSaque').value = s.origem || '';
   editandoId = id;
   document.getElementById('btnRegistrar').textContent = 'Atualizar';
@@ -364,7 +435,7 @@ function assistirResumo() {
     db,
     uid: uidAtual,
     anoMes,
-    onChange: r => {
+    onChange: (r) => {
       const cards = document.getElementById('cardsResumo');
       const texto = document.getElementById('faltasTexto');
       if (!r) {
@@ -395,7 +466,7 @@ function assistirResumo() {
         </div>
       `;
       texto.textContent = `Faltam R$${r.faltamPara4.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 4% | R$${r.faltamPara5.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} para 5%`;
-    }
+    },
   });
 }
 
@@ -411,8 +482,12 @@ async function carregarFonteRoboto(doc) {
     return btoa(binary);
   }
   const [regular, medium] = await Promise.all([
-    fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf').then(r => r.arrayBuffer()),
-    fetch('https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf').then(r => r.arrayBuffer())
+    fetch(
+      'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf',
+    ).then((r) => r.arrayBuffer()),
+    fetch(
+      'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf',
+    ).then((r) => r.arrayBuffer()),
   ]);
   doc.addFileToVFS('Roboto-Regular.ttf', toBase64(regular));
   doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
@@ -425,21 +500,40 @@ async function imprimirFechamento() {
   const { jsPDF } = window.jspdf;
   const anoMes = document.getElementById('filtroMes').value || anoMesBR();
 
-  const colSaques = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'saques');
-  const colRecebidas = collection(db, 'usuarios', uidAtual, 'comissoes', anoMes, 'recebidas');
+  const colSaques = collection(
+    db,
+    'usuarios',
+    uidAtual,
+    'comissoes',
+    anoMes,
+    'saques',
+  );
+  const colRecebidas = collection(
+    db,
+    'usuarios',
+    uidAtual,
+    'comissoes',
+    anoMes,
+    'recebidas',
+  );
   const [snapSaques, snapRecebidas] = await Promise.all([
     getDocs(colSaques),
-    getDocs(colRecebidas)
+    getDocs(colRecebidas),
   ]);
 
-  const saques = snapSaques.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
-  const recebidas = snapRecebidas.docs.map(d => d.data()).sort((a, b) => a.data.localeCompare(b.data));
+  const saques = snapSaques.docs
+    .map((d) => d.data())
+    .sort((a, b) => a.data.localeCompare(b.data));
+  const recebidas = snapRecebidas.docs
+    .map((d) => d.data())
+    .sort((a, b) => a.data.localeCompare(b.data));
   const resumoCalc = calcularResumo(saques);
   const { totalSacado, taxaFinal, comissaoPrevista } = resumoCalc;
   const totalPago = recebidas.reduce((s, x) => s + (Number(x.valor) || 0), 0);
   const totalPagar = comissaoPrevista - totalPago;
 
-  let responsavel = auth.currentUser?.displayName || auth.currentUser?.email || '';
+  let responsavel =
+    auth.currentUser?.displayName || auth.currentUser?.email || '';
   let loja = '';
   try {
     const perfil = await getDoc(doc(db, 'perfil', uidAtual));
@@ -465,14 +559,14 @@ async function imprimirFechamento() {
   function formatCurrency(v) {
     return `R$ ${(Number(v) || 0).toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     })}`;
   }
   function formatDate(iso) {
     return iso ? new Date(iso).toLocaleDateString('pt-BR') : '';
   }
 
-  const header = data => {
+  const header = (data) => {
     doc.setFont('Roboto', 'bold');
     doc.setFontSize(20);
     doc.text(`Fechamento de Saques — ${mesAno}`, margin, 20);
@@ -484,9 +578,11 @@ async function imprimirFechamento() {
     doc.text(right, pageWidth - margin, 20, { align: 'right' });
   };
 
-  const footer = data => {
+  const footer = (data) => {
     doc.setFontSize(10);
-    doc.text(`Página ${data.pageNumber}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.text(`Página ${data.pageNumber}`, pageWidth / 2, pageHeight - 10, {
+      align: 'center',
+    });
   };
 
   header();
@@ -497,9 +593,13 @@ async function imprimirFechamento() {
   const cardH = 24;
   const cards = [
     { icon: '💰', label: 'Total Sacado', valor: formatCurrency(totalSacado) },
-    { icon: '🧾', label: 'Comissão do Mês', valor: formatCurrency(comissaoPrevista) },
+    {
+      icon: '🧾',
+      label: 'Comissão do Mês',
+      valor: formatCurrency(comissaoPrevista),
+    },
     { icon: '✅', label: 'Pago', valor: formatCurrency(totalPago) },
-    { icon: '⌛', label: 'A Pagar', valor: formatCurrency(totalPagar) }
+    { icon: '⌛', label: 'A Pagar', valor: formatCurrency(totalPagar) },
   ];
   cards.forEach((c, i) => {
     const x = margin + i * (cardW + cardGap);
@@ -517,15 +617,24 @@ async function imprimirFechamento() {
 
   y += cardH + 12;
 
-  const saquesBody = saques.map(s => [
+  const saquesBody = saques.map((s) => [
     formatDate(s.data),
     s.origem || '',
-    formatCurrency(s.valor)
+    formatCurrency(s.valor),
   ]);
-  const saquesFoot = [[
-    { content: 'Total', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } },
-    { content: formatCurrency(totalSacado), styles: { halign: 'right', fontStyle: 'bold' } }
-  ]];
+  const saquesFoot = [
+    [
+      {
+        content: 'Total',
+        colSpan: 2,
+        styles: { halign: 'right', fontStyle: 'bold' },
+      },
+      {
+        content: formatCurrency(totalSacado),
+        styles: { halign: 'right', fontStyle: 'bold' },
+      },
+    ],
+  ];
 
   doc.autoTable({
     startY: y,
@@ -533,32 +642,55 @@ async function imprimirFechamento() {
     body: saquesBody,
     foot: saquesFoot,
     margin: { left: margin, right: margin },
-    styles: { font: 'Roboto', fontSize: 12, lineColor: [241, 245, 249], lineWidth: 0.1 },
+    styles: {
+      font: 'Roboto',
+      fontSize: 12,
+      lineColor: [241, 245, 249],
+      lineWidth: 0.1,
+    },
     headStyles: { fillColor: accent, textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [249, 250, 251] },
-    columnStyles: { 0: { halign: 'left' }, 1: { halign: 'center' }, 2: { halign: 'right' } },
-    didDrawPage: data => {
+    columnStyles: {
+      0: { halign: 'left' },
+      1: { halign: 'center' },
+      2: { halign: 'right' },
+    },
+    didDrawPage: (data) => {
       header();
       footer(data);
-    }
+    },
   });
 
   y = doc.lastAutoTable.finalY + 10;
 
   const comissoesBody = [
-    ...recebidas.map(c => [
+    ...recebidas.map((c) => [
       formatDate(c.data),
       `${(taxaFinal * 100).toFixed(0)}%`,
       formatCurrency(c.valor),
-      'Pago'
+      'Pago',
     ]),
-    ['', `${(taxaFinal * 100).toFixed(0)}%`, formatCurrency(totalPagar), 'A pagar']
+    [
+      '',
+      `${(taxaFinal * 100).toFixed(0)}%`,
+      formatCurrency(totalPagar),
+      'A pagar',
+    ],
   ];
-  const comissoesFoot = [[
-    { content: 'Total', colSpan: 2, styles: { halign: 'right', fontStyle: 'bold' } },
-    { content: formatCurrency(comissaoPrevista), styles: { halign: 'right', fontStyle: 'bold' } },
-    ''
-  ]];
+  const comissoesFoot = [
+    [
+      {
+        content: 'Total',
+        colSpan: 2,
+        styles: { halign: 'right', fontStyle: 'bold' },
+      },
+      {
+        content: formatCurrency(comissaoPrevista),
+        styles: { halign: 'right', fontStyle: 'bold' },
+      },
+      '',
+    ],
+  ];
 
   doc.autoTable({
     startY: y,
@@ -566,26 +698,31 @@ async function imprimirFechamento() {
     body: comissoesBody,
     foot: comissoesFoot,
     margin: { left: margin, right: margin },
-    styles: { font: 'Roboto', fontSize: 12, lineColor: [241, 245, 249], lineWidth: 0.1 },
+    styles: {
+      font: 'Roboto',
+      fontSize: 12,
+      lineColor: [241, 245, 249],
+      lineWidth: 0.1,
+    },
     headStyles: { fillColor: accent, textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [249, 250, 251] },
     columnStyles: {
       0: { halign: 'left' },
       1: { halign: 'center' },
       2: { halign: 'right' },
-      3: { halign: 'center' }
+      3: { halign: 'center' },
     },
-    didParseCell: data => {
+    didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 3) {
         const val = data.cell.raw;
         data.cell.styles.textColor = val === 'Pago' ? '#16a34a' : '#d97706';
         data.cell.styles.fontStyle = 'bold';
       }
     },
-    didDrawPage: data => {
+    didDrawPage: (data) => {
       header();
       footer(data);
-    }
+    },
   });
 
   doc.save('fechamento-saques.pdf');

@@ -1,6 +1,22 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, orderBy, startAt, endAt, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  query,
+  orderBy,
+  startAt,
+  endAt,
+  getDocs,
+  doc,
+  getDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 
@@ -20,14 +36,21 @@ async function calcularResumo(uid, inicio, fim) {
     const q = query(colFat, orderBy('__name__'), startAt(inicio), endAt(fim));
     const snap = await getDocs(q);
     for (const docSnap of snap.docs) {
-      const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`));
+      const lojasSnap = await getDocs(
+        collection(db, `uid/${uid}/faturamento/${docSnap.id}/lojas`),
+      );
       for (const lojaDoc of lojasSnap.docs) {
         let dados = lojaDoc.data();
         if (dados.encrypted) {
           const pass = getPassphrase() || `chave-${uid}`;
           let txt;
-          try { txt = await decryptString(dados.encrypted, pass); }
-          catch (e) { try { txt = await decryptString(dados.encrypted, uid); } catch (_) {} }
+          try {
+            txt = await decryptString(dados.encrypted, pass);
+          } catch (e) {
+            try {
+              txt = await decryptString(dados.encrypted, uid);
+            } catch (_) {}
+          }
           if (txt) dados = JSON.parse(txt);
         }
         bruto += Number(dados.valorBruto) || 0;
@@ -45,13 +68,15 @@ async function calcularResumo(uid, inicio, fim) {
       collection(db, `uid/${uid}/skusVendidos`),
       orderBy('__name__'),
       startAt(inicio),
-      endAt(fim)
+      endAt(fim),
     );
     const skusSnap = await getDocs(qSkus);
     const setSkus = new Set();
     for (const docSnap of skusSnap.docs) {
-      const listaSnap = await getDocs(collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`));
-      listaSnap.forEach(item => {
+      const listaSnap = await getDocs(
+        collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`),
+      );
+      listaSnap.forEach((item) => {
         const d = item.data();
         if (d.sku) setSkus.add(d.sku);
       });
@@ -68,11 +93,17 @@ async function carregarResultados(inicio, fim) {
   if (!uid) return;
   const container = document.getElementById('resumoMentorado');
   container.innerHTML = '<p class="text-sm text-gray-500">Carregando...</p>';
-  const { bruto, liquido, vendas, skusVendidos } = await calcularResumo(uid, inicio, fim);
+  const { bruto, liquido, vendas, skusVendidos } = await calcularResumo(
+    uid,
+    inicio,
+    fim,
+  );
   const mesMeta = inicio.slice(0, 7);
   let meta = 0;
   try {
-    const metaDoc = await getDoc(doc(db, `uid/${uid}/metasFaturamento`, mesMeta));
+    const metaDoc = await getDoc(
+      doc(db, `uid/${uid}/metasFaturamento`, mesMeta),
+    );
     if (metaDoc.exists()) {
       meta = Number(metaDoc.data().valor) || 0;
     }
@@ -97,15 +128,15 @@ async function carregarListaSkus(inicio, fim) {
       collection(db, `uid/${uid}/skusVendidos`),
       orderBy('__name__'),
       startAt(inicio),
-      endAt(fim)
+      endAt(fim),
     );
     const snap = await getDocs(q);
     const mapa = {};
     for (const docSnap of snap.docs) {
       const listaSnap = await getDocs(
-        collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`)
+        collection(db, `uid/${uid}/skusVendidos/${docSnap.id}/lista`),
       );
-      listaSnap.forEach(item => {
+      listaSnap.forEach((item) => {
         const d = item.data();
         const sku = d.sku || item.id;
         const qtd = Number(d.total || d.quantidade || 0);
@@ -117,7 +148,8 @@ async function carregarListaSkus(inicio, fim) {
       .map(([sku, qtd]) => ({ sku, qtd }))
       .sort((a, b) => b.qtd - a.qtd);
     if (linhas.length === 0) {
-      container.innerHTML = '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
+      container.innerHTML =
+        '<p class="text-sm text-gray-500">Nenhum SKU encontrado.</p>';
       return;
     }
     container.innerHTML = `
@@ -128,7 +160,8 @@ async function carregarListaSkus(inicio, fim) {
         <tbody>
           ${linhas
             .map(
-              l => `<tr><td class="p-2">${l.sku}</td><td class="p-2 text-right">${l.qtd}</td></tr>`
+              (l) =>
+                `<tr><td class="p-2">${l.sku}</td><td class="p-2 text-right">${l.qtd}</td></tr>`,
             )
             .join('')}
         </tbody>
@@ -136,12 +169,13 @@ async function carregarListaSkus(inicio, fim) {
     `;
   } catch (err) {
     console.error('Erro ao carregar SKUs vendidos', err);
-    container.innerHTML = '<p class="text-sm text-red-500">Erro ao carregar SKUs.</p>';
+    container.innerHTML =
+      '<p class="text-sm text-red-500">Erro ao carregar SKUs.</p>';
   }
 }
 
 function initResultadosMentorado() {
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, (user) => {
     if (user) {
       const hoje = new Date();
       const dataFim = document.getElementById('dataFim');
@@ -154,12 +188,10 @@ function initResultadosMentorado() {
       dataFim.value = hojeStr;
       carregarResultados(primeiroDia, hojeStr);
       carregarListaSkus(primeiroDia, hojeStr);
-      document
-        .getElementById('filtrarSkus')
-        .addEventListener('click', () => {
-          carregarResultados(dataInicio.value, dataFim.value);
-          carregarListaSkus(dataInicio.value, dataFim.value);
-        });
+      document.getElementById('filtrarSkus').addEventListener('click', () => {
+        carregarResultados(dataInicio.value, dataFim.value);
+        carregarListaSkus(dataInicio.value, dataFim.value);
+      });
     }
   });
 }

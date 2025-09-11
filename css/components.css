@@ -1,10 +1,9 @@
-
 .card {
   border-radius: 1rem;
   border: 1px solid var(--border);
   background-color: var(--background);
   padding: 1.5rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
 }
@@ -18,12 +17,17 @@
   padding: 0.5rem 1rem;
   color: var(--white);
   font-weight: 500;
-  transition: background-color .2s;
+  transition: background-color 0.2s;
 }
-.btn-primary:hover { background-color: var(--highlight-hover); }
-.btn-primary:active { background-color: var(--primary-active); }
-.btn-primary:disabled { opacity: .5; }
-
+.btn-primary:hover {
+  background-color: var(--highlight-hover);
+}
+.btn-primary:active {
+  background-color: var(--primary-active);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+}
 
 .dropdown {
   position: relative;
@@ -55,7 +59,7 @@
   color: var(--primary);
   font-weight: 500;
   text-decoration: none;
-  transition: color .2s;
+  transition: color 0.2s;
 }
 .action-link:hover {
   text-decoration: underline;
@@ -86,13 +90,13 @@
   background-color: var(--secondary);
 }
 .modal {
-    display: none;
+  display: none;
   position: fixed;
   inset: 0;
   z-index: 50;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
 }
 .modal-content {
@@ -103,7 +107,9 @@
   width: 90%; /* w-11/12 */
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Color variations for financeiro cards */
@@ -151,7 +157,6 @@
   transition: width 0.3s ease;
 }
 
-
 .floating-btn {
   position: fixed;
   bottom: 1.5rem;
@@ -164,9 +169,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: background-color .2s;
+  transition: background-color 0.2s;
   z-index: 100;
 }
 

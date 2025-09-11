@@ -1,13 +1,25 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getStorage, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 const input = document.getElementById('inputPdfFechamento');
 const btnProcessar = document.getElementById('btnProcessarPdf');
@@ -40,7 +52,11 @@ btnProcessar?.addEventListener('click', async () => {
       const lines = agruparLinhas(textContent.items);
       for (const line of lines) {
         if (line.trim()) {
-          lancamentos.push({ Arquivo: file.name, Pagina: i, Linha: line.trim() });
+          lancamentos.push({
+            Arquivo: file.name,
+            Pagina: i,
+            Linha: line.trim(),
+          });
         }
       }
     }
@@ -80,9 +96,13 @@ function renderTabela() {
   const start = (paginaAtual - 1) * pageSize;
   const dados = lancamentos.slice(start, start + pageSize);
   const headers = ['Arquivo', 'Página', 'Linha'];
-  let html = '<table class="w-full text-sm"><thead><tr>' + headers.map(h => `<th class="text-left px-1">${h}</th>`).join('') + '</tr></thead><tbody>';
+  let html =
+    '<table class="w-full text-sm"><thead><tr>' +
+    headers.map((h) => `<th class="text-left px-1">${h}</th>`).join('') +
+    '</tr></thead><tbody>';
   for (const l of dados) {
-    html += '<tr>' +
+    html +=
+      '<tr>' +
       `<td>${l.Arquivo}</td>` +
       `<td>${l.Pagina}</td>` +
       `<td>${l.Linha}</td>` +
@@ -124,7 +144,9 @@ btnExportar?.addEventListener('click', () => {
 
 async function salvarContasFechamento() {
   try {
-    const ops = lancamentos.map(l => addDoc(collection(db, 'contasfechamento'), l));
+    const ops = lancamentos.map((l) =>
+      addDoc(collection(db, 'contasfechamento'), l),
+    );
     await Promise.all(ops);
   } catch (err) {
     console.error('Erro ao salvar contasfechamento', err);
@@ -132,4 +154,3 @@ async function salvarContasFechamento() {
 }
 
 export {}; // for module scope
-
