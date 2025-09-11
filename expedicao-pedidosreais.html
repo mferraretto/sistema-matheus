@@ -43,6 +43,10 @@
         </select>
       </div>
     </div>
+    <div class="flex justify-between items-center mb-2">
+      <div id="resumoPedidos" class="font-medium"></div>
+      <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
+    </div>
     <div class="bg-white rounded shadow overflow-x-auto">
       <table class="min-w-full">
         <thead>
@@ -71,6 +75,7 @@
     }
     const db = firebase.firestore();
     let todosPedidos = [];
+    let listaFiltrada = [];
 
     function parseDate(str) {
       if (!str) return null;
@@ -126,7 +131,9 @@
         if (status && (p.status || '').toLowerCase() !== status) return false;
         return true;
       });
+      listaFiltrada = filtrados;
       renderPedidos(filtrados);
+      atualizarResumo(filtrados);
     }
 
     firebase.auth().onAuthStateChanged(async user => {
@@ -173,6 +180,39 @@
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
+    document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
+
+    function atualizarResumo(lista) {
+      const total = lista.length;
+      const somaSubtotal = lista.reduce((s, p) => s + Number(p.subtotal || 0), 0);
+      const somaLiquido = lista.reduce((s, p) => s + Number(p.liquido || 0), 0);
+      const fmt = n => `R$ ${Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+      document.getElementById('resumoPedidos').textContent = `${total} pedidos | Subtotal: ${fmt(somaSubtotal)} | Líquido: ${fmt(somaLiquido)}`;
+    }
+
+    function exportarCSV(lista) {
+      if (!lista.length) return;
+      const headers = ['Pedido','Data','Loja','SKU','Status','Subtotal','Taxas','Líquido','Reembolso'];
+      const rows = lista.map(d => [
+        d.pedidoId || '',
+        d.data || '',
+        d.loja || '',
+        d.sku || '',
+        d.status || '',
+        d.subtotal || 0,
+        d.taxas || 0,
+        d.liquido || 0,
+        d.reembolso || 0
+      ].join(';'));
+      const csv = [headers.join(';'), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pedidos.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
   <script src="shared.js"></script>
 </body>
