@@ -30,8 +30,12 @@
         <input type="date" id="filtroDataFim" class="mt-1 border p-2 rounded" />
       </div>
       <div>
-        <label for="filtroPrevEnvio" class="block text-sm font-medium">Prev. envio</label>
-        <input type="date" id="filtroPrevEnvio" class="mt-1 border p-2 rounded" />
+        <label for="filtroPrevEnvioInicio" class="block text-sm font-medium">Prev. envio início</label>
+        <input type="date" id="filtroPrevEnvioInicio" class="mt-1 border p-2 rounded" />
+      </div>
+      <div>
+        <label for="filtroPrevEnvioFim" class="block text-sm font-medium">Prev. envio fim</label>
+        <input type="date" id="filtroPrevEnvioFim" class="mt-1 border p-2 rounded" />
       </div>
       <div>
         <label for="filtroLoja" class="block text-sm font-medium">Loja</label>
@@ -134,19 +138,22 @@
     function aplicarFiltros() {
       const inicio = document.getElementById('filtroDataInicio').value;
       const fim = document.getElementById('filtroDataFim').value;
-      const prevEnvio = document.getElementById('filtroPrevEnvio').value;
+      const prevEnvioInicio = document.getElementById('filtroPrevEnvioInicio').value;
+      const prevEnvioFim = document.getElementById('filtroPrevEnvioFim').value;
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
       const status = document.getElementById('filtroStatus').value.trim().toLowerCase();
       const startDate = inicio ? new Date(inicio) : null;
       const endDate = fim ? new Date(fim) : null;
-      const prevEnvioDate = prevEnvio ? new Date(prevEnvio) : null;
+      const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
+      const prevEnvioEnd = prevEnvioFim ? new Date(prevEnvioFim) : null;
 
       const filtrados = todosPedidos.filter(p => {
         const dataPedido = parseDate(p.data);
         if (startDate && (!dataPedido || dataPedido < startDate)) return false;
         if (endDate && (!dataPedido || dataPedido > endDate)) return false;
         const dataPrevEnvio = parseDate(p.dataPrevistaEnvio);
-        if (prevEnvioDate && (!dataPrevEnvio || dataPrevEnvio.toDateString() !== prevEnvioDate.toDateString())) return false;
+        if (prevEnvioStart && (!dataPrevEnvio || dataPrevEnvio < prevEnvioStart)) return false;
+        if (prevEnvioEnd && (!dataPrevEnvio || dataPrevEnvio > prevEnvioEnd)) return false;
         if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
         if (status && (p.status || '').toLowerCase() !== status) return false;
         return true;
@@ -226,7 +233,7 @@
       }
     }
 
-    ['filtroDataInicio','filtroDataFim','filtroPrevEnvio','filtroLoja'].forEach(id => {
+    ['filtroDataInicio','filtroDataFim','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
