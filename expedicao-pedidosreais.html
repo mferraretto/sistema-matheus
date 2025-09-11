@@ -50,6 +50,14 @@
           <option value="a enviar">A Enviar</option>
         </select>
       </div>
+      <div>
+        <label for="filtroEtiqueta" class="block text-sm font-medium">Status Etiqueta</label>
+        <select id="filtroEtiqueta" class="mt-1 border p-2 rounded">
+          <option value="">Todos</option>
+          <option value="nao">Não impressa</option>
+          <option value="sim">Impressa</option>
+        </select>
+      </div>
     </div>
     <div class="flex justify-between items-center mb-2">
       <div id="resumoPedidos" class="font-medium"></div>
@@ -117,6 +125,7 @@
     let selectedFile = null;
 
     document.getElementById('filtroStatus').selectedIndex = -1;
+    document.getElementById('filtroEtiqueta').value = '';
 
     function parseDate(str) {
       if (!str) return null;
@@ -177,6 +186,7 @@
       const loja = document.getElementById('filtroLoja').value.trim().toLowerCase();
       const statusSelect = document.getElementById('filtroStatus');
       const statuses = Array.from(statusSelect.selectedOptions).map(o => o.value.trim().toLowerCase());
+      const filtroEtiqueta = document.getElementById('filtroEtiqueta').value;
       const startDate = inicio ? new Date(inicio) : null;
       const endDate = fim ? new Date(fim) : null;
       const prevEnvioStart = prevEnvioInicio ? new Date(prevEnvioInicio) : null;
@@ -191,6 +201,8 @@
         if (prevEnvioEnd && (!dataPrevEnvio || dataPrevEnvio > prevEnvioEnd)) return false;
         if (loja && !(p.loja || '').toLowerCase().includes(loja)) return false;
         if (statuses.length && !statuses.includes((p.status || '').toLowerCase())) return false;
+        const etq = (p.etiquetaImpressa || !!p.numeroRastreamento) ? 'sim' : 'nao';
+        if (filtroEtiqueta && etq !== filtroEtiqueta) return false;
         return true;
       });
       listaFiltrada = filtrados;
@@ -272,6 +284,7 @@
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
     document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroEtiqueta').addEventListener('change', aplicarFiltros);
     document.getElementById('exportarBtn').addEventListener('click', () => exportarCSV(listaFiltrada));
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFileInput').click());
     document.getElementById('importFileInput').addEventListener('change', e => {
