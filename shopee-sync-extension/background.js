@@ -1,11 +1,12 @@
 import { db, collection, doc, setDoc } from './firebase-init.js';
 import { encryptString } from '../crypto.js';
+import logger from '../logger.js';
 
 chrome.runtime.onMessage.addListener(async (msg) => {
   if (msg.type === 'salvarPedidos') {
     const { uid, passphrase, pedidos } = msg;
     if (!uid || !passphrase) {
-      console.warn('UID ou senha ausente');
+      logger.warn('UID ou senha ausente');
       return;
     }
     for (const pedido of pedidos) {

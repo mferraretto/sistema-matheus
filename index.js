@@ -5,6 +5,7 @@ import { loadSecureDoc } from './secure-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 import { checkBackend } from './login.js';
+import logger from './logger.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -321,7 +322,7 @@ async function carregarTopSkus(uid, isAdmin) {
     if (isAdmin) {
       const parentDoc = docSnap.ref.parent.parent;
       if (!parentDoc) {
-        console.warn('Documento sem pai para skusVendidos:', docSnap.ref.path);
+        logger.warn('Documento sem pai para skusVendidos:', docSnap.ref.path);
         continue;
       }
       ownerUid = parentDoc.id;
@@ -450,7 +451,7 @@ async function iniciarPainel(user) {
         const perfil = String(snap.data().perfil || '').toLowerCase();
         isAdmin = (perfil === 'adm' || perfil === 'admin');
       } else {
-        console.warn(`Documento de usuário ${uid} não encontrado em 'usuarios'`);
+        logger.warn(`Documento de usuário ${uid} não encontrado em 'usuarios'`);
       }
     } catch (e) {
       console.error('Erro ao carregar perfil do usuário:', e);

@@ -2,13 +2,14 @@ import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveUserDoc } from './secure-firestore.js';
+import logger from './logger.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function chamarIA(prompt, { json = false } = {}) {
-    console.log("📤 Pergunta enviada para a IA:", prompt); // 👈 ADICIONE ESTA LINHA
+    logger.log("📤 Pergunta enviada para a IA:", prompt); // 👈 ADICIONE ESTA LINHA
 
   const body = {
     model: 'deepseek-chat',
@@ -29,7 +30,7 @@ async function chamarIA(prompt, { json = false } = {}) {
 
   const data = await resp.json();
   const texto = data.choices?.[0]?.message?.content?.trim() || '';
-  console.log("🧠 Resposta da IA (bruta):", texto);
+  logger.log("🧠 Resposta da IA (bruta):", texto);
   return texto;
 }
 
@@ -84,7 +85,7 @@ Crie um anúncio profissional com base nas informações abaixo e responda com u
       dados = match ? JSON.parse(match[0]) : {};
     }
 
-    console.log("🎯 Dados processados:", dados);
+    logger.log("🎯 Dados processados:", dados);
 
     document.getElementById('sugestoes').classList.remove('hidden');
     document.getElementById('tituloIA').value = dados.titulo || '';
@@ -115,7 +116,7 @@ Produto: "${termo}"`;
 
   try {
     const texto = await chamarIA(prompt, { json: true });
-    console.log("🧠 Resposta da IA (bruta):", texto);
+    logger.log("🧠 Resposta da IA (bruta):", texto);
 
     let lista;
     try {
@@ -129,7 +130,7 @@ Produto: "${termo}"`;
       }
     }
 
-    console.log("🔑 Palavras-chave:", lista);
+    logger.log("🔑 Palavras-chave:", lista);
 
     const tabela = document.getElementById('resultadoKeywords');
     let html = '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';

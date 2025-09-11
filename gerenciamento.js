@@ -5,6 +5,7 @@ import {
   query, where, orderBy, limit, startAfter, collectionGroup
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
+import logger from './logger.js';
 
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
@@ -234,7 +235,7 @@ const normalizeKey = (str) =>
         }
       }
       if (!id) {
-        console.warn(`❌ Linha de ${tipo} sem ID do Produto.`, linha);
+        logger.warn(`❌ Linha de ${tipo} sem ID do Produto.`, linha);
         continue;
       }
       id = String(id).trim();
@@ -245,7 +246,7 @@ const normalizeKey = (str) =>
 
       if (!varianteId) {
         if (tipo === 'desempenho') {
-          console.warn(`❌ Linha de desempenho sem ID da Variação para item ${id}.`);
+          logger.warn(`❌ Linha de desempenho sem ID da Variação para item ${id}.`);
           continue;
         }
         varianteId = 'unico_' + id;
@@ -543,7 +544,7 @@ if (docExiste && !dadosAntigos) {
               }
             }
           } else {
-            console.warn(`❌ Desempenho ignorado - anúncio ${id} não existe no Firebase.`);
+            logger.warn(`❌ Desempenho ignorado - anúncio ${id} não existe no Firebase.`);
           }
         } else {
           const variantesPath = `uid/${user.uid}/anuncios/${id}/variantes`;
@@ -629,7 +630,7 @@ let pageCursors = [null];
 window.carregarAnuncios = async function (direction) {
   const tbody = document.querySelector("#tabelaAnuncios tbody");
   if (!tbody) {
-    console.warn("Elemento #tabelaAnuncios tbody não encontrado.");
+    logger.warn("Elemento #tabelaAnuncios tbody não encontrado.");
     return;
   }
   tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8">Carregando anúncios...</td></tr>';
@@ -735,7 +736,7 @@ for (const v of variantes) {
         }
       }
   } catch (e) {
-    console.warn(`Erro ao buscar SKU ${sku} em produtos:`, e);
+    logger.warn(`Erro ao buscar SKU ${sku} em produtos:`, e);
     v.skuNaoEncontrado = true; // fallback de segurança
     const skuLower = String(sku);
     if (!window.skusNaoCadastrados.includes(skuLower)) {

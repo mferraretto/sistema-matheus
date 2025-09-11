@@ -28,7 +28,6 @@
       return;
     }
 
-    console.log("Pedidos capturados:", pedidos);
     alert(`Foram coletados ${pedidos.length} pedidos. Veja no console (F12).`);
 
     // Pede UID + senha do sistema
