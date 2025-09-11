@@ -275,8 +275,10 @@
         const pedidos = [];
         for (const row of rows) {
           const headers = Object.keys(row);
-          const pedidoId = String(row[headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'))] || '').trim();
-          const horaPagHeader = headers.find(h => h.toLowerCase().includes('hora') && h.toLowerCase().includes('pagamento'));
+          const pedidoId = String(row[
+            headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'))
+          ] || '').trim();
+          const horaPagHeader = headers.find(h => h.toLowerCase().includes('hora do pagamento'));
           const dataHeader = headers.find(h => h.toLowerCase().includes('data') && !h.toLowerCase().includes('hora'));
           let horaPagamento = horaPagHeader ? String(row[horaPagHeader]).trim() : '';
           let data = dataHeader ? row[dataHeader] : '';
@@ -288,7 +290,6 @@
             const d = new Date(data);
             if (!isNaN(d)) data = d.toISOString().split('T')[0];
           }
-          const lojaHeader = headers.find(h => h.toLowerCase().includes('loja'));
           const skuHeader = headers.find(h => h.toLowerCase().includes('sku'));
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
@@ -300,11 +301,11 @@
           const liquido = subtotal + reembolso - taxas;
           pedidos.push({
             pedidoId,
+            status: statusHeader ? row[statusHeader] : '',
+            sku: skuHeader ? row[skuHeader] : '',
+            loja: nomeLoja,
             data,
             horaPagamento,
-            loja: nomeLoja || (lojaHeader ? row[lojaHeader] : ''),
-            sku: skuHeader ? row[skuHeader] : '',
-            status: statusHeader ? row[statusHeader] : '',
             subtotal,
             taxas,
             liquido,
@@ -317,50 +318,27 @@
         let novos = 0;
         for (const p of pedidos) {
           if (!p.pedidoId || !p.data) continue;
-          let docRef;
-          let snap;
-          const dupSnap = await db.collectionGroup('lista')
-            .where('uid', '==', usuarioAtual.uid)
-            .where(firebase.firestore.FieldPath.documentId(), '==', p.pedidoId)
-            .limit(1).get();
-          if (!dupSnap.empty) {
-            snap = dupSnap.docs[0];
-            docRef = snap.ref;
-          } else {
-            docRef = db.collection('uid').doc(usuarioAtual.uid)
-              .collection('pedidosreais').doc(p.data)
-              .collection('lista').doc(p.pedidoId);
-            snap = await docRef.get();
-          }
-          if (!snap.exists) {
-            const encNovo = await encryptString(JSON.stringify(p), pass);
-            await docRef.set({ encrypted: encNovo, uid: usuarioAtual.uid });
-            novos++;
-            continue;
-          }
-          let existente = {};
-          const dados = snap.data();
-          if (dados.encrypted) {
+          const docRef = db.collection('uid').doc(usuarioAtual.uid)
+            .collection('pedidosreais').doc(p.data)
+            .collection('lista').doc(p.pedidoId);
+          const snap = await docRef.get();
+          let precisaAtualizar = true;
+          if (snap.exists) {
             try {
-              const txt = await decryptString(dados.encrypted, pass);
-              existente = JSON.parse(txt);
+              const atual = JSON.parse(await decryptString(snap.data().encrypted, pass));
+              if (JSON.stringify(atual) === JSON.stringify(p)) {
+                precisaAtualizar = false;
+              }
             } catch (e) {
-              console.error('Erro ao descriptografar', e);
-              continue;
+              console.error('Erro ao comparar pedido existente', e);
             }
+          } else {
+            novos++;
           }
-          const campos = ['pedidoId','data','horaPagamento','loja','sku','status','subtotal','taxas','liquido','reembolso'];
-          let diferente = false;
-          for (const c of campos) {
-            if ((existente[c] ?? '') != (p[c] ?? '')) {
-              diferente = true;
-              break;
-            }
-          }
-          if (diferente) {
+          if (precisaAtualizar) {
             const enc = await encryptString(JSON.stringify(p), pass);
             await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
-            atualizados++;
+            if (snap.exists) atualizados++;
           }
         }
         if (atualizados || novos) {
