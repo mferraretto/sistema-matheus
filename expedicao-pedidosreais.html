@@ -87,6 +87,7 @@
         </button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
         <button id="verificarDuplicadosBtn" class="px-3 py-1 bg-red-600 text-white rounded">Verificar Duplicados</button>
+        <button id="atualizarResponsaveisBtn" class="px-3 py-1 bg-purple-600 text-white rounded">Atualizar Responsáveis e Gestores</button>
       </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
@@ -294,6 +295,77 @@
       }
     }
 
+    async function atualizarResponsaveisGestores() {
+      if (!usuarioAtual) return;
+      try {
+        const { decryptString, encryptString } = await import('./crypto.js');
+        const userSnap = await db.collection('uid').doc(usuarioAtual.uid).get();
+        const userData = userSnap.data() || {};
+        const responsaveis = [];
+
+        if (window.responsavelFinanceiro?.uid && window.responsavelFinanceiro.email) {
+          responsaveis.push({ uid: window.responsavelFinanceiro.uid, email: window.responsavelFinanceiro.email });
+        } else if (userData.responsavelFinanceiroEmail) {
+          const snap = await db.collection('uid').where('email', '==', userData.responsavelFinanceiroEmail).limit(1).get();
+          if (!snap.empty) responsaveis.push({ uid: snap.docs[0].id, email: userData.responsavelFinanceiroEmail });
+        }
+
+        let gestoresEmails = userData.gestoresExpedicaoEmails || userData.responsavelExpedicaoEmail || [];
+        gestoresEmails = Array.isArray(gestoresEmails) ? gestoresEmails : [gestoresEmails];
+        for (const email of gestoresEmails) {
+          if (!email) continue;
+          const snap = await db.collection('uid').where('email', '==', email).limit(1).get();
+          if (!snap.empty) responsaveis.push({ uid: snap.docs[0].id, email });
+        }
+
+        if (!responsaveis.length) {
+          alert('Nenhum responsável ou gestor configurado.');
+          return;
+        }
+
+        let novos = 0;
+        let atualizados = 0;
+        for (const pedido of todosPedidos) {
+          const data = pedido.data;
+          const pid = pedido.pedidoId;
+          if (!data || !pid) continue;
+          for (const resp of responsaveis) {
+            const docRef = db
+              .collection('uid').doc(resp.uid)
+              .collection('uid').doc(usuarioAtual.uid)
+              .collection('pedidosreais').doc(data)
+              .collection('lista').doc(pid);
+            const snap = await docRef.get();
+            let precisaAtualizar = true;
+            if (snap.exists && snap.data().encrypted) {
+              try {
+                const atual = JSON.parse(await decryptString(snap.data().encrypted, resp.email));
+                if (JSON.stringify(atual) === JSON.stringify(pedido)) {
+                  precisaAtualizar = false;
+                } else {
+                  atualizados++;
+                }
+              } catch (e) {
+                console.error('Erro ao comparar pedido do responsável', e);
+              }
+            } else if (snap.exists) {
+              atualizados++;
+            } else {
+              novos++;
+            }
+            if (precisaAtualizar) {
+              const enc = await encryptString(JSON.stringify(pedido), resp.email);
+              await docRef.set({ encrypted: enc, uid: usuarioAtual.uid });
+            }
+          }
+        }
+        alert(`Atualização concluída: ${atualizados} atualizados, ${novos} novos.`);
+      } catch (e) {
+        console.error('Erro ao atualizar responsáveis e gestores:', e);
+        alert('Erro ao atualizar responsáveis e gestores.');
+      }
+    }
+
     ['filtroData','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
@@ -365,6 +437,7 @@
       }
     });
     document.getElementById('verificarDuplicadosBtn').addEventListener('click', verificarDuplicados);
+    document.getElementById('atualizarResponsaveisBtn').addEventListener('click', atualizarResponsaveisGestores);
     document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
     document.getElementById('confirmImportBtn').addEventListener('click', () => {
       const nome = document.getElementById('modalNomeLoja').value.trim();
