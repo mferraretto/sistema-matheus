@@ -1698,37 +1698,43 @@ const dataInput = document.getElementById("dataFaturamento");
           const pedidosTinyRef = db.collection('usuarios').doc(usuarioLogado.uid).collection('pedidostiny');
           for (const row of rows) {
             const statusPedido = row['Status do pedido'] || '';
-            const headersPedido = Object.keys(row);
-            const headerSku = headersPedido.find(h => h.trim() === 'Número de referência SKU');
-            const skuPedido = headerSku ? row[headerSku] : null;
-           const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
-           const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
-           const headerPagamento = headersPedido.find(h => h.toLowerCase().includes('hora do pagamento'));
-           const horaPagamento = headerPagamento ? row[headerPagamento] : null;
-           const headerPrevEnvio = headersPedido.find(h => h.toLowerCase().includes('data prevista') && h.toLowerCase().includes('envio'));
-           let dataPrevistaEnvio = headerPrevEnvio ? row[headerPrevEnvio] : null;
-           dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
-            const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
-            const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
-            const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
-            const comissaoPedido = parseFloat(row['Taxa de comissão']) || 0;
-            const servicoPedido = parseFloat(row['Taxa de serviço']) || 0;
-            const taxasPedido = cupomPedido + comissaoPedido + servicoPedido;
-            const liquidoPedido = subtotalPedido + reembolsoPedido - taxasPedido;
-            if (!pedidoId) continue;
-            const pedidoPayload = {
-              pedidoId,
-              status: statusPedido,
-              sku: skuPedido,
-              loja,
-              data: dataReferencia,
-              horaPagamento,
-              subtotal: subtotalPedido,
-              taxas: taxasPedido,
-              liquido: liquidoPedido,
-              reembolso: reembolsoPedido
-            };
-            if (dataPrevistaEnvio) pedidoPayload.dataPrevistaEnvio = dataPrevistaEnvio;
+           const headersPedido = Object.keys(row);
+           const headerSku = headersPedido.find(h => h.trim() === 'Número de referência SKU');
+           const skuPedido = headerSku ? row[headerSku] : null;
+          const headerPedidoId = headersPedido.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
+          const pedidoId = headerPedidoId ? row[headerPedidoId] : null;
+          const headerPagamento = headersPedido.find(h => h.toLowerCase().includes('hora do pagamento'));
+          const horaPagamento = headerPagamento ? row[headerPagamento] : null;
+          const headerPrevEnvio = headersPedido.find(h => h.toLowerCase().includes('data prevista') && h.toLowerCase().includes('envio'));
+          let dataPrevistaEnvio = headerPrevEnvio ? row[headerPrevEnvio] : null;
+          dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
+           const headerRastreio = headersPedido.find(h => h.toLowerCase().includes('rastreamento'));
+           const rastreio = headerRastreio ? String(row[headerRastreio]).trim() : '';
+           const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
+           const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
+           const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
+           const comissaoPedido = parseFloat(row['Taxa de comissão']) || 0;
+           const servicoPedido = parseFloat(row['Taxa de serviço']) || 0;
+           const taxasPedido = cupomPedido + comissaoPedido + servicoPedido;
+           const liquidoPedido = subtotalPedido + reembolsoPedido - taxasPedido;
+           if (!pedidoId) continue;
+           const pedidoPayload = {
+             pedidoId,
+             status: statusPedido,
+             sku: skuPedido,
+             loja,
+             data: dataReferencia,
+             horaPagamento,
+             subtotal: subtotalPedido,
+             taxas: taxasPedido,
+             liquido: liquidoPedido,
+             reembolso: reembolsoPedido
+           };
+           if (dataPrevistaEnvio) pedidoPayload.dataPrevistaEnvio = dataPrevistaEnvio;
+           if (rastreio) {
+             pedidoPayload.rastreio = rastreio;
+             pedidoPayload.etiquetaImpressa = true;
+           }
 
             // Atualiza coleção pedidostiny evitando duplicações
             const tinyDocRef = pedidosTinyRef.doc(pedidoId);

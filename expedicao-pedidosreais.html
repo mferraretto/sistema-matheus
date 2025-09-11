@@ -73,6 +73,7 @@
             <th class="p-2">Loja</th>
             <th class="p-2">SKU</th>
             <th class="p-2">Status</th>
+            <th class="p-2">Rastreio</th>
             <th class="p-2">Subtotal</th>
             <th class="p-2">Taxas</th>
             <th class="p-2">Líquido</th>
@@ -118,7 +119,7 @@
       tbody.innerHTML = '';
       if (!lista.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="11">Sem registros.</td>';
+        tr.innerHTML = '<td class="p-2 text-center text-gray-500" colspan="12">Sem registros.</td>';
         tbody.appendChild(tr);
         return;
       }
@@ -134,6 +135,7 @@
           <td class="p-2">${d.loja || ''}</td>
           <td class="p-2">${d.sku || ''}</td>
           <td class="p-2">${d.status || ''}</td>
+          <td class="p-2">${d.rastreio || ''}</td>
           <td class="p-2">${fmt(d.subtotal)}</td>
           <td class="p-2">${fmt(d.taxas)}</td>
           <td class="p-2">${fmt(d.liquido)}</td>
@@ -260,7 +262,7 @@
 
     function exportarCSV(lista) {
       if (!lista.length) return;
-      const headers = ['Pedido','Data','Pagamento','Prev. envio','Loja','SKU','Status','Subtotal','Taxas','Líquido','Reembolso'];
+      const headers = ['Pedido','Data','Pagamento','Prev. envio','Loja','SKU','Status','Rastreio','Subtotal','Taxas','Líquido','Reembolso'];
       const rows = lista.map(d => [
         d.pedidoId || '',
         d.data || '',
@@ -269,6 +271,7 @@
         d.loja || '',
         d.sku || '',
         d.status || '',
+        d.rastreio || '',
         d.subtotal || 0,
         d.taxas || 0,
         d.liquido || 0,
@@ -318,6 +321,7 @@
           dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
           const skuHeader = headers.find(h => h.trim() === 'Número de referência SKU');
           const statusHeader = headers.find(h => h.toLowerCase().includes('status'));
+          const rastreioHeader = headers.find(h => h.toLowerCase().includes('rastreamento'));
           const subtotal = parseFloat(row['Subtotal do produto']) || 0;
           const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
           const cupom = parseFloat(row['Cupom do vendedor']) || 0;
@@ -325,7 +329,8 @@
           const servico = parseFloat(row['Taxa de serviço']) || 0;
           const taxas = cupom + comissao + servico;
           const liquido = subtotal + reembolso - taxas;
-          pedidos.push({
+          const rastreio = rastreioHeader ? String(row[rastreioHeader]).trim() : '';
+          const pedido = {
             pedidoId,
             status: statusHeader ? row[statusHeader] : '',
             sku: skuHeader ? row[skuHeader] : '',
@@ -337,7 +342,12 @@
             taxas,
             liquido,
             reembolso
-          });
+          };
+          if (rastreio) {
+            pedido.rastreio = rastreio;
+            pedido.etiquetaImpressa = true;
+          }
+          pedidos.push(pedido);
         }
         const { encryptString, decryptString } = await import('./crypto.js');
         const pass = getPassphrase() || usuarioAtual.uid;
