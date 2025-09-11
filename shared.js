@@ -16,6 +16,17 @@
   var ROOT_PATH = BASE_PATH.replace(/public\/$/, '');
   window.ROOT_PATH = ROOT_PATH;
 
+  // Toggle submenu visibility using max-height for smooth transitions
+  window.toggleMenu = function (menuId, btn) {
+    var el = document.getElementById(menuId);
+    if (!el) return;
+    var isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
+    el.style.maxHeight = isOpen ? '0px' : el.scrollHeight + 'px';
+    if (btn) {
+      btn.classList.toggle('open', !isOpen);
+    }
+  };
+
   function fetchWithFallback(urls, idx) {
     idx = idx || 0;
     if (idx >= urls.length) return Promise.reject(new Error('Not found'));
