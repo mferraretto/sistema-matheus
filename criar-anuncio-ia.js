@@ -1,4 +1,7 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveUserDoc } from './secure-firestore.js';
@@ -9,19 +12,22 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function chamarIA(prompt, { json = false } = {}) {
-    logger.log("📤 Pergunta enviada para a IA:", prompt); // 👈 ADICIONE ESTA LINHA
+  logger.log('📤 Pergunta enviada para a IA:', prompt); // 👈 ADICIONE ESTA LINHA
 
   const body = {
     model: 'deepseek-chat',
-    messages: [{ role: 'user', content: prompt }]
+    messages: [{ role: 'user', content: prompt }],
   };
   if (json) body.response_format = { type: 'json_object' };
 
-  const resp = await fetch('https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
+  const resp = await fetch(
+    'https://us-central1-matheus-35023.cloudfunctions.net/proxyDeepSeek',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
 
   if (!resp.ok) {
     const text = await resp.text();
@@ -30,11 +36,11 @@ async function chamarIA(prompt, { json = false } = {}) {
 
   const data = await resp.json();
   const texto = data.choices?.[0]?.message?.content?.trim() || '';
-  logger.log("🧠 Resposta da IA (bruta):", texto);
+  logger.log('🧠 Resposta da IA (bruta):', texto);
   return texto;
 }
 
-window.gerarAnuncioIA = async function() {
+window.gerarAnuncioIA = async function () {
   const nome = document.getElementById('nomeProduto').value;
   const preco = document.getElementById('precoBase').value;
   const caracteristicas = document.getElementById('caracteristicas').value;
@@ -43,7 +49,7 @@ window.gerarAnuncioIA = async function() {
   const cor = document.getElementById('corProduto').value;
   const uso = document.getElementById('usoProduto').value;
 
-const prompt = `
+  const prompt = `
 Você é um especialista em criação de anúncios para a Shopee.
 
 Crie um anúncio profissional com base nas informações abaixo e responda com um JSON válido no seguinte formato:
@@ -73,7 +79,6 @@ Crie um anúncio profissional com base nas informações abaixo e responda com u
 - Indicação de uso: ${uso}
 `;
 
-
   try {
     const texto = await chamarIA(prompt, { json: true });
 
@@ -85,22 +90,23 @@ Crie um anúncio profissional com base nas informações abaixo e responda com u
       dados = match ? JSON.parse(match[0]) : {};
     }
 
-    logger.log("🎯 Dados processados:", dados);
+    logger.log('🎯 Dados processados:', dados);
 
     document.getElementById('sugestoes').classList.remove('hidden');
     document.getElementById('tituloIA').value = dados.titulo || '';
     document.getElementById('descricaoIA').value = dados.descricao || '';
     document.getElementById('categoriaIA').value = dados.categoria || '';
-    document.getElementById('palavrasChaveIA').value = (dados.palavras_chave || []).join(', ');
+    document.getElementById('palavrasChaveIA').value = (
+      dados.palavras_chave || []
+    ).join(', ');
   } catch (e) {
     alert('Erro ao gerar anúncio: ' + e.message);
   }
 };
 
-
 window.buscarPalavrasChave = async function () {
   const termo = document.getElementById('buscaKeyword').value;
-const prompt = `
+  const prompt = `
 Você é um gerador de palavras-chave para Shopee.
 
 IMPORTANTE:
@@ -116,7 +122,7 @@ Produto: "${termo}"`;
 
   try {
     const texto = await chamarIA(prompt, { json: true });
-    logger.log("🧠 Resposta da IA (bruta):", texto);
+    logger.log('🧠 Resposta da IA (bruta):', texto);
 
     let lista;
     try {
@@ -126,26 +132,25 @@ Produto: "${termo}"`;
       if (match) {
         lista = JSON.parse(match[0]);
       } else {
-        throw new Error("Não foi possível extrair JSON da resposta.");
+        throw new Error('Não foi possível extrair JSON da resposta.');
       }
     }
 
-    logger.log("🔑 Palavras-chave:", lista);
+    logger.log('🔑 Palavras-chave:', lista);
 
     const tabela = document.getElementById('resultadoKeywords');
-    let html = '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';
+    let html =
+      '<tr><th class="text-left p-2">Palavra</th><th class="text-left p-2">Volume</th><th class="text-left p-2">Concorrência</th><th class="text-left p-2">Uso</th></tr>';
     for (const item of lista) {
       html += `<tr><td class="p-2">${item.palavra}</td><td class="p-2">${item.volume}</td><td class="p-2">${item.concorrencia}</td><td class="p-2">${item.uso}</td></tr>`;
     }
     tabela.innerHTML = html;
-
   } catch (e) {
     alert('Erro ao buscar palavras-chave: ' + e.message);
   }
-}
+};
 
-
-window.salvarRascunho = async function() {
+window.salvarRascunho = async function () {
   const user = auth.currentUser;
   if (!user) {
     alert('É necessário estar logado.');
@@ -160,40 +165,66 @@ window.salvarRascunho = async function() {
     tituloIA: document.getElementById('tituloIA').value,
     descricaoIA: document.getElementById('descricaoIA').value,
     categoriaIA: document.getElementById('categoriaIA').value,
-    palavrasChaveIA: document.getElementById('palavrasChaveIA').value.split(',').map(s => s.trim()).filter(Boolean),
-    dataCriacao: new Date().toISOString()
+    palavrasChaveIA: document
+      .getElementById('palavrasChaveIA')
+      .value.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    dataCriacao: new Date().toISOString(),
   };
   const id = crypto.randomUUID();
   try {
-    await saveUserDoc(db, user.uid, 'anunciosCriados', id, dados, getPassphrase());
+    await saveUserDoc(
+      db,
+      user.uid,
+      'anunciosCriados',
+      id,
+      dados,
+      getPassphrase(),
+    );
     alert('Rascunho salvo!');
   } catch (e) {
     alert('Erro ao salvar: ' + e.message);
   }
-}
+};
 
-window.exportarCSV = function() {
+window.exportarCSV = function () {
   const nome = document.getElementById('nomeProduto').value;
   const titulo = document.getElementById('tituloIA').value;
-  const descricao = document.getElementById('descricaoIA').value.replace(/\n/g, ' ');
+  const descricao = document
+    .getElementById('descricaoIA')
+    .value.replace(/\n/g, ' ');
   const categoria = document.getElementById('categoriaIA').value;
   const preco = document.getElementById('precoBase').value;
   const estoque = document.getElementById('estoque').value;
   const palavras = document.getElementById('palavrasChaveIA').value;
-  const sku = 'SKU' + Math.floor(Math.random()*1000000);
+  const sku = 'SKU' + Math.floor(Math.random() * 1000000);
   const linhas = [
-    ['Nome','Título','Descrição','Categoria','Preço','Estoque','SKU','Palavras-chave'],
-    [nome,titulo,descricao,categoria,preco,estoque,sku,palavras]
+    [
+      'Nome',
+      'Título',
+      'Descrição',
+      'Categoria',
+      'Preço',
+      'Estoque',
+      'SKU',
+      'Palavras-chave',
+    ],
+    [nome, titulo, descricao, categoria, preco, estoque, sku, palavras],
   ];
-  const csv = linhas.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const csv = linhas
+    .map((r) =>
+      r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(','),
+    )
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = 'anuncio-shopee.csv';
   a.click();
   URL.revokeObjectURL(url);
-}
+};
 window.copiarAnuncio = function () {
   const titulo = document.getElementById('tituloIA').value;
   const descricao = document.getElementById('descricaoIA').value;
@@ -201,9 +232,10 @@ window.copiarAnuncio = function () {
 
   const texto = `📌 TÍTULO:\n${titulo}\n\n📝 DESCRIÇÃO:\n${descricao}\n\n🔑 PALAVRAS-CHAVE:\n${palavras}`;
 
-  navigator.clipboard.writeText(texto)
-    .then(() => alert("✅ Anúncio copiado com sucesso!"))
-    .catch(() => alert("❌ Falha ao copiar. Tente novamente."));
+  navigator.clipboard
+    .writeText(texto)
+    .then(() => alert('✅ Anúncio copiado com sucesso!'))
+    .catch(() => alert('❌ Falha ao copiar. Tente novamente.'));
 };
 window.sugerirCategoriaComIA = async function () {
   const nome = document.getElementById('nomeProduto').value;
@@ -228,8 +260,8 @@ Informações do produto:
 
     const categoriaLimpa = resposta.trim().replace(/^["']|["']$/g, ''); // Remove aspas se vier com
     document.getElementById('categoriaIA').value = categoriaLimpa;
-    alert("✅ Categoria sugerida preenchida com sucesso!");
+    alert('✅ Categoria sugerida preenchida com sucesso!');
   } catch (e) {
-    alert("❌ Erro ao sugerir categoria: " + e.message);
+    alert('❌ Erro ao sugerir categoria: ' + e.message);
   }
 };

@@ -2,6 +2,14 @@
   "name": "vendedorpro",
   "type": "module",
   "scripts": {
-    "test": "node tests/comissoes.test.js"
+    "test": "node tests/comissoes.test.js",
+    "lint": "eslint \"*.js\"",
+    "format": "prettier --write \"*.js\" \"css/*.css\"",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2"
   }
 }

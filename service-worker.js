@@ -1,23 +1,37 @@
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
-
-const PRECACHE_MANIFEST = [
-  {url: 'index.html', revision: null},
-  {url: 'index.js', revision: null},
-  {url: 'financeiro.html', revision: null},
-  {url: 'financeiro.js', revision: null},
-  {url: 'css/styles.css', revision: null},
-  {url: 'css/components.css', revision: null},
-  {url: 'css/utilities.css', revision: null},
-  {url: 'icons/icon-192.png', revision: null},
-  {url: 'icons/icon-512.png', revision: null},
-  {url: 'offline.html', revision: '1'},
+const CACHE_VERSION = '20240826';
+const CACHE_PREFIX = 'app-cache-v';
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
+const URLS_TO_CACHE = [
+  'index.html',
+  'index.js',
+  'financeiro.html',
+  'financeiro.js',
+  `css/styles.css?v=${CACHE_VERSION}`,
+  'css/components.css',
+  'css/utilities.css',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
 ];
 
-workbox.core.skipWaiting();
-workbox.core.clientsClaim();
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE)),
+  );
+});
 
-workbox.precaching.precacheAndRoute((self.__WB_MANIFEST || []).concat(PRECACHE_MANIFEST), {
-  ignoreURLParametersMatching: [/.*/]
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      ),
+  );
+
 });
 
 workbox.precaching.cleanupOutdatedCaches();
@@ -36,9 +50,12 @@ workbox.routing.registerRoute(
   })
 );
 
-workbox.routing.setCatchHandler(async ({event}) => {
-  if (event.request.mode === 'navigate') {
-    return caches.match('offline.html', {ignoreSearch: true});
-  }
-  return Response.error();
+  event.respondWith(
+    caches
+      .match(event.request)
+      .then(
+        (response) => response || fetch(event.request).catch(() => response),
+      ),
+  );
+
 });

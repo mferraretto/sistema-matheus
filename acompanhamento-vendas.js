@@ -1,6 +1,23 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, orderBy, startAt, endAt, doc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  startAt,
+  endAt,
+  doc,
+  getDoc,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
@@ -11,13 +28,14 @@ const auth = getAuth(app);
 
 let usuariosCache = [];
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
   try {
-    const { usuarios, isGestor, isResponsavelFinanceiro } = await carregarUsuariosFinanceiros(db, user);
+    const { usuarios, isGestor, isResponsavelFinanceiro } =
+      await carregarUsuariosFinanceiros(db, user);
     if (!isGestor && !isResponsavelFinanceiro) {
       window.location.href = 'index.html';
       return;
@@ -36,7 +54,7 @@ function setupFiltros(usuarios) {
   const mesSel = document.getElementById('mesFiltro');
   if (!userSel || !mesSel) return;
   userSel.innerHTML = '<option value="todos">Todos</option>';
-  usuarios.forEach(u => {
+  usuarios.forEach((u) => {
     const opt = document.createElement('option');
     opt.value = u.uid;
     opt.textContent = u.nome;
@@ -51,7 +69,10 @@ function setupFiltros(usuarios) {
 async function carregar() {
   const mes = document.getElementById('mesFiltro')?.value;
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
-  const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
+  const listaUsuarios =
+    uid === 'todos'
+      ? usuariosCache
+      : usuariosCache.filter((u) => u.uid === uid);
   await carregarSkus(listaUsuarios, mes);
 }
 
@@ -63,13 +84,22 @@ async function carregarSkus(usuarios, mes) {
     const baseCol = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
     let q = baseCol;
     if (mesData) {
-      const inicio = new Date(mesData.getFullYear(), mesData.getMonth(), 1).toISOString().split('T')[0];
-      const fim = new Date(mesData.getFullYear(), mesData.getMonth() + 1, 0).toISOString().split('T')[0];
+      const inicio = new Date(mesData.getFullYear(), mesData.getMonth(), 1)
+        .toISOString()
+        .split('T')[0];
+      const fim = new Date(mesData.getFullYear(), mesData.getMonth() + 1, 0)
+        .toISOString()
+        .split('T')[0];
       q = query(baseCol, orderBy('data'), startAt(inicio), endAt(fim));
     }
     const snap = await getDocs(q);
-    const promessas = snap.docs.map(async docSnap => {
-      let pedido = await loadSecureDoc(db, `usuarios/${usuario.uid}/pedidostiny`, docSnap.id, pass);
+    const promessas = snap.docs.map(async (docSnap) => {
+      let pedido = await loadSecureDoc(
+        db,
+        `usuarios/${usuario.uid}/pedidostiny`,
+        docSnap.id,
+        pass,
+      );
       if (!pedido) {
         const raw = docSnap.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
@@ -78,17 +108,23 @@ async function carregarSkus(usuarios, mes) {
       const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
       const data = parseDate(dataStr);
       if (mesData && !sameMonth(data, mesData)) return {};
-      const itens = Array.isArray(pedido.itens) && pedido.itens.length ? pedido.itens : [pedido];
+      const itens =
+        Array.isArray(pedido.itens) && pedido.itens.length
+          ? pedido.itens
+          : [pedido];
       const resumoLocal = {};
-      itens.forEach(item => {
+      itens.forEach((item) => {
         const sku = item.sku || pedido.sku || 'sem-sku';
-        const qtd = Number(item.quantidade || item.qtd || item.quantity || item.total || 1) || 1;
+        const qtd =
+          Number(
+            item.quantidade || item.qtd || item.quantity || item.total || 1,
+          ) || 1;
         resumoLocal[sku] = (resumoLocal[sku] || 0) + qtd;
       });
       return resumoLocal;
     });
     const resultados = await Promise.all(promessas);
-    resultados.forEach(res => {
+    resultados.forEach((res) => {
       Object.entries(res).forEach(([sku, qtd]) => {
         resumoGeral[sku] = (resumoGeral[sku] || 0) + qtd;
       });
@@ -111,12 +147,18 @@ function renderSkusCard(resumo) {
   }
   card.classList.remove('hidden');
   topCard.classList.remove('hidden');
-  let html = '<h4 class="text-sm text-gray-500 mb-2">SKUs vendidos no mês</h4><ul class="text-sm space-y-1">';
-  entries.forEach(([sku, qtd]) => { html += `<li>${sku}: ${qtd}</li>`; });
+  let html =
+    '<h4 class="text-sm text-gray-500 mb-2">SKUs vendidos no mês</h4><ul class="text-sm space-y-1">';
+  entries.forEach(([sku, qtd]) => {
+    html += `<li>${sku}: ${qtd}</li>`;
+  });
   html += '</ul>';
   card.innerHTML = html;
-  let topHtml = '<h4 class="text-sm text-gray-500 mb-2">Top 5 SKUs</h4><ul class="text-sm space-y-1">';
-  entries.slice(0,5).forEach(([sku, qtd]) => { topHtml += `<li>${sku}: ${qtd}</li>`; });
+  let topHtml =
+    '<h4 class="text-sm text-gray-500 mb-2">Top 5 SKUs</h4><ul class="text-sm space-y-1">';
+  entries.slice(0, 5).forEach(([sku, qtd]) => {
+    topHtml += `<li>${sku}: ${qtd}</li>`;
+  });
   topHtml += '</ul>';
   topCard.innerHTML = topHtml;
 }

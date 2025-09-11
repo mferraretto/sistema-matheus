@@ -1,5 +1,9 @@
 import { encryptString, decryptString } from './crypto.js';
-import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  doc,
+  setDoc,
+  getDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import logger from './logger.js';
 function buildRef(db, collectionPath, id) {
   const segments = collectionPath.split('/').filter(Boolean);
@@ -7,7 +11,7 @@ function buildRef(db, collectionPath, id) {
 }
 
 export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
- // Store the UID outside the encrypted payload so we can query by owner
+  // Store the UID outside the encrypted payload so we can query by owner
   const { uid, ...rest } = data || {};
   const encrypted = await encryptString(JSON.stringify(rest), passphrase);
   const payload = { encrypted };
@@ -17,15 +21,19 @@ export async function saveSecureDoc(db, collectionName, id, data, passphrase) {
 }
 
 export async function loadSecureDoc(db, collectionName, id, passphrase) {
- if (!id) {
-    logger.warn('⚠️ ID do documento não foi fornecido para a coleção:', collectionName);
+  if (!id) {
+    logger.warn(
+      '⚠️ ID do documento não foi fornecido para a coleção:',
+      collectionName,
+    );
     return null;
   }
   const ref = buildRef(db, collectionName, id);
   const snap = await getDoc(ref);
   // Firestore SDKs vary between an `exists` boolean property and an
   // `exists()` method. Handle both to avoid runtime errors.
-  const snapExists = typeof snap.exists === 'function' ? snap.exists() : snap.exists;
+  const snapExists =
+    typeof snap.exists === 'function' ? snap.exists() : snap.exists;
   if (!snapExists) return null;
 
   const { encrypted, encryptedData, uid, ...rest } = snap.data();
@@ -70,7 +78,9 @@ export async function loadSecureDoc(db, collectionName, id, passphrase) {
 export async function loadSecureDocFromSnap(docSnap, passphrase) {
   // Support both Firestore v9 `exists()` method and SDKs that expose
   // an `exists` boolean property.
-  const snapExists = docSnap && (typeof docSnap.exists === 'function' ? docSnap.exists() : docSnap.exists);
+  const snapExists =
+    docSnap &&
+    (typeof docSnap.exists === 'function' ? docSnap.exists() : docSnap.exists);
   if (!snapExists) return null;
 
   const { encrypted, encryptedData, uid, ...rest } = docSnap.data();
@@ -102,7 +112,11 @@ export async function loadSecureDocFromSnap(docSnap, passphrase) {
     if (uid && !data.uid) data.uid = uid;
     return data;
   } catch (err) {
-    logger.warn('🔐 Erro ao descriptografar documento:', docSnap.id, err.message);
+    logger.warn(
+      '🔐 Erro ao descriptografar documento:',
+      docSnap.id,
+      err.message,
+    );
     if (Object.keys(rest).length) {
       return { ...rest, ...(uid && { uid }) };
     }
@@ -110,11 +124,12 @@ export async function loadSecureDocFromSnap(docSnap, passphrase) {
   }
 }
 
-
 // Helpers enforcing the standard `uid/<uid>/collection` pattern
 export async function setDocWithCopy(ref, data, uid, responsavelUid) {
   await setDoc(ref, data);
-  const respUid = responsavelUid || (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
+  const respUid =
+    responsavelUid ||
+    (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
   if (respUid && respUid !== uid) {
     const segments = ref.path.split('/');
     const relative = segments.slice(2).join('/');
@@ -123,11 +138,33 @@ export async function setDocWithCopy(ref, data, uid, responsavelUid) {
   }
 }
 
-export async function saveUserDoc(db, uid, collection, id, data, passphrase, responsavelUid) {
-  await saveSecureDoc(db, `uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
-  const respUid = responsavelUid || (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
+export async function saveUserDoc(
+  db,
+  uid,
+  collection,
+  id,
+  data,
+  passphrase,
+  responsavelUid,
+) {
+  await saveSecureDoc(
+    db,
+    `uid/${uid}/${collection}`,
+    id,
+    { ...data, uid },
+    passphrase,
+  );
+  const respUid =
+    responsavelUid ||
+    (typeof window !== 'undefined' && window.responsavelFinanceiro?.uid);
   if (respUid && respUid !== uid) {
-    await saveSecureDoc(db, `uid/${respUid}/uid/${uid}/${collection}`, id, { ...data, uid }, passphrase);
+    await saveSecureDoc(
+      db,
+      `uid/${respUid}/uid/${uid}/${collection}`,
+      id,
+      { ...data, uid },
+      passphrase,
+    );
   }
 }
 

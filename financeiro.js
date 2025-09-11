@@ -1,10 +1,32 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, doc, getDoc, query, where, onSnapshot, orderBy, startAt, endAt, startAfter, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  startAt,
+  endAt,
+  startAfter,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
 import { loadSecureDoc, setDocWithCopy } from './secure-firestore.js';
-import { atualizarSaque as atualizarSaqueSvc, watchResumoMes as watchResumoMesSvc } from './comissoes-service.js';
+import {
+  atualizarSaque as atualizarSaqueSvc,
+  watchResumoMes as watchResumoMesSvc,
+} from './comissoes-service.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -20,7 +42,7 @@ let vendasChart;
 let resumoUnsub = null;
 let currentUser = null;
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -51,7 +73,7 @@ function setupFiltros(usuarios) {
   optTodos.value = 'todos';
   optTodos.textContent = 'Todos';
   userSel.appendChild(optTodos);
-  usuarios.forEach(u => {
+  usuarios.forEach((u) => {
     const opt = document.createElement('option');
     opt.value = u.uid;
     opt.textContent = u.nome;
@@ -63,7 +85,7 @@ function setupFiltros(usuarios) {
   // A interação com os filtros não precisa mais bloquear a propagação
   // de cliques. Isso evita conflitos com o botão que abre o sidebar
   // em dispositivos móveis.
-  document.getElementById('usuarioIcon')?.addEventListener('click', e => {
+  document.getElementById('usuarioIcon')?.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof userSel.showPicker === 'function') {
       userSel.showPicker();
@@ -71,7 +93,7 @@ function setupFiltros(usuarios) {
       userSel.focus();
     }
   });
-  document.getElementById('mesIcon')?.addEventListener('click', e => {
+  document.getElementById('mesIcon')?.addEventListener('click', (e) => {
     e.preventDefault();
     if (typeof mesSel.showPicker === 'function') {
       mesSel.showPicker();
@@ -90,19 +112,28 @@ function setupFiltros(usuarios) {
     metaSection.classList.remove('hidden');
     if (!metaInput) return;
     try {
-      const metaDoc = await getDoc(doc(db, `uid/${userSel.value}/metasFaturamento`, mesSel.value));
+      const metaDoc = await getDoc(
+        doc(db, `uid/${userSel.value}/metasFaturamento`, mesSel.value),
+      );
       metaInput.value = metaDoc.exists() ? metaDoc.data().valor || '' : '';
     } catch (_) {
       metaInput.value = '';
     }
   }
 
-  userSel.addEventListener('change', () => { atualizarMeta(); atualizarContexto(); carregar(); });
-  mesSel.addEventListener('change', () => { atualizarMeta(); atualizarContexto(); carregar(); });
+  userSel.addEventListener('change', () => {
+    atualizarMeta();
+    atualizarContexto();
+    carregar();
+  });
+  mesSel.addEventListener('change', () => {
+    atualizarMeta();
+    atualizarContexto();
+    carregar();
+  });
   if (salvarMetaBtn) salvarMetaBtn.addEventListener('click', salvarMeta);
   atualizarMeta();
   atualizarContexto();
-
 }
 
 async function salvarMeta() {
@@ -137,14 +168,19 @@ async function carregar() {
     if (mesSel) mesSel.value = mes;
   }
   const uid = document.getElementById('usuarioFiltro')?.value || 'todos';
-  const listaUsuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
+  const listaUsuarios =
+    uid === 'todos'
+      ? usuariosCache
+      : usuariosCache.filter((u) => u.uid === uid);
   atualizarContexto();
   resumoUsuarios = {};
-  listaUsuarios.forEach(u => resumoUsuarios[u.uid] = { uid: u.uid, nome: u.nome });
+  listaUsuarios.forEach(
+    (u) => (resumoUsuarios[u.uid] = { uid: u.uid, nome: u.nome }),
+  );
   await Promise.all([
     carregarSaques(listaUsuarios, mes),
     carregarFaturamentoMeta(listaUsuarios, mes),
-    carregarDevolucoes(listaUsuarios, mes)
+    carregarDevolucoes(listaUsuarios, mes),
   ]);
   await carregarTotaisPedidosTiny(listaUsuarios);
   renderResumoUsuarios(Object.values(resumoUsuarios));
@@ -170,10 +206,12 @@ function atualizarContexto() {
   const uid = document.getElementById('usuarioFiltro')?.value;
   if (contextoEl) {
     const mesData = mes ? parseMes(mes) : null;
-    const mesTxt = mesData ? mesData.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '';
+    const mesTxt = mesData
+      ? mesData.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+      : '';
     let usuarioTxt = 'Todos os usuários';
     if (uid && uid !== 'todos') {
-      const u = usuariosCache.find(x => x.uid === uid);
+      const u = usuariosCache.find((x) => x.uid === uid);
       usuarioTxt = u ? u.nome : uid;
     }
     contextoEl.textContent = `${mesTxt} – ${usuarioTxt}`;
@@ -213,20 +251,30 @@ function sameMonth(a, b) {
 }
 
 function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function toNumber(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = v
+      .replace(/[R$\s]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
     return parseFloat(n) || 0;
   }
   return 0;
 }
 
 function formatCurrency(v) {
-  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(v || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
 
 function calcularLiquido(p) {
@@ -235,7 +283,7 @@ function calcularLiquido(p) {
   let taxa = 0;
   if (loja.includes('shopee')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         const comissao = Math.min(v * 0.22, 100);
         taxa += comissao + 4.0;
@@ -246,7 +294,7 @@ function calcularLiquido(p) {
     }
   } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         let fixo = 0;
         if (v < 12.5) fixo = v / 2;
@@ -275,9 +323,16 @@ async function carregarSaques(usuarios, mes) {
     let totalComissao = 0;
     const detalhes = [];
     try {
-      const col = collection(db, 'usuarios', usuario.uid, 'comissoes', mes, 'saques');
+      const col = collection(
+        db,
+        'usuarios',
+        usuario.uid,
+        'comissoes',
+        mes,
+        'saques',
+      );
       const snap = await getDocs(col);
-      snap.forEach(docSnap => {
+      snap.forEach((docSnap) => {
         const dados = docSnap.data();
         const valor = Number(dados.valor) || 0;
         const percentual = Number(dados.percentualPago) || 0;
@@ -286,18 +341,22 @@ async function carregarSaques(usuarios, mes) {
         totalComissao += comissao;
         detalhes.push({
           id: docSnap.id,
-          data: (dados.data || '').substring(0,10),
+          data: (dados.data || '').substring(0, 10),
           dataISO: dados.data || '',
           loja: dados.origem || '-',
           valor,
           percentual,
-          comissao
+          comissao,
         });
       });
     } catch (e) {
       console.error('Erro ao carregar saques:', e);
     }
-    dadosSaquesExport.push({ usuario: usuario.nome, total, comissao: totalComissao });
+    dadosSaquesExport.push({
+      usuario: usuario.nome,
+      total,
+      comissao: totalComissao,
+    });
     resumoUsuarios[usuario.uid].saques = { total, comissao: totalComissao };
     resumoUsuarios[usuario.uid].saquesDetalhes = detalhes;
   }
@@ -320,9 +379,9 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     const snap = await getDocs(q);
 
     const dias = await Promise.all(
-      snap.docs.map(async docSnap => {
+      snap.docs.map(async (docSnap) => {
         const lojasSnap = await getDocs(
-          collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`)
+          collection(db, `uid/${usuario.uid}/faturamento/${docSnap.id}/lojas`),
         );
         let totalDia = 0;
         let totalDiaBruto = 0;
@@ -344,7 +403,7 @@ async function carregarFaturamentoMeta(usuarios, mes) {
           totalDiaBruto += Number(dados.valorBruto) || 0;
         }
         return { dia: docSnap.id, totalDia, totalDiaBruto };
-      })
+      }),
     );
 
     dias.forEach(({ dia, totalDia, totalDiaBruto }) => {
@@ -357,7 +416,9 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let diferenca = 0;
     let metaDiaria = 0;
     try {
-      const metaDoc = await getDoc(doc(db, `uid/${usuario.uid}/metasFaturamento`, mes));
+      const metaDoc = await getDoc(
+        doc(db, `uid/${usuario.uid}/metasFaturamento`, mes),
+      );
       if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
     } catch (err) {
       console.error('Erro ao buscar meta de faturamento:', err);
@@ -372,13 +433,19 @@ async function carregarFaturamentoMeta(usuarios, mes) {
       esperado = metaDiaria * diasDecorridos;
       diferenca = total - esperado;
     }
-    dadosFaturamentoExport.push({ usuario: usuario.nome, faturado: total, meta, esperado, diferenca });
+    dadosFaturamentoExport.push({
+      usuario: usuario.nome,
+      faturado: total,
+      meta,
+      esperado,
+      diferenca,
+    });
     resumoUsuarios[usuario.uid].faturamento = {
       faturado: total,
       bruto: totalBruto,
       meta,
       esperado,
-      diferenca
+      diferenca,
     };
     resumoUsuarios[usuario.uid].faturamentoDetalhes = { diario, metaDiaria };
   }
@@ -395,7 +462,7 @@ async function carregarDevolucoes(usuarios, mes) {
     }
     const snap = await getDocs(q);
     let total = 0;
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       const dados = docSnap.data();
       total += Number(dados.quantidade || dados.total || 1);
     });
@@ -426,7 +493,7 @@ async function carregarTotaisPedidosTiny(usuarios) {
     const snap = await getDocs(col);
     let extraBruto = 0;
     let extraLiquido = 0;
-    snap.docs.forEach(d => {
+    snap.docs.forEach((d) => {
       const pedido = d.data();
       extraBruto += toNumber(pedido.valor || pedido.total || 0);
       extraLiquido += calcularLiquido(pedido);
@@ -436,19 +503,25 @@ async function carregarTotaisPedidosTiny(usuarios) {
       totalBruto += extraBruto;
       totalLiquido += extraLiquido;
       ultimoDoc = last.id;
-      await setDocWithCopy(resumoRef, { totalBruto, totalLiquido, ultimoDoc }, usuario.uid);
+      await setDocWithCopy(
+        resumoRef,
+        { totalBruto, totalLiquido, ultimoDoc },
+        usuario.uid,
+      );
     }
     const existente = resumoUsuarios[usuario.uid].faturamento || {};
     resumoUsuarios[usuario.uid].faturamento = {
       ...existente,
       faturado: totalLiquido,
-      bruto: totalBruto
+      bruto: totalBruto,
     };
   }
 }
 
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
-  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+  const lojasSnap = await getDocs(
+    collection(db, `uid/${uid}/faturamento/${dia}/lojas`),
+  );
   let liquido = 0;
   let bruto = 0;
   for (const lojaDoc of lojasSnap.docs) {
@@ -459,7 +532,9 @@ async function calcularFaturamentoDiaDetalhado(uid, dia) {
       try {
         txt = await decryptString(dados.encrypted, pass);
       } catch (e) {
-        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+        try {
+          txt = await decryptString(dados.encrypted, uid);
+        } catch (_) {}
       }
       if (txt) dados = JSON.parse(txt);
     }
@@ -470,7 +545,9 @@ async function calcularFaturamentoDiaDetalhado(uid, dia) {
 }
 
 async function getFaturamentoRegistrosDia(uid, dia) {
-  const lojasSnap = await getDocs(collection(db, `uid/${uid}/faturamento/${dia}/lojas`));
+  const lojasSnap = await getDocs(
+    collection(db, `uid/${uid}/faturamento/${dia}/lojas`),
+  );
   const registros = [];
   for (const lojaDoc of lojasSnap.docs) {
     let dados = lojaDoc.data();
@@ -480,14 +557,16 @@ async function getFaturamentoRegistrosDia(uid, dia) {
       try {
         txt = await decryptString(dados.encrypted, pass);
       } catch (e) {
-        try { txt = await decryptString(dados.encrypted, uid); } catch (_) {}
+        try {
+          txt = await decryptString(dados.encrypted, uid);
+        } catch (_) {}
       }
       if (txt) dados = JSON.parse(txt);
     }
     registros.push({
       loja: lojaDoc.id,
       valorBruto: Number(dados.valorBruto) || 0,
-      valorLiquido: Number(dados.valorLiquido) || 0
+      valorLiquido: Number(dados.valorLiquido) || 0,
     });
   }
   return registros;
@@ -512,14 +591,17 @@ function initKpiVendasDetalhes() {
     }
     const dia = new Date();
     dia.setDate(dia.getDate() - 1);
-    const diaStr = dia.toISOString().slice(0,10);
+    const diaStr = dia.toISOString().slice(0, 10);
     const registros = await getFaturamentoRegistrosDia(uid, diaStr);
     if (!registros.length) {
       alert('Sem registros de faturamento no dia anterior');
       return;
     }
     const linhas = registros
-      .map(r => `<tr><td>${r.loja}</td><td>R$ ${r.valorBruto.toLocaleString('pt-BR')}</td><td>R$ ${r.valorLiquido.toLocaleString('pt-BR')}</td></tr>`)
+      .map(
+        (r) =>
+          `<tr><td>${r.loja}</td><td>R$ ${r.valorBruto.toLocaleString('pt-BR')}</td><td>R$ ${r.valorLiquido.toLocaleString('pt-BR')}</td></tr>`,
+      )
       .join('');
     const tabela = `<table class="data-table w-full text-sm"><thead><tr><th>Loja</th><th>Bruto</th><th>Líquido</th></tr></thead><tbody>${linhas}</tbody></table>`;
     showModal(`Faturamento Diário - ${formatarData(diaStr)}`, tabela);
@@ -527,7 +609,7 @@ function initKpiVendasDetalhes() {
 }
 
 async function subscribeKPIs() {
-  kpiUnsubs.forEach(fn => fn());
+  kpiUnsubs.forEach((fn) => fn());
   kpiUnsubs = [];
   const uid = document.getElementById('usuarioFiltro')?.value;
   const mes = document.getElementById('mesFiltro')?.value;
@@ -564,14 +646,21 @@ async function subscribeKPIs() {
       for (const u of usuariosCache) {
         let metaValor = 0;
         try {
-          const metaDoc = await getDoc(doc(db, `uid/${u.uid}/metasFaturamento`, mes));
+          const metaDoc = await getDoc(
+            doc(db, `uid/${u.uid}/metasFaturamento`, mes),
+          );
           if (metaDoc.exists()) metaValor = Number(metaDoc.data().valor) || 0;
         } catch (_) {}
-        const fatSnap = await getDocs(collection(db, `uid/${u.uid}/faturamento`));
+        const fatSnap = await getDocs(
+          collection(db, `uid/${u.uid}/faturamento`),
+        );
         let totalMes = 0;
         for (const d of fatSnap.docs) {
           if (mes && !d.id.startsWith(mes)) continue;
-          const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(u.uid, d.id);
+          const { liquido: totalDia } = await calcularFaturamentoDiaDetalhado(
+            u.uid,
+            d.id,
+          );
           totalMes += totalDia;
         }
         const [ano, mesNum] = mes.split('-').map(Number);
@@ -581,9 +670,16 @@ async function subscribeKPIs() {
         if (mes === formatMes(hoje)) diasDecorridos = hoje.getDate();
         const mediaDiaria = diasDecorridos ? totalMes / diasDecorridos : 0;
         const projTotal = mediaDiaria * totalDias;
-        const prog = metaValor ? Math.min(100, (totalMes / metaValor) * 100) : 0;
+        const prog = metaValor
+          ? Math.min(100, (totalMes / metaValor) * 100)
+          : 0;
         const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
-        const color = prog >= 100 ? 'text-green-600' : prog >= 50 ? 'text-yellow-500' : 'text-red-600';
+        const color =
+          prog >= 100
+            ? 'text-green-600'
+            : prog >= 50
+              ? 'text-yellow-500'
+              : 'text-red-600';
         const item = document.createElement('div');
         item.innerHTML = `\n          <div class="text-sm font-medium">${u.nome}</div>\n          <div class="flex items-baseline gap-2">\n            <span class="text-2xl font-bold ${color}">${metaValor ? prog.toFixed(1) : '0'}%</span>\n            <span class="text-xs text-gray-500">Proj: ${metaValor ? projPerc.toFixed(1) : '0'}%</span>\n          </div>\n          <div class="progress mt-1 ${color}">\n            <div class="progress-bar" style="width:${prog.toFixed(0)}%"></div>\n          </div>`;
         metaMulti.appendChild(item);
@@ -601,21 +697,22 @@ async function subscribeKPIs() {
   }
   const ontem = new Date();
   ontem.setDate(ontem.getDate() - 1);
-  const diaAnterior = ontem.toISOString().slice(0,10);
+  const diaAnterior = ontem.toISOString().slice(0, 10);
   let metaValor = 0;
   const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
-  const unsubMeta = onSnapshot(metaRef, snap => {
+  const unsubMeta = onSnapshot(metaRef, (snap) => {
     metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
   });
   kpiUnsubs.push(unsubMeta);
 
   const faturamentoRef = collection(db, `uid/${uid}/faturamento`);
-  const unsubFat = onSnapshot(faturamentoRef, async snap => {
+  const unsubFat = onSnapshot(faturamentoRef, async (snap) => {
     let totalMes = 0;
     let vendasLiquido = 0;
     let vendasBruto = 0;
     for (const d of snap.docs) {
-      const { liquido: totalDia, bruto: brutoDia } = await calcularFaturamentoDiaDetalhado(uid, d.id);
+      const { liquido: totalDia, bruto: brutoDia } =
+        await calcularFaturamentoDiaDetalhado(uid, d.id);
       if (d.id === diaAnterior) {
         vendasLiquido = totalDia;
         vendasBruto = brutoDia;
@@ -635,11 +732,22 @@ async function subscribeKPIs() {
     const projTotal = mediaDiaria * totalDias;
     const projPerc = metaValor ? (projTotal / metaValor) * 100 : 0;
     metaEl.textContent = metaValor ? `${prog.toFixed(1)}%` : '0%';
-    if (metaProjEl) metaProjEl.textContent = metaValor ? `Proj: ${projPerc.toFixed(1)}%` : 'Proj: 0%';
+    if (metaProjEl)
+      metaProjEl.textContent = metaValor
+        ? `Proj: ${projPerc.toFixed(1)}%`
+        : 'Proj: 0%';
     if (metaBar && metaWrap) {
       metaBar.style.width = `${prog.toFixed(0)}%`;
-      metaWrap.classList.remove('text-green-600','text-yellow-500','text-red-600');
-      metaEl.classList.remove('text-green-600','text-yellow-500','text-red-600');
+      metaWrap.classList.remove(
+        'text-green-600',
+        'text-yellow-500',
+        'text-red-600',
+      );
+      metaEl.classList.remove(
+        'text-green-600',
+        'text-yellow-500',
+        'text-red-600',
+      );
       if (prog >= 100) {
         metaWrap.classList.add('text-green-600');
         metaEl.classList.add('text-green-600');
@@ -654,10 +762,13 @@ async function subscribeKPIs() {
   });
   kpiUnsubs.push(unsubFat);
 
-  const skusRef = collection(db, `uid/${uid}/skusVendidos/${diaAnterior}/lista`);
-  const unsubSkus = onSnapshot(skusRef, snap => {
+  const skusRef = collection(
+    db,
+    `uid/${uid}/skusVendidos/${diaAnterior}/lista`,
+  );
+  const unsubSkus = onSnapshot(skusRef, (snap) => {
     let totalSkus = 0;
-    snap.forEach(item => {
+    snap.forEach((item) => {
       const dados = item.data();
       totalSkus += Number(dados.total || dados.quantidade) || 0;
     });
@@ -666,10 +777,10 @@ async function subscribeKPIs() {
   kpiUnsubs.push(unsubSkus);
 
   const devolucoesRef = collection(db, `uid/${uid}/devolucoes`);
-  const unsubDev = onSnapshot(devolucoesRef, snap => {
-    const hoje = new Date().toISOString().slice(0,10);
+  const unsubDev = onSnapshot(devolucoesRef, (snap) => {
+    const hoje = new Date().toISOString().slice(0, 10);
     let qtd = 0;
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       if (docSnap.id.includes(hoje)) {
         const dados = docSnap.data();
         qtd += Number(dados.quantidade || dados.total || 1);
@@ -693,15 +804,17 @@ function updateSalesChart(labels, data) {
       type: 'line',
       data: {
         labels,
-        datasets: [{
-          label: 'Vendas',
-          data,
-          borderColor: 'var(--primary)',
-          backgroundColor: 'rgba(99,102,241,0.2)',
-          tension: 0.3
-        }]
+        datasets: [
+          {
+            label: 'Vendas',
+            data,
+            borderColor: 'var(--primary)',
+            backgroundColor: 'rgba(99,102,241,0.2)',
+            tension: 0.3,
+          },
+        ],
       },
-      options: { scales: { y: { beginAtZero: true } } }
+      options: { scales: { y: { beginAtZero: true } } },
     });
   }
 }
@@ -714,11 +827,19 @@ function renderResumoUsuarios(lista) {
   overview.innerHTML = '';
 
   const totalBruto = lista.reduce((s, u) => s + (u.faturamento?.bruto || 0), 0);
-  const totalLiquido = lista.reduce((s, u) => s + (u.faturamento?.faturado || 0), 0);
+  const totalLiquido = lista.reduce(
+    (s, u) => s + (u.faturamento?.faturado || 0),
+    0,
+  );
   const metaTotal = lista.reduce((s, u) => s + (u.faturamento?.meta || 0), 0);
   const devolTotal = lista.reduce((s, u) => s + (u.devolucoes || 0), 0);
   const perc = metaTotal ? (totalLiquido / metaTotal) * 100 : 0;
-  const percColor = perc >= 100 ? 'text-green-600' : perc >= 50 ? 'text-yellow-500' : 'text-red-600';
+  const percColor =
+    perc >= 100
+      ? 'text-green-600'
+      : perc >= 50
+        ? 'text-yellow-500'
+        : 'text-red-600';
 
   overview.innerHTML = `
     <div class="card p-4 flex items-center gap-2 text-green-600"><i class="fa fa-money-bill text-2xl"></i><div><div class="text-sm text-gray-500">Total Faturado</div><div class="text-xl font-bold">R$ ${totalBruto.toLocaleString('pt-BR')}</div></div></div>
@@ -728,14 +849,22 @@ function renderResumoUsuarios(lista) {
     <div class="card p-4 flex items-center gap-2 text-orange-500"><i class="fa fa-undo text-2xl"></i><div><div class="text-sm text-gray-500">Devoluções</div><div class="text-xl font-bold">${devolTotal}</div></div></div>`;
 
   const grid = document.createElement('div');
-  grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
-  lista.forEach(u => grid.appendChild(createResumoCard(u)));
+  grid.className =
+    'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+  lista.forEach((u) => grid.appendChild(createResumoCard(u)));
   container.appendChild(grid);
 }
 
 function createResumoCard(u) {
-  const progresso = u.faturamento?.meta ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100) : 0;
-  const statusColor = progresso >= 100 ? 'text-green-600' : progresso >= 50 ? 'text-yellow-500' : 'text-red-600';
+  const progresso = u.faturamento?.meta
+    ? Math.min(100, (u.faturamento.faturado / u.faturamento.meta) * 100)
+    : 0;
+  const statusColor =
+    progresso >= 100
+      ? 'text-green-600'
+      : progresso >= 50
+        ? 'text-yellow-500'
+        : 'text-red-600';
   const card = document.createElement('div');
   card.className = 'card p-4 flex flex-col gap-2';
   card.innerHTML = `
@@ -782,10 +911,20 @@ async function renderPedidosTiny7Dias(lista) {
     if (!resumoCarregado) {
       const pass = getPassphrase() || `chave-${u.uid}`;
       const baseCol = collection(db, `usuarios/${u.uid}/pedidostiny`);
-      const q = query(baseCol, orderBy('data'), startAt(inicioAnteriorStr), endAt(fimAtualStr));
+      const q = query(
+        baseCol,
+        orderBy('data'),
+        startAt(inicioAnteriorStr),
+        endAt(fimAtualStr),
+      );
       const snap = await getDocs(q);
       for (const d of snap.docs) {
-        let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
+        let pedido = await loadSecureDoc(
+          db,
+          `usuarios/${u.uid}/pedidostiny`,
+          d.id,
+          pass,
+        );
         if (!pedido) {
           const raw = d.data();
           if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
@@ -803,16 +942,24 @@ async function renderPedidosTiny7Dias(lista) {
       }
       try {
         const resumoRef = doc(db, `uid/${u.uid}/resumoVendas`, 'ultimos7');
-        await setDocWithCopy(resumoRef, {
-          atualizado: fimAtualStr,
-          bruto7d: bruto,
-          liquido7d: liquido,
-          brutoAnterior7d: brutoAnt,
-          liquidoAnterior7d: liquidoAnt
-        }, u.uid);
+        await setDocWithCopy(
+          resumoRef,
+          {
+            atualizado: fimAtualStr,
+            bruto7d: bruto,
+            liquido7d: liquido,
+            brutoAnterior7d: brutoAnt,
+            liquidoAnterior7d: liquidoAnt,
+          },
+          u.uid,
+        );
       } catch (_) {}
     }
-    const variacao = liquidoAnt ? ((liquido - liquidoAnt) / liquidoAnt) * 100 : (liquido ? 100 : 0);
+    const variacao = liquidoAnt
+      ? ((liquido - liquidoAnt) / liquidoAnt) * 100
+      : liquido
+        ? 100
+        : 0;
     const card = document.createElement('div');
     card.className = 'card p-4 text-sm';
     const varClass = variacao >= 0 ? 'text-green-600' : 'text-red-600';
@@ -826,11 +973,14 @@ async function renderPedidosTiny7Dias(lista) {
   cards
     .sort((a, b) => b.bruto - a.bruto)
     .slice(0, 10)
-    .forEach(c => container.appendChild(c.card));
+    .forEach((c) => container.appendChild(c.card));
 }
 
 async function carregarGraficoPedidosTiny(uid, mes) {
-  const usuarios = uid === 'todos' ? usuariosCache : usuariosCache.filter(u => u.uid === uid);
+  const usuarios =
+    uid === 'todos'
+      ? usuariosCache
+      : usuariosCache.filter((u) => u.uid === uid);
   const agregados = {};
   const [ano, mesNum] = mes.split('-').map(Number);
   const inicio = new Date(ano, mesNum - 1, 1);
@@ -841,10 +991,20 @@ async function carregarGraficoPedidosTiny(uid, mes) {
     const pass = getPassphrase() || `chave-${u.uid}`;
     try {
       const baseCol = collection(db, `usuarios/${u.uid}/pedidostiny`);
-      const q = query(baseCol, orderBy('data'), startAt(inicioStr), endAt(fimStr));
+      const q = query(
+        baseCol,
+        orderBy('data'),
+        startAt(inicioStr),
+        endAt(fimStr),
+      );
       const snap = await getDocs(q);
       for (const d of snap.docs) {
-        let pedido = await loadSecureDoc(db, `usuarios/${u.uid}/pedidostiny`, d.id, pass);
+        let pedido = await loadSecureDoc(
+          db,
+          `usuarios/${u.uid}/pedidostiny`,
+          d.id,
+          pass,
+        );
         if (!pedido) {
           const raw = d.data();
           if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
@@ -859,7 +1019,7 @@ async function carregarGraficoPedidosTiny(uid, mes) {
     } catch (_) {}
   }
   const labels = Object.keys(agregados).sort();
-  const data = labels.map(l => agregados[l]);
+  const data = labels.map((l) => agregados[l]);
   updateSalesChart(labels.map(formatarData), data);
 }
 
@@ -875,11 +1035,11 @@ function renderTabelaSaques() {
     return;
   }
   section.classList.remove('hidden');
-  const dados = (resumoUsuarios[uid]?.saquesDetalhes) || [];
-  dados.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
+  const dados = resumoUsuarios[uid]?.saquesDetalhes || [];
+  dados.sort((a, b) => (a.data || '').localeCompare(b.data || ''));
   tbody.innerHTML = '';
   chkAll.checked = false;
-  dados.forEach(s => {
+  dados.forEach((s) => {
     const pago = (s.percentual || 0) > 0;
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -901,7 +1061,7 @@ function assistirResumoFinanceiro(uid, anoMes) {
     db,
     uid,
     anoMes,
-    onChange: r => {
+    onChange: (r) => {
       const cards = document.getElementById('cardsResumoFinanceiro');
       const texto = document.getElementById('faltasTextoFinanceiro');
       const resumo = document.getElementById('resumoSaquesFinanceiro');
@@ -937,19 +1097,25 @@ function assistirResumoFinanceiro(uid, anoMes) {
         `Total Comissão: R$ ${(r.comissaoPrevista || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
         `Total já pago: R$ ${(r.comissaoRecebida || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ` +
         `Total a pagar: R$ ${((r.comissaoPrevista || 0) - (r.comissaoRecebida || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
+    },
   });
 }
 
 async function marcarSaquesSelecionados() {
   const uid = document.getElementById('usuarioFiltro')?.value;
   const mes = document.getElementById('mesFiltro')?.value;
-  const perc = parseFloat(document.getElementById('percentualMarcar')?.value || '0');
+  const perc = parseFloat(
+    document.getElementById('percentualMarcar')?.value || '0',
+  );
   if (!uid || uid === 'todos' || !mes) return;
-  const checks = Array.from(document.querySelectorAll('.chk-saque-fin:checked'));
+  const checks = Array.from(
+    document.querySelectorAll('.chk-saque-fin:checked'),
+  );
   for (const chk of checks) {
     const id = chk.dataset.id;
-    const dados = (resumoUsuarios[uid]?.saquesDetalhes || []).find(s => s.id === id);
+    const dados = (resumoUsuarios[uid]?.saquesDetalhes || []).find(
+      (s) => s.id === id,
+    );
     if (!dados) continue;
     await atualizarSaqueSvc({
       db,
@@ -959,14 +1125,14 @@ async function marcarSaquesSelecionados() {
       dataISO: dados.dataISO,
       valor: dados.valor,
       percentualPago: perc,
-      origem: dados.loja
+      origem: dados.loja,
     });
   }
   await carregar();
 }
 
 function formatarData(str) {
-  // Evita problemas de fuso horário ao converter datas (ex.: "2024-05-01" 
+  // Evita problemas de fuso horário ao converter datas (ex.: "2024-05-01"
   // sendo interpretado como 30/04 em localidades UTC-3). Quando a string
   // está no formato YYYY-MM-DD construímos a data utilizando o construtor
   // `new Date(ano, mesIndex, dia)` que considera o fuso local sem deslocar
@@ -996,21 +1162,24 @@ function showModal(titulo, corpo) {
         </div>
       </div>`;
     document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
-    modal.querySelector('#detalhesFechar').addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+    modal
+      .querySelector('#detalhesFechar')
+      .addEventListener('click', () => (modal.style.display = 'none'));
   }
   modal.querySelector('#detalhesTitulo').textContent = titulo;
   modal.querySelector('#detalhesCorpo').innerHTML = corpo;
   modal.style.display = 'flex';
 }
 
-
 function exportarSaques() {
   if (!dadosSaquesExport.length) {
     alert('Sem dados para exportar');
     return;
   }
-  exportarCSV(dadosSaquesExport, ['usuario','total','comissao'], 'saques');
+  exportarCSV(dadosSaquesExport, ['usuario', 'total', 'comissao'], 'saques');
 }
 
 function exportarFaturamento() {
@@ -1018,13 +1187,17 @@ function exportarFaturamento() {
     alert('Sem dados para exportar');
     return;
   }
-  exportarCSV(dadosFaturamentoExport, ['usuario','faturado','meta','esperado','diferenca'], 'faturamento_meta');
+  exportarCSV(
+    dadosFaturamentoExport,
+    ['usuario', 'faturado', 'meta', 'esperado', 'diferenca'],
+    'faturamento_meta',
+  );
 }
 
 function exportarCSV(dados, campos, nome) {
   const linhas = [campos.join(';')];
-  dados.forEach(l => {
-    linhas.push(campos.map(c => l[c]).join(';'));
+  dados.forEach((l) => {
+    linhas.push(campos.map((c) => l[c]).join(';'));
   });
   const csv = linhas.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1036,17 +1209,23 @@ function exportarCSV(dados, campos, nome) {
   URL.revokeObjectURL(url);
 }
 
-document.getElementById('btnMarcarPago')?.addEventListener('click', marcarSaquesSelecionados);
-document.getElementById('chkSaquesFinanceiro')?.addEventListener('change', e => {
-  document.querySelectorAll('.chk-saque-fin').forEach(ch => (ch.checked = e.target.checked));
-});
+document
+  .getElementById('btnMarcarPago')
+  ?.addEventListener('click', marcarSaquesSelecionados);
+document
+  .getElementById('chkSaquesFinanceiro')
+  ?.addEventListener('change', (e) => {
+    document
+      .querySelectorAll('.chk-saque-fin')
+      .forEach((ch) => (ch.checked = e.target.checked));
+  });
 
 // PWA install handling
 if ('serviceWorker' in navigator) {
   // Use a relative path so GitHub Pages serves the correct file when hosted in a subdirectory
   navigator.serviceWorker
     .register('service-worker.js')
-    .catch(err => console.error('SW registration failed', err));
+    .catch((err) => console.error('SW registration failed', err));
 }
 
 let deferredPrompt;

@@ -1,6 +1,21 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, query, where, doc, getDoc, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  doc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { loadSecureDoc } from './secure-firestore.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
@@ -24,7 +39,7 @@ function setTbodyMessage(tbody, message, classes = '', colspan = 6) {
   tbody.appendChild(tr);
 }
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
@@ -51,12 +66,17 @@ export async function carregarPedidosTiny(uidParam) {
 
     const [snap, produtosSnap] = await Promise.all([
       getDocs(collection(db, `usuarios/${uid}/pedidostiny`)),
-      getDocs(collection(db, `uid/${uid}/produtos`))
+      getDocs(collection(db, `uid/${uid}/produtos`)),
     ]);
 
     const pedidos = [];
     for (const d of snap.docs) {
-      let pedido = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
+      let pedido = await loadSecureDoc(
+        db,
+        `usuarios/${uid}/pedidostiny`,
+        d.id,
+        pass,
+      );
       if (!pedido) {
         const raw = d.data();
         if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
@@ -66,7 +86,7 @@ export async function carregarPedidosTiny(uidParam) {
     todosPedidos = pedidos;
 
     custosProdutos = {};
-    produtosSnap.forEach(p => {
+    produtosSnap.forEach((p) => {
       const dados = p.data();
       const chave = (dados.sku || p.id || '').toLowerCase();
       custosProdutos[chave] = Number(dados.custo || 0);
@@ -84,7 +104,7 @@ function setupUsuariosFiltro(usuarios) {
   const grupo = document.getElementById('grupoUsuario');
   if (!select) return;
   select.textContent = '';
-  usuarios.forEach(u => {
+  usuarios.forEach((u) => {
     const opt = document.createElement('option');
     opt.value = u.uid;
     opt.textContent = u.nome;
@@ -106,8 +126,10 @@ function preencherFiltroLoja(pedidos) {
   optAll.value = '';
   optAll.textContent = 'Todas';
   select.appendChild(optAll);
-  const lojas = [...new Set(pedidos.map(p => p.loja || p.store || '').filter(Boolean))].sort();
-  lojas.forEach(loja => {
+  const lojas = [
+    ...new Set(pedidos.map((p) => p.loja || p.store || '').filter(Boolean)),
+  ].sort();
+  lojas.forEach((loja) => {
     const opt = document.createElement('option');
     opt.value = loja;
     opt.textContent = loja;
@@ -129,20 +151,30 @@ function parseDate(str) {
 }
 
 function sameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function toNumber(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
-    const n = v.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = v
+      .replace(/[R$\s]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
     return parseFloat(n) || 0;
   }
   return 0;
 }
 
 function formatCurrency(v) {
-  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return Number(v || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
 
 function calcularLiquido(p) {
@@ -151,7 +183,7 @@ function calcularLiquido(p) {
   let taxa = 0;
   if (loja.includes('shopee')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         const comissao = Math.min(v * 0.22, 100);
         taxa += comissao + 4.0;
@@ -162,7 +194,7 @@ function calcularLiquido(p) {
     }
   } else if (loja.includes('mercado livre') || loja.includes('mercadolivre')) {
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const v = toNumber(i.valor || i.total || i.preco || i.price || 0);
         let fixo = 0;
         if (v < 12.5) fixo = v / 2;
@@ -187,16 +219,19 @@ function calcularLiquido(p) {
 function atualizarResumo(pedidos) {
   const resumo = document.getElementById('resumoPedidosTiny');
   if (!resumo) return;
-  const totalBruto = pedidos.reduce((s, p) => s + toNumber(p.valor || p.total || 0), 0);
+  const totalBruto = pedidos.reduce(
+    (s, p) => s + toNumber(p.valor || p.total || 0),
+    0,
+  );
   const totalLiquido = pedidos.reduce((s, p) => s + calcularLiquido(p), 0);
   const quantidade = pedidos.length;
   resumo.textContent = '';
   const cards = [
     { titulo: 'Valor Bruto', valor: formatCurrency(totalBruto) },
     { titulo: 'Valor Líquido', valor: formatCurrency(totalLiquido) },
-    { titulo: 'Pedidos', valor: quantidade }
+    { titulo: 'Pedidos', valor: quantidade },
   ];
-  cards.forEach(c => {
+  cards.forEach((c) => {
     const div = document.createElement('div');
     div.className = 'resumo-card';
     const h4 = document.createElement('h4');
@@ -221,7 +256,7 @@ export function aplicarFiltros() {
   const loja = document.getElementById('filtroLoja')?.value;
   const skuFiltro = document.getElementById('filtroSku')?.value?.toLowerCase();
 
-  filtrados = filtrados.filter(p => {
+  filtrados = filtrados.filter((p) => {
     const dataStr = p.data || p.dataPedido || p.date || '';
     const data = parseDate(dataStr);
     if (tipo === 'dia' && dia) {
@@ -229,7 +264,11 @@ export function aplicarFiltros() {
       if (!sameDay(data, d)) return false;
     } else if (tipo === 'mes' && mes) {
       const m = parseDate(`${mes}-01`);
-      if (data.getFullYear() !== m.getFullYear() || data.getMonth() !== m.getMonth()) return false;
+      if (
+        data.getFullYear() !== m.getFullYear() ||
+        data.getMonth() !== m.getMonth()
+      )
+        return false;
     } else if (tipo === 'personalizado' && inicio && fim) {
       const i = parseDate(inicio);
       const f = parseDate(fim);
@@ -239,22 +278,27 @@ export function aplicarFiltros() {
     const lojaPedido = (p.loja || p.store || '').toLowerCase();
     if (loja && lojaPedido !== loja.toLowerCase()) return false;
 
-    const sku = (p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '')).toLowerCase();
+    const sku = (
+      p.sku ||
+      (Array.isArray(p.itens) ? p.itens.map((i) => i.sku).join(', ') : '')
+    ).toLowerCase();
     if (skuFiltro && !sku.includes(skuFiltro)) return false;
     return true;
   });
 
   tbody.textContent = '';
-  filtrados.forEach(p => {
+  filtrados.forEach((p) => {
     const tr = document.createElement('tr');
     const data = p.data || p.dataPedido || p.date || '';
     const lojaPedido = p.loja || p.store || '';
-    const sku = p.sku || (Array.isArray(p.itens) ? p.itens.map(i => i.sku).join(', ') : '');
+    const sku =
+      p.sku ||
+      (Array.isArray(p.itens) ? p.itens.map((i) => i.sku).join(', ') : '');
     const valorBruto = toNumber(p.valor || p.total || 0);
     const liquido = calcularLiquido(p);
     let custoTotal = 0;
     if (Array.isArray(p.itens) && p.itens.length) {
-      p.itens.forEach(i => {
+      p.itens.forEach((i) => {
         const skuItem = (i.sku || '').toLowerCase();
         const qtd = Number(i.quantidade || i.qtd || i.quantity || 1) || 1;
         const c = custosProdutos[skuItem] || 0;
@@ -273,15 +317,16 @@ export function aplicarFiltros() {
       { label: 'Loja', text: lojaPedido },
       { label: 'SKU', text: sku },
       { label: 'Valor', text: formatCurrency(valorBruto) },
-      { label: 'Líquido', text: formatCurrency(liquido) }
+      { label: 'Líquido', text: formatCurrency(liquido) },
     ];
-    cells.forEach(c => {
+    cells.forEach((c) => {
       const td = document.createElement('td');
       td.setAttribute('data-label', c.label);
       td.textContent = c.text;
       tr.appendChild(td);
     });
-    if (custoTotal && liquido < custoTotal * 0.9) tr.classList.add('bg-red-100');
+    if (custoTotal && liquido < custoTotal * 0.9)
+      tr.classList.add('bg-red-100');
     tbody.appendChild(tr);
   });
   if (!tbody.children.length) {
@@ -292,39 +337,64 @@ export function aplicarFiltros() {
 
 function atualizarTipoData() {
   const tipo = document.getElementById('tipoData')?.value;
-  document.getElementById('grupoDia')?.classList.toggle('hidden', tipo !== 'dia');
-  document.getElementById('grupoMes')?.classList.toggle('hidden', tipo !== 'mes');
+  document
+    .getElementById('grupoDia')
+    ?.classList.toggle('hidden', tipo !== 'dia');
+  document
+    .getElementById('grupoMes')
+    ?.classList.toggle('hidden', tipo !== 'mes');
   const perso = tipo !== 'personalizado';
   document.getElementById('grupoInicio')?.classList.toggle('hidden', perso);
   document.getElementById('grupoFim')?.classList.toggle('hidden', perso);
 }
 
-document.getElementById('aplicarFiltros')?.addEventListener('click', e => {
+document.getElementById('aplicarFiltros')?.addEventListener('click', (e) => {
   e.preventDefault();
   aplicarFiltros();
 });
-['tipoData', 'dataDia', 'dataMes', 'dataInicio', 'dataFim', 'filtroLoja'].forEach(id => {
+[
+  'tipoData',
+  'dataDia',
+  'dataMes',
+  'dataInicio',
+  'dataFim',
+  'filtroLoja',
+].forEach((id) => {
   document.getElementById(id)?.addEventListener('change', aplicarFiltros);
 });
 document.getElementById('filtroSku')?.addEventListener('input', aplicarFiltros);
-document.getElementById('tipoData')?.addEventListener('change', atualizarTipoData);
+document
+  .getElementById('tipoData')
+  ?.addEventListener('change', atualizarTipoData);
 
 async function verificarDuplicados() {
   const btn = document.getElementById('verificarDuplicados');
   if (btn) btn.disabled = true;
   try {
-    const uid = document.getElementById('usuarioFiltro')?.value || auth.currentUser.uid;
+    const uid =
+      document.getElementById('usuarioFiltro')?.value || auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
     const snap = await getDocs(collection(db, `usuarios/${uid}/pedidostiny`));
     const mapa = {};
     for (const d of snap.docs) {
       const raw = d.data() || {};
-      let idPedido = raw.idPedido || raw.idpedido || raw.numeroPedido || raw.numero;
+      let idPedido =
+        raw.idPedido || raw.idpedido || raw.numeroPedido || raw.numero;
 
       if (!idPedido) {
         try {
-          const dados = await loadSecureDoc(db, `usuarios/${uid}/pedidostiny`, d.id, pass);
-          idPedido = dados?.idPedido || dados?.idpedido || dados?.numeroPedido || dados?.numero || dados?.id;
+          const dados = await loadSecureDoc(
+            db,
+            `usuarios/${uid}/pedidostiny`,
+            d.id,
+            pass,
+          );
+          idPedido =
+            dados?.idPedido ||
+            dados?.idpedido ||
+            dados?.numeroPedido ||
+            dados?.numero ||
+            dados?.id;
         } catch (e) {
           // ignore decrypt errors, we'll skip this doc if id remains undefined
         }
@@ -343,7 +413,11 @@ async function verificarDuplicados() {
         }
       }
     }
-    alert(removidos ? `${removidos} pedidos duplicados removidos` : 'Nenhum pedido duplicado encontrado');
+    alert(
+      removidos
+        ? `${removidos} pedidos duplicados removidos`
+        : 'Nenhum pedido duplicado encontrado',
+    );
     if (removidos) await carregarPedidosTiny(uid);
   } catch (err) {
     console.error('Erro ao verificar duplicados', err);
@@ -353,7 +427,9 @@ async function verificarDuplicados() {
   }
 }
 
-document.getElementById('verificarDuplicados')?.addEventListener('click', verificarDuplicados);
+document
+  .getElementById('verificarDuplicados')
+  ?.addEventListener('click', verificarDuplicados);
 
 atualizarTipoData();
 

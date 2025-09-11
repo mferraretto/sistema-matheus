@@ -1,6 +1,16 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { loadUserDoc, loadSecureDoc } from './secure-firestore.js';
 import logger from './logger.js';
 
@@ -8,17 +18,17 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
     return;
   }
-await carregarPedidosShopee();
+  await carregarPedidosShopee();
 });
 function normalizarTexto(texto) {
   return (texto || '')
     .toLowerCase()
-    .normalize("NFD") // remove acentos
+    .normalize('NFD') // remove acentos
     .replace(/[\u0300-\u036f]/g, '') // remove acentos restantes
     .replace(/[^a-z0-9]+/g, ' ') // remove símbolos especiais
     .trim();
@@ -41,11 +51,11 @@ export async function carregarPedidosShopee() {
   setTbodyMessage(tbody, 'Carregando...');
   try {
     const uid = auth.currentUser.uid;
-const pass = (await getPassphrase()) || `chave-${uid}`;
+    const pass = (await getPassphrase()) || `chave-${uid}`;
 
     const [snap, mapaAnuncios] = await Promise.all([
       getDocs(collection(db, `uid/${uid}/pedidosshopee`)),
-      carregarMapaAnuncios(uid, pass)
+      carregarMapaAnuncios(uid, pass),
     ]);
     const pedidos = [];
     for (const d of snap.docs) {
@@ -57,20 +67,24 @@ const pass = (await getPassphrase()) || `chave-${uid}`;
           pedido = raw;
         }
       }
-if (pedido) {
-  logger.log('📦 Pedido carregado:', d.id, pedido); // 🔍 mostra no console
-  pedidos.push({ id: d.id, ...pedido });
-}
+      if (pedido) {
+        logger.log('📦 Pedido carregado:', d.id, pedido); // 🔍 mostra no console
+        pedidos.push({ id: d.id, ...pedido });
+      }
     }
-correlacionarPedidosComAnuncios(pedidos, mapaAnuncios);
+    correlacionarPedidosComAnuncios(pedidos, mapaAnuncios);
 
     tbody.textContent = '';
-    pedidos.forEach(p => {
+    pedidos.forEach((p) => {
       const tr = document.createElement('tr');
       const data = p.data || p.status || '–';
       const total = p.preco || p.total || '–';
-      const skuList = (p.itens || []).map(i => i.sku).filter(Boolean).join(', ') || '–';
-      [p.id || '', data, total, skuList].forEach(text => {
+      const skuList =
+        (p.itens || [])
+          .map((i) => i.sku)
+          .filter(Boolean)
+          .join(', ') || '–';
+      [p.id || '', data, total, skuList].forEach((text) => {
         const td = document.createElement('td');
         td.textContent = text;
         tr.appendChild(td);
@@ -99,25 +113,41 @@ async function carregarMapaAnuncios(uid, pass) {
   try {
     const anunciosSnap = await getDocs(collection(db, `uid/${uid}/anuncios`));
     for (const anuncioDoc of anunciosSnap.docs) {
-      const anuncio = await loadUserDoc(db, uid, 'anuncios', anuncioDoc.id, pass);
+      const anuncio = await loadUserDoc(
+        db,
+        uid,
+        'anuncios',
+        anuncioDoc.id,
+        pass,
+      );
 
       if (!anuncio) continue;
       const nomeAnuncio = anuncio.nome || anuncioDoc.id;
-     const variantesSnap = await getDocs(collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`));
+      const variantesSnap = await getDocs(
+        collection(db, `uid/${uid}/anuncios/${anuncioDoc.id}/variantes`),
+      );
       for (const varDoc of variantesSnap.docs) {
-const variante = await loadUserDoc(db, uid, `anuncios/${anuncioDoc.id}/variantes`, varDoc.id, pass);
+        const variante = await loadUserDoc(
+          db,
+          uid,
+          `anuncios/${anuncioDoc.id}/variantes`,
+          varDoc.id,
+          pass,
+        );
         if (!variante) continue;
         const chave = `${normalizarTexto(nomeAnuncio)}|${normalizarTexto(variante.nomeVariante)}`;
         if (variante.skuVariante) {
- mapa[chave] = variante.skuVariante;
-          logger.log(`🔑 Chave gerada no anúncio: "${chave}" → SKU: ${variante.skuVariante}`);
+          mapa[chave] = variante.skuVariante;
+          logger.log(
+            `🔑 Chave gerada no anúncio: "${chave}" → SKU: ${variante.skuVariante}`,
+          );
         }
       }
     }
   } catch (err) {
     console.error('Erro ao carregar anúncios para correlação', err);
   }
-    logger.log("📦 Mapa de Anúncios completo:");
+  logger.log('📦 Mapa de Anúncios completo:');
   logger.log(mapa);
   return mapa;
 }
@@ -125,14 +155,14 @@ const variante = await loadUserDoc(db, uid, `anuncios/${anuncioDoc.id}/variantes
 function correlacionarPedidosComAnuncios(pedidos, mapa) {
   for (const pedido of pedidos) {
     const itens = pedido.itens || pedido.items || [];
-    pedido.itens = itens.map(item => {
-const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
+    pedido.itens = itens.map((item) => {
+      const chave = `${normalizarTexto(item.produto)}|${normalizarTexto(item.variacao)}`;
       const sku = mapa[chave] || null;
-if (sku) {
-  logger.log(`✅ Correlacionado: "${chave}" → SKU: ${sku}`);
-} else {
-  logger.warn(`❌ SKU não encontrado para chave: "${chave}"`);
-}
+      if (sku) {
+        logger.log(`✅ Correlacionado: "${chave}" → SKU: ${sku}`);
+      } else {
+        logger.warn(`❌ SKU não encontrado para chave: "${chave}"`);
+      }
 
       return { ...item, sku };
     });
@@ -141,16 +171,23 @@ if (sku) {
 async function getPassphrase() {
   // 1. Tenta recuperar da extensão
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-    return new Promise(resolve => {
-      chrome.storage.local.get(['user'], res => {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['user'], (res) => {
         if (res?.user?.passphrase) resolve(res.user.passphrase);
-        else resolve(localStorage.getItem('sistemaPassphrase') || prompt("Digite sua senha de visualização:"));
+        else
+          resolve(
+            localStorage.getItem('sistemaPassphrase') ||
+              prompt('Digite sua senha de visualização:'),
+          );
       });
     });
   }
 
   // 2. Se não estiver na extensão, tenta localStorage ou prompt
-  return localStorage.getItem('sistemaPassphrase') || prompt("Digite sua senha de visualização:");
+  return (
+    localStorage.getItem('sistemaPassphrase') ||
+    prompt('Digite sua senha de visualização:')
+  );
 }
 
 function mostrarDetalhesPedido(pedido) {
@@ -165,7 +202,7 @@ function mostrarDetalhesPedido(pedido) {
       strong.textContent = 'Itens:';
       div.appendChild(strong);
       const ul = document.createElement('ul');
-      v.forEach(item => {
+      v.forEach((item) => {
         const li = document.createElement('li');
         li.textContent = `${item.produto || ''} / ${item.variacao || ''} - SKU: ${item.sku || '–'}`;
         ul.appendChild(li);
@@ -185,7 +222,7 @@ function mostrarDetalhesPedido(pedido) {
 
 const modal = document.getElementById('modalPedido');
 if (modal) {
-  modal.addEventListener('click', e => {
+  modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.style.display = 'none';
   });
   const fechar = document.getElementById('fecharModal');
@@ -197,5 +234,5 @@ if (modal) {
 }
 
 if (typeof window !== 'undefined') {
-window.carregarPedidosShopee = carregarPedidosShopee;
+  window.carregarPedidosShopee = carregarPedidosShopee;
 }

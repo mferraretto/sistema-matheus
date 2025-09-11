@@ -1,6 +1,18 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -37,7 +49,7 @@ function renderStores(stores = []) {
     addStoreRow();
     return;
   }
-  stores.forEach(s => addStoreRow(s));
+  stores.forEach((s) => addStoreRow(s));
 }
 
 async function loadProfile(uid) {
@@ -51,10 +63,12 @@ async function loadProfile(uid) {
       }
       document.getElementById('nomeCompleto').value = data.nomeCompleto || '';
       document.getElementById('nomeExibicao').value = data.nomeExibicao || '';
-      document.getElementById('dataNascimento').value = data.dataNascimento || '';
+      document.getElementById('dataNascimento').value =
+        data.dataNascimento || '';
       document.getElementById('genero').value = data.genero || '';
 
-      document.getElementById('email').value = data.email || auth.currentUser?.email || '';
+      document.getElementById('email').value =
+        data.email || auth.currentUser?.email || '';
       document.getElementById('telefone').value = data.telefone || '';
       const end = data.endereco || {};
       document.getElementById('endRua').value = end.rua || '';
@@ -100,10 +114,14 @@ async function loadProfile(uid) {
 }
 
 async function saveProfile(uid) {
-  const stores = Array.from(document.querySelectorAll('#lojasContainer .store-row')).map(row => ({
-    nome: row.querySelector('[data-field="nome"]').value.trim(),
-    link: row.querySelector('[data-field="link"]').value.trim()
-  })).filter(s => s.nome || s.link);
+  const stores = Array.from(
+    document.querySelectorAll('#lojasContainer .store-row'),
+  )
+    .map((row) => ({
+      nome: row.querySelector('[data-field="nome"]').value.trim(),
+      link: row.querySelector('[data-field="link"]').value.trim(),
+    }))
+    .filter((s) => s.nome || s.link);
   const plataformas = document.getElementById('plataformas').value.trim();
   const infoPessoal = document.getElementById('infoPessoal').value.trim();
 
@@ -135,7 +153,7 @@ async function saveProfile(uid) {
       cidade: document.getElementById('endCidade').value.trim(),
       estado: document.getElementById('endEstado').value.trim(),
       cep: document.getElementById('endCEP').value.trim(),
-      pais: document.getElementById('endPais').value.trim()
+      pais: document.getElementById('endPais').value.trim(),
     },
     login: document.getElementById('login').value.trim(),
     perfilFuncao: document.getElementById('perfilFuncao').value,
@@ -147,10 +165,10 @@ async function saveProfile(uid) {
     notificacoes: {
       email: document.getElementById('notifEmail').checked,
       whatsapp: document.getElementById('notifWhats').checked,
-      push: document.getElementById('notifPush').checked
+      push: document.getElementById('notifPush').checked,
     },
     tema: document.getElementById('tema').value,
-    permissoes: document.getElementById('permissoes').value.trim()
+    permissoes: document.getElementById('permissoes').value.trim(),
   };
 
   try {
@@ -182,7 +200,7 @@ function initConfiguracaoPerfil() {
     }
   });
 
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, (user) => {
     if (!user) return;
     loadProfile(user.uid);
     form.addEventListener('submit', (e) => {

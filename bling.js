@@ -1,4 +1,7 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import {
+  initializeApp,
+  getApps,
+} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { saveSecureDoc, loadSecureDoc } from './secure-firestore.js';
@@ -14,7 +17,12 @@ async function getStoredApiKey() {
   if (!uid) return null;
   if (window.sistema?.blingApiKey) return window.sistema.blingApiKey;
   try {
-    const data = await loadSecureDoc(db, `uid/${uid}/blingKeys`, 'apiKey', getPassphrase() || `chave-${uid}`);
+    const data = await loadSecureDoc(
+      db,
+      `uid/${uid}/blingKeys`,
+      'apiKey',
+      getPassphrase() || `chave-${uid}`,
+    );
     if (data && data.key) {
       window.sistema = window.sistema || {};
       window.sistema.blingApiKey = data.key;
@@ -30,7 +38,13 @@ async function saveApiKey(key) {
   const uid = auth.currentUser?.uid || window.sistema?.uid;
   if (!uid) return;
   try {
-    await saveSecureDoc(db, `uid/${uid}/blingKeys`, 'apiKey', { key, uid }, getPassphrase() || `chave-${uid}`);
+    await saveSecureDoc(
+      db,
+      `uid/${uid}/blingKeys`,
+      'apiKey',
+      { key, uid },
+      getPassphrase() || `chave-${uid}`,
+    );
     window.sistema = window.sistema || {};
     window.sistema.blingApiKey = key;
   } catch (err) {
@@ -38,7 +52,7 @@ async function saveApiKey(key) {
   }
 }
 export async function importarPedidosBling() {
-   const uid = auth.currentUser?.uid || window.sistema?.uid;
+  const uid = auth.currentUser?.uid || window.sistema?.uid;
   if (!uid) {
     alert('Usuário não autenticado');
     return;
@@ -50,19 +64,18 @@ export async function importarPedidosBling() {
     await saveApiKey(apiKey);
   }
 
-const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
+  const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
   let json;
 
-
   try {
-  const res = await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         apiKey,
         endpoint: 'pedidos',
-        parametros: ''
-      })
+        parametros: '',
+      }),
     });
 
     if (!res.ok) {
@@ -79,13 +92,19 @@ const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
     for (const obj of pedidos) {
       const pedido = obj.pedido || obj;
       const numero = String(pedido.numero);
-  await saveSecureDoc(db, `uid/${uid}/pedidosBling`, numero, { ...pedido, uid }, getPassphrase() || `chave-${uid}`);
+      await saveSecureDoc(
+        db,
+        `uid/${uid}/pedidosBling`,
+        numero,
+        { ...pedido, uid },
+        getPassphrase() || `chave-${uid}`,
+      );
     }
 
     atualizarTabelaPedidos(pedidos);
     alert(`${pedidos.length} pedidos importados`);
   } catch (err) {
-   logger.warn('Proxy falhou, tentando acesso direto:', err);
+    logger.warn('Proxy falhou, tentando acesso direto:', err);
     try {
       const directUrl = `https://corsproxy.io/https://bling.com.br/Api/v2/pedidos/json/?apikey=${encodeURIComponent(apiKey)}`;
       const res = await fetch(directUrl);
@@ -95,7 +114,13 @@ const url = 'https://proxybling-g6u4niudyq-uc.a.run.app';
       for (const obj of pedidos) {
         const pedido = obj.pedido || obj;
         const numero = String(pedido.numero);
-        await saveSecureDoc(db, `uid/${uid}/pedidosBling`, numero, { ...pedido, uid }, getPassphrase() || `chave-${uid}`);
+        await saveSecureDoc(
+          db,
+          `uid/${uid}/pedidosBling`,
+          numero,
+          { ...pedido, uid },
+          getPassphrase() || `chave-${uid}`,
+        );
       }
 
       atualizarTabelaPedidos(pedidos);
