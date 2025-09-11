@@ -88,7 +88,6 @@
         </button>
         <button id="exportarBtn" class="px-3 py-1 bg-green-600 text-white rounded">Exportar CSV</button>
         <button id="verificarDuplicadosBtn" class="px-3 py-1 bg-red-600 text-white rounded">Verificar Duplicados</button>
-        <button id="atualizarResponsaveisBtn" class="px-3 py-1 bg-indigo-600 text-white rounded">Atualizar Responsáveis</button>
       </div>
     </div>
     <div class="bg-white rounded shadow overflow-x-auto">
@@ -336,88 +335,6 @@
       }
     }
 
-    async function atualizarResponsaveisGestores() {
-      if (!usuarioAtual) return;
-      try {
-        await buscarResponsaveis(usuarioAtual);
-        await carregarPedidos(usuarioAtual);
-        const { encryptString, decryptString } = await import('./crypto.js');
-        let atualizados = 0;
-        let novos = 0;
-        for (const p of todosPedidos) {
-          const data = p.data;
-          const pedidoId = p.pedidoId;
-          if (!data || !pedidoId) continue;
-
-          if (responsavelFinanceiro?.uid && responsavelFinanceiro.uid !== usuarioAtual.uid) {
-            const refFin = db
-              .collection('uid')
-              .doc(responsavelFinanceiro.uid)
-              .collection('uid')
-              .doc(usuarioAtual.uid)
-              .collection('pedidosreais')
-              .doc(data)
-              .collection('lista')
-              .doc(pedidoId);
-            const snapFin = await refFin.get();
-            let atualizar = true;
-            if (snapFin.exists) {
-              try {
-                const atualFin = JSON.parse(
-                  await decryptString(snapFin.data().encrypted, responsavelFinanceiro.email)
-                );
-                if (JSON.stringify(atualFin) === JSON.stringify(p)) atualizar = false;
-              } catch (e) {
-                console.error('Erro ao comparar pedido do responsável financeiro', e);
-              }
-            } else {
-              novos++;
-            }
-            if (atualizar) {
-              const encFin = await encryptString(JSON.stringify(p), responsavelFinanceiro.email);
-              await refFin.set({ encrypted: encFin, uid: usuarioAtual.uid });
-              if (snapFin.exists) atualizados++;
-            }
-          }
-
-          if (responsavelExpedicao?.uid && responsavelExpedicao.uid !== usuarioAtual.uid) {
-            const refExp = db
-              .collection('uid')
-              .doc(responsavelExpedicao.uid)
-              .collection('uid')
-              .doc(usuarioAtual.uid)
-              .collection('pedidosreais')
-              .doc(data)
-              .collection('lista')
-              .doc(pedidoId);
-            const snapExp = await refExp.get();
-            let atualizar2 = true;
-            if (snapExp.exists) {
-              try {
-                const atualExp = JSON.parse(
-                  await decryptString(snapExp.data().encrypted, responsavelExpedicao.email)
-                );
-                if (JSON.stringify(atualExp) === JSON.stringify(p)) atualizar2 = false;
-              } catch (e) {
-                console.error('Erro ao comparar pedido do responsável de expedição', e);
-              }
-            } else {
-              novos++;
-            }
-            if (atualizar2) {
-              const encExp = await encryptString(JSON.stringify(p), responsavelExpedicao.email);
-              await refExp.set({ encrypted: encExp, uid: usuarioAtual.uid });
-              if (snapExp.exists) atualizados++;
-            }
-          }
-        }
-        alert(`${atualizados} pedidos atualizados, ${novos} novas cópias criadas.`);
-      } catch (e) {
-        console.error('Erro ao atualizar responsáveis', e);
-        alert('Erro ao atualizar responsáveis.');
-      }
-    }
-
     ['filtroDataInicio','filtroDataFim','filtroPrevEnvioInicio','filtroPrevEnvioFim','filtroLoja'].forEach(id => {
       document.getElementById(id).addEventListener('input', aplicarFiltros);
     });
@@ -484,7 +401,6 @@
       }
     });
     document.getElementById('verificarDuplicadosBtn').addEventListener('click', verificarDuplicados);
-    document.getElementById('atualizarResponsaveisBtn').addEventListener('click', atualizarResponsaveisGestores);
     document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
     document.getElementById('confirmImportBtn').addEventListener('click', () => {
       const nome = document.getElementById('modalNomeLoja').value.trim();
