@@ -13,6 +13,17 @@ let todosPedidos = [];
 let custosProdutos = {};
 let usuariosCache = [];
 
+function setTbodyMessage(tbody, message, classes = '', colspan = 6) {
+  tbody.textContent = '';
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = colspan;
+  td.className = `text-center py-4 ${classes}`.trim();
+  td.textContent = message;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -33,7 +44,7 @@ onAuthStateChanged(auth, async user => {
 export async function carregarPedidosTiny(uidParam) {
   const tbody = document.querySelector('#tabelaPedidosTiny tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Carregando...</td></tr>';
+  setTbodyMessage(tbody, 'Carregando...');
   try {
     const uid = uidParam || auth.currentUser.uid;
     const pass = getPassphrase() || `chave-${uid}`;
@@ -64,7 +75,7 @@ export async function carregarPedidosTiny(uidParam) {
     aplicarFiltros();
   } catch (err) {
     console.error('Erro ao carregar pedidos', err);
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
+    setTbodyMessage(tbody, 'Erro ao carregar pedidos', 'text-red-500');
   }
 }
 
@@ -72,7 +83,7 @@ function setupUsuariosFiltro(usuarios) {
   const select = document.getElementById('usuarioFiltro');
   const grupo = document.getElementById('grupoUsuario');
   if (!select) return;
-  select.innerHTML = '';
+  select.textContent = '';
   usuarios.forEach(u => {
     const opt = document.createElement('option');
     opt.value = u.uid;
@@ -90,7 +101,11 @@ function setupUsuariosFiltro(usuarios) {
 function preencherFiltroLoja(pedidos) {
   const select = document.getElementById('filtroLoja');
   if (!select) return;
-  select.innerHTML = '<option value="">Todas</option>';
+  select.textContent = '';
+  const optAll = document.createElement('option');
+  optAll.value = '';
+  optAll.textContent = 'Todas';
+  select.appendChild(optAll);
   const lojas = [...new Set(pedidos.map(p => p.loja || p.store || '').filter(Boolean))].sort();
   lojas.forEach(loja => {
     const opt = document.createElement('option');
@@ -175,11 +190,23 @@ function atualizarResumo(pedidos) {
   const totalBruto = pedidos.reduce((s, p) => s + toNumber(p.valor || p.total || 0), 0);
   const totalLiquido = pedidos.reduce((s, p) => s + calcularLiquido(p), 0);
   const quantidade = pedidos.length;
-  resumo.innerHTML = `
-    <div class="resumo-card"><h4>Valor Bruto</h4><p>${formatCurrency(totalBruto)}</p></div>
-    <div class="resumo-card"><h4>Valor Líquido</h4><p>${formatCurrency(totalLiquido)}</p></div>
-    <div class="resumo-card"><h4>Pedidos</h4><p>${quantidade}</p></div>
-  `;
+  resumo.textContent = '';
+  const cards = [
+    { titulo: 'Valor Bruto', valor: formatCurrency(totalBruto) },
+    { titulo: 'Valor Líquido', valor: formatCurrency(totalLiquido) },
+    { titulo: 'Pedidos', valor: quantidade }
+  ];
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'resumo-card';
+    const h4 = document.createElement('h4');
+    h4.textContent = c.titulo;
+    const p = document.createElement('p');
+    p.textContent = c.valor;
+    div.appendChild(h4);
+    div.appendChild(p);
+    resumo.appendChild(div);
+  });
 }
 
 export function aplicarFiltros() {
@@ -217,7 +244,7 @@ export function aplicarFiltros() {
     return true;
   });
 
-  tbody.innerHTML = '';
+  tbody.textContent = '';
   filtrados.forEach(p => {
     const tr = document.createElement('tr');
     const data = p.data || p.dataPedido || p.date || '';
@@ -240,19 +267,25 @@ export function aplicarFiltros() {
       custoTotal += c * qtd;
     }
     const idPedido = p.idPedido || p.idpedido || p.id;
-    tr.innerHTML = `
-        <td data-label="Data">${data}</td>
-        <td data-label="ID">${idPedido}</td>
-        <td data-label="Loja">${lojaPedido}</td>
-        <td data-label="SKU">${sku}</td>
-        <td data-label="Valor">${formatCurrency(valorBruto)}</td>
-        <td data-label="Líquido">${formatCurrency(liquido)}</td>
-      `;
+    const cells = [
+      { label: 'Data', text: data },
+      { label: 'ID', text: idPedido },
+      { label: 'Loja', text: lojaPedido },
+      { label: 'SKU', text: sku },
+      { label: 'Valor', text: formatCurrency(valorBruto) },
+      { label: 'Líquido', text: formatCurrency(liquido) }
+    ];
+    cells.forEach(c => {
+      const td = document.createElement('td');
+      td.setAttribute('data-label', c.label);
+      td.textContent = c.text;
+      tr.appendChild(td);
+    });
     if (custoTotal && liquido < custoTotal * 0.9) tr.classList.add('bg-red-100');
     tbody.appendChild(tr);
   });
   if (!tbody.children.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
+    setTbodyMessage(tbody, 'Nenhum pedido encontrado', 'text-gray-500');
   }
   atualizarResumo(filtrados);
 }

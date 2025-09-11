@@ -23,10 +23,21 @@ function normalizarTexto(texto) {
     .trim();
 }
 
+function setTbodyMessage(tbody, message, classes = '', colspan = 5) {
+  tbody.textContent = '';
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = colspan;
+  td.className = `text-center py-4 ${classes}`.trim();
+  td.textContent = message;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
 export async function carregarPedidosShopee() {
   const tbody = document.querySelector('#tabelaPedidosShopee tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Carregando...</td></tr>';
+  setTbodyMessage(tbody, 'Carregando...');
   try {
     const uid = auth.currentUser.uid;
 const pass = (await getPassphrase()) || `chave-${uid}`;
@@ -52,29 +63,33 @@ if (pedido) {
     }
 correlacionarPedidosComAnuncios(pedidos, mapaAnuncios);
 
-    tbody.innerHTML = '';
+    tbody.textContent = '';
     pedidos.forEach(p => {
       const tr = document.createElement('tr');
-      const data = p.data || p.status || '–'; // usa status se não houver data
-      const total = p.preco || p.total || '–'; // usa preço se não houver total
+      const data = p.data || p.status || '–';
+      const total = p.preco || p.total || '–';
       const skuList = (p.itens || []).map(i => i.sku).filter(Boolean).join(', ') || '–';
-      tr.innerHTML = `
-        <td>${p.id || ''}</td>
-        <td>${data}</td>
-        <td>${total}</td>
-        <td>${skuList}</td>
-        <td><button class="btn btn-secondary text-sm">Ver Detalhes</button></td>
-      `;
-      tr.querySelector('button').addEventListener('click', () => mostrarDetalhesPedido(p));
+      [p.id || '', data, total, skuList].forEach(text => {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      const tdBtn = document.createElement('td');
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary text-sm';
+      btn.textContent = 'Ver Detalhes';
+      btn.addEventListener('click', () => mostrarDetalhesPedido(p));
+      tdBtn.appendChild(btn);
+      tr.appendChild(tdBtn);
       tbody.appendChild(tr);
     });
 
     if (!tbody.children.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">Nenhum pedido encontrado</td></tr>';
+      setTbodyMessage(tbody, 'Nenhum pedido encontrado', 'text-gray-500');
     }
   } catch (err) {
     console.error('Erro ao carregar pedidos', err);
- tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-red-500">Erro ao carregar pedidos</td></tr>';
+    setTbodyMessage(tbody, 'Erro ao carregar pedidos', 'text-red-500');
   }
 }
 
@@ -141,11 +156,13 @@ function mostrarDetalhesPedido(pedido) {
   const modal = document.getElementById('modalPedido');
   const detalhes = document.getElementById('detalhesPedido');
   if (!modal || !detalhes) return;
-  detalhes.innerHTML = '';
+  detalhes.textContent = '';
   Object.entries(pedido).forEach(([k, v]) => {
     const div = document.createElement('div');
-if (k === 'itens' && Array.isArray(v)) {
-      div.innerHTML = '<strong>Itens:</strong>';
+    if (k === 'itens' && Array.isArray(v)) {
+      const strong = document.createElement('strong');
+      strong.textContent = 'Itens:';
+      div.appendChild(strong);
       const ul = document.createElement('ul');
       v.forEach(item => {
         const li = document.createElement('li');
@@ -155,7 +172,10 @@ if (k === 'itens' && Array.isArray(v)) {
       div.appendChild(ul);
     } else {
       const valor = typeof v === 'object' ? JSON.stringify(v, null, 2) : v;
-      div.innerHTML = `<strong>${k}:</strong> ${valor}`;
+      const strong = document.createElement('strong');
+      strong.textContent = `${k}:`;
+      div.appendChild(strong);
+      div.appendChild(document.createTextNode(` ${valor}`));
     }
     detalhes.appendChild(div);
   });
