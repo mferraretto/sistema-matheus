@@ -503,16 +503,3 @@ authListaPrecos.onAuthStateChanged(user => {
   }
   carregarProdutos();
 });
-
-// Expose functions used by inline event handlers
-window.exportarExcelLista = exportarExcelLista;
-window.exportarPlanilhaPrecificacao = exportarPlanilhaPrecificacao;
-window.exportarPDFLista = exportarPDFLista;
-window.importarExcelLista = importarExcelLista;
-window.excluirSelecionados = excluirSelecionados;
-window.excluirTodos = excluirTodos;
-window.toggleSelecionado = toggleSelecionado;
-window.verDetalhes = verDetalhes;
-window.editarProduto = editarProduto;
-window.excluirProduto = excluirProduto;
-window.fecharModal = fecharModal;
