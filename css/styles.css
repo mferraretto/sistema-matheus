@@ -1532,7 +1532,7 @@ input:checked + .toggle-slider:before {
 .sidebar {
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: var(--primary);
+  background-color: #0000ff;
   color: var(--white);
   width: var(--sidebar-width);
   min-height: 100vh;
@@ -1550,7 +1550,9 @@ input:checked + .toggle-slider:before {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   padding: 0.8rem 1.5rem;
+  background-color: #ffa500;
   color: var(--white);
   text-decoration: none;
   font-size: 0.95rem;
@@ -1560,7 +1562,7 @@ input:checked + .toggle-slider:before {
 
 .sidebar-link:hover,
 .sidebar-link.active {
-  background-color: var(--primary-dark);
+  background-color: #cc8400;
   color: var(--white);
 }
 
@@ -1581,7 +1583,7 @@ input:checked + .toggle-slider:before {
 }
 
 body.dark .sidebar {
-  background-color: var(--primary-dark);
+  background-color: #0000ff;
 }
 
 body.dark .sidebar-link {
@@ -1590,7 +1592,7 @@ body.dark .sidebar-link {
 
 body.dark .sidebar-link:hover,
 body.dark .sidebar-link.active {
-  background-color: var(--primary);
+  background-color: #cc8400;
 }
 
 /* Base layout spacing */
