@@ -38,6 +38,12 @@ let editandoId = null;
 let saquesCache = {};
 let selecionados = new Set();
 
+function formatarDataBR(iso) {
+  if (!iso) return '';
+  const [ano, mes, dia] = iso.split('T')[0].split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -279,7 +285,7 @@ function exportarSelecionadosExcel() {
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
     linhas.push(
       [
-        s.data.substring(0, 10),
+        formatarDataBR(s.data),
         s.origem || '',
         s.valor.toFixed(2),
         (s.percentualPago * 100).toFixed(0) + '%',
@@ -348,7 +354,7 @@ function exportarSelecionadosPDF() {
     const status = s.percentualPago > 0 ? 'PAGO' : 'A PAGAR';
 
     body.push([
-      (s.data || '').substring(0, 10),
+      formatarDataBR(s.data),
       s.origem || '',
       valor.toFixed(2),
       `${(taxaFinal * 100).toFixed(0)}%`,
@@ -563,7 +569,7 @@ async function imprimirFechamento() {
     })}`;
   }
   function formatDate(iso) {
-    return iso ? new Date(iso).toLocaleDateString('pt-BR') : '';
+    return formatarDataBR(iso);
   }
 
   const header = (data) => {
