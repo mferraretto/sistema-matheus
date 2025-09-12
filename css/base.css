@@ -6,7 +6,9 @@
   --primary-light: #a5b4fc;
   --primary-active: #d95449;
   --secondary: #f3f4f6;
-  --nav-bg: var(--primary);
+  --nav-bg: #1a1b4b;
+  --nav-hover: #a855f7;
+  --nav-text: #f9fafb;
   --success: #4caf50;
   --error: #f44336;
   --background: #ffffff;
