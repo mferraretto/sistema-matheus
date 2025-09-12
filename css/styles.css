@@ -1778,7 +1778,7 @@ body.dark .sidebar-link.active {
 }
 /* Client sidebar layout */
 .sidebar.client-layout {
-  background: linear-gradient(180deg, #7c3aed 0%, #4c1d95 100%);
+  background: #0000ff;
 }
 .sidebar.client-layout .sidebar-logo {
   padding-top: 1rem;
@@ -1793,7 +1793,7 @@ body.dark .sidebar-link.active {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+  background: #ffa500;
   border: 2px solid #fff;
   display: flex;
   align-items: center;
@@ -1805,10 +1805,16 @@ body.dark .sidebar-link.active {
   color: #fff;
 }
 .sidebar.client-layout .sidebar-link {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  height: 3rem;
+  width: calc(100% - 2rem);
   margin: 0.5rem 1rem;
+  padding: 0 1rem;
+  box-sizing: border-box;
   border-radius: 9999px;
-  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+  background: #ffa500;
   border: 2px solid #fff;
   font-weight: 600;
 }
@@ -1817,7 +1823,7 @@ body.dark .sidebar-link.active {
 }
 .sidebar.client-layout .sidebar-link:hover,
 .sidebar.client-layout .sidebar-link.active {
-  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+  background: #ffa500;
 }
 .sidebar.client-layout .submenu,
 .sidebar.client-layout .submenu-toggle {
