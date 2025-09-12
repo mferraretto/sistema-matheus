@@ -727,6 +727,23 @@ document.addEventListener('sidebarLoaded', async () => {
   }
 
   function buildClienteSidebarLayout() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.classList.add('client-layout');
+      const logo = sidebar.querySelector('.sidebar-logo');
+      if (logo) {
+        logo.innerHTML = `
+          <div class="client-top-icons">
+            <a href="/index.html" class="client-icon" aria-label="Início">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.59 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+            </a>
+            <a href="/desempenho.html" class="client-icon" aria-label="Desempenho">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M13.41 10.59l2.59 -2.59"/><path d="M7 12a5 5 0 0 1 5 -5"/></svg>
+            </a>
+          </div>`;
+      }
+    }
+
     const menu = document.querySelector('#sidebar .sidebar-menu');
     if (!menu) return;
 
