@@ -1793,7 +1793,7 @@ body.dark .sidebar-link.active {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #ffa500;
+  background: #cc8400;
   border: 2px solid #fff;
   display: flex;
   align-items: center;
@@ -1814,7 +1814,7 @@ body.dark .sidebar-link.active {
   padding: 0 1rem;
   box-sizing: border-box;
   border-radius: 9999px;
-  background: #ffa500;
+  background: #cc8400;
   border: 2px solid #fff;
   font-weight: 600;
 }
@@ -1823,7 +1823,7 @@ body.dark .sidebar-link.active {
 }
 .sidebar.client-layout .sidebar-link:hover,
 .sidebar.client-layout .sidebar-link.active {
-  background: #ffa500;
+  background: #b36b00;
 }
 .sidebar.client-layout .submenu,
 .sidebar.client-layout .submenu-toggle {
