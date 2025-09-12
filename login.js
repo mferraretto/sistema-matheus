@@ -1,10 +1,4 @@
 import {
-  initializeApp,
-  getApps,
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-
-import {
-  getAuth,
   setPersistence,
   browserLocalPersistence,
   signInWithEmailAndPassword,
@@ -15,7 +9,6 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
 import {
-  getFirestore,
   doc,
   getDoc,
   collection,
@@ -29,19 +22,26 @@ import {
   onSnapshot,
   orderBy,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import {
-  firebaseConfig,
-  setPassphrase,
-  getPassphrase,
-  clearPassphrase,
-} from './firebase-config.js';
+import { auth, db } from './src/firebase.js';
+function setPassphrase(pass) {
+  if (typeof localStorage !== 'undefined' && pass) {
+    localStorage.setItem('sistemaPassphrase', pass);
+  }
+}
+function getPassphrase() {
+  return typeof localStorage !== 'undefined'
+    ? localStorage.getItem('sistemaPassphrase')
+    : null;
+}
+function clearPassphrase() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('sistemaPassphrase');
+  }
+}
 import { encryptString, decryptString } from './crypto.js';
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 import { showToast } from './utils.js';
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
