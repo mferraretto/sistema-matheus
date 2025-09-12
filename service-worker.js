@@ -3,6 +3,11 @@ importScripts(
   'https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js',
 );
 
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) =>
+  event.waitUntil(self.clients.claim()),
+);
+
 const CACHE_VERSION = '20240826';
 const CACHE_PREFIX = 'app-cache-v';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
@@ -11,6 +16,15 @@ const URLS_TO_CACHE = [
   'index.js',
   'financeiro.html',
   'financeiro.js',
+  'login.html',
+  'login.js',
+  'dashboard-geral.html',
+  'dashboard-geral.js',
+  'monitoramento.html',
+  'monitoramento.js',
+  'offline.html',
+  'manifest.json',
+  'favicon.ico',
   `css/styles.css?v=${CACHE_VERSION}`,
   'css/components.css',
   'css/utilities.css',
@@ -44,5 +58,22 @@ workbox.routing.registerRoute(
     request.destination === 'script' || request.destination === 'style',
   new workbox.strategies.StaleWhileRevalidate({
     cacheName: 'assets-cache',
+  }),
+);
+
+// NetworkFirst strategy for API requests.
+workbox.routing.registerRoute(
+  ({ url }) => url.pathname.startsWith('/api/'),
+  new workbox.strategies.NetworkFirst({
+    cacheName: 'api-cache',
+  }),
+  'GET',
+);
+
+// NetworkFirst strategy for HTML navigation requests.
+workbox.routing.registerRoute(
+  ({ request }) => request.destination === 'document',
+  new workbox.strategies.NetworkFirst({
+    cacheName: 'html-cache',
   }),
 );
