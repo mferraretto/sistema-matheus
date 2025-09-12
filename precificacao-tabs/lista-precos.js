@@ -62,13 +62,13 @@ async function carregarProdutos() {
 
 function aplicarFiltros() {
   const termo =
-    document.getElementById('filtroBusca')?.value.toLowerCase() || '';
+    document.getElementById('filtroBusca')?.value?.toLowerCase() || '';
   const tipo = document.getElementById('tipoFiltro')?.value || 'contains';
 
   const filtrados = produtos.filter((p) => {
-    const nome = (p.produto || '').toLowerCase();
-    const sku = (p.sku || '').toLowerCase();
-    const loja = (p.plataforma || '').toLowerCase();
+    const nome = String(p.produto || '').toLowerCase();
+    const sku = String(p.sku || '').toLowerCase();
+    const loja = String(p.plataforma || '').toLowerCase();
     if (!termo) return true;
     if (tipo === 'exact') {
       return nome === termo || sku === termo || loja === termo;
