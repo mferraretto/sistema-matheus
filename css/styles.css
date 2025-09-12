@@ -1052,7 +1052,7 @@ body.dark-mode .data-table th {
   color: var(--white);
   border-bottom: 1px solid rgba(229, 231, 235, 0.7);
 }
-@media (--bp-md-up) {
+@media (min-width: 768px) {
   .navbar {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -1075,7 +1075,7 @@ body.dark-mode .data-table th {
   font-weight: 600;
   font-size: 1.125rem;
 }
-@media (--bp-md-up) {
+@media (min-width: 768px) {
   .navbar-title {
     font-size: 1.25rem;
   }
@@ -1596,13 +1596,13 @@ body.dark .sidebar-link.active {
 /* Base layout spacing */
 .main-content {
   margin-top: var(--navbar-height);
-  margin-left: 0;
+  margin-left: var(--sidebar-width);
 }
 
-/* Desktop sidebar beside content */
-@media (--bp-xl) {
+/* Mobile layout: sidebar overlays content */
+@media (max-width: 1023px) {
   .main-content {
-    margin-left: var(--sidebar-width);
+    margin-left: 0;
   }
 }
 
@@ -1623,7 +1623,7 @@ body.dark .sidebar-link.active {
 /* Mobile-specific styles extracted from styles.css and components.css */
 
 /* Allow sidebar text to remain visible on small screens */
-@media (--bp-md) {
+@media (max-width: 768px) {
   .sidebar {
     width: var(--sidebar-width);
   }
@@ -1638,13 +1638,13 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   .mobile-menu-btn {
     display: flex;
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   .card.metric-card {
     min-width: 150px;
     padding: 2rem;
@@ -1654,7 +1654,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   .tab-btn {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
@@ -1675,7 +1675,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-xs) {
+@media (max-width: 576px) {
   .page-title {
     flex-direction: column;
     align-items: flex-start;
@@ -1692,7 +1692,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-lg) {
+@media (max-width: 992px) {
   .navbar {
     left: 0;
     justify-content: space-between;
@@ -1705,7 +1705,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   /* Sidebar visibility handled by container; remove legacy transforms */
   .content-wrapper,
   body.has-sidebar .content-wrapper {
@@ -1713,14 +1713,14 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   .tabs {
     margin-left: 0.5rem;
     margin-right: 0.5rem;
   }
 }
 
-@media (--bp-md) {
+@media (max-width: 768px) {
   .grid-cols-2 {
     grid-template-columns: 1fr;
   }
@@ -1746,7 +1746,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-sm) {
+@media (max-width: 640px) {
   .faturamento-header,
   .faturamento-dia {
     width: 130px;
@@ -1754,7 +1754,7 @@ body.dark .sidebar-link.active {
 }
 
 /* Mobile adjustments for cards and tables */
-@media (--bp-sm) {
+@media (max-width: 640px) {
   .card {
     padding: 1rem;
   }
@@ -1769,7 +1769,7 @@ body.dark .sidebar-link.active {
   }
 }
 
-@media (--bp-sm) {
+@media (max-width: 640px) {
   #resumoTotais .card {
     padding: 0.5rem;
   }
