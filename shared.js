@@ -203,7 +203,6 @@
     intro
       .setOptions({
         steps: [
-          { element: '#menu-inicio', intro: 'Voltar para a página inicial.' },
           {
             element: '#menu-vendas',
             intro: 'Área para acompanhar vendas e sobras.',
