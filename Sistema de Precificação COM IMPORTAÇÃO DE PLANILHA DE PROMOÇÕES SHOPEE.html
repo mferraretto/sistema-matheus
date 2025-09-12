@@ -1022,7 +1022,7 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       const user = auth.currentUser;
       if (!user) {
         showToast("Usuário não autenticado!", "error");
-        return;
+        return false;
       }
 
       const calculos = {};
@@ -1052,19 +1052,52 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       };
 
       try {
-        const docRef = await db
+        const querySnapshot = await db
           .collection('uid')
           .doc(user.uid)
           .collection('produtos')
-          .add(novoProduto);
-        sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
-        atualizarLista();
+          .where('sku', '==', sku)
+          .get();
 
-        showToast("Produto criado com sucesso!", "success");
-        addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          const existente = doc.data();
+          const hasDifferences = Object.keys(novoProduto).some(key => {
+            if (key === 'createdAt') return false;
+            return JSON.stringify(existente[key]) !== JSON.stringify(novoProduto[key]);
+          });
+          if (hasDifferences) {
+            novoProduto.createdAt = existente.createdAt || novoProduto.createdAt;
+            await doc.ref.update(novoProduto);
+            const index = sistema.produtos.findIndex(item => item.id === doc.id);
+            if (index !== -1) {
+              sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
+            } else {
+              sistema.produtos.unshift({ ...novoProduto, id: doc.id });
+            }
+            atualizarLista();
+            showToast("Produto atualizado com sucesso!", "success");
+            addHistoryEntry('product_edit', `Produto \"${produto}\" atualizado`);
+            return true;
+          }
+          return false;
+        } else {
+          const docRef = await db
+            .collection('uid')
+            .doc(user.uid)
+            .collection('produtos')
+            .add(novoProduto);
+          sistema.produtos.unshift({ ...novoProduto, id: docRef.id });
+          atualizarLista();
+
+          showToast("Produto criado com sucesso!", "success");
+          addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+          return true;
+        }
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
         showToast("Erro ao salvar produto!", "error");
+        return false;
       }
     }
 
@@ -1072,13 +1105,13 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
       const user = auth.currentUser;
       if (!user) {
         showToast("Usuário não autenticado!", "error");
-        return;
+        return false;
       }
 
       const novoProduto = {
         produto,
         sku,
-        plataforma, 
+        plataforma,
         precoMinimo,
         precoIdeal,
         precoMedio,
@@ -1099,23 +1132,28 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
             .get();
 
           if (!querySnapshot.empty) {
-            const docId = querySnapshot.docs[0].id;
-            await db
-              .collection('uid')
-              .doc(user.uid)
-              .collection('produtos')
-              .doc(docId)
-              .update(novoProduto);
-            const index = sistema.produtos.findIndex(item => item.id === docId);
-            if (index !== -1) {
-              sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
-            } else {
-              sistema.produtos.unshift({ ...novoProduto, id: docId });
-            }
+            const doc = querySnapshot.docs[0];
+            const existente = doc.data();
+            const hasDifferences = Object.keys(novoProduto).some(key => {
+              if (key === 'createdAt') return false;
+              return JSON.stringify(existente[key]) !== JSON.stringify(novoProduto[key]);
+            });
+            if (hasDifferences) {
+              novoProduto.createdAt = existente.createdAt || novoProduto.createdAt;
+              await doc.ref.update(novoProduto);
+              const index = sistema.produtos.findIndex(item => item.id === doc.id);
+              if (index !== -1) {
+                sistema.produtos[index] = { ...sistema.produtos[index], ...novoProduto };
+              } else {
+                sistema.produtos.unshift({ ...novoProduto, id: doc.id });
+              }
 
-            atualizarLista();
-            showToast("Produto atualizado com sucesso!", "success");
-            addHistoryEntry('product_edit', `Produto \"${produto}\" atualizado`);
+              atualizarLista();
+              showToast("Produto atualizado com sucesso!", "success");
+              addHistoryEntry('product_edit', `Produto \"${produto}\" atualizado`);
+              return true;
+            }
+            return false;
           } else {
             const docRef = await db
               .collection('uid')
@@ -1127,6 +1165,7 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
 
             showToast("Produto criado com sucesso!", "success");
             addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+            return true;
           }
         } else {
           const docRef = await db
@@ -1139,11 +1178,13 @@ const tabs = ['dashboard','precificacao','produtos','lista-precos','historico','
 
           showToast("Produto criado com sucesso!", "success");
           addHistoryEntry('product_add', `Produto \"${produto}\" cadastrado para ${plataforma}`);
+          return true;
         }
       } catch (error) {
         console.error("Erro ao salvar produto:", error);
         showToast("Erro ao salvar produto!", "error");
       }
+      return false;
     }
 
     async function atualizarProduto(produto, sku, plataforma, precoMinimo, precoIdeal, precoMedio, precoPromo, custo, taxas) {
