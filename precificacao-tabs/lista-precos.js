@@ -503,3 +503,18 @@ authListaPrecos.onAuthStateChanged(user => {
   }
   carregarProdutos();
 });
+
+// Expose functions for inline handlers
+Object.assign(window, {
+  exportarExcelLista,
+  exportarPlanilhaPrecificacao,
+  exportarPDFLista,
+  importarExcelLista,
+  excluirSelecionados,
+  excluirTodos,
+  toggleSelecionado,
+  verDetalhes,
+  editarProduto,
+  excluirProduto,
+  fecharModal
+});
