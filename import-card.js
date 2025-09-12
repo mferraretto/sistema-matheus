@@ -166,14 +166,14 @@
             .filter(Boolean);
 
           if (resultados.length) {
-            await salvarProdutoMultiplasTaxas(
+            const salvo = await salvarProdutoMultiplasTaxas(
               nome,
               sku,
               plataforma,
               custo,
               resultados,
             );
-            imported++;
+            if (salvo) imported++;
           }
           continue;
         }
@@ -188,7 +188,7 @@
         const precoMedio = (precoMinimo * 1.05).toFixed(2);
         const precoIdeal = (precoMinimo * 1.1).toFixed(2);
 
-        await salvarProduto(
+        const salvo = await salvarProduto(
           nome,
           sku,
           plataforma,
@@ -198,9 +198,8 @@
           precoPromo,
           custo,
           taxas,
-          true,
         );
-        imported++;
+        if (salvo) imported++;
       }
 
       showToast(`${imported} produtos importados!`, 'success');
