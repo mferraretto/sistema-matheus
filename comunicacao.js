@@ -18,6 +18,10 @@ import {
   serverTimestamp,
   onSnapshot,
   orderBy,
+  limit,
+  startAfter,
+  endBefore,
+  limitToLast,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
   getStorage,
@@ -45,6 +49,10 @@ const usersMap = {};
 const chatDock = document.getElementById('chatDock');
 const chatTemplate = document.getElementById('chatWindowTemplate');
 const chatWindows = {};
+
+const PAGE_SIZE = 10;
+let lastCommDoc = null;
+const pageStack = [];
 
 function addUserOption(user) {
   const li = document.createElement('li');
@@ -167,18 +175,39 @@ async function loadTeam(user, perfil, data) {
   members.forEach(addUserOption);
 }
 
-async function loadComms(uid) {
-  const snap = await getDocs(collection(db, 'comunicacao'));
-  snap.forEach((docSnap) => {
-    const c = docSnap.data();
-    if (
-      c.tipo !== 'mensagem' &&
-      ((Array.isArray(c.destinatarios) && c.destinatarios.includes(uid)) ||
-        c.remetente === uid)
-    ) {
-      renderComm(c);
-    }
-  });
+async function loadComms(uid, direction = 'next') {
+  let q = query(
+    collection(db, 'comunicacao'),
+    where('destinatarios', 'array-contains', uid),
+    where('tipo', 'in', ['alerta', 'arquivo']),
+    orderBy('timestamp', 'desc'),
+    limit(PAGE_SIZE),
+  );
+
+  if (direction === 'next' && lastCommDoc) {
+    q = query(q, startAfter(lastCommDoc));
+  } else if (direction === 'prev' && pageStack.length > 1) {
+    const prevStart = pageStack[pageStack.length - 2];
+    q = query(
+      collection(db, 'comunicacao'),
+      where('destinatarios', 'array-contains', uid),
+      where('tipo', 'in', ['alerta', 'arquivo']),
+      orderBy('timestamp', 'desc'),
+      endBefore(prevStart),
+      limitToLast(PAGE_SIZE),
+    );
+    pageStack.pop();
+  }
+
+  const snap = await getDocs(q);
+  commsListEl.innerHTML = '';
+  snap.forEach((docSnap) => renderComm(docSnap.data()));
+
+  if (snap.docs.length) {
+    lastCommDoc = snap.docs[snap.docs.length - 1];
+    const first = snap.docs[0];
+    if (direction === 'next') pageStack.push(first);
+  }
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -188,6 +217,13 @@ onAuthStateChanged(auth, async (user) => {
   const perfil = (data.perfil || '').toLowerCase();
   await loadTeam(user, perfil, data);
   await loadComms(user.uid);
+
+  document
+    .getElementById('nextCommsBtn')
+    ?.addEventListener('click', () => loadComms(user.uid, 'next'));
+  document
+    .getElementById('prevCommsBtn')
+    ?.addEventListener('click', () => loadComms(user.uid, 'prev'));
 
   onSnapshot(
     query(
