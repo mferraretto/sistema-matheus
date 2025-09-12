@@ -1683,7 +1683,7 @@ function downloadPricingTemplate() {
         'Frete (R$)', 'Taxa de Transação (%)',
         'Taxa de Transferência (%)', 'Taxa de Antecipação (%)',
         'Custos Variáveis (R$)', 'Imposto (%)',
-        'Comissão do Vendedor (%)'
+        'Comissão do Vendedor (%)', 'Duas Taxas Shopee (S/N)'
       ];
       const ws = XLSX.utils.aoa_to_sheet([headers]);
       const wb = XLSX.utils.book_new();
@@ -1727,6 +1727,8 @@ function downloadPricingTemplate() {
           const sku = product['SKU'] || product['sku'] || '';
           const plataforma = (product['Plataforma'] || product['plataforma'] || '').toUpperCase();
           const custo = parseFloat(product['Custo'] || product['Custo do Produto'] || product['Custo (R$)'] || 0);
+          const duasVal = (product['Duas Taxas Shopee (S/N)'] || '').toString().trim().toLowerCase();
+          const usarDuas = plataforma === 'SHOPEE' && ['s','sim','y','yes','1','true'].includes(duasVal);
 
           if (!nome || !plataforma) continue;
 
@@ -1747,6 +1749,32 @@ function downloadPricingTemplate() {
             else acc.fix += val || 0;
             return acc;
           }, { percent: 0, fix: 0 });
+          const taxaPlataforma = taxas['Taxas da Plataforma (%)'] || 0;
+
+          if (usarDuas) {
+            const basePercent = totals.percent - taxaPlataforma;
+            const resultados = [20, 14].map(taxa => {
+              const totalPercent = basePercent + taxa;
+              if (totalPercent >= 100) return null;
+              const precoMinimo = ((custo + totals.fix) / (1 - totalPercent / 100)).toFixed(2);
+              const precoPromo = precoMinimo;
+              const precoMedio = (precoMinimo * 1.05).toFixed(2);
+              const precoIdeal = (precoMinimo * 1.10).toFixed(2);
+              const taxasDetalhadas = { ...taxas, 'Taxas da Plataforma (%)': taxa };
+              return {
+                taxaPercentual: taxa,
+                precoMinimo: parseFloat(precoMinimo),
+                precoIdeal: parseFloat(precoIdeal),
+                precoMedio: parseFloat(precoMedio),
+                precoPromo: parseFloat(precoPromo),
+                taxas: taxasDetalhadas
+              };
+            }).filter(Boolean);
+            if (!resultados.length) continue;
+            await salvarProdutoMultiplasTaxas(nome, sku, plataforma, custo, resultados);
+            imported++;
+            continue;
+          }
 
           if (totals.percent >= 100) continue;
 
