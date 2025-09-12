@@ -23,6 +23,16 @@
       "fields": [
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "comunicacao",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "destinatarios", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
