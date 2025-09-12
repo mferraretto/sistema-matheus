@@ -60,15 +60,21 @@ async function carregarProdutos() {
   aplicarFiltros();
 }
 
+function normalizeTexto(valor) {
+  return typeof valor === 'string'
+    ? valor.toLowerCase()
+    : String(valor ?? '').toLowerCase();
+}
+
 function aplicarFiltros() {
   const termo =
     document.getElementById('filtroBusca')?.value?.toLowerCase() || '';
   const tipo = document.getElementById('tipoFiltro')?.value || 'contains';
 
   const filtrados = produtos.filter((p) => {
-    const nome = String(p.produto || '').toLowerCase();
-    const sku = String(p.sku || '').toLowerCase();
-    const loja = String(p.plataforma || '').toLowerCase();
+    const nome = normalizeTexto(p.produto);
+    const sku = normalizeTexto(p.sku);
+    const loja = normalizeTexto(p.plataforma);
     if (!termo) return true;
     if (tipo === 'exact') {
       return nome === termo || sku === termo || loja === termo;
