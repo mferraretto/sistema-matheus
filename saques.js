@@ -550,7 +550,8 @@ async function imprimirFechamento() {
     }
   } catch (_) {}
 
-  const dataTitulo = new Date(anoMes + '-01');
+  const [anoTitulo, mesTitulo] = anoMes.split('-').map(Number);
+  const dataTitulo = new Date(anoTitulo, mesTitulo - 1, 1);
   const mesNome = dataTitulo.toLocaleDateString('pt-BR', { month: 'long' });
   const mesAno = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}/${dataTitulo.getFullYear()}`;
   const emissao = new Date().toLocaleDateString('pt-BR');
