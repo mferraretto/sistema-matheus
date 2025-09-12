@@ -954,16 +954,17 @@ body.dark-mode .table-container {
   color: var(--text);
 }
 body.dark-mode .navbar {
-  background: var(--background);
-  color: var(--text);
-  border-bottom: 1px solid var(--border);
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  border-bottom: 1px solid var(--nav-bg);
 }
 body.dark-mode .navbar .menu-item {
-  color: var(--text);
+  color: var(--nav-text);
 }
-body.dark-mode .navbar .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--white);
+body.dark-mode .navbar .menu-item:hover,
+body.dark-mode .navbar .menu-item.active {
+  background-color: var(--nav-hover);
+  color: var(--nav-text);
 }
 body.dark-mode .form-control {
   background: #334155;
@@ -1049,7 +1050,7 @@ body.dark-mode .data-table th {
   height: var(--navbar-height);
   padding: 0 1rem;
   background: var(--nav-bg);
-  color: var(--white);
+  color: var(--nav-text);
   border-bottom: 1px solid rgba(229, 231, 235, 0.7);
 }
 @media (min-width: 768px) {
@@ -1081,7 +1082,7 @@ body.dark-mode .data-table th {
   }
 }
 .navbar .menu-item {
-  color: var(--white);
+  color: var(--nav-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1094,9 +1095,10 @@ body.dark-mode .data-table th {
     background-color 0.2s ease,
     color 0.2s ease;
 }
-.navbar .menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--white);
+.navbar .menu-item:hover,
+.navbar .menu-item.active {
+  background-color: var(--nav-hover);
+  color: var(--nav-text);
 }
 .user-dropdown {
   display: flex;
