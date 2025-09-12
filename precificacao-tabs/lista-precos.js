@@ -299,20 +299,45 @@ function fecharModal() {
 }
 function exportarExcelLista() {
   if (!produtos.length) return;
+
+  const headers = [
+    'Produto',
+    'SKU',
+    'Plataforma',
+    'Custo (R$)',
+    'Taxas da Plataforma (%)',
+    'Custo Fixo Plataforma (R$)',
+    'Frete (R$)',
+    'Taxa de Transação (%)',
+    'Taxa de Transferência (%)',
+    'Taxa de Antecipação (%)',
+    'Custos Variáveis (R$)',
+    'Imposto (%)',
+    'Comissão do Vendedor (%)',
+    'Duas Taxas Shopee (S/N)'
+  ];
+
   const data = produtos.map(p => ({
-    SKU: p.sku || '',
-    Produto: p.produto,
-    Loja: p.plataforma,
-    Custo: parseFloat(p.custo || 0).toFixed(2),
-    'Preço Mínimo': parseFloat(p.precoMinimo).toFixed(2),
-    'Preço Ideal': parseFloat(p.precoIdeal).toFixed(2),
-    'Preço Médio': parseFloat(p.precoMedio).toFixed(2),
-    'Preço Promo': parseFloat(p.precoPromo).toFixed(2)
+    'Produto': p.produto,
+    'SKU': p.sku || '',
+    'Plataforma': p.plataforma || '',
+    'Custo (R$)': parseFloat(p.custo || 0),
+    'Taxas da Plataforma (%)': '',
+    'Custo Fixo Plataforma (R$)': '',
+    'Frete (R$)': '',
+    'Taxa de Transação (%)': '',
+    'Taxa de Transferência (%)': '',
+    'Taxa de Antecipação (%)': '',
+    'Custos Variáveis (R$)': '',
+    'Imposto (%)': '',
+    'Comissão do Vendedor (%)': '',
+    'Duas Taxas Shopee (S/N)': ''
   }));
-  const ws = XLSX.utils.json_to_sheet(data);
+
+  const ws = XLSX.utils.json_to_sheet(data, { header: headers });
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Precos');
-  XLSX.writeFile(wb, 'lista_precos.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+  XLSX.writeFile(wb, 'produtos_precificacao.xlsx');
 }
 
 function exportarPlanilhaPrecificacao() {
