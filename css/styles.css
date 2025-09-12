@@ -1774,3 +1774,50 @@ body.dark .sidebar-link.active {
     padding: 0.5rem;
   }
 }
+/* Client sidebar layout */
+.sidebar.client-layout {
+  background: linear-gradient(180deg, #7c3aed 0%, #4c1d95 100%);
+}
+.sidebar.client-layout .sidebar-logo {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.sidebar.client-layout .client-top-icons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1rem;
+}
+.sidebar.client-layout .client-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar.client-layout .client-icon svg {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+}
+.sidebar.client-layout .sidebar-link {
+  justify-content: center;
+  margin: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+  border: 2px solid #fff;
+  font-weight: 600;
+}
+.sidebar.client-layout .sidebar-link svg {
+  display: none;
+}
+.sidebar.client-layout .sidebar-link:hover,
+.sidebar.client-layout .sidebar-link.active {
+  background: linear-gradient(180deg, #ff5f6d 0%, #ffc371 100%);
+}
+.sidebar.client-layout .submenu,
+.sidebar.client-layout .submenu-toggle {
+  display: none;
+}
