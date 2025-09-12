@@ -39,7 +39,6 @@ const storage = getStorage(app);
 let currentUser = null;
 let initialLoad = true;
 let usuariosResponsaveis = [];
-let graficoFaturamento = null;
 
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
@@ -219,11 +218,8 @@ function formatarData(str) {
 async function carregarHistoricoFaturamento() {
   const card = document.getElementById('historicoFaturamentoCard');
   const container = document.getElementById('historicoFaturamento');
-  const graficoCanvas = document.getElementById('historicoFaturamentoGrafico');
-  if (!card || !container || !graficoCanvas) return;
+  if (!card || !container) return;
   container.innerHTML = '';
-  const labels = [];
-  const liquidos = [];
   if (!usuariosResponsaveis.length) {
     card.classList.add('hidden');
     return;
@@ -250,6 +246,7 @@ async function carregarHistoricoFaturamento() {
       if (metaDoc.exists()) metaMensal = Number(metaDoc.data().valor) || 0;
     } catch (_) {}
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
+
     const fatSnap = await getDocs(
       collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'),
     );
@@ -257,57 +254,77 @@ async function carregarHistoricoFaturamento() {
       .map((d) => d.id)
       .sort()
       .slice(-1);
-    if (!dias.length) continue;
-    const dia = dias[0];
-    const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(
-      currentUser.uid,
-      u.uid,
+
+    const col = document.createElement('div');
+    col.className = 'faturamento-col';
+
+    const header = document.createElement('div');
+    header.className = 'faturamento-header cursor-pointer';
+    header.innerHTML = `<div>${u.nome}</div><div>META R$ ${metaMensal.toLocaleString('pt-BR')}</div>`;
+    header.addEventListener('click', () =>
+      toggleFaturamentoMensal(col, currentUser.uid, u.uid),
+    );
+    col.appendChild(header);
+
+    for (const dia of dias) {
+      const { liquido, bruto } = await calcularFaturamentoDiaDetalhado(
+        currentUser.uid,
+        u.uid,
+        dia,
+      );
+      const vendas = await calcularVendasDia(currentUser.uid, u.uid, dia);
+      const diff = metaDiaria - liquido;
+      const atingido = diff <= 0;
+      const day = document.createElement('div');
+      day.className = 'faturamento-dia';
+      day.innerHTML = `
+        <div class="dia-data">${formatarData(dia)}</div>
+        <div>Bruto: <span class="valor">R$ ${bruto.toLocaleString('pt-BR')}</span></div>
+        <div>Líquido: <span class="valor">R$ ${liquido.toLocaleString('pt-BR')}</span></div>
+        <div>Qtd: <span class="valor">${vendas}</span></div>
+        <div class="resultado ${atingido ? 'positivo' : 'negativo'}">${atingido ? 'POSITIVO' : 'NEGATIVO'}${diff ? ` R$ ${Math.abs(diff).toLocaleString('pt-BR')}` : ''}</div>
+      `;
+      col.appendChild(day);
+    }
+
+    container.appendChild(col);
+  }
+}
+
+async function toggleFaturamentoMensal(container, responsavelUid, uid) {
+  let tabela = container.querySelector('table');
+  if (tabela) {
+    tabela.remove();
+    return;
+  }
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const fatSnap = await getDocs(
+    collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento'),
+  );
+  const dias = fatSnap.docs
+    .map((d) => d.id)
+    .filter((id) => id.startsWith(mesAtual))
+    .sort();
+  tabela = document.createElement('table');
+  tabela.className = 'mt-2 w-full text-sm border-collapse';
+  const thead = document.createElement('thead');
+  thead.innerHTML =
+    '<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th></tr>';
+  tabela.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  for (const dia of dias) {
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(
+      responsavelUid,
+      uid,
       dia,
     );
-    const vendas = await calcularVendasDia(currentUser.uid, u.uid, dia);
-    const diff = metaDiaria - liquido;
-    const atingido = diff <= 0;
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'card p-4 flex flex-col';
-    cardDiv.innerHTML = `
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="font-semibold">${u.nome}</h3>
-        <span class="text-xs text-gray-500">Meta R$ ${metaMensal.toLocaleString('pt-BR')}</span>
-      </div>
-      <div class="text-xs text-gray-500 mb-2">${formatarData(dia)}</div>
-      <div class="grid grid-cols-2 gap-2 text-sm">
-        <div><span class="text-gray-500">Bruto</span><div class="font-medium">R$ ${bruto.toLocaleString('pt-BR')}</div></div>
-        <div><span class="text-gray-500">Líquido</span><div class="font-medium">R$ ${liquido.toLocaleString('pt-BR')}</div></div>
-        <div><span class="text-gray-500">Pedidos</span><div class="font-medium">${vendas}</div></div>
-        <div><span class="text-gray-500">Resultado</span><div class="font-medium ${atingido ? 'text-green-600' : 'text-red-600'}">${
-          atingido ? 'Positivo' : 'Negativo'
-        }${diff ? ` R$ ${Math.abs(diff).toLocaleString('pt-BR')}` : ''}</div></div>
-      </div>
-    `;
-    container.appendChild(cardDiv);
-    labels.push(u.nome);
-    liquidos.push(liquido);
+    const vendas = await calcularVendasDia(responsavelUid, uid, dia);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="border px-2 py-1">${dia}</td><td class="border px-2 py-1">R$ ${bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">R$ ${liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">${vendas}</td>`;
+    tbody.appendChild(tr);
   }
-  if (graficoFaturamento) graficoFaturamento.destroy();
-  graficoFaturamento = new Chart(graficoCanvas, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Líquido',
-          data: liquidos,
-          backgroundColor: '#3b82f6',
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true },
-      },
-    },
-  });
+  tabela.appendChild(tbody);
+  container.appendChild(tabela);
 }
 
 async function carregarTotais() {

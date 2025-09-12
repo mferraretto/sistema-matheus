@@ -23,11 +23,7 @@
     <div id="resumoTotais" class="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4"></div>
     <div id="historicoFaturamentoCard" class="card p-4 hidden">
       <h2 class="font-medium mb-2">Histórico de Faturamento (Último dia)</h2>
-      <div
-        id="historicoFaturamento"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-      ></div>
-      <canvas id="historicoFaturamentoGrafico" class="mt-4 h-48"></canvas>
+      <div id="historicoFaturamento" class="flex flex-nowrap gap-4 overflow-x-auto"></div>
     </div>
     <div id="usuariosResponsaveisCard" class="card p-4 hidden">
       <h2 class="font-medium mb-2">Usuários vinculados</h2>
@@ -54,7 +50,6 @@
     </form>
     <div id="listaAtualizacoes" class="space-y-4"></div>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module" src="firebase-config.js"></script>
   <script type="module" src="atualizacoes.js"></script>
   <script>
