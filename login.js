@@ -203,8 +203,10 @@ async function showUserArea(user) {
     if (input) input.value = nameEl.textContent;
     openModal('displayNameModal');
   };
-  // Exibe o botão de logout apenas se estiver presente na navbar
-  document.getElementById('logoutBtn')?.classList.remove('hidden');
+  // Exibe os botões de logout
+  document
+    .querySelectorAll('#logoutBtn, #logoutSidebarBtn')
+    .forEach((btn) => btn.classList.remove('hidden'));
 
   window.sistema = window.sistema || {};
   window.sistema.uid = user.uid;
@@ -311,8 +313,10 @@ function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
   nameEl.textContent = 'Usuário';
   nameEl.onclick = null;
-  // Oculta o botão de logout apenas se ele existir
-  document.getElementById('logoutBtn')?.classList.add('hidden');
+  // Oculta os botões de logout
+  document
+    .querySelectorAll('#logoutBtn, #logoutSidebarBtn')
+    .forEach((btn) => btn.classList.add('hidden'));
   if (window.sistema) delete window.sistema.uid;
 
   // ⚠️ Reseta para mostrar o modal novamente no próximo login
@@ -579,7 +583,7 @@ document.addEventListener('navbarLoaded', () => {
     openModal('loginModal');
   });
 
-  // Garante que o evento de logout só seja registrado se o botão existir
+  // Garante que o evento de logout seja registrado no navbar
   document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
   if (window.location.search.includes('login=1')) {
@@ -596,6 +600,16 @@ document.addEventListener('navbarLoaded', () => {
 document.addEventListener('sidebarLoaded', () => {
   if (window.userPerfil) applyPerfilRestrictions(window.userPerfil);
   ensureFinanceiroMenu();
+
+  // Garante o evento de logout no sidebar
+  document
+    .getElementById('logoutSidebarBtn')
+    ?.addEventListener('click', logout);
+  if (auth.currentUser) {
+    document
+      .querySelectorAll('#logoutBtn, #logoutSidebarBtn')
+      .forEach((btn) => btn.classList.remove('hidden'));
+  }
 });
 
 checkLogin();
