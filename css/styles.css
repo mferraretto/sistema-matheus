@@ -939,7 +939,7 @@ body.dark-mode .data-table th {
   padding: 0 1rem;
   background: var(--nav-bg);
   color: var(--nav-text);
-  border-bottom: none;
+  border-bottom: 1px solid #000;
 }
 @media (min-width: 768px) {
   .navbar {
@@ -949,6 +949,10 @@ body.dark-mode .data-table th {
 }
 .navbar .hamburger {
   display: none;
+}
+.navbar svg {
+  color: #000;
+  stroke: #000;
 }
 .navbar-right {
   display: flex;
