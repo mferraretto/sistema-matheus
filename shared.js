@@ -689,6 +689,13 @@ document.addEventListener('sidebarLoaded', async () => {
     });
   }
 
+  function buildClienteSidebarLayout() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.classList.add('client-layout');
+    }
+  }
+
   async function applySidebarPermissions(uid) {
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid));
@@ -722,7 +729,7 @@ document.addEventListener('sidebarLoaded', async () => {
           if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id))
             li.style.display = '';
         });
-        buildGestorSidebarLayout();
+        buildClienteSidebarLayout();
       }
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
