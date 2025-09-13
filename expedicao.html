@@ -1188,7 +1188,12 @@
               <i class="fas ${statusInfo[status].icon} ${statusInfo[status].color}"></i>
             </span>
           </div>
-          <p class="mt-2 text-sm font-semibold ${statusInfo[status].color}">${statusInfo[status].text}</p>
+          <button
+            class="mt-2 px-2 py-1 rounded text-sm font-semibold text-white ${status === 'impresso' ? 'bg-yellow-500' : 'bg-red-500'}"
+            data-status="${status}"
+            onclick="toggleImpressoCard('${doc.id}', this, this.closest('.pdf-card'))">
+            ${statusInfo[status].text}
+          </button>
           ${foraHorario ? '<span class="mt-1 text-xs text-white px-2 py-0.5 rounded-full bg-red-600">Fora do horário</span>' : ''}
         </div>
         <div class="text-sm text-gray-700 mb-4 text-center">
@@ -1295,6 +1300,40 @@
       showToast('Status atualizado');
     }
     window.toggleImpresso = toggleImpresso;
+
+    async function toggleImpressoCard(id, button, card) {
+      const current = button.dataset.status || 'nao_impresso';
+      const newStatus = current === 'impresso' ? 'nao_impresso' : 'impresso';
+      const confirmMsg = `Deseja marcar como ${newStatus === 'impresso' ? 'impresso' : 'não impresso'}?`;
+      if (!confirm(confirmMsg)) return;
+
+      await db.collection('pdfDocs').doc(id).update({ status: newStatus });
+
+      button.dataset.status = newStatus;
+      button.textContent = newStatus === 'impresso' ? 'Impresso' : 'Não impresso';
+      button.classList.remove('bg-red-500', 'bg-yellow-500');
+      button.classList.add(newStatus === 'impresso' ? 'bg-yellow-500' : 'bg-red-500');
+
+      const iconContainer = button.previousElementSibling;
+      if (iconContainer) {
+        const badge = iconContainer.querySelector('span');
+        const icon = badge ? badge.querySelector('i') : null;
+        if (badge && icon) {
+          badge.classList.remove('border-red-500', 'border-yellow-500', 'border-green-500');
+          icon.classList.remove('fa-times', 'fa-check', 'text-red-600', 'text-yellow-600', 'text-green-600');
+          if (newStatus === 'impresso') {
+            badge.classList.add('border-yellow-500');
+            icon.classList.add('fa-check', 'text-yellow-600');
+          } else {
+            badge.classList.add('border-red-500');
+            icon.classList.add('fa-times', 'text-red-600');
+          }
+        }
+      }
+
+      showToast('Status atualizado');
+    }
+    window.toggleImpressoCard = toggleImpressoCard;
 
     async function updateStatus(id, select, card) {
       const newStatus = select.value;
