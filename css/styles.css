@@ -876,7 +876,7 @@ body.dark-mode .table-container {
 body.dark-mode .navbar {
   background: var(--nav-bg);
   color: var(--nav-text);
-  border-bottom: 1px solid var(--nav-bg);
+  border-bottom: 1px solid var(--nav-border);
 }
 body.dark-mode .navbar .menu-item {
   color: var(--nav-text);
@@ -939,7 +939,7 @@ body.dark-mode .data-table th {
   padding: 0 1rem;
   background: var(--nav-bg);
   color: var(--nav-text);
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--nav-border);
 }
 @media (min-width: 768px) {
   .navbar {
@@ -951,8 +951,8 @@ body.dark-mode .data-table th {
   display: none;
 }
 .navbar svg {
-  color: #000;
-  stroke: #000;
+  color: var(--nav-text);
+  stroke: var(--nav-text);
 }
 .navbar-right {
   display: flex;
