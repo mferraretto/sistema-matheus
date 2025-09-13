@@ -9,6 +9,10 @@
   --nav-bg: #5c4fd5;
   --nav-hover: rgba(255, 255, 255, 0.1);
   --nav-text: #000000;
+  --nav-border: #000000;
+  --sidebar-bg: var(--primary);
+  --sidebar-text: #000000;
+  --sidebar-border: #000000;
   --success: #4caf50;
   --error: #f44336;
   --background: #ffffff;
@@ -56,4 +60,14 @@ body {
     sans-serif;
   color: var(--text);
   background-color: var(--background);
+}
+
+/* Dark mode overrides */
+body.dark-mode {
+  --nav-bg: #1f2937;
+  --nav-text: #f9fafb;
+  --nav-border: #1f2937;
+  --sidebar-bg: #1f2937;
+  --sidebar-text: #f9fafb;
+  --sidebar-border: #f9fafb;
 }
