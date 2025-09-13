@@ -8,30 +8,45 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="icons/icon-192.png">
 </head>
-<body class="flex items-center justify-center h-screen" style="background-color: var(--background);">
-  <div class="w-full max-w-sm p-6 rounded shadow" style="background-color: var(--secondary);">
-    <h1 class="mb-4 text-2xl font-bold text-center" style="color: var(--text);">Login</h1>
-    <div id="offlineNotice" class="hidden mb-4 text-center text-red-600">Sem conexão com o servidor.</div>
-      <form onsubmit="login(); return false;">
-        <input id="loginEmail" type="email" placeholder="E-mail" class="w-full p-2 mb-3 border rounded">
-        <input id="loginPassword" type="password" placeholder="Senha" class="w-full p-2 mb-3 border rounded">
-        <input id="loginPassphrase" type="password" placeholder="Passphrase (opcional)" class="w-full p-2 mb-3 border rounded">
-
-        <div class="flex items-center justify-between mb-3">
-          <label class="flex items-center">
-            <input type="radio" name="userRole" value="usuario" class="mr-1" checked>
-            <span>Usuário</span>
-          </label>
-          <label class="flex items-center">
-            <input type="radio" name="userRole" value="gestor" class="mr-1">
-            <span>Gestor</span>
-          </label>
-        </div>
-
-        <button id="loginButton" type="submit" class="w-full btn-primary justify-center">Entrar</button>
-      </form>
-      <div id="toastContainer" class="mt-4"></div>
+<body class="min-h-screen flex items-center justify-center" style="background: linear-gradient(to bottom right, var(--primary-light), var(--primary));">
+  <div class="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
+    <div class="flex flex-col items-center mb-6">
+      <img src="icons/icon-192.png" alt="VendedorPro" class="w-16 h-16 mb-2" />
+      <h1 class="text-2xl font-bold" style="color: var(--text);">VendedorPro</h1>
+      <p class="text-gray-500">Faça login para continuar</p>
     </div>
+    <div id="offlineNotice" class="hidden mb-4 text-center text-red-600">Sem conexão com o servidor.</div>
+    <form onsubmit="login(); return false;" class="space-y-4">
+      <div>
+        <label for="loginEmail" class="block text-sm font-medium text-gray-700">E-mail</label>
+        <input id="loginEmail" type="email" placeholder="seu@email.com" class="mt-1 w-full p-3 border rounded focus:ring-1 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label for="loginPassword" class="block text-sm font-medium text-gray-700">Senha</label>
+        <input id="loginPassword" type="password" placeholder="Senha" class="mt-1 w-full p-3 border rounded focus:ring-1 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label for="loginPassphrase" class="block text-sm font-medium text-gray-700">Passphrase <span class="text-gray-400">(opcional)</span></label>
+        <input id="loginPassphrase" type="password" placeholder="Passphrase" class="mt-1 w-full p-3 border rounded focus:ring-1 focus:ring-indigo-500" />
+      </div>
+      <div class="flex items-center justify-center space-x-6">
+        <label class="flex items-center">
+          <input type="radio" name="userRole" value="usuario" class="mr-1" checked />
+          <span>Usuário</span>
+        </label>
+        <label class="flex items-center">
+          <input type="radio" name="userRole" value="gestor" class="mr-1" />
+          <span>Gestor</span>
+        </label>
+      </div>
+      <button id="loginButton" type="submit" class="w-full btn-primary justify-center">Entrar</button>
+    </form>
+    <p class="mt-4 text-center text-sm text-gray-600">
+      Não é usuário?
+      <a href="cadastro-interesse.html" class="text-indigo-600 hover:underline">Cadastre seu interesse</a>
+    </p>
+    <div id="toastContainer" class="mt-4"></div>
+  </div>
   <script type="module" src="login.js"></script>
   <script type="module">
     import { checkBackend } from './utils.js';
