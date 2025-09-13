@@ -1,5 +1,5 @@
 :root {
-  --sidebar-width: 16rem;
+  --sidebar-width: 18rem;
 }
 
 /* Sidebar container & overlay */
@@ -59,17 +59,22 @@ body.has-sidebar .content-wrapper {
 }
 
 /* Scrollbar styling */
+#sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-dark) var(--primary);
+}
+
 #sidebar::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 
 #sidebar::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--primary);
 }
 
 #sidebar::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 0.125rem;
+  background-color: var(--primary-dark);
+  border-radius: 0.25rem;
 }
 
 /* Base sidebar styles */
