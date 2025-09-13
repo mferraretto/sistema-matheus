@@ -332,7 +332,7 @@ async function carregarResumoFaturamento(uid, isAdmin) {
         const arrow = variacao >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
         const variacaoFmt = `${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}%`;
         return `
-          <div class="bg-white rounded-xl shadow p-4">
+          <div class="bg-white rounded-xl shadow-lg p-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 text-gray-500 text-xs">
                 <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
