@@ -464,6 +464,59 @@ window.addEventListener('resize', () => {
 window.toggleSidebar = window.toggleSidebar || toggleSidebar;
 window.ensureLayout = ensureLayout;
 
+let searchPages = [];
+
+function collectSearchPages() {
+  searchPages = Array.from(document.querySelectorAll('#sidebar a.sidebar-link'))
+    .map((a) => ({
+      title: a.textContent.trim(),
+      href: a.getAttribute('href'),
+    }))
+    .filter((p) => p.title && p.href);
+}
+
+document.addEventListener('sidebarLoaded', collectSearchPages);
+
+document.addEventListener('navbarLoaded', () => {
+  const input = document.getElementById('navbarSearch');
+  const results = document.getElementById('navbarSearchResults');
+  if (!input || !results) return;
+
+  function renderResults() {
+    const q = input.value.trim().toLowerCase();
+    if (!q) {
+      results.innerHTML = '';
+      results.classList.add('hidden');
+      return;
+    }
+    if (!searchPages.length) collectSearchPages();
+    const filtered = searchPages.filter((p) =>
+      p.title.toLowerCase().includes(q),
+    );
+    if (!filtered.length) {
+      results.innerHTML =
+        '<div class="px-3 py-2 text-sm text-gray-500">Nenhum resultado</div>';
+      results.classList.remove('hidden');
+      return;
+    }
+    results.innerHTML = filtered
+      .map((p) => `<a href="${p.href}">${p.title}</a>`)
+      .join('');
+    results.classList.remove('hidden');
+  }
+
+  input.addEventListener('input', renderResults);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const first = results.querySelector('a');
+      if (first) window.location.href = first.getAttribute('href');
+    }
+  });
+  input.addEventListener('blur', () =>
+    setTimeout(() => results.classList.add('hidden'), 200),
+  );
+});
+
 let userMenuClickRegistered = false;
 document.addEventListener('navbarLoaded', () => {
   const btn = document.getElementById('userMenuBtn');
