@@ -87,6 +87,7 @@ body.has-sidebar .content-wrapper {
   min-height: 100vh;
   padding-top: 1rem;
   border-right: 1px solid var(--sidebar-border);
+  font-family: 'Poppins', 'Inter', sans-serif;
 }
 
 /* Subtle text and icon shadow for better contrast */
