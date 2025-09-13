@@ -287,25 +287,11 @@ async function carregarResumoFaturamento(uid, isAdmin) {
     const calcVar = (a, b) => (b ? ((a - b) / b) * 100 : 0);
     const kpis = [
       {
-        titulo: 'receita bruta',
-        valor: totalBruto,
-        anterior: totalBrutoPrev,
+        titulo: 'comissão aberta',
+        valor: totalComissaoAberto,
+        anterior: totalComissaoAbertoPrev,
         moeda: true,
-        icon: 'fa-coins',
-      },
-      {
-        titulo: 'receita líquida',
-        valor: totalLiquido,
-        anterior: totalLiquidoPrev,
-        moeda: true,
-        icon: 'fa-sack-dollar',
-      },
-      {
-        titulo: 'pedidos',
-        valor: pedidos,
-        anterior: pedidosPrev,
-        moeda: false,
-        icon: 'fa-shopping-cart',
+        icon: 'fa-hand-holding-dollar',
       },
       {
         titulo: 'saques',
@@ -315,11 +301,25 @@ async function carregarResumoFaturamento(uid, isAdmin) {
         icon: 'fa-wallet',
       },
       {
-        titulo: 'comissão aberta',
-        valor: totalComissaoAberto,
-        anterior: totalComissaoAbertoPrev,
+        titulo: 'pedidos',
+        valor: pedidos,
+        anterior: pedidosPrev,
+        moeda: false,
+        icon: 'fa-shopping-cart',
+      },
+      {
+        titulo: 'receita líquida',
+        valor: totalLiquido,
+        anterior: totalLiquidoPrev,
         moeda: true,
-        icon: 'fa-hand-holding-dollar',
+        icon: 'fa-sack-dollar',
+      },
+      {
+        titulo: 'receita bruta',
+        valor: totalBruto,
+        anterior: totalBrutoPrev,
+        moeda: true,
+        icon: 'fa-coins',
       },
     ];
     kpiEl.innerHTML = kpis
@@ -336,7 +336,7 @@ async function carregarResumoFaturamento(uid, isAdmin) {
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 text-gray-500 text-xs">
                 <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-orange-600">
-                  <i class="fas ${k.icon}"></i>
+                  <i class="fas ${k.icon} text-lg"></i>
                 </div>
                 <span>${k.titulo}</span>
               </div>
