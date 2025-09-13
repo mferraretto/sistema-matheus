@@ -16,7 +16,20 @@
   <link rel="stylesheet" href="css/styles.css?v=20240826">
   <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+    import { firebaseConfig } from './firebase-config.js';
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
+
 </head>
 <body class="bg-gray-50">
   <div class="main-container">
