@@ -184,37 +184,6 @@ body.has-sidebar .content-wrapper {
   }
 }
 
-/* Client sidebar layout */
-.sidebar.client-layout {
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-}
-.sidebar.client-layout .sidebar-link {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  width: 100%;
-  padding: 0.8rem 1.5rem;
-  background: transparent;
-  color: var(--sidebar-text) !important;
-  border-radius: 0.375rem;
-  border-left: 4px solid var(--sidebar-border);
-}
-.sidebar.client-layout .sidebar-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-.sidebar.client-layout .sidebar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-left-color: var(--sidebar-border);
-}
-.sidebar.client-layout .sidebar-link svg {
-  display: block;
-}
-.sidebar.client-layout .submenu-toggle {
-  display: block;
-}
-
 /* Mobile-specific sidebar rules */
 @media (max-width: 768px) {
   .sidebar {
