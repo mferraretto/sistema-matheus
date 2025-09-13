@@ -692,7 +692,7 @@ document.addEventListener('sidebarLoaded', async () => {
   function buildClienteSidebarLayout() {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-      sidebar.classList.remove('client-layout');
+      sidebar.classList.add('client-layout');
     }
   }
 
