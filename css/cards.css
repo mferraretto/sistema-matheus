@@ -118,3 +118,31 @@
   font-weight: 700;
   color: var(--success);
 }
+
+/* Ticket-style cards for expedição */
+.ticket-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.ticket-card:before,
+.ticket-card:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.ticket-card:before {
+  left: -10px;
+}
+
+.ticket-card:after {
+  right: -10px;
+}

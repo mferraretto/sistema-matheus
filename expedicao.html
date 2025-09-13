@@ -1163,6 +1163,7 @@
       const name = data.name || 'PDF';
       const url = data.url;
       const owner = ownerName || 'Desconhecido';
+      const qty = Number(data.quantidade) || 0;
       const createdDate = data.createdAt && data.createdAt.toDate
         ? data.createdAt.toDate()
         : null;
@@ -1170,34 +1171,39 @@
         ? createdDate.toLocaleString('pt-BR')
         : 'Data desconhecida';
       const statusInfo = {
-        nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
-        impresso: { text: 'Impresso', color: 'bg-green-500' },
-        concluido: { text: 'Concluído', color: 'bg-blue-500' }
+        nao_impresso: { text: 'Não impresso', color: 'text-red-600', icon: 'fa-times-circle' },
+        impresso: { text: 'Impresso', color: 'text-yellow-500', icon: 'fa-print' },
+        concluido: { text: 'Concluído', color: 'text-green-600', icon: 'fa-check-circle' }
       };
       const div = document.createElement('div');
-      div.className = 'pdf-card bg-white border rounded-lg p-4 shadow flex flex-col h-full' + (attention ? ' border-red-500 border-2' : '');
+      div.className = 'pdf-card ticket-card bg-white p-4 shadow flex flex-col' + (attention ? ' border-red-500 border-2' : '');
       div.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <p class="text-sm text-gray-500">${createdDateStr}</p>
-            <p class="font-semibold text-gray-800">${owner}</p>
-            <p class="text-xs text-gray-500 break-words">${name}</p>
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <span class="font-semibold text-gray-800">${owner}</span>
+          <span>${createdDateStr}</span>
+        </div>
+        ${foraHorario ? '<span class="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">Fora do horário</span>' : ''}
+        <div class="flex flex-col items-center flex-grow">
+          <div class="relative">
+            <i class="fas fa-print text-4xl text-gray-500"></i>
+            <i class="status-icon fas ${statusInfo[status].icon} ${statusInfo[status].color} absolute -right-2 -top-2 text-xl bg-white rounded-full"></i>
           </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
-            ${foraHorario ? '<span class="text-xs text-white px-2 py-0.5 rounded-full bg-red-600">Fora do horário</span>' : ''}
+          <div class="relative mt-2">
+            <span class="status-text text-lg font-semibold ${statusInfo[status].color}">${statusInfo[status].text}</span>
+            <select class="absolute inset-0 opacity-0 cursor-pointer" onchange="updateStatus('${doc.id}', this, this.closest('.pdf-card'))">
+              <option value="nao_impresso" ${status === 'nao_impresso' ? 'selected' : ''}>Não impresso</option>
+              <option value="impresso" ${status === 'impresso' ? 'selected' : ''}>Impresso</option>
+              <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
+            </select>
           </div>
         </div>
-        <div class="mt-auto flex items-center justify-between pt-2">
-          <select class="border rounded px-2 py-1 text-xs" onchange="updateStatus('${doc.id}', this, this.closest('.pdf-card'))">
-            <option value="nao_impresso" ${status === 'nao_impresso' ? 'selected' : ''}>Não impresso</option>
-            <option value="impresso" ${status === 'impresso' ? 'selected' : ''}>Impresso</option>
-            <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
-          </select>
-          <div class="flex items-center space-x-2">
-            <button class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
-            <button class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
-          </div>
+        <div class="mt-2 text-center">
+          <p class="text-sm text-gray-600 break-words">${name}</p>
+          ${qty ? `<p class="text-sm text-gray-600">Quantidade: ${qty} etiquetas</p>` : ''}
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button class="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
+          <button class="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm hover:bg-red-700" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
         </div>`;
       return div;
     }
@@ -1299,15 +1305,17 @@
     async function updateStatus(id, select, card) {
       const newStatus = select.value;
       await db.collection('pdfDocs').doc(id).update({ status: newStatus });
-      const badge = card.querySelector('.status-badge');
+      const statusText = card.querySelector('.status-text');
+      const statusIcon = card.querySelector('.status-icon');
       const statusInfo = {
-        nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
-        impresso: { text: 'Impresso', color: 'bg-green-500' },
-        concluido: { text: 'Concluído', color: 'bg-blue-500' }
+        nao_impresso: { text: 'Não impresso', color: 'text-red-600', icon: 'fa-times-circle' },
+        impresso: { text: 'Impresso', color: 'text-yellow-500', icon: 'fa-print' },
+        concluido: { text: 'Concluído', color: 'text-green-600', icon: 'fa-check-circle' }
       };
-      if (badge) {
-        badge.textContent = statusInfo[newStatus].text;
-        badge.className = `status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[newStatus].color}`;
+      if (statusText && statusIcon) {
+        statusText.textContent = statusInfo[newStatus].text;
+        statusText.className = `status-text text-lg font-semibold ${statusInfo[newStatus].color}`;
+        statusIcon.className = `status-icon fas ${statusInfo[newStatus].icon} ${statusInfo[newStatus].color} absolute -right-2 -top-2 text-xl bg-white rounded-full`;
       }
       if (newStatus === 'concluido' && currentFilter === 'all') {
         card.remove();
