@@ -101,7 +101,8 @@ window.saveDisplayName = async () => {
     try {
       await updateProfile(user, { displayName: nome });
     } catch {}
-    document.getElementById('currentUser').textContent = nome;
+    const currentUserEl = document.getElementById('currentUser');
+    if (currentUserEl) currentUserEl.textContent = nome;
     input.value = '';
     closeModal('displayNameModal');
     showToast('Nome atualizado!', 'success');
@@ -197,12 +198,14 @@ window.sendRecovery = () => {
 
 async function showUserArea(user) {
   const nameEl = document.getElementById('currentUser');
-  nameEl.textContent = user.email;
-  nameEl.onclick = () => {
-    const input = document.getElementById('displayNameInput');
-    if (input) input.value = nameEl.textContent;
-    openModal('displayNameModal');
-  };
+  if (nameEl) {
+    nameEl.textContent = user.email;
+    nameEl.onclick = () => {
+      const input = document.getElementById('displayNameInput');
+      if (input) input.value = nameEl.textContent;
+      openModal('displayNameModal');
+    };
+  }
   // Exibe os botões de logout
   document
     .querySelectorAll('#logoutBtn, #logoutSidebarBtn')
@@ -223,14 +226,14 @@ async function showUserArea(user) {
   try {
     const uidSnap = await getDoc(doc(db, 'uid', user.uid));
     const uidData = uidSnap.data();
-    if (uidData?.nome) {
+    if (nameEl && uidData?.nome) {
       nameEl.textContent = uidData.nome;
     }
     if (uidData?.encrypted) {
       const pass = getPassphrase() || `chave-${user.uid}`;
       try {
         const data = JSON.parse(await decryptString(uidData.encrypted, pass));
-        if (!uidData?.nome && data.nome) {
+        if (nameEl && !uidData?.nome && data.nome) {
           nameEl.textContent = data.nome;
         }
         if (data.perfil) {
@@ -311,8 +314,10 @@ async function showUserArea(user) {
 
 function hideUserArea() {
   const nameEl = document.getElementById('currentUser');
-  nameEl.textContent = 'Usuário';
-  nameEl.onclick = null;
+  if (nameEl) {
+    nameEl.textContent = 'Usuário';
+    nameEl.onclick = null;
+  }
   // Oculta os botões de logout
   document
     .querySelectorAll('#logoutBtn, #logoutSidebarBtn')
