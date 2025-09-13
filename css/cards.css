@@ -9,6 +9,31 @@
   flex-direction: column;
 }
 
+/* Grid layout for card containers */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Common card header icon */
+.card-header-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  background-color: rgba(20, 184, 166, 0.1); /* subtle highlight */
+  color: var(--primary);
+}
+
+.card-header i {
+  font-size: 1.6rem;
+  color: var(--white);
+}
+
 /* Cards de resumo - usados em sobras-tabs/acompanhamento.html, acompanhamento-tiny.html, pedidos-tiny.html e CONTROLE DE SOBRAS SHOPEE.html */
 .resumo-grid {
   display: grid;
@@ -147,4 +172,93 @@
 
 .ticket-card::after {
   right: -10px;
+}
+
+/* Task card styles for dashboard */
+#tarefasCard {
+  border-left: 4px solid var(--primary);
+}
+
+#tarefasCard .card-header {
+  background-color: var(--background);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+#tarefasCard .card-header-icon {
+  background-color: rgba(20, 184, 166, 0.1);
+  color: var(--primary);
+}
+
+#tarefasCard .card-body {
+  background-color: var(--background);
+}
+
+#tarefasCard .progress {
+  width: 100%;
+  background-color: var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  height: 0.5rem;
+}
+
+#tarefasCard .progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, var(--success), #86efac);
+  transition: width 0.3s ease;
+}
+
+#tarefasCard .task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--secondary);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+#tarefasCard .task-item:hover {
+  background-color: var(--secondary);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+#tarefasCard .task-item.completed {
+  background-color: rgba(126, 87, 194, 0.1);
+}
+
+#tarefasCard .task-text.completed {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+#tarefasCard .task-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#tarefasCard .task-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+#tarefasCard .task-actions button {
+  background-color: var(--border);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+#tarefasCard .task-actions button:hover {
+  background-color: var(--gray-300);
 }
