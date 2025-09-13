@@ -1,0 +1,120 @@
+/* Estilo base para cards - utilizado em diversas abas */
+.card {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  padding: 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cards de resumo - usados em sobras-tabs/acompanhamento.html, acompanhamento-tiny.html, pedidos-tiny.html e CONTROLE DE SOBRAS SHOPEE.html */
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.resumo-card {
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.resumo-card h4 {
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.resumo-card p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Cards do dashboard de precificação - usados em precificacao-tabs/dashboard.html */
+.dashboard-card {
+  background: var(--background);
+  border-radius: 0.75rem;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Cards de cenário - usados em precificacao-tabs/precificacao.html e na página Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html */
+.scenario-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--background);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.scenario-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+}
+
+.scenario-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.scenario-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.scenario-ideal {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.scenario-ideal .scenario-dot {
+  background-color: var(--success);
+}
+
+.scenario-medium {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.scenario-medium .scenario-dot {
+  background-color: #ffc107;
+}
+
+.scenario-promo {
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+.scenario-promo .scenario-dot {
+  background-color: var(--error);
+}
+
+/* Cards de produto - usados em Sistema de Precificação COM IMPORTAÇÃO DE PLANILHA DE PROMOÇÕES SHOPEE.html */
+.product-card {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary);
+}
+
+.product-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--success);
+}
