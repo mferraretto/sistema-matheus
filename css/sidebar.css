@@ -179,63 +179,33 @@ body.dark .sidebar-link.active {
 
 /* Client sidebar layout */
 .sidebar.client-layout {
-  background: #1a1b4b;
-  color: #f9fafb;
-}
-.sidebar.client-layout .sidebar-logo {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-.sidebar.client-layout .client-top-icons {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 1rem;
-}
-.sidebar.client-layout .client-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #a855f7;
-  border: 2px solid #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sidebar.client-layout .client-icon:hover {
-  background: #c084fc;
-}
-.sidebar.client-layout .client-icon svg {
-  width: 24px;
-  height: 24px;
-  color: #f9fafb;
+  background: #ffffff;
+  color: #1f2937;
 }
 .sidebar.client-layout .sidebar-link {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 3rem;
-  width: calc(100% - 2rem);
-  margin: 0.5rem 1rem;
-  padding: 0 1rem;
-  box-sizing: border-box;
-  border-radius: 9999px;
-  background: #a855f7;
-  border: 2px solid #f9fafb;
-  font-weight: 600;
-  color: #f9fafb;
-}
-.sidebar.client-layout .sidebar-link svg {
-  display: none;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  background: transparent;
+  color: inherit;
+  border-radius: 0.375rem;
+  border-left: 4px solid transparent;
 }
 .sidebar.client-layout .sidebar-link:hover {
-  background: #c084fc;
+  background: #f3f4f6;
 }
 .sidebar.client-layout .sidebar-link.active {
-  border-color: #facc15;
+  background: #e5e7eb;
+  border-left-color: #3b82f6;
 }
-.sidebar.client-layout .submenu,
+.sidebar.client-layout .sidebar-link svg {
+  display: block;
+}
 .sidebar.client-layout .submenu-toggle {
-  display: none;
+  display: block;
 }
 
 /* Mobile-specific sidebar rules */
