@@ -600,7 +600,11 @@ async function iniciarPainel(user) {
   maybeStartTour();
 }
 onAuthStateChanged(auth, (user) => {
-  if (user) iniciarPainel(user);
+  if (user) {
+    iniciarPainel(user);
+  } else {
+    window.location.href = 'login.html';
+  }
 });
 
 async function carregarGraficoFaturamento(uid, isAdmin) {
