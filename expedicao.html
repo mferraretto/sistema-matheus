@@ -1170,34 +1170,34 @@
         ? createdDate.toLocaleString('pt-BR')
         : 'Data desconhecida';
       const statusInfo = {
-        nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
-        impresso: { text: 'Impresso', color: 'bg-green-500' },
-        concluido: { text: 'Concluído', color: 'bg-blue-500' }
+        nao_impresso: { text: 'Não impresso', icon: 'fa-times', color: 'text-red-600', border: 'border-red-500' },
+        impresso: { text: 'Impresso', icon: 'fa-check', color: 'text-yellow-600', border: 'border-yellow-500' },
+        concluido: { text: 'Concluído', icon: 'fa-check', color: 'text-green-600', border: 'border-green-500' }
       };
       const div = document.createElement('div');
-      div.className = 'pdf-card bg-white border rounded-lg p-4 shadow flex flex-col h-full' + (attention ? ' border-red-500 border-2' : '');
+      div.className = 'pdf-card ticket-card p-4 flex flex-col h-full' + (attention ? ' border-red-500 border-2' : '');
       div.innerHTML = `
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <p class="text-sm text-gray-500">${createdDateStr}</p>
-            <p class="font-semibold text-gray-800">${owner}</p>
-            <p class="text-xs text-gray-500 break-words">${name}</p>
-          </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[status].color}">${statusInfo[status].text}</span>
-            ${foraHorario ? '<span class="text-xs text-white px-2 py-0.5 rounded-full bg-red-600">Fora do horário</span>' : ''}
-          </div>
+        <div class="flex justify-between items-center mb-4">
+          <span class="font-semibold text-gray-800">${owner}</span>
+          <span class="text-xs text-gray-500">${createdDateStr}</span>
         </div>
-        <div class="mt-auto flex items-center justify-between pt-2">
-          <select class="border rounded px-2 py-1 text-xs" onchange="updateStatus('${doc.id}', this, this.closest('.pdf-card'))">
-            <option value="nao_impresso" ${status === 'nao_impresso' ? 'selected' : ''}>Não impresso</option>
-            <option value="impresso" ${status === 'impresso' ? 'selected' : ''}>Impresso</option>
-            <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
-          </select>
-          <div class="flex items-center space-x-2">
-            <button class="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700" onclick="visualizar('${url}')">Abrir</button>
-            <button class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
+        <div class="flex flex-col items-center mb-4">
+          <div class="relative">
+            <i class="fas fa-print text-4xl text-gray-600"></i>
+            <span class="absolute -top-2 -right-2 w-6 h-6 flex items-center justify-center rounded-full bg-white border-2 ${statusInfo[status].border}">
+              <i class="fas ${statusInfo[status].icon} ${statusInfo[status].color}"></i>
+            </span>
           </div>
+          <p class="mt-2 text-sm font-semibold ${statusInfo[status].color}">${statusInfo[status].text}</p>
+          ${foraHorario ? '<span class="mt-1 text-xs text-white px-2 py-0.5 rounded-full bg-red-600">Fora do horário</span>' : ''}
+        </div>
+        <div class="text-sm text-gray-700 mb-4 text-center">
+          <p class="break-words">${name}</p>
+          <p class="text-xs text-gray-500">Quantidade: ${data.quantidade || 0} etiquetas</p>
+        </div>
+        <div class="mt-auto flex justify-center gap-2">
+          <button class="px-3 py-1 rounded border text-sm hover:bg-gray-100" onclick="visualizar('${url}')">Abrir</button>
+          <button class="px-3 py-1 rounded border text-sm text-red-600 border-red-600 hover:bg-red-50" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
         </div>`;
       return div;
     }
