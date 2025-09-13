@@ -240,9 +240,6 @@ body.dark .sidebar-link.active {
   .sidebar-link .mr-3 {
     margin-right: 0.75rem;
   }
-  .mobile-menu-btn {
-    display: flex;
-  }
   .content-wrapper,
   body.has-sidebar .content-wrapper {
     margin-left: 0;

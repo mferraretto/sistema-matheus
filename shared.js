@@ -303,18 +303,6 @@
 window.CUSTOM_SIDEBAR_PATH =
   window.CUSTOM_SIDEBAR_PATH || 'partials/sidebar.html';
 window.CUSTOM_NAVBAR_PATH = window.CUSTOM_NAVBAR_PATH || 'partials/navbar.html';
-
-// Pages related to Expedição or Etiquetas use a specific navbar
-const _path = decodeURIComponent(window.location.pathname.toLowerCase());
-if (/(expedicao|etiquet|zpl)/.test(_path)) {
-  window.CUSTOM_NAVBAR_PATH = 'partials/navbar-expedicao.html';
-} else if (
-  /(vendas|sobras|faturamento|saques|anuncio|ads|promoc|marketing|precifica|lista-precos|custeio)/.test(
-    _path,
-  )
-) {
-  window.CUSTOM_NAVBAR_PATH = 'partials/navbar-grupos.html';
-}
 const PARTIALS_VERSION = '2025-08-25-02'; // mude quando atualizar parciais
 
 function toggleSidebar() {
@@ -329,11 +317,9 @@ function toggleSidebar() {
     overlay.addEventListener('click', toggleSidebar);
   }
 
-  const btn = document.querySelector('.mobile-menu-btn');
   const isOpen = sb.classList.toggle('open');
   overlay.classList.toggle('show', isOpen);
   document.body.style.overflow = isOpen ? 'hidden' : '';
-  if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 
 async function loadPartial(selector, path) {
@@ -442,10 +428,6 @@ async function ensureLayout() {
   if (typeof window.initDarkMode === 'function') {
     window.initDarkMode();
   }
-  // Ensure mobile sidebar buttons are wired after partials load
-  if (typeof setupMobileSidebar === 'function') {
-    setupMobileSidebar();
-  }
 }
 
 // roda em momentos essenciais para evitar recargas desnecessárias
@@ -481,77 +463,6 @@ window.addEventListener('resize', () => {
 // expõe global
 window.toggleSidebar = window.toggleSidebar || toggleSidebar;
 window.ensureLayout = ensureLayout;
-
-function setupMobileSidebar() {
-  const container = document.getElementById('sidebar-container');
-  const btns = Array.from(document.querySelectorAll('.mobile-menu-btn'));
-  if (!container || !btns.length) return;
-
-  let overlay = document.getElementById('sidebar-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'sidebar-overlay';
-    document.body.appendChild(overlay);
-  }
-  overlay.classList.remove('show');
-
-  btns.forEach((btn) => {
-    if (btn.dataset.sidebarReady) return;
-    // Impede que outros listeners de clique capturem o evento
-    // antes de abrir o menu lateral em telas menores.
-    btn.addEventListener(
-      'click',
-      (e) => {
-        e.stopPropagation();
-        toggleSidebar();
-      },
-      { once: false },
-    );
-    btn.dataset.sidebarReady = 'true';
-  });
-  if (!overlay.dataset.sidebarReady) {
-    overlay.addEventListener('click', toggleSidebar);
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth > 768) return;
-      if (
-        !container.contains(e.target) &&
-        !btns.some((b) => b.contains(e.target))
-      ) {
-        container.classList.remove('open');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
-        btns.forEach((b) => b.setAttribute('aria-expanded', 'false'));
-      }
-    });
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        container.classList.add('open');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
-      } else {
-        container.classList.remove('open');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
-      }
-      btns.forEach((b) => b.setAttribute('aria-expanded', 'false'));
-    });
-    overlay.dataset.sidebarReady = 'true';
-  }
-
-  container.querySelectorAll('a').forEach((a) =>
-    a.addEventListener('click', () => {
-      if (window.innerWidth <= 768) toggleSidebar();
-    }),
-  );
-
-  if (window.innerWidth > 768) {
-    container.classList.add('open');
-  }
-}
-
-document.addEventListener('navbarLoaded', setupMobileSidebar);
-document.addEventListener('sidebarLoaded', setupMobileSidebar);
-document.addEventListener('DOMContentLoaded', setupMobileSidebar);
 
 let userMenuClickRegistered = false;
 document.addEventListener('navbarLoaded', () => {

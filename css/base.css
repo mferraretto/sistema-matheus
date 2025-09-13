@@ -6,9 +6,9 @@
   --primary-light: #a5b4fc;
   --primary-active: #d95449;
   --secondary: #f3f4f6;
-  --nav-bg: #1a1b4b;
-  --nav-hover: #a855f7;
-  --nav-text: #f9fafb;
+  --nav-bg: #5c4fd5;
+  --nav-hover: rgba(255, 255, 255, 0.1);
+  --nav-text: #000000;
   --success: #4caf50;
   --error: #f44336;
   --background: #ffffff;

@@ -402,24 +402,6 @@ button:hover {
 .flex-container {
   flex-direction: column;
 }
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 15px;
-  left: 15px;
-  z-index: 1100;
-  background: var(--primary);
-  color: var(--white);
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -957,7 +939,7 @@ body.dark-mode .data-table th {
   padding: 0 1rem;
   background: var(--nav-bg);
   color: var(--nav-text);
-  border-bottom: 1px solid rgba(229, 231, 235, 0.7);
+  border-bottom: none;
 }
 @media (min-width: 768px) {
   .navbar {
@@ -977,6 +959,12 @@ body.dark-mode .data-table th {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+.navbar-search {
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
 }
 .navbar-title {
   font-weight: 600;
