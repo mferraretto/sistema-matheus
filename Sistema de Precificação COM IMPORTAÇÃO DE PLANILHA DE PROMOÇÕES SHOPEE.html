@@ -2145,7 +2145,7 @@ function applyPriceUpdate(type) {
     }
     function setupEventListeners() {
       // Login/logout
-      document.getElementById('logoutBtn').addEventListener('click', logout);
+      document.getElementById('logoutBtn')?.addEventListener('click', logout);
       
       // Tabs
       document.querySelectorAll('.tab-button').forEach(btn => {
