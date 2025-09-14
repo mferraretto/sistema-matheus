@@ -7,7 +7,8 @@
   height: 100%;
   transform: translateX(-100%);
   transition: transform 0.3s ease;
-  z-index: 50;
+  /* Ensure sidebar appears above navbar and other overlays on mobile */
+  z-index: 1100;
 }
 
 #sidebar-container.open {
@@ -18,7 +19,8 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 40;
+  /* Overlay needs lower z-index than sidebar but higher than page content */
+  z-index: 1050;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
