@@ -478,6 +478,15 @@ function collectSearchPages() {
 document.addEventListener('sidebarLoaded', collectSearchPages);
 
 document.addEventListener('navbarLoaded', () => {
+  const toggle = document.getElementById('sidebarToggle');
+  if (toggle) {
+    const clone = toggle.cloneNode(true);
+    toggle.replaceWith(clone);
+    clone.addEventListener('click', toggleSidebar);
+  }
+});
+
+document.addEventListener('navbarLoaded', () => {
   const input = document.getElementById('navbarSearch');
   const results = document.getElementById('navbarSearchResults');
   if (!input || !results) return;
