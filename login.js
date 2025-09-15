@@ -225,11 +225,11 @@ async function showUserArea(user) {
       perfil = String(snap.data().perfil).toLowerCase().trim();
       if (perfil === 'administrador') perfil = 'adm';
     } else {
-      perfil = perfilFallback || 'basico';
+      perfil = perfilFallback || 'usuario';
     }
     window.userPerfil = perfil;
 
-    if (['completo', 'adm'].includes(perfil)) {
+    if (['gestor', 'adm'].includes(perfil)) {
       const path = window.location.pathname.toLowerCase();
       if (
         path.endsWith('/index.html') ||
@@ -245,7 +245,7 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) verifica associação com expedição (gestor ou responsável)
-    if (perfil !== 'expedicao') {
+    if (perfil !== 'gestor expedicao') {
       await checkExpedicao(user);
     }
 
@@ -349,7 +349,7 @@ function restoreSidebar() {
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase().trim();
-  if (!currentPerfil) return;
+  if (!currentPerfil || currentPerfil === 'expedicao') return;
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
 
@@ -358,8 +358,8 @@ function applyPerfilRestrictions(perfil) {
 
   const nivelMenus = {
     adm: allIds,
-    completo: allIds,
-    basico: [
+    'usuario completo': allIds,
+    'usuario basico': [
       'menu-vendas',
       'menu-etiquetas',
       'menu-precificacao',
@@ -367,12 +367,32 @@ function applyPerfilRestrictions(perfil) {
       'menu-configuracoes',
       'menu-comunicacao',
     ],
-    expedicao: ['menu-expedicao', 'menu-configuracoes', 'menu-comunicacao'],
-    financeiro: [
+    cliente: [
       'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'gestor expedicao': [
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'responsavel financeiro': [
+      'menu-atualizacoes',
       'menu-financeiro',
       'menu-saques',
-      'menu-configuracoes',
+      'menu-gestao',
+      'menu-acompanhamento-gestor',
+      'menu-mentoria',
+      'menu-perfil-mentorado',
+      'menu-equipes',
+      'menu-produtos',
+      'menu-sku-associado',
+      'menu-desempenho',
+      'menu-acompanhamento',
       'menu-comunicacao',
     ],
   };
@@ -394,9 +414,23 @@ function applyPerfilRestrictions(perfil) {
       .toLowerCase()
       .split(',')
       .map((p) => p.trim());
-    const show =
-      allowedPerfis.includes(currentPerfil) || currentPerfil === 'adm';
+    let show = allowedPerfis.includes(currentPerfil);
     if (!show) {
+      if (
+        currentPerfil === 'cliente' &&
+        (allowedPerfis.includes('usuario') ||
+          allowedPerfis.includes('usuario basico') ||
+          allowedPerfis.includes('usuario completo'))
+      ) {
+        show = true;
+      } else if (
+        currentPerfil.startsWith('usuario') &&
+        allowedPerfis.includes('usuario')
+      ) {
+        show = true;
+      }
+    }
+    if (currentPerfil !== 'adm' && !show) {
       el.classList.add('hidden');
     } else {
       el.classList.remove('hidden');
@@ -407,7 +441,11 @@ function applyPerfilRestrictions(perfil) {
 function ensureFinanceiroMenu() {
   const menu = document.getElementById('menu-vendas');
   if (!menu) return;
-  if (window.isFinanceiroResponsavel || window.userPerfil === 'financeiro') {
+  if (
+    window.isFinanceiroResponsavel ||
+    window.userPerfil === 'responsavel' ||
+    window.userPerfil === 'gestor financeiro'
+  ) {
     menu.classList.remove('hidden');
   }
 }
