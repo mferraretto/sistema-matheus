@@ -568,26 +568,42 @@ document.addEventListener('sidebarLoaded', async () => {
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  function filterSidebarLinks(perfil, isADM) {
-    const links = document.querySelectorAll('#sidebar .sidebar-link');
-    links.forEach((a) => {
+  const ADMIN_GESTOR_MENU_IDS = [
+    'menu-gestao',
+    'menu-financeiro',
+    'menu-atualizacoes',
+    'menu-comunicacao',
+    'menu-saques',
+    'menu-acompanhamento-gestor',
+    'menu-mentoria',
+    'menu-perfil-mentorado',
+    'menu-equipes',
+    'menu-produtos',
+    'menu-sku-associado',
+    'menu-desempenho',
+  ];
+
+  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(
+    (id) => id !== 'menu-comunicacao',
+  );
+
+  function showOnly(ids) {
+    document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
       const li = a.closest('li') || a.parentElement;
-      if (!li) return;
+      if (li) li.style.display = 'none';
+    });
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      const li = el && (el.closest('li') || el.parentElement);
+      if (li) li.style.display = '';
+    });
+  }
 
-      if (isADM) {
-        li.style.display = '';
-        return;
-      }
-
-      const allowedAttr = a.getAttribute('data-perfil');
-      if (!allowedAttr) {
-        li.style.display = '';
-        return;
-      }
-
-      const allowed = allowedAttr.split(',').map((p) => p.trim().toLowerCase());
-
-      li.style.display = allowed.includes(perfil) ? '' : 'none';
+  function hideIds(ids) {
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      const li = el && (el.closest('li') || el.parentElement);
+      if (li) li.style.display = 'none';
     });
   }
 
@@ -695,13 +711,26 @@ document.addEventListener('sidebarLoaded', async () => {
       ].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
-      if (isGestor) {
+      if (isADM) {
+        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
+          const li = a.closest('li') || a.parentElement;
+          if (li) li.style.display = '';
+        });
+      } else if (isGestor) {
+        showOnly(ADMIN_GESTOR_MENU_IDS);
+        if (!['gestor', 'responsavel financeiro'].includes(perfil)) {
+          hideIds(['menu-sku-associado']);
+        }
         buildGestorSidebarLayout();
       } else if (isCliente) {
+        hideIds(CLIENTE_HIDDEN_MENU_IDS);
+        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
+          const li = a.closest('li') || a.parentElement;
+          if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id))
+            li.style.display = '';
+        });
         buildClienteSidebarLayout();
       }
-
-      filterSidebarLinks(perfil, isADM);
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
     }
