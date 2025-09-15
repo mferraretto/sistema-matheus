@@ -271,7 +271,9 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) verifica associação com expedição (gestor ou responsável)
-    await checkExpedicao(user);
+    if (perfil !== 'gestor expedicao') {
+      await checkExpedicao(user);
+    }
 
     // 3) localiza responsável financeiro do usuário, se houver
     try {
@@ -335,11 +337,17 @@ function applyExpedicaoSidebar() {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
-    const expLink = document.getElementById('menu-expedicao');
-    const expLi = expLink ? expLink.closest('li') : null;
+    const allowedIds = [
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ];
+    const allowedLis = allowedIds
+      .map((id) => document.getElementById(id)?.closest('li'))
+      .filter(Boolean);
 
     sidebar.querySelectorAll('li').forEach((li) => {
-      if (expLi && (li === expLi || expLi.contains(li))) {
+      if (allowedLis.some((ali) => ali === li || ali.contains(li))) {
         li.classList.remove('hidden');
         li.style.display = '';
       } else {
@@ -368,12 +376,66 @@ function restoreSidebar() {
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase().trim();
   if (!currentPerfil || currentPerfil === 'expedicao') return;
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  const menuLinks = Array.from(sidebar.querySelectorAll('a[id^="menu-"]'));
+  const allIds = menuLinks.map((a) => a.id);
+
+  const nivelMenus = {
+    adm: allIds,
+    'usuario completo': allIds,
+    'usuario basico': [
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'gestor expedicao': [
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'responsavel financeiro': [
+      'menu-atualizacoes',
+      'menu-financeiro',
+      'menu-saques',
+      'menu-gestao',
+      'menu-acompanhamento-gestor',
+      'menu-acompanhamento-tiny',
+      'menu-acompanhamento-vendas',
+      'menu-produtos-vendidos',
+      'menu-mentoria',
+      'menu-perfil-mentorado',
+      'menu-equipes',
+      'menu-produtos',
+      'menu-sku-associado',
+      'menu-desempenho',
+      'menu-acompanhamento',
+      'menu-comunicacao',
+    ],
+  };
+
+  const allowed = nivelMenus[currentPerfil];
+  if (allowed) {
+    menuLinks.forEach((link) => {
+      const li = link.closest('li');
+      if (allowed.includes(link.id)) {
+        li.classList.remove('hidden');
+      } else {
+        li.classList.add('hidden');
+      }
+    });
+  }
+
   document.querySelectorAll('[data-perfil]').forEach((el) => {
-    const allowed = (el.getAttribute('data-perfil') || '')
+    const allowedPerfis = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
       .split(',')
       .map((p) => p.trim());
-    if (!allowed.includes(currentPerfil)) {
+    if (currentPerfil !== 'adm' && !allowedPerfis.includes(currentPerfil)) {
       el.classList.add('hidden');
     } else {
       el.classList.remove('hidden');
