@@ -568,6 +568,104 @@ document.addEventListener('sidebarLoaded', async () => {
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  const NIVEL_MENUS = {
+    adm: [
+      'menu-gestao',
+      'menu-financeiro',
+      'menu-atualizacoes',
+      'menu-saques',
+      'menu-acompanhamento-gestor',
+      'menu-acompanhamento-tiny',
+      'menu-acompanhamento-vendas',
+      'menu-produtos-vendidos',
+      'menu-mentoria',
+      'menu-perfil-mentorado',
+      'menu-equipes',
+      'menu-produtos',
+      'menu-sku-associado',
+      'menu-desempenho',
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-precificacao-custeio',
+      'menu-precificacao-historico',
+      'menu-marketing',
+      'menu-anuncios',
+      'menu-expedicao',
+      'menu-gestao-contas',
+      'menu-acompanhamento',
+      'menu-outros',
+      'menu-configuracoes',
+      'menu-configuracoes-usuarios',
+      'menu-comunicacao',
+    ],
+    'usuario completo': [
+      'menu-desempenho',
+      'menu-vendas',
+      'menu-saques',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-precificacao-custeio',
+      'menu-precificacao-historico',
+      'menu-marketing',
+      'menu-anuncios',
+      'menu-expedicao',
+      'menu-gestao-contas',
+      'menu-acompanhamento',
+      'menu-outros',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'usuario basico': [
+      'menu-desempenho',
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'gestor expedicao': [
+      'menu-desempenho',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    'responsavel financeiro': [
+      'menu-atualizacoes',
+      'menu-financeiro',
+      'menu-saques',
+      'menu-acompanhamento-tiny',
+      'menu-acompanhamento-gestor',
+      'menu-acompanhamento',
+      'menu-produtos-vendidos',
+      'menu-desempenho',
+      'menu-perfil-mentorado',
+      'menu-produtos',
+      'menu-sku-associado',
+      'menu-equipes',
+      'menu-comunicacao',
+    ],
+  };
+
+  function applyNivelMenus(perfil) {
+    const allowed = NIVEL_MENUS[perfil];
+    if (!allowed) return false;
+    document.querySelectorAll('#sidebar [id^="menu-"]').forEach((el) => {
+      const li = el.closest('li') || el.parentElement;
+      if (li) li.style.display = allowed.includes(el.id) ? '' : 'none';
+    });
+    const painel = document.getElementById('menu-configuracoes-usuarios');
+    if (painel && perfil !== 'adm') painel.closest('li').style.display = 'none';
+    if (perfil === 'usuario basico') {
+      const custeio = document.getElementById('menu-precificacao-custeio');
+      if (custeio) custeio.closest('li').style.display = 'none';
+      const historico = document.getElementById('menu-precificacao-historico');
+      if (historico) historico.closest('li').style.display = 'none';
+    }
+    return true;
+  }
+
   const ADMIN_GESTOR_MENU_IDS = [
     'menu-gestao',
     'menu-financeiro',
@@ -711,6 +809,8 @@ document.addEventListener('sidebarLoaded', async () => {
       const perfil = ((snap.exists() && String(snap.data().perfil || '')) || '')
         .trim()
         .toLowerCase();
+
+      if (applyNivelMenus(perfil)) return;
 
       const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
       const isGestor = [

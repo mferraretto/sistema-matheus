@@ -76,7 +76,7 @@ window.saveDisplayName = async () => {
   }
   try {
     const pass = getPassphrase() || `chave-${user.uid}`;
-    let perfil = 'Cliente';
+    let perfil = 'Usuario Basico';
     const uidRef = doc(db, 'uid', user.uid);
     const snap = await getDoc(uidRef);
     if (snap.exists()) {
@@ -367,7 +367,20 @@ function restoreSidebar() {
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = (perfil || '').toLowerCase().trim();
-  if (!currentPerfil || currentPerfil === 'expedicao') return;
+  const known = [
+    'usuario completo',
+    'usuario basico',
+    'gestor expedicao',
+    'gestores de expedição',
+    'responsavel financeiro',
+    'adm',
+  ];
+  if (
+    !currentPerfil ||
+    known.includes(currentPerfil) ||
+    currentPerfil === 'expedicao'
+  )
+    return;
   document.querySelectorAll('[data-perfil]').forEach((el) => {
     const allowed = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
