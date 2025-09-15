@@ -156,6 +156,9 @@ body.has-sidebar .content-wrapper {
 .submenu {
   padding-left: 0;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
 }
 
 .submenu-link {
@@ -170,20 +173,12 @@ body.has-sidebar .content-wrapper {
   color: var(--primary-light);
 }
 
-@media print {
-  .submenu {
-    overflow: hidden;
-    max-height: 0;
-    transition: max-height 0.3s ease;
-  }
+.submenu-toggle svg {
+  transition: transform 0.3s ease;
+}
 
-  .submenu-toggle svg {
-    transition: transform 0.3s ease;
-  }
-
-  .submenu-toggle.open svg {
-    transform: rotate(180deg);
-  }
+.submenu-toggle.open svg {
+  transform: rotate(180deg);
 }
 
 /* Client sidebar layout */
