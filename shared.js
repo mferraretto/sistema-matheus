@@ -575,14 +575,11 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-comunicacao',
     'menu-saques',
     'menu-acompanhamento-gestor',
-    'menu-acompanhamento-tiny',
-    'menu-acompanhamento-vendas',
     'menu-mentoria',
     'menu-perfil-mentorado',
     'menu-equipes',
     'menu-produtos',
     'menu-sku-associado',
-    'menu-produtos-vendidos',
     'menu-desempenho',
   ];
 
@@ -622,11 +619,8 @@ document.addEventListener('sidebarLoaded', async () => {
     const atualizacoes = getLi('menu-atualizacoes');
     const financeiro = getLi('menu-financeiro');
     const saques = getLi('menu-saques');
-    const tiny = getLi('menu-acompanhamento-tiny');
     const gestao = getLi('menu-gestao');
     const acompGestor = getLi('menu-acompanhamento-gestor');
-    const acompVendas = getLi('menu-acompanhamento-vendas');
-    const produtosVendidos = getLi('menu-produtos-vendidos');
     const mentoria = getLi('menu-mentoria');
     const perfilMentorado = getLi('menu-perfil-mentorado');
     const produtos = getLi('menu-produtos');
@@ -666,14 +660,9 @@ document.addEventListener('sidebarLoaded', async () => {
       return mainLi;
     }
 
-    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [
-      saques,
-      tiny,
-    ]);
+    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques]);
     const gestaoGroup = createGroup(gestao, 'menuGestao', [
       acompGestor,
-      acompVendas,
-      produtosVendidos,
       mentoria,
       perfilMentorado,
       produtos,

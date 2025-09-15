@@ -182,7 +182,6 @@ async function carregar() {
     carregarFaturamentoMeta(listaUsuarios, mes),
     carregarDevolucoes(listaUsuarios, mes),
   ]);
-  await carregarTotaisPedidosTiny(listaUsuarios);
   renderResumoUsuarios(Object.values(resumoUsuarios));
   renderTabelaSaques();
   if (uid !== 'todos') {
@@ -196,7 +195,6 @@ async function carregar() {
     if (texto) texto.textContent = '';
     if (resumo) resumo.textContent = '';
   }
-  await renderPedidosTiny7Dias(listaUsuarios);
 }
 
 function atualizarContexto() {
@@ -470,54 +468,6 @@ async function carregarDevolucoes(usuarios, mes) {
   }
 }
 
-async function carregarTotaisPedidosTiny(usuarios) {
-  for (const usuario of usuarios) {
-    const resumoRef = doc(db, `uid/${usuario.uid}/pedidosTinyResumo`, 'total');
-    let totalBruto = 0;
-    let totalLiquido = 0;
-    let ultimoDoc = null;
-    try {
-      const resumoSnap = await getDoc(resumoRef);
-      if (resumoSnap.exists()) {
-        const dados = resumoSnap.data();
-        totalBruto = Number(dados.totalBruto) || 0;
-        totalLiquido = Number(dados.totalLiquido) || 0;
-        ultimoDoc = dados.ultimoDoc || null;
-      }
-    } catch (_) {}
-
-    let col = collection(db, `usuarios/${usuario.uid}/pedidostiny`);
-    if (ultimoDoc) {
-      col = query(col, orderBy('__name__'), startAfter(ultimoDoc));
-    }
-    const snap = await getDocs(col);
-    let extraBruto = 0;
-    let extraLiquido = 0;
-    snap.docs.forEach((d) => {
-      const pedido = d.data();
-      extraBruto += toNumber(pedido.valor || pedido.total || 0);
-      extraLiquido += calcularLiquido(pedido);
-    });
-    if (snap.docs.length) {
-      const last = snap.docs[snap.docs.length - 1];
-      totalBruto += extraBruto;
-      totalLiquido += extraLiquido;
-      ultimoDoc = last.id;
-      await setDocWithCopy(
-        resumoRef,
-        { totalBruto, totalLiquido, ultimoDoc },
-        usuario.uid,
-      );
-    }
-    const existente = resumoUsuarios[usuario.uid].faturamento || {};
-    resumoUsuarios[usuario.uid].faturamento = {
-      ...existente,
-      faturado: totalLiquido,
-      bruto: totalBruto,
-    };
-  }
-}
-
 async function calcularFaturamentoDiaDetalhado(uid, dia) {
   const lojasSnap = await getDocs(
     collection(db, `uid/${uid}/faturamento/${dia}/lojas`),
@@ -685,7 +635,6 @@ async function subscribeKPIs() {
         metaMulti.appendChild(item);
       }
     }
-    await carregarGraficoPedidosTiny('todos', mes);
     return;
   }
   if (metaEl && metaProjEl && metaWrap && metaMulti) {
@@ -789,7 +738,6 @@ async function subscribeKPIs() {
     devEl.textContent = qtd;
   });
   kpiUnsubs.push(unsubDev);
-  await carregarGraficoPedidosTiny(uid, mes);
 }
 
 function updateSalesChart(labels, data) {
@@ -874,153 +822,6 @@ function createResumoCard(u) {
     <div class="text-sm">Comissão: R$ ${(u.saques?.comissao || 0).toLocaleString('pt-BR')}</div>
     <div class="progress ${statusColor}"><div class="progress-bar" style="width:${progresso.toFixed(0)}%"></div></div>`;
   return card;
-}
-
-async function renderPedidosTiny7Dias(lista) {
-  const container = document.getElementById('financeiroUsuarios');
-  if (!container) return;
-  container.innerHTML = '';
-  const hoje = new Date();
-  const inicioAtual = new Date();
-  inicioAtual.setDate(hoje.getDate() - 6);
-  const inicioAnterior = new Date();
-  inicioAnterior.setDate(hoje.getDate() - 13);
-  const fimAnterior = new Date();
-  fimAnterior.setDate(hoje.getDate() - 7);
-  const fimAtualStr = hoje.toISOString().slice(0, 10);
-  const inicioAnteriorStr = inicioAnterior.toISOString().slice(0, 10);
-  const cards = [];
-  for (const u of lista) {
-    let bruto = 0;
-    let liquido = 0;
-    let brutoAnt = 0;
-    let liquidoAnt = 0;
-    let resumoCarregado = false;
-    try {
-      const resumoRef = doc(db, `uid/${u.uid}/resumoVendas`, 'ultimos7');
-      const resumoSnap = await getDoc(resumoRef);
-      if (resumoSnap.exists() && resumoSnap.data().atualizado === fimAtualStr) {
-        const dados = resumoSnap.data();
-        bruto = Number(dados.bruto7d) || 0;
-        liquido = Number(dados.liquido7d) || 0;
-        brutoAnt = Number(dados.brutoAnterior7d) || 0;
-        liquidoAnt = Number(dados.liquidoAnterior7d) || 0;
-        resumoCarregado = true;
-      }
-    } catch (_) {}
-    if (!resumoCarregado) {
-      const pass = getPassphrase() || `chave-${u.uid}`;
-      const baseCol = collection(db, `usuarios/${u.uid}/pedidostiny`);
-      const q = query(
-        baseCol,
-        orderBy('data'),
-        startAt(inicioAnteriorStr),
-        endAt(fimAtualStr),
-      );
-      const snap = await getDocs(q);
-      for (const d of snap.docs) {
-        let pedido = await loadSecureDoc(
-          db,
-          `usuarios/${u.uid}/pedidostiny`,
-          d.id,
-          pass,
-        );
-        if (!pedido) {
-          const raw = d.data();
-          if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-        }
-        if (!pedido) continue;
-        const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
-        const data = parseDate(dataStr);
-        if (data >= inicioAtual && data <= hoje) {
-          bruto += toNumber(pedido.valor || pedido.total || 0);
-          liquido += calcularLiquido(pedido);
-        } else if (data >= inicioAnterior && data <= fimAnterior) {
-          brutoAnt += toNumber(pedido.valor || pedido.total || 0);
-          liquidoAnt += calcularLiquido(pedido);
-        }
-      }
-      try {
-        const resumoRef = doc(db, `uid/${u.uid}/resumoVendas`, 'ultimos7');
-        await setDocWithCopy(
-          resumoRef,
-          {
-            atualizado: fimAtualStr,
-            bruto7d: bruto,
-            liquido7d: liquido,
-            brutoAnterior7d: brutoAnt,
-            liquidoAnterior7d: liquidoAnt,
-          },
-          u.uid,
-        );
-      } catch (_) {}
-    }
-    const variacao = liquidoAnt
-      ? ((liquido - liquidoAnt) / liquidoAnt) * 100
-      : liquido
-        ? 100
-        : 0;
-    const card = document.createElement('div');
-    card.className = 'card p-4 text-sm';
-    const varClass = variacao >= 0 ? 'text-green-600' : 'text-red-600';
-    card.innerHTML = `
-      <h4 class="font-bold mb-2">${u.nome}</h4>
-      <div>Bruto 7d: ${formatCurrency(bruto)}</div>
-      <div>Líquido 7d: ${formatCurrency(liquido)}</div>
-      <div class="${varClass}">Evolução: ${variacao >= 0 ? '+' : ''}${variacao.toFixed(1)}%</div>`;
-    cards.push({ card, bruto });
-  }
-  cards
-    .sort((a, b) => b.bruto - a.bruto)
-    .slice(0, 10)
-    .forEach((c) => container.appendChild(c.card));
-}
-
-async function carregarGraficoPedidosTiny(uid, mes) {
-  const usuarios =
-    uid === 'todos'
-      ? usuariosCache
-      : usuariosCache.filter((u) => u.uid === uid);
-  const agregados = {};
-  const [ano, mesNum] = mes.split('-').map(Number);
-  const inicio = new Date(ano, mesNum - 1, 1);
-  const fim = new Date(ano, mesNum, 0);
-  const inicioStr = inicio.toISOString().slice(0, 10);
-  const fimStr = fim.toISOString().slice(0, 10);
-  for (const u of usuarios) {
-    const pass = getPassphrase() || `chave-${u.uid}`;
-    try {
-      const baseCol = collection(db, `usuarios/${u.uid}/pedidostiny`);
-      const q = query(
-        baseCol,
-        orderBy('data'),
-        startAt(inicioStr),
-        endAt(fimStr),
-      );
-      const snap = await getDocs(q);
-      for (const d of snap.docs) {
-        let pedido = await loadSecureDoc(
-          db,
-          `usuarios/${u.uid}/pedidostiny`,
-          d.id,
-          pass,
-        );
-        if (!pedido) {
-          const raw = d.data();
-          if (raw && !raw.encrypted && !raw.encryptedData) pedido = raw;
-        }
-        if (!pedido) continue;
-        const dataStr = pedido.data || pedido.dataPedido || pedido.date || '';
-        const data = parseDate(dataStr);
-        if (isNaN(data)) continue;
-        const dia = data.toISOString().slice(0, 10);
-        agregados[dia] = (agregados[dia] || 0) + calcularLiquido(pedido);
-      }
-    } catch (_) {}
-  }
-  const labels = Object.keys(agregados).sort();
-  const data = labels.map((l) => agregados[l]);
-  updateSalesChart(labels.map(formatarData), data);
 }
 
 function renderTabelaSaques() {

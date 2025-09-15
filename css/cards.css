@@ -34,7 +34,7 @@
   color: var(--white);
 }
 
-/* Cards de resumo - usados em sobras-tabs/acompanhamento.html, acompanhamento-tiny.html, pedidos-tiny.html e CONTROLE DE SOBRAS SHOPEE.html */
+/* Cards de resumo - usados em sobras-tabs/acompanhamento.html e CONTROLE DE SOBRAS SHOPEE.html */
 .resumo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

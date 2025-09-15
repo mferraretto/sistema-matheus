@@ -1694,7 +1694,6 @@ const dataInput = document.getElementById("dataFaturamento");
           const pass = getPassphrase() || usuarioLogado.uid;
 
           const pedidosRef = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais');
-          const pedidosTinyRef = db.collection('usuarios').doc(usuarioLogado.uid).collection('pedidostiny');
           for (const row of rows) {
             const statusPedido = row['Status do pedido'] || '';
             const headersPedido = Object.keys(row);
@@ -1733,26 +1732,6 @@ const dataInput = document.getElementById("dataFaturamento");
             if (numeroRastreamento) {
               pedidoPayload.numeroRastreamento = numeroRastreamento;
               pedidoPayload.etiquetaImpressa = true;
-            }
-
-            // Atualiza coleção pedidostiny evitando duplicações
-            const tinyDocRef = pedidosTinyRef.doc(pedidoId);
-            const tinyDoc = await tinyDocRef.get();
-            let updateTiny = true;
-            if (tinyDoc.exists) {
-              let dadosTiny = tinyDoc.data();
-              if (dadosTiny.encrypted) {
-                try {
-                  dadosTiny = JSON.parse(await decryptString(dadosTiny.encrypted, pass));
-                } catch (e) { dadosTiny = null; }
-              }
-              if (dadosTiny && JSON.stringify(dadosTiny) === JSON.stringify(pedidoPayload)) {
-                updateTiny = false;
-              }
-            }
-            if (updateTiny) {
-              const encTiny = await encryptString(JSON.stringify(pedidoPayload), pass);
-              await tinyDocRef.set({ encrypted: encTiny, uid: usuarioLogado.uid });
             }
 
             const pedidoDocRef = pedidosRef

@@ -155,41 +155,7 @@
         batch.set(docRef, { ...o, createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       });
       await batch.commit();
-      if (novos.length) await marcarPedidosTinyColetados(novos);
       return novos.length;
-    }
-
-    // Marca pedidos correspondentes em pedidostiny como coletados
-    async function marcarPedidosTinyColetados(orders) {
-      if (!currentUser) return;
-      const tinyCol = db.collection('usuarios').doc(currentUser.uid).collection('pedidostiny');
-      for (const o of orders) {
-        try {
-          // procura pelo pedido usando a chave interna "idPedido"
-          let qSnap = await tinyCol.where('idPedido', '==', o.numeroPedido).limit(1).get();
-          // fallback para alguns registros que utilizam "numeroPedido"
-          if (qSnap.empty) {
-            qSnap = await tinyCol.where('numeroPedido', '==', o.numeroPedido).limit(1).get();
-          }
-          if (!qSnap.empty) {
-            const foundRef = tinyCol.doc(qSnap.docs[0].id);
-            const updateData = { coletado: true };
-            if (o.horarioColeta) updateData.horarioColeta = o.horarioColeta;
-            await foundRef.set(updateData, { merge: true });
-            continue;
-          }
-          // por fim, tenta atualizar um documento cujo ID seja o número do pedido
-          const docRef = tinyCol.doc(o.numeroPedido);
-          const docSnap = await docRef.get();
-          if (docSnap.exists) {
-            const updateData = { coletado: true };
-            if (o.horarioColeta) updateData.horarioColeta = o.horarioColeta;
-            await docRef.set(updateData, { merge: true });
-          }
-        } catch (err) {
-          console.error('Erro ao marcar pedido coletado no Tiny:', o.numeroPedido, err);
-        }
-      }
     }
 
     // Fluxo completo de importação
