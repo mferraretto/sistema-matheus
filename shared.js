@@ -42,7 +42,11 @@
 
   function loadTailwind() {
     return new Promise(function (resolve, reject) {
-      if (document.querySelector('link[href*="tailwind"]')) {
+      if (
+        document.querySelector('link[href*="tailwind"]') ||
+        document.querySelector('script[src*="cdn.tailwindcss.com"]') ||
+        window.tailwind
+      ) {
         resolve();
         return;
       }
