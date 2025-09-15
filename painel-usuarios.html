@@ -95,13 +95,19 @@
         }
 
         try {
+          let perfil = '';
           const snap = await db.collection('uid').doc(user.uid).get();
           const enc = snap.data()?.encrypted;
-          if (!enc) throw new Error('Sem dados');
-          const { decryptString } = await import('./crypto.js');
-          const pass = getPassphrase() || `chave-${user.uid}`;
-          const data = JSON.parse(await decryptString(enc, pass));
-          const perfil = String(data.perfil || '').toLowerCase().trim();
+          if (enc) {
+            const { decryptString } = await import('./crypto.js');
+            const pass = getPassphrase() || `chave-${user.uid}`;
+            const data = JSON.parse(await decryptString(enc, pass));
+            perfil = data.perfil || '';
+          } else {
+            const userSnap = await db.collection('usuarios').doc(user.uid).get();
+            perfil = userSnap.data()?.perfil || '';
+          }
+          perfil = String(perfil).toLowerCase().trim();
           if (!['adm', 'admin', 'administrador'].includes(perfil)) {
             alert('Acesso permitido apenas para administradores.');
             window.location.href = 'index.html';
