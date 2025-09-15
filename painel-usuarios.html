@@ -177,10 +177,26 @@
           const resp = respArr.length
             ? respArr.join(', ')
             : info.responsavelExpedicaoEmail || 'N/A';
-          const email = info.email || 'N/A';
+          const emailRaw = info.email || '';
+          const email = emailRaw || 'N/A';
           const item = document.createElement('li');
-          item.className = 'p-2 bg-gray-50 border rounded';
-          item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+          item.className =
+            'p-2 bg-gray-50 border rounded flex justify-between items-center';
+          const infoSpan = document.createElement('span');
+          infoSpan.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+          const editBtn = document.createElement('button');
+          editBtn.className = 'bg-yellow-500 text-white px-2 py-1 rounded';
+          editBtn.innerText = 'Editar';
+          editBtn.addEventListener('click', () => {
+            document.getElementById('uid').value = doc.id;
+            document.getElementById('nome').value = data.nome || '';
+            document.getElementById('email').value = emailRaw;
+            document.getElementById('emailExpedicao').value = respArr.join(', ');
+            document.getElementById('perfil').value =
+              data.perfil || 'Usuario Completo';
+          });
+          item.appendChild(infoSpan);
+          item.appendChild(editBtn);
           lista.appendChild(item);
         }
       }
