@@ -30,8 +30,8 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
   try {
-    const snap = await getDoc(doc(db, 'uid', user.uid));
-    const perfil = String(snap.data().perfil || '')
+    const snap = await getDoc(doc(db, 'usuarios', user.uid));
+    const perfil = String(snap.data()?.perfil || '')
       .toLowerCase()
       .trim();
     isAdmin =
