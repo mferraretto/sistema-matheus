@@ -9,7 +9,6 @@ import {
   where,
   getDocs,
   doc,
-  getDoc,
   setDoc,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
@@ -17,6 +16,7 @@ import {
   onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
+import { loadUserProfile } from './user-profile.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -117,24 +117,16 @@ async function carregarPerfis() {
 
   if (singleUid) {
     try {
-      const userDoc = await getDoc(doc(db, 'usuarios', singleUid));
-      if (!userDoc.exists()) {
+      const profile = await loadUserProfile(singleUid);
+      if (!profile) {
         const p = document.createElement('p');
         p.className = 'text-sm text-gray-500';
         p.textContent = 'Usuário não encontrado.';
         list.appendChild(p);
         return;
       }
-      const email = userDoc.data().email || singleUid;
-      let perfilData = {};
-      try {
-        const perfilSnap = await getDoc(doc(db, 'perfilMentorado', singleUid));
-        if (perfilSnap.exists()) {
-          perfilData = perfilSnap.data();
-        }
-      } catch (e) {
-        console.error('Erro ao carregar perfil do mentorado:', e);
-      }
+      const email = profile.email || singleUid;
+      const perfilData = profile.perfilMentorado || {};
       list.appendChild(createPerfilCard(singleUid, email, perfilData));
     } catch (e) {
       console.error('Erro ao carregar usuário:', e);
@@ -150,16 +142,9 @@ async function carregarPerfis() {
   const snap = await getDocs(q);
   for (const docSnap of snap.docs) {
     const uid = docSnap.id;
-    const email = docSnap.data().email || uid;
-    let perfilData = {};
-    try {
-      const perfilSnap = await getDoc(doc(db, 'perfilMentorado', uid));
-      if (perfilSnap.exists()) {
-        perfilData = perfilSnap.data();
-      }
-    } catch (e) {
-      console.error('Erro ao carregar perfil do mentorado:', e);
-    }
+    const profile = await loadUserProfile(uid);
+    const email = profile?.email || uid;
+    const perfilData = profile?.perfilMentorado || {};
     list.appendChild(createPerfilCard(uid, email, perfilData));
   }
 }

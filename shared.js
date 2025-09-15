@@ -556,13 +556,15 @@ document.addEventListener('sidebarLoaded', async () => {
   const [
     { initializeApp, getApps },
     { getAuth, onAuthStateChanged },
-    { getFirestore, doc, getDoc },
+    { getFirestore },
     { firebaseConfig },
+    { loadUserProfile },
   ] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js'),
     import('./firebase-config.js'),
+    import('./user-profile.js'),
   ]);
 
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -714,14 +716,8 @@ document.addEventListener('sidebarLoaded', async () => {
 
   async function applySidebarPermissions(uid) {
     try {
-      const snap = await getDoc(doc(db, 'usuarios', uid));
-      const rawPerfil = (
-        (snap.exists() && String(snap.data().perfil || '')) ||
-        ''
-      )
-        .trim()
-        .toLowerCase();
-      const perfil = normalizePerfil(rawPerfil);
+      const profile = await loadUserProfile(uid);
+      const perfil = normalizePerfil(profile?.perfil || '');
 
       const isADM = perfil === 'adm';
       const isGestor = perfil === 'gestor';

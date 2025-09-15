@@ -5,7 +5,6 @@ import {
 import {
   getFirestore,
   doc,
-  getDoc,
   setDoc,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
@@ -14,6 +13,7 @@ import {
   sendPasswordResetEmail,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
+import { loadUserProfile } from './user-profile.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -54,9 +54,8 @@ function renderStores(stores = []) {
 
 async function loadProfile(uid) {
   try {
-    const snap = await getDoc(doc(db, 'perfil', uid));
-    if (snap.exists()) {
-      const data = snap.data();
+    const data = await loadUserProfile(uid);
+    if (data) {
       fotoPerfilData = data.fotoPerfil || '';
       if (fotoPerfilData) {
         document.getElementById('fotoPreview').src = fotoPerfilData;

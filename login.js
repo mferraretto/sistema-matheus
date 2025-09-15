@@ -38,6 +38,7 @@ import {
 import { encryptString, decryptString } from './crypto.js';
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 import { showToast } from './utils.js';
+import { loadUserProfile } from './user-profile.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -219,14 +220,17 @@ async function showUserArea(user) {
   }
 
   try {
-    const snap = await getDoc(doc(db, 'usuarios', user.uid));
-    let perfil = '';
-    if (snap.exists() && snap.data().perfil) {
-      perfil = normalizePerfil(snap.data().perfil);
-    } else {
-      perfil = normalizePerfil(perfilFallback || 'usuario');
+    const profile = await loadUserProfile(user.uid);
+    if (nameEl && profile?.nome) {
+      nameEl.textContent = profile.nome;
     }
+    let perfil = normalizePerfil(
+      profile?.perfil || perfilFallback || 'usuario',
+    );
     window.userPerfil = perfil;
+    window.authUser = user;
+    window.userProfile = profile;
+    window.userPerms = { perfil, isAdm: profile?.isAdm || false };
 
     if (['gestor', 'adm'].includes(perfil)) {
       const path = window.location.pathname.toLowerCase();
@@ -250,7 +254,7 @@ async function showUserArea(user) {
 
     // 3) localiza responsável financeiro do usuário, se houver
     try {
-      let respEmail = snap.data()?.responsavelFinanceiroEmail;
+      let respEmail = profile?.responsavelFinanceiroEmail;
       if (!respEmail) {
         const altDoc = await getDoc(doc(db, 'uid', user.uid));
         if (altDoc.exists())
