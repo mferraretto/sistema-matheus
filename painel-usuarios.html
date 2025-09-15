@@ -1,130 +1,184 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Gerenciamento de Usuários</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20240826">
-</head>
-<body class="bg-gray-100">
-  <div class="app-container">
-    <div id="sidebar-container"></div>
-    <div id="navbar-container"></div>
-    <div class="main-content p-6">
-      <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-        <h1 class="text-2xl font-bold mb-4">👥 Gerenciamento de Usuários</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Gerenciamento de Usuários</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20240826" />
+  </head>
+  <body class="bg-gray-100">
+    <div class="app-container">
+      <div id="sidebar-container"></div>
+      <div id="navbar-container"></div>
+      <div class="main-content p-6">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+          <h1 class="text-2xl font-bold mb-4">👥 Gerenciamento de Usuários</h1>
 
-        <form id="userForm" class="space-y-4">
-          <input type="text" id="uid" placeholder="UID do Usuário" class="w-full p-2 border rounded">
-          <input type="text" id="nome" placeholder="Nome do Usuário" class="w-full p-2 border rounded">
-          <input type="email" id="email" placeholder="E-mail do Usuário" class="w-full p-2 border rounded">
-          <input type="text" id="emailExpedicao" placeholder="E-mails Responsável Expedição (até 2, separados por vírgula)" class="w-full p-2 border rounded">
-      <select id="perfil" class="w-full p-2 border rounded">
-        <option value="Cliente">Cliente</option>
-        <option value="ADM">ADM</option>
-        <option value="EXPEDICAO">Expedição</option>
-      </select>
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Salvar Usuário</button>
-    </form>
+          <form id="userForm" class="space-y-4">
+            <input
+              type="text"
+              id="uid"
+              placeholder="UID do Usuário"
+              class="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              id="nome"
+              placeholder="Nome do Usuário"
+              class="w-full p-2 border rounded"
+            />
+            <input
+              type="email"
+              id="email"
+              placeholder="E-mail do Usuário"
+              class="w-full p-2 border rounded"
+            />
+            <input
+              type="text"
+              id="emailExpedicao"
+              placeholder="E-mails Responsável Expedição (até 2, separados por vírgula)"
+              class="w-full p-2 border rounded"
+            />
+            <select id="perfil" class="w-full p-2 border rounded">
+              <option value="Usuario Completo">Usuário Completo</option>
+              <option value="Usuario Basico">Usuário Básico</option>
+              <option value="Gestor Expedicao">Gestor Expedição</option>
+              <option value="Responsavel Financeiro">
+                Responsável Financeiro
+              </option>
+              <option value="ADM">ADM</option>
+            </select>
+            <button
+              type="submit"
+              class="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Salvar Usuário
+            </button>
+          </form>
 
-    <hr class="my-6">
+          <hr class="my-6" />
 
-    <h2 class="text-xl font-semibold mb-2">📋 Lista de Usuários</h2>
-    <ul id="listaUsuarios" class="space-y-2"></ul>
-  </div>
- </div>
+          <h2 class="text-xl font-semibold mb-2">📋 Lista de Usuários</h2>
+          <ul id="listaUsuarios" class="space-y-2"></ul>
+        </div>
+      </div>
     </div>
     <script src="shared.js"></script>
 
-  <script type="module">
-import { firebaseConfig, getPassphrase } from './firebase-config.js';
+    <script type="module">
+      import { firebaseConfig, getPassphrase } from './firebase-config.js';
 
-if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-
-    firebase.auth().onAuthStateChanged(async user => {
-      if (!user) {
-        window.location.href = 'index.html?login=1';
-         return;
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
       }
+      const db = firebase.firestore();
 
-      try {
-        const snap = await db.collection('uid').doc(user.uid).get();
-        const enc = snap.data()?.encrypted;
-        if (!enc) throw new Error('Sem dados');
-        const { decryptString } = await import('./crypto.js');
-        const pass = getPassphrase() || `chave-${user.uid}`;
-        const data = JSON.parse(await decryptString(enc, pass));
-        if (data.perfil !== 'ADM') {
-          alert('Acesso permitido apenas para administradores.');
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          window.location.href = 'index.html?login=1';
+          return;
+        }
+
+        try {
+          const snap = await db.collection('uid').doc(user.uid).get();
+          const enc = snap.data()?.encrypted;
+          if (!enc) throw new Error('Sem dados');
+          const { decryptString } = await import('./crypto.js');
+          const pass = getPassphrase() || `chave-${user.uid}`;
+          const data = JSON.parse(await decryptString(enc, pass));
+          if (data.perfil !== 'ADM') {
+            alert('Acesso permitido apenas para administradores.');
+            window.location.href = 'index.html';
+          }
+        } catch (err) {
+          console.error('Erro ao verificar perfil do usuário:', err);
           window.location.href = 'index.html';
         }
-      } catch (err) {
-        console.error('Erro ao verificar perfil do usuário:', err);
-        window.location.href = 'index.html';
+      });
+      const form = document.getElementById('userForm');
+      const lista = document.getElementById('listaUsuarios');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const uid = document.getElementById('uid').value.trim();
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const emailExpedicaoRaw = document
+          .getElementById('emailExpedicao')
+          .value.trim();
+        const gestoresEmails = emailExpedicaoRaw
+          .split(',')
+          .map((e) => e.trim())
+          .filter((e) => e);
+        if (gestoresEmails.length > 2) {
+          alert('Informe no máximo 2 e-mails de gestores de expedição.');
+          return;
+        }
+        const perfil = document.getElementById('perfil').value;
+
+        if (uid && nome && email) {
+          const { encryptString } = await import('./crypto.js');
+          const pass = getPassphrase() || `chave-${uid}`;
+          await db
+            .collection('uid')
+            .doc(uid)
+            .set({
+              uid,
+              email,
+              responsavelExpedicaoEmail: gestoresEmails[0] || null,
+              gestoresExpedicaoEmails: gestoresEmails,
+              encrypted: await encryptString(
+                JSON.stringify({ nome, perfil }),
+                pass,
+              ),
+            });
+          await db
+            .collection('usuarios')
+            .doc(uid)
+            .set({ perfil, email }, { merge: true });
+          alert('Usuário salvo com sucesso!');
+          carregarUsuarios();
+        }
+      });
+
+      async function carregarUsuarios() {
+        lista.innerHTML = '';
+        const { decryptString } = await import('./crypto.js');
+        const snapshot = await db.collection('uid').get();
+        for (const doc of snapshot.docs) {
+          const enc = doc.data().encrypted;
+          if (!enc) continue;
+          const pass = getPassphrase() || `chave-${doc.id}`;
+          const data = JSON.parse(await decryptString(enc, pass));
+          const info = doc.data();
+          const respArr = info.gestoresExpedicaoEmails || [];
+          const resp = respArr.length
+            ? respArr.join(', ')
+            : info.responsavelExpedicaoEmail || 'N/A';
+          const email = info.email || 'N/A';
+          const item = document.createElement('li');
+          item.className = 'p-2 bg-gray-50 border rounded';
+          item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+          lista.appendChild(item);
+        }
       }
-    });
-    const form = document.getElementById("userForm");
-    const lista = document.getElementById("listaUsuarios");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const uid = document.getElementById("uid").value.trim();
-      const nome = document.getElementById("nome").value.trim();
-      const email = document.getElementById("email").value.trim();
- const emailExpedicaoRaw = document.getElementById("emailExpedicao").value.trim();
-      const gestoresEmails = emailExpedicaoRaw.split(',').map(e => e.trim()).filter(e => e);
-      if (gestoresEmails.length > 2) {
-        alert("Informe no máximo 2 e-mails de gestores de expedição.");
-        return;
-      }
-      const perfil = document.getElementById("perfil").value;
-
-      if (uid && nome && email) {
-const { encryptString } = await import('./crypto.js');
-        const pass = getPassphrase() || `chave-${uid}`;
-        await db.collection('uid').doc(uid).set({
-          uid,
-          email,
- responsavelExpedicaoEmail: gestoresEmails[0] || null,
-          gestoresExpedicaoEmails: gestoresEmails,
-          encrypted: await encryptString(JSON.stringify({ nome, perfil }), pass)
-        });
-        await db.collection('usuarios').doc(uid).set({ perfil, email }, { merge: true });
-        alert("Usuário salvo com sucesso!");
-        carregarUsuarios();
-      }
-    });
-
-    async function carregarUsuarios() {
-      lista.innerHTML = "";
-            const { decryptString } = await import('./crypto.js');
-      const snapshot = await db.collection("uid").get();
-       for (const doc of snapshot.docs) {
-        const enc = doc.data().encrypted;
-        if (!enc) continue;
-        const pass = getPassphrase() || `chave-${doc.id}`;
-        const data = JSON.parse(await decryptString(enc, pass));
-        const info = doc.data();
-const respArr = info.gestoresExpedicaoEmails || [];
-        const resp = respArr.length ? respArr.join(', ') : (info.responsavelExpedicaoEmail || 'N/A');
-         const email = info.email || 'N/A';
-        const item = document.createElement("li");
-        item.className = "p-2 bg-gray-50 border rounded";
-        item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
-        lista.appendChild(item);
-    }
-    }
-
-    carregarUsuarios();
-  </script>
-</body>
+      carregarUsuarios();
+    </script>
+  </body>
 </html>
