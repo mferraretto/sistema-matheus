@@ -101,7 +101,7 @@
           const { decryptString } = await import('./crypto.js');
           const pass = getPassphrase() || `chave-${user.uid}`;
           const data = JSON.parse(await decryptString(enc, pass));
-          const perfil = String(data.perfil || '').toLowerCase();
+          const perfil = String(data.perfil || '').toLowerCase().trim();
           if (!['adm', 'admin', 'administrador'].includes(perfil)) {
             alert('Acesso permitido apenas para administradores.');
             window.location.href = 'index.html';
