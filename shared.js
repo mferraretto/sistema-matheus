@@ -568,7 +568,7 @@ document.addEventListener('sidebarLoaded', async () => {
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js'),
     import('./firebase-config.js'),
-    import('./user-profile.js'),
+    import('./login.js'),
   ]);
 
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);

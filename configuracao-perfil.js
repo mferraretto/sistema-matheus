@@ -13,7 +13,7 @@ import {
   sendPasswordResetEmail,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
-import { loadUserProfile } from './user-profile.js';
+import { loadUserProfile } from './login.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
