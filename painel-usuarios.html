@@ -166,37 +166,67 @@
       async function carregarUsuarios() {
         lista.innerHTML = '';
         const { decryptString } = await import('./crypto.js');
-        const snapshot = await db.collection('uid').get();
-        for (const doc of snapshot.docs) {
-          const enc = doc.data().encrypted;
-          if (!enc) continue;
-          const pass = getPassphrase() || `chave-${doc.id}`;
-          const data = JSON.parse(await decryptString(enc, pass));
-          const info = doc.data();
-          const respArr = info.gestoresExpedicaoEmails || [];
-          const resp = respArr.length
+        const snapshot = await db.collection('usuarios').get();
+        for (const userDoc of snapshot.docs) {
+          const userInfo = userDoc.data();
+          const uidSnap = await db.collection('uid').doc(userDoc.id).get();
+          let nome = 'N/A';
+          let perfil = userInfo.perfil || 'N/A';
+          let respArr = userInfo.gestoresExpedicaoEmails || [];
+          let resp = respArr.length
             ? respArr.join(', ')
-            : info.responsavelExpedicaoEmail || 'N/A';
-          const emailRaw = info.email || '';
+            : userInfo.responsavelExpedicaoEmail || 'N/A';
+          if (uidSnap.exists) {
+            const uidData = uidSnap.data();
+            const enc = uidData.encrypted;
+            if (enc) {
+              const pass = getPassphrase() || `chave-${userDoc.id}`;
+              const dec = JSON.parse(await decryptString(enc, pass));
+              nome = dec.nome || nome;
+              perfil = perfil || dec.perfil || perfil;
+            }
+            if (!respArr.length) {
+              respArr = uidData.gestoresExpedicaoEmails || [];
+              resp = respArr.length
+                ? respArr.join(', ')
+                : uidData.responsavelExpedicaoEmail || resp;
+            }
+          }
+          const emailRaw = userInfo.email || '';
           const email = emailRaw || 'N/A';
           const item = document.createElement('li');
           item.className =
             'p-2 bg-gray-50 border rounded flex justify-between items-center';
           const infoSpan = document.createElement('span');
-          infoSpan.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+          infoSpan.innerText = `UID: ${userDoc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${nome} | Perfil: ${perfil}`;
+          const btnContainer = document.createElement('div');
+          btnContainer.className = 'flex space-x-2';
           const editBtn = document.createElement('button');
           editBtn.className = 'bg-yellow-500 text-white px-2 py-1 rounded';
           editBtn.innerText = 'Editar';
           editBtn.addEventListener('click', () => {
-            document.getElementById('uid').value = doc.id;
-            document.getElementById('nome').value = data.nome || '';
+            document.getElementById('uid').value = userDoc.id;
+            document.getElementById('nome').value = nome === 'N/A' ? '' : nome;
             document.getElementById('email').value = emailRaw;
             document.getElementById('emailExpedicao').value = respArr.join(', ');
             document.getElementById('perfil').value =
-              data.perfil || 'Usuario Completo';
+              perfil || 'Usuario Completo';
           });
+          const delBtn = document.createElement('button');
+          delBtn.className = 'bg-red-500 text-white px-2 py-1 rounded';
+          delBtn.innerText = 'Excluir';
+          delBtn.addEventListener('click', async () => {
+            if (confirm('Deseja excluir este usuário?')) {
+              await db.collection('usuarios').doc(userDoc.id).delete();
+              await db.collection('uid').doc(userDoc.id).delete().catch(() => {});
+              alert('Usuário excluído com sucesso!');
+              carregarUsuarios();
+            }
+          });
+          btnContainer.appendChild(editBtn);
+          btnContainer.appendChild(delBtn);
           item.appendChild(infoSpan);
-          item.appendChild(editBtn);
+          item.appendChild(btnContainer);
           lista.appendChild(item);
         }
       }
