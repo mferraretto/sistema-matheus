@@ -1,9 +1,4 @@
 import {
-  initializeApp,
-  getApps,
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-import {
-  getFirestore,
   collection,
   getDocs,
   doc,
@@ -11,16 +6,9 @@ import {
   query,
   where,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
-import {
-  getAuth,
-  onAuthStateChanged,
-} from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { firebaseConfig, getPassphrase } from './firebase-config.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+import { db, auth, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
-
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
 const opts = {
   responsive: true,
   maintainAspectRatio: false,
