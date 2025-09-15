@@ -711,12 +711,14 @@ document.addEventListener('sidebarLoaded', async () => {
       ].includes(perfil);
       const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
 
-      if (isADM || isGestor) {
+      if (isADM) {
+        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
+          const li = a.closest('li') || a.parentElement;
+          if (li) li.style.display = '';
+        });
+      } else if (isGestor) {
         showOnly(ADMIN_GESTOR_MENU_IDS);
-        if (
-          isGestor &&
-          !['gestor', 'responsavel financeiro'].includes(perfil)
-        ) {
+        if (!['gestor', 'responsavel financeiro'].includes(perfil)) {
           hideIds(['menu-sku-associado']);
         }
         buildGestorSidebarLayout();
