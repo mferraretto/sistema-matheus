@@ -150,7 +150,7 @@ function openChat(userInfo) {
 
 async function loadTeam(user, perfil, data) {
   let members = [];
-  if (['adm', 'completo'].includes(perfil)) {
+  if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
     const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
     members = lista.map((u) => ({
       id: u.uid,
