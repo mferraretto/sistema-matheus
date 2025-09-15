@@ -35,7 +35,7 @@ import {
   getPassphrase,
   clearPassphrase,
 } from './firebase-config.js';
-import { encryptString, decryptString } from './crypto.js';
+// Removido encrypt/decrypt pois perfil não é mais criptografado
 import { fetchResponsavelFinanceiroUsuarios } from './responsavel-financeiro.js';
 import { showToast } from './utils.js';
 
@@ -74,27 +74,25 @@ window.saveDisplayName = async () => {
     return;
   }
   try {
-    const pass = getPassphrase() || `chave-${user.uid}`;
+    // Perfil padrão é Cliente e está armazenado em 'usuarios'
     let perfil = 'Cliente';
-    const uidRef = doc(db, 'uid', user.uid);
-    const snap = await getDoc(uidRef);
-    if (snap.exists()) {
-      const enc = snap.data().encrypted;
-      if (enc) {
-        try {
-          const data = JSON.parse(await decryptString(enc, pass));
-          perfil = data.perfil || perfil;
-        } catch {}
-      }
+    const usuariosRef = doc(db, 'usuarios', user.uid);
+    const snap = await getDoc(usuariosRef);
+    if (snap.exists() && snap.data().perfil) {
+      perfil = snap.data().perfil;
     }
     await setDoc(
-      uidRef,
+      doc(db, 'uid', user.uid),
       {
         uid: user.uid,
         email: user.email,
         nome,
-        encrypted: await encryptString(JSON.stringify({ perfil }), pass),
       },
+      { merge: true },
+    );
+    await setDoc(
+      usuariosRef,
+      { nome, perfil, email: user.email },
       { merge: true },
     );
     try {
@@ -195,37 +193,18 @@ async function showUserArea(user) {
     }
   }
 
-  let perfilFallback = '';
-  try {
-    const uidSnap = await getDoc(doc(db, 'uid', user.uid));
-    const uidData = uidSnap.data();
-    if (nameEl && uidData?.nome) {
-      nameEl.textContent = uidData.nome;
-    }
-    if (uidData?.encrypted) {
-      const pass = getPassphrase() || `chave-${user.uid}`;
-      try {
-        const data = JSON.parse(await decryptString(uidData.encrypted, pass));
-        if (nameEl && !uidData?.nome && data.nome) {
-          nameEl.textContent = data.nome;
-        }
-        if (data.perfil) {
-          perfilFallback = String(data.perfil).toLowerCase().trim();
-        }
-      } catch {}
-    }
-  } catch (e) {
-    console.error('Erro ao carregar nome/perfil do usuário:', e);
-  }
-
+  let perfil = '';
   try {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
-    let perfil = '';
-    if (snap.exists() && snap.data().perfil) {
-      perfil = String(snap.data().perfil).toLowerCase().trim();
+    const data = snap.data();
+    if (nameEl && data?.nome) {
+      nameEl.textContent = data.nome;
+    }
+    if (data?.perfil) {
+      perfil = String(data.perfil).toLowerCase().trim();
       if (perfil === 'administrador') perfil = 'adm';
     } else {
-      perfil = perfilFallback || 'usuario';
+      perfil = 'usuario';
     }
     window.userPerfil = perfil;
 

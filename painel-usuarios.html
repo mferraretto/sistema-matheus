@@ -81,7 +81,7 @@
     <script src="shared.js"></script>
 
     <script type="module">
-      import { firebaseConfig, getPassphrase } from './firebase-config.js';
+      import { firebaseConfig } from './firebase-config.js';
 
       if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -95,13 +95,8 @@
         }
 
         try {
-          const snap = await db.collection('uid').doc(user.uid).get();
-          const enc = snap.data()?.encrypted;
-          if (!enc) throw new Error('Sem dados');
-          const { decryptString } = await import('./crypto.js');
-          const pass = getPassphrase() || `chave-${user.uid}`;
-          const data = JSON.parse(await decryptString(enc, pass));
-          const perfil = String(data.perfil || '').toLowerCase().trim();
+          const snap = await db.collection('usuarios').doc(user.uid).get();
+          const perfil = String(snap.data()?.perfil || '').toLowerCase().trim();
           if (!['adm', 'admin', 'administrador'].includes(perfil)) {
             alert('Acesso permitido apenas para administradores.');
             window.location.href = 'index.html';
@@ -133,8 +128,6 @@
         const perfil = document.getElementById('perfil').value;
 
         if (uid && nome && email) {
-          const { encryptString } = await import('./crypto.js');
-          const pass = getPassphrase() || `chave-${uid}`;
           await db
             .collection('uid')
             .doc(uid)
@@ -143,15 +136,11 @@
               email,
               responsavelExpedicaoEmail: gestoresEmails[0] || null,
               gestoresExpedicaoEmails: gestoresEmails,
-              encrypted: await encryptString(
-                JSON.stringify({ nome, perfil }),
-                pass,
-              ),
             });
           await db
             .collection('usuarios')
             .doc(uid)
-            .set({ perfil, email }, { merge: true });
+            .set({ perfil, email, nome }, { merge: true });
           alert('Usuário salvo com sucesso!');
           carregarUsuarios();
         }
@@ -159,22 +148,21 @@
 
       async function carregarUsuarios() {
         lista.innerHTML = '';
-        const { decryptString } = await import('./crypto.js');
-        const snapshot = await db.collection('uid').get();
+        const snapshot = await db.collection('usuarios').get();
         for (const doc of snapshot.docs) {
-          const enc = doc.data().encrypted;
-          if (!enc) continue;
-          const pass = getPassphrase() || `chave-${doc.id}`;
-          const data = JSON.parse(await decryptString(enc, pass));
-          const info = doc.data();
+          const data = doc.data();
+          const uidDoc = await db.collection('uid').doc(doc.id).get();
+          const info = uidDoc.data() || {};
           const respArr = info.gestoresExpedicaoEmails || [];
           const resp = respArr.length
             ? respArr.join(', ')
             : info.responsavelExpedicaoEmail || 'N/A';
-          const email = info.email || 'N/A';
+          const email = data.email || 'N/A';
+          const nome = data.nome || 'N/A';
+          const perfil = data.perfil || 'N/A';
           const item = document.createElement('li');
           item.className = 'p-2 bg-gray-50 border rounded';
-          item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${data.nome} | Perfil: ${data.perfil}`;
+          item.innerText = `UID: ${doc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${nome} | Perfil: ${perfil}`;
           lista.appendChild(item);
         }
       }
