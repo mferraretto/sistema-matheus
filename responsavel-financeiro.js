@@ -54,9 +54,8 @@ export async function carregarUsuariosFinanceiros(db, user) {
         .trim()
     : '';
   const extras = await fetchResponsavelFinanceiroUsuarios(db, user.email);
-  const isResponsavelFinanceiro =
-    extras.length > 0 || ['responsavel', 'gestor financeiro'].includes(perfil);
-  const isGestor = perfil === 'gestor';
+  const isResponsavelFinanceiro = extras.length > 0 || perfil === 'financeiro';
+  const isGestor = perfil === 'completo';
   const usuarios = [
     { uid: user.uid, nome: user.displayName || user.email, email: user.email },
     ...extras,

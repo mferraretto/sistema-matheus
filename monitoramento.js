@@ -34,8 +34,7 @@ onAuthStateChanged(auth, async (user) => {
     const perfil = String(snap.data()?.perfil || '')
       .toLowerCase()
       .trim();
-    isAdmin =
-      snap.exists() && ['adm', 'admin', 'administrador'].includes(perfil);
+    isAdmin = snap.exists() && perfil === 'adm';
   } catch (err) {
     console.error('Erro ao verificar perfil do usuário:', err);
     isAdmin = false;

@@ -568,130 +568,64 @@ document.addEventListener('sidebarLoaded', async () => {
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const ADMIN_GESTOR_MENU_IDS = [
-    'menu-gestao',
-    'menu-financeiro',
-    'menu-atualizacoes',
-    'menu-comunicacao',
-    'menu-saques',
-    'menu-acompanhamento-gestor',
-    'menu-mentoria',
-    'menu-perfil-mentorado',
-    'menu-equipes',
-    'menu-produtos',
-    'menu-sku-associado',
-    'menu-desempenho',
-  ];
-
-  const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(
-    (id) => id !== 'menu-comunicacao',
-  );
+  const ROLE_MENU_ACCESS = {
+    basico: [
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    completo: [
+      'menu-gestao',
+      'menu-financeiro',
+      'menu-atualizacoes',
+      'menu-saques',
+      'menu-acompanhamento-gestor',
+      'menu-mentoria',
+      'menu-perfil-mentorado',
+      'menu-equipes',
+      'menu-produtos',
+      'menu-sku-associado',
+      'menu-desempenho',
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-marketing',
+      'menu-anuncios',
+      'menu-expedicao',
+      'menu-gestao-contas',
+      'menu-acompanhamento',
+      'menu-outros',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+    expedicao: ['menu-expedicao', 'menu-configuracoes', 'menu-comunicacao'],
+    financeiro: [
+      'menu-vendas',
+      'menu-financeiro',
+      'menu-saques',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
+  };
 
   function showOnly(ids) {
-    document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
-      const li = a.closest('li') || a.parentElement;
-      if (li) li.style.display = 'none';
-    });
+    document
+      .querySelectorAll('#sidebar .sidebar-menu > li')
+      .forEach((li) => (li.style.display = 'none'));
     ids.forEach((id) => {
       const el = document.getElementById(id);
-      const li = el && (el.closest('li') || el.parentElement);
+      const li = el && el.closest('li');
       if (li) li.style.display = '';
     });
   }
 
-  function hideIds(ids) {
-    ids.forEach((id) => {
-      const el = document.getElementById(id);
-      const li = el && (el.closest('li') || el.parentElement);
-      if (li) li.style.display = 'none';
-    });
-  }
-
-  function buildGestorSidebarLayout() {
-    const menu = document.querySelector('#sidebar .sidebar-menu');
-    if (!menu) return;
-
-    const getLi = (id) => {
-      const el = document.getElementById(id);
-      return el ? el.closest('li') : null;
-    };
-
-    const atualizacoes = getLi('menu-atualizacoes');
-    const financeiro = getLi('menu-financeiro');
-    const saques = getLi('menu-saques');
-    const gestao = getLi('menu-gestao');
-    const acompGestor = getLi('menu-acompanhamento-gestor');
-    const mentoria = getLi('menu-mentoria');
-    const perfilMentorado = getLi('menu-perfil-mentorado');
-    const produtos = getLi('menu-produtos');
-    const skuAssociado = getLi('menu-sku-associado');
-    const comunicacao = getLi('menu-comunicacao');
-    const equipes = getLi('menu-equipes');
-    const desempenho = getLi('menu-desempenho');
-
-    function createGroup(mainLi, submenuId, items) {
-      if (!mainLi) return null;
-      const a = mainLi.querySelector('a.sidebar-link');
-      if (!a) return null;
-
-      const div = document.createElement('div');
-      div.className = 'sidebar-item flex items-center justify-between';
-      div.appendChild(a);
-
-      const btn = document.createElement('button');
-      btn.className = 'submenu-toggle p-2';
-      btn.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>';
-      btn.addEventListener('click', () => toggleMenu(submenuId, btn));
-      div.appendChild(btn);
-
-      const ul = document.createElement('ul');
-      ul.id = submenuId;
-      ul.className =
-        'submenu space-y-1 overflow-hidden transition-all duration-300';
-      ul.style.maxHeight = '0';
-      items.forEach((item) => {
-        if (item) ul.appendChild(item);
-      });
-
-      mainLi.innerHTML = '';
-      mainLi.appendChild(div);
-      mainLi.appendChild(ul);
-      return mainLi;
-    }
-
-    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques]);
-    const gestaoGroup = createGroup(gestao, 'menuGestao', [
-      acompGestor,
-      mentoria,
-      perfilMentorado,
-      produtos,
-      skuAssociado,
-    ]);
-    const comunicacaoGroup = createGroup(comunicacao, 'menuComunicacao', [
-      equipes,
-    ]);
-
-    menu.innerHTML = '';
-    [
-      atualizacoes,
-      financeiroGroup,
-      gestaoGroup,
-      comunicacaoGroup,
-      desempenho,
-    ].forEach((li) => {
-      if (li) {
-        li.style.display = '';
-        menu.appendChild(li);
-      }
-    });
-  }
-
-  function buildClienteSidebarLayout() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-      sidebar.classList.add('client-layout');
-    }
+  function showAllMenus() {
+    document
+      .querySelectorAll('#sidebar .sidebar-menu > li')
+      .forEach((li) => (li.style.display = ''));
   }
 
   async function applySidebarPermissions(uid) {
@@ -701,36 +635,13 @@ document.addEventListener('sidebarLoaded', async () => {
         .trim()
         .toLowerCase();
 
-      const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
-      const isGestor = [
-        'gestor',
-        'mentor',
-        'responsavel',
-        'gestor financeiro',
-        'responsavel financeiro',
-      ].includes(perfil);
-      const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
-
-      if (isADM) {
-        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
-          const li = a.closest('li') || a.parentElement;
-          if (li) li.style.display = '';
-        });
-      } else if (isGestor) {
-        showOnly(ADMIN_GESTOR_MENU_IDS);
-        if (!['gestor', 'responsavel financeiro'].includes(perfil)) {
-          hideIds(['menu-sku-associado']);
-        }
-        buildGestorSidebarLayout();
-      } else if (isCliente) {
-        hideIds(CLIENTE_HIDDEN_MENU_IDS);
-        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
-          const li = a.closest('li') || a.parentElement;
-          if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id))
-            li.style.display = '';
-        });
-        buildClienteSidebarLayout();
+      if (perfil === 'adm' || perfil === 'completo') {
+        showAllMenus();
+        return;
       }
+
+      const allowed = ROLE_MENU_ACCESS[perfil];
+      if (allowed) showOnly(allowed);
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
     }
