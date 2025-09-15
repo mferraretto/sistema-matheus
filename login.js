@@ -222,10 +222,9 @@ async function showUserArea(user) {
     const snap = await getDoc(doc(db, 'usuarios', user.uid));
     let perfil = '';
     if (snap.exists() && snap.data().perfil) {
-      perfil = String(snap.data().perfil).toLowerCase().trim();
-      if (perfil === 'administrador') perfil = 'adm';
+      perfil = normalizePerfil(snap.data().perfil);
     } else {
-      perfil = perfilFallback || 'usuario';
+      perfil = normalizePerfil(perfilFallback || 'usuario');
     }
     window.userPerfil = perfil;
 
@@ -347,8 +346,26 @@ function restoreSidebar() {
     if (el.style) el.style.display = '';
   });
 }
+
+function normalizePerfil(perfil) {
+  const p = (perfil || '').toLowerCase().trim();
+  if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
+  if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
+  if (['usuario basico', 'cliente'].includes(p)) return 'cliente';
+  if (
+    [
+      'gestor',
+      'mentor',
+      'responsavel',
+      'gestor financeiro',
+      'responsavel financeiro',
+    ].includes(p)
+  )
+    return 'gestor';
+  return p;
+}
 function applyPerfilRestrictions(perfil) {
-  const currentPerfil = (perfil || '').toLowerCase().trim();
+  const currentPerfil = normalizePerfil(perfil);
   if (!currentPerfil || currentPerfil === 'expedicao') return;
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
@@ -358,12 +375,17 @@ function applyPerfilRestrictions(perfil) {
 
   const nivelMenus = {
     adm: allIds,
-    'usuario completo': allIds,
-    'usuario basico': [
+    usuario: [
       'menu-vendas',
+      'menu-saques',
       'menu-etiquetas',
       'menu-precificacao',
+      'menu-marketing',
+      'menu-anuncios',
       'menu-expedicao',
+      'menu-gestao-contas',
+      'menu-acompanhamento',
+      'menu-outros',
       'menu-configuracoes',
       'menu-comunicacao',
     ],
@@ -375,12 +397,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-configuracoes',
       'menu-comunicacao',
     ],
-    'gestor expedicao': [
-      'menu-expedicao',
-      'menu-configuracoes',
-      'menu-comunicacao',
-    ],
-    'responsavel financeiro': [
+    gestor: [
       'menu-atualizacoes',
       'menu-financeiro',
       'menu-saques',
@@ -393,6 +410,11 @@ function applyPerfilRestrictions(perfil) {
       'menu-sku-associado',
       'menu-desempenho',
       'menu-acompanhamento',
+      'menu-comunicacao',
+    ],
+    'gestor expedicao': [
+      'menu-expedicao',
+      'menu-configuracoes',
       'menu-comunicacao',
     ],
   };
@@ -413,24 +435,10 @@ function applyPerfilRestrictions(perfil) {
     const allowedPerfis = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
       .split(',')
-      .map((p) => p.trim());
-    let show = allowedPerfis.includes(currentPerfil);
+      .map((p) => normalizePerfil(p));
+    const show =
+      currentPerfil === 'adm' || allowedPerfis.includes(currentPerfil);
     if (!show) {
-      if (
-        currentPerfil === 'cliente' &&
-        (allowedPerfis.includes('usuario') ||
-          allowedPerfis.includes('usuario basico') ||
-          allowedPerfis.includes('usuario completo'))
-      ) {
-        show = true;
-      } else if (
-        currentPerfil.startsWith('usuario') &&
-        allowedPerfis.includes('usuario')
-      ) {
-        show = true;
-      }
-    }
-    if (currentPerfil !== 'adm' && !show) {
       el.classList.add('hidden');
     } else {
       el.classList.remove('hidden');
@@ -441,11 +449,7 @@ function applyPerfilRestrictions(perfil) {
 function ensureFinanceiroMenu() {
   const menu = document.getElementById('menu-vendas');
   if (!menu) return;
-  if (
-    window.isFinanceiroResponsavel ||
-    window.userPerfil === 'responsavel' ||
-    window.userPerfil === 'gestor financeiro'
-  ) {
+  if (window.isFinanceiroResponsavel || window.userPerfil === 'gestor') {
     menu.classList.remove('hidden');
   }
 }

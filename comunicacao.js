@@ -54,6 +54,24 @@ const PAGE_SIZE = 10;
 let lastCommDoc = null;
 const pageStack = [];
 
+function normalizePerfil(perfil) {
+  const p = (perfil || '').toLowerCase().trim();
+  if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
+  if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
+  if (['usuario basico', 'cliente'].includes(p)) return 'cliente';
+  if (
+    [
+      'gestor',
+      'mentor',
+      'responsavel',
+      'gestor financeiro',
+      'responsavel financeiro',
+    ].includes(p)
+  )
+    return 'gestor';
+  return p;
+}
+
 function addUserOption(user) {
   const li = document.createElement('li');
   li.textContent = user.nome || user.email || user.id;
@@ -149,8 +167,9 @@ function openChat(userInfo) {
 }
 
 async function loadTeam(user, perfil, data) {
+  perfil = normalizePerfil(perfil);
   let members = [];
-  if (['gestor', 'mentor', 'adm', 'admin', 'administrador'].includes(perfil)) {
+  if (['gestor', 'adm'].includes(perfil)) {
     const lista = await fetchResponsavelFinanceiroUsuarios(db, user.email);
     members = lista.map((u) => ({
       id: u.uid,

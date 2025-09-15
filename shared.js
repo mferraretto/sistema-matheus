@@ -694,22 +694,38 @@ document.addEventListener('sidebarLoaded', async () => {
     }
   }
 
-  async function applySidebarPermissions(uid) {
-    try {
-      const snap = await getDoc(doc(db, 'usuarios', uid));
-      const perfil = ((snap.exists() && String(snap.data().perfil || '')) || '')
-        .trim()
-        .toLowerCase();
-
-      const isADM = ['adm', 'admin', 'administrador'].includes(perfil);
-      const isGestor = [
+  function normalizePerfil(perfil) {
+    const p = (perfil || '').toLowerCase().trim();
+    if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
+    if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
+    if (['usuario basico', 'cliente', 'user'].includes(p)) return 'cliente';
+    if (
+      [
         'gestor',
         'mentor',
         'responsavel',
         'gestor financeiro',
         'responsavel financeiro',
-      ].includes(perfil);
-      const isCliente = ['cliente', 'user', 'usuario'].includes(perfil);
+      ].includes(p)
+    )
+      return 'gestor';
+    return p;
+  }
+
+  async function applySidebarPermissions(uid) {
+    try {
+      const snap = await getDoc(doc(db, 'usuarios', uid));
+      const rawPerfil = (
+        (snap.exists() && String(snap.data().perfil || '')) ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+      const perfil = normalizePerfil(rawPerfil);
+
+      const isADM = perfil === 'adm';
+      const isGestor = perfil === 'gestor';
+      const isCliente = ['cliente', 'usuario'].includes(perfil);
 
       if (isADM) {
         document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
@@ -718,9 +734,6 @@ document.addEventListener('sidebarLoaded', async () => {
         });
       } else if (isGestor) {
         showOnly(ADMIN_GESTOR_MENU_IDS);
-        if (!['gestor', 'responsavel financeiro'].includes(perfil)) {
-          hideIds(['menu-sku-associado']);
-        }
         buildGestorSidebarLayout();
       } else if (isCliente) {
         hideIds(CLIENTE_HIDDEN_MENU_IDS);
