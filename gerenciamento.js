@@ -70,8 +70,11 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     const snap = await getDoc(doc(db, 'uid', user.uid));
-    const perfil = String(snap.data().perfil || '').toLowerCase();
-    isAdmin = snap.exists() && (perfil === 'adm' || perfil === 'admin');
+    const perfil = String(snap.data().perfil || '')
+      .toLowerCase()
+      .trim();
+    isAdmin =
+      snap.exists() && ['adm', 'admin', 'administrador'].includes(perfil);
   } catch (err) {
     console.error('Erro ao verificar perfil do usuário:', err);
     isAdmin = false;
