@@ -565,8 +565,10 @@ async function iniciarPainel(user) {
     try {
       const snap = await getDoc(doc(db, 'usuarios', uid)); // <- aqui era 'uid'
       if (snap.exists()) {
-        const perfil = String(snap.data().perfil || '').toLowerCase();
-        isAdmin = perfil === 'adm' || perfil === 'admin';
+        const perfil = String(snap.data().perfil || '')
+          .toLowerCase()
+          .trim();
+        isAdmin = ['adm', 'admin', 'administrador'].includes(perfil);
       } else {
         logger.warn(`Documento de usuário ${uid} não encontrado em 'usuarios'`);
       }
