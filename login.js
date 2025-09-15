@@ -367,6 +367,14 @@ function applyPerfilRestrictions(perfil) {
       'menu-configuracoes',
       'menu-comunicacao',
     ],
+    cliente: [
+      'menu-vendas',
+      'menu-etiquetas',
+      'menu-precificacao',
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+    ],
     'gestor expedicao': [
       'menu-expedicao',
       'menu-configuracoes',
@@ -406,7 +414,23 @@ function applyPerfilRestrictions(perfil) {
       .toLowerCase()
       .split(',')
       .map((p) => p.trim());
-    if (currentPerfil !== 'adm' && !allowedPerfis.includes(currentPerfil)) {
+    let show = allowedPerfis.includes(currentPerfil);
+    if (!show) {
+      if (
+        currentPerfil === 'cliente' &&
+        (allowedPerfis.includes('usuario') ||
+          allowedPerfis.includes('usuario basico') ||
+          allowedPerfis.includes('usuario completo'))
+      ) {
+        show = true;
+      } else if (
+        currentPerfil.startsWith('usuario') &&
+        allowedPerfis.includes('usuario')
+      ) {
+        show = true;
+      }
+    }
+    if (currentPerfil !== 'adm' && !show) {
       el.classList.add('hidden');
     } else {
       el.classList.remove('hidden');
