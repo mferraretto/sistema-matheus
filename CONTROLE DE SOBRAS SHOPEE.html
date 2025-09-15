@@ -207,11 +207,6 @@ function normalizeDate(value) {
           await carregarMetas();
           carregarHistorico();
           await verificarGestorFinanceiro();
-          const dataField = document.getElementById('dataFaturamento');
-          if (dataField) {
-            dataField.value = new Date().toISOString().slice(0,10);
-          }
-
           document.getElementById('filtroSKU').addEventListener('input', filtrarPorSKU);
           document.getElementById('filtroHistorico').addEventListener('input', filtrarHistorico);
           document.getElementById('metaSku').addEventListener('input', atualizarPrecoMinimo);
@@ -1465,6 +1460,25 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
       const file = input.files[0];
       if (!file) return mostrarErro("Selecione um arquivo para importar.");
 
+      const { value: form, isConfirmed } = await Swal.fire({
+        title: 'Informações de Faturamento',
+        html: `\n          <input type="date" id="swal-data" class="swal2-input" />\n          <input type="text" id="swal-loja" class="swal2-input" placeholder="Nome da Loja" />\n        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Continuar',
+        preConfirm: () => {
+          const data = document.getElementById('swal-data').value;
+          const lojaNome = document.getElementById('swal-loja').value.trim();
+          if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data) || lojaNome.length < 2) {
+            Swal.showValidationMessage('Informe uma data e uma loja válidas.');
+          }
+          return { data, loja: lojaNome };
+        }
+      });
+      if (!isConfirmed || !form) return;
+      const dataReferencia = form.data;
+      const loja = form.loja;
+
       const reader = new FileReader();
       reader.onload = async function (e) {
         try {
@@ -1500,19 +1514,7 @@ document.getElementById("dadosSobrasIA").value = sobras.map(s => {
             }
           }
 
-const dataInput = document.getElementById("dataFaturamento");
-          const lojaInput = document.getElementById("lojaFaturamento");
-          const dataReferencia = dataInput?.value;
-          const loja = lojaInput?.value?.trim();
-          if (!dataReferencia || !/^\d{4}-\d{2}-\d{2}$/.test(dataReferencia)) {
-            return mostrarErro("Data inválida.");
-          }
-
-          if (!loja || loja.length < 2) {
-            return mostrarErro("Nome da loja inválido.");
-          }
-
- const ref = db
+          const ref = db
             .collection('uid')
             .doc(usuarioLogado.uid)
             .collection('faturamento')
@@ -1523,7 +1525,17 @@ const dataInput = document.getElementById("dataFaturamento");
 
           let operacao = "salvar";
           if (doc.exists) {
-            operacao = confirm("Já existe um registro para esse dia. Deseja somar ao existente?") ? "somar" : "substituir";
+            const { isConfirmed: substituir, isDenied: somar } = await Swal.fire({
+              title: 'Registro existente',
+              text: 'Já existe um registro para esta loja e data. O que deseja fazer?',
+              showDenyButton: true,
+              showCancelButton: true,
+              confirmButtonText: 'Substituir',
+              denyButtonText: 'Somar',
+              cancelButtonText: 'Cancelar'
+            });
+            if (!substituir && !somar) return;
+            operacao = somar ? "somar" : "substituir";
           }
 
             let bruto = 0, taxas = 0, qtdVendas = 0;
