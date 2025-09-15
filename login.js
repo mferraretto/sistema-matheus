@@ -49,7 +49,6 @@ let isExpedicao = false;
 let notifUnsub = null;
 let expNotifUnsub = null;
 let updNotifUnsub = null;
-let selectedRole = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -114,32 +113,12 @@ window.saveDisplayName = async () => {
 
 window.openModal = (id) => {
   const el = document.getElementById(id);
-  if (el) {
-    if (id === 'loginModal') {
-      document.getElementById('roleSelection')?.classList.remove('hidden');
-      document.getElementById('loginForm')?.classList.add('hidden');
-      selectedRole = null;
-    }
-    el.style.display = 'flex';
-  }
-};
-
-window.selectRole = (role) => {
-  selectedRole = role;
-  document.getElementById('roleSelection')?.classList.add('hidden');
-  document.getElementById('loginForm')?.classList.remove('hidden');
+  if (el) el.style.display = 'flex';
 };
 
 window.closeModal = (id) => {
   const el = document.getElementById(id);
-  if (el) {
-    el.style.display = 'none';
-    if (id === 'loginModal') {
-      document.getElementById('roleSelection')?.classList.remove('hidden');
-      document.getElementById('loginForm')?.classList.add('hidden');
-      selectedRole = null;
-    }
-  }
+  if (el) el.style.display = 'none';
 };
 
 window.openRecoverModal = () => {
@@ -151,8 +130,6 @@ window.login = () => {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPassword').value;
   const passphrase = document.getElementById('loginPassphrase').value;
-  const roleInput = document.querySelector('input[name="userRole"]:checked');
-  const role = roleInput ? roleInput.value : selectedRole || 'usuario';
 
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInWithEmailAndPassword(auth, email, password))
@@ -163,10 +140,6 @@ window.login = () => {
       showUserArea(cred.user);
       closeModal('loginModal');
       document.getElementById('loginPassphrase').value = '';
-      sessionStorage.setItem('selectedRole', role);
-      if (role === 'gestor') {
-        window.location.href = 'financeiro.html';
-      }
     })
     .catch((err) =>
       showToast('Credenciais inválidas! ' + err.message, 'error'),
@@ -250,12 +223,13 @@ async function showUserArea(user) {
     let perfil = '';
     if (snap.exists() && snap.data().perfil) {
       perfil = String(snap.data().perfil).toLowerCase().trim();
+      if (perfil === 'administrador') perfil = 'adm';
     } else {
       perfil = perfilFallback || 'usuario';
     }
     window.userPerfil = perfil;
 
-    if (perfil === 'gestor') {
+    if (['gestor', 'adm'].includes(perfil)) {
       const path = window.location.pathname.toLowerCase();
       if (
         path.endsWith('/index.html') ||

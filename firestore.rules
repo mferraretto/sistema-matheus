@@ -3,7 +3,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isGestorOrADM(uid) {
       return exists(/databases/$(database)/documents/usuarios/$(uid)) &&
-        get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in ['Gestor', 'ADM'];
+        get(/databases/$(database)/documents/usuarios/$(uid)).data.perfil in [
+          'Gestor',
+          'gestor',
+          'ADM',
+          'adm',
+          'Administrador',
+          'administrador'
+        ];
     }
 
     match /usuarios/{uid}/comissoes/{anoMes} {

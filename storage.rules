@@ -14,7 +14,7 @@ service firebase.storage {
       allow read: if request.auth != null && (
         autorUid == request.auth.uid ||
         (get(/databases/(default)/documents/relatorios/{relatorioId}).data.gestores != null && request.auth.uid in get(/databases/(default)/documents/relatorios/{relatorioId}).data.gestores) ||
-        get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.perfil in ['Gestor', 'ADM']
+        get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.perfil in ['Gestor', 'gestor', 'ADM', 'adm', 'Administrador', 'administrador']
       );
       allow write: if request.auth != null && autorUid == request.auth.uid;
     }
@@ -24,7 +24,7 @@ service firebase.storage {
         autorUid == request.auth.uid ||
         (get(/databases/(default)/documents/financeiroAtualizacoes/{docId}).data.destinatarios != null &&
           request.auth.uid in get(/databases/(default)/documents/financeiroAtualizacoes/{docId}).data.destinatarios) ||
-        get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.perfil in ['Gestor', 'ADM']
+        get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.perfil in ['Gestor', 'gestor', 'ADM', 'adm', 'Administrador', 'administrador']
       );
       allow write: if request.auth != null && autorUid == request.auth.uid;
     }
