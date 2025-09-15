@@ -46,16 +46,34 @@ export async function fetchResponsavelFinanceiroUsuarios(db, email) {
   return usuarios;
 }
 
+function normalizePerfil(perfil) {
+  const p = (perfil || '').toLowerCase().trim();
+  if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
+  if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
+  if (['usuario basico', 'cliente'].includes(p)) return 'cliente';
+  if (
+    [
+      'gestor',
+      'mentor',
+      'responsavel',
+      'gestor financeiro',
+      'responsavel financeiro',
+    ].includes(p)
+  )
+    return 'gestor';
+  return p;
+}
+
 export async function carregarUsuariosFinanceiros(db, user) {
   const docSnap = await getDoc(doc(db, 'usuarios', user.uid));
-  const perfil = docSnap.exists()
+  const rawPerfil = docSnap.exists()
     ? String(docSnap.data().perfil || '')
         .toLowerCase()
         .trim()
     : '';
+  const perfil = normalizePerfil(rawPerfil);
   const extras = await fetchResponsavelFinanceiroUsuarios(db, user.email);
-  const isResponsavelFinanceiro =
-    extras.length > 0 || ['responsavel', 'gestor financeiro'].includes(perfil);
+  const isResponsavelFinanceiro = extras.length > 0 || perfil === 'gestor';
   const isGestor = perfil === 'gestor';
   const usuarios = [
     { uid: user.uid, nome: user.displayName || user.email, email: user.email },
