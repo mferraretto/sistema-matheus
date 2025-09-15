@@ -465,6 +465,8 @@ window.toggleSidebar = window.toggleSidebar || toggleSidebar;
 window.ensureLayout = ensureLayout;
 
 let searchPages = [];
+let lastSidebarPerfil = null;
+let lastSidebarUid = null;
 
 function collectSearchPages() {
   searchPages = Array.from(document.querySelectorAll('#sidebar a.sidebar-link'))
@@ -475,7 +477,64 @@ function collectSearchPages() {
     .filter((p) => p.title && p.href);
 }
 
+function applyPerfilToSidebar(perfil) {
+  const sidebar = document.getElementById('sidebar');
+  const menu = document.querySelector('#sidebar .sidebar-menu');
+  if (!sidebar || !menu) return false;
+
+  sidebar.classList.remove('client-layout');
+
+  document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
+    const li = a.closest('li') || a.parentElement;
+    if (li) li.style.display = '';
+  });
+
+  const isADM = perfil === 'adm';
+  const isGestor = perfil === 'gestor';
+  const isCliente = ['cliente', 'usuario'].includes(perfil);
+
+  if (isADM) {
+    collectSearchPages();
+    return true;
+  }
+
+  if (isGestor) {
+    showOnly(ADMIN_GESTOR_MENU_IDS);
+    buildGestorSidebarLayout();
+    document.querySelectorAll('#sidebar .submenu li').forEach((li) => {
+      li.style.display = '';
+    });
+    collectSearchPages();
+    return true;
+  }
+
+  if (isCliente) {
+    hideIds(CLIENTE_HIDDEN_MENU_IDS);
+    document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
+      const li = a.closest('li') || a.parentElement;
+      if (!li) return;
+      li.style.display = CLIENTE_HIDDEN_MENU_IDS.includes(a.id) ? 'none' : '';
+    });
+    buildClienteSidebarLayout();
+    collectSearchPages();
+    return true;
+  }
+
+  collectSearchPages();
+  return true;
+}
+
 document.addEventListener('sidebarLoaded', collectSearchPages);
+
+document.addEventListener('sidebarLoaded', () => {
+  if (lastSidebarPerfil) {
+    if (!applyPerfilToSidebar(lastSidebarPerfil) && lastSidebarUid) {
+      applySidebarPermissions(lastSidebarUid);
+    }
+  } else if (lastSidebarUid) {
+    applySidebarPermissions(lastSidebarUid);
+  }
+});
 
 document.addEventListener('navbarLoaded', () => {
   const toggle = document.getElementById('sidebarToggle');
@@ -719,27 +778,10 @@ document.addEventListener('sidebarLoaded', async () => {
       const profile = await loadUserProfile(uid);
       const perfil = normalizePerfil(profile?.perfil || '');
 
-      const isADM = perfil === 'adm';
-      const isGestor = perfil === 'gestor';
-      const isCliente = ['cliente', 'usuario'].includes(perfil);
+      lastSidebarUid = uid;
+      lastSidebarPerfil = perfil;
 
-      if (isADM) {
-        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
-          const li = a.closest('li') || a.parentElement;
-          if (li) li.style.display = '';
-        });
-      } else if (isGestor) {
-        showOnly(ADMIN_GESTOR_MENU_IDS);
-        buildGestorSidebarLayout();
-      } else if (isCliente) {
-        hideIds(CLIENTE_HIDDEN_MENU_IDS);
-        document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
-          const li = a.closest('li') || a.parentElement;
-          if (li && !CLIENTE_HIDDEN_MENU_IDS.includes(a.id))
-            li.style.display = '';
-        });
-        buildClienteSidebarLayout();
-      }
+      applyPerfilToSidebar(perfil);
     } catch (e) {
       console.error('Erro ao aplicar permissões do sidebar:', e);
     }
@@ -747,6 +789,12 @@ document.addEventListener('sidebarLoaded', async () => {
 
   const auth = getAuth(app);
   onAuthStateChanged(auth, (user) => {
-    if (user) applySidebarPermissions(user.uid);
+    if (user) {
+      lastSidebarUid = user.uid;
+      applySidebarPermissions(user.uid);
+    } else {
+      lastSidebarUid = null;
+      lastSidebarPerfil = null;
+    }
   });
 });
