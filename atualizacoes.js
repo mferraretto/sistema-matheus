@@ -436,10 +436,43 @@ async function carregarExpedicao() {
       if (!dataHora || dataHora < limiteData) return;
       const item = document.createElement('div');
       item.className = 'p-2 border rounded';
-      item.innerHTML =
-        `<div>Qtd não expedida: ${dados.quantidade}</div>` +
-        `${dados.motivo ? `<div>Motivo: ${dados.motivo}</div>` : ''}` +
-        `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
+      const tipo = dados.tipo || 'sobras';
+      if (tipo === 'status') {
+        const texto = document.createElement('div');
+        texto.className = 'text-sm text-gray-700';
+        const statusChave = dados.status || '';
+        const statusLabel =
+          dados.statusLabel ||
+          (statusChave === 'impresso'
+            ? 'Impresso'
+            : statusChave === 'concluido'
+              ? 'Concluído'
+              : statusChave);
+        const responsavel =
+          dados.responsavelNome ||
+          dados.gestorNome ||
+          dados.responsavelEmail ||
+          dados.gestorEmail ||
+          'Equipe de expedição';
+        const arquivoNome = dados.arquivoNome || dados.arquivoId || 'Etiqueta';
+        texto.textContent = `${responsavel} marcou a etiqueta ${arquivoNome} como ${statusLabel}.`;
+        item.appendChild(texto);
+      } else {
+        const quantidade = document.createElement('div');
+        quantidade.className = 'text-sm text-gray-700';
+        quantidade.textContent = `Qtd não expedida: ${dados.quantidade || 0}`;
+        item.appendChild(quantidade);
+        if (dados.motivo) {
+          const motivo = document.createElement('div');
+          motivo.className = 'text-sm text-gray-700';
+          motivo.textContent = `Motivo: ${dados.motivo}`;
+          item.appendChild(motivo);
+        }
+      }
+      const dataInfo = document.createElement('div');
+      dataInfo.className = 'text-xs text-gray-500';
+      dataInfo.textContent = dataHora.toLocaleString('pt-BR');
+      item.appendChild(dataInfo);
       container.appendChild(item);
       count++;
     });
