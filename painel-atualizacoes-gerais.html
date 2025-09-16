@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Atualizações Gerais</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20240826" />
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div id="navbar-container"></div>
+
+    <main class="main-content p-4 space-y-6">
+      <section class="card p-4 space-y-4">
+        <div class="flex flex-col gap-1">
+          <h1 class="text-2xl font-bold text-gray-900">Painel de Atualizações Gerais</h1>
+          <p class="text-sm text-gray-500">Centralize avisos rápidos, ocorrências e produtos em linha para toda a equipe conectada.</p>
+        </div>
+        <form id="mensagemForm" class="space-y-3">
+          <div>
+            <label for="mensagemTexto" class="text-sm font-medium text-gray-700">Mensagem geral</label>
+            <textarea id="mensagemTexto" rows="3" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Compartilhe uma atualização importante com a equipe" required></textarea>
+          </div>
+          <div class="flex items-center justify-end gap-3">
+            <p id="mensagemStatus" class="text-sm hidden"></p>
+            <button type="submit" class="btn btn-primary text-sm px-4 py-2">Enviar mensagem</button>
+          </div>
+        </form>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-lg font-semibold text-gray-800">Últimas 10 mensagens</h2>
+            <span id="mensagensTotal" class="text-xs text-gray-500"></span>
+          </div>
+          <div id="mensagensLista" class="space-y-3 max-h-80 overflow-y-auto"></div>
+        </div>
+      </section>
+
+      <section class="card p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-gray-800">Atualização de Problemas por Setor</h2>
+          <span class="text-xs text-gray-500">Registre ocorrências e acompanhe soluções</span>
+        </div>
+        <form id="problemaForm" class="grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
+            <label for="problemaDescricao" class="text-sm font-medium text-gray-700">Descrição do problema</label>
+            <textarea id="problemaDescricao" rows="3" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Descreva o problema ocorrido" required></textarea>
+          </div>
+          <div>
+            <label for="problemaSetor" class="text-sm font-medium text-gray-700">Setor</label>
+            <input id="problemaSetor" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Ex.: Produção, Expedição" required />
+          </div>
+          <div>
+            <label for="problemaResponsavel" class="text-sm font-medium text-gray-700">Responsável</label>
+            <input id="problemaResponsavel" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Quem ficou responsável pela tratativa" />
+          </div>
+          <div>
+            <label for="problemaData" class="text-sm font-medium text-gray-700">Data</label>
+            <input id="problemaData" type="date" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" />
+          </div>
+          <div class="md:col-span-2">
+            <label for="problemaSolucao" class="text-sm font-medium text-gray-700">Solução / Observações</label>
+            <textarea id="problemaSolucao" rows="2" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Informe a solução adotada ou próximos passos"></textarea>
+          </div>
+          <div class="md:col-span-2 flex items-center justify-end gap-3">
+            <p id="problemaStatus" class="text-sm hidden"></p>
+            <button type="submit" class="btn btn-primary text-sm px-4 py-2">Registrar problema</button>
+          </div>
+        </form>
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Problemas registrados</h3>
+          <div id="problemasLista" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <section class="card p-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800">Peças em Linha</h2>
+            <p class="text-sm text-gray-500">Produtos liberados para produção e acompanhamento financeiro.</p>
+          </div>
+          <span id="produtoAviso" class="text-xs text-indigo-600 hidden">Apenas gestores ou responsáveis financeiros podem cadastrar</span>
+        </div>
+        <form id="produtoForm" class="grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-1">
+            <label for="produtoNome" class="text-sm font-medium text-gray-700">Produto / Peça</label>
+            <input id="produtoNome" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Nome da peça em linha" required />
+          </div>
+          <div class="md:col-span-2">
+            <label for="produtoObservacoes" class="text-sm font-medium text-gray-700">Observações</label>
+            <textarea id="produtoObservacoes" rows="2" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-400 focus:outline-none text-sm" placeholder="Detalhes relevantes, responsável financeiro, prazos etc."></textarea>
+          </div>
+          <div class="md:col-span-2 flex items-center justify-end gap-3">
+            <p id="produtoStatus" class="text-sm hidden"></p>
+            <button type="submit" class="btn btn-primary text-sm px-4 py-2">Adicionar produto</button>
+          </div>
+        </form>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-semibold text-gray-800">Produtos cadastrados</h3>
+            <span id="produtosTotal" class="text-xs text-gray-500"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm text-left border border-gray-200 rounded-lg overflow-hidden">
+              <thead class="bg-gray-100 text-gray-600">
+                <tr>
+                  <th class="px-4 py-2 font-medium">Produto</th>
+                  <th class="px-4 py-2 font-medium">Observações</th>
+                  <th class="px-4 py-2 font-medium">Registrado por</th>
+                  <th class="px-4 py-2 font-medium">Data</th>
+                </tr>
+              </thead>
+              <tbody id="produtosLista" class="divide-y divide-gray-200"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
+      window.CUSTOM_NAVBAR_PATH = '/partials/navbar.html';
+    </script>
+    <script src="shared.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="painel-atualizacoes-gerais.js"></script>
+  </div>
+</body>
+</html>
