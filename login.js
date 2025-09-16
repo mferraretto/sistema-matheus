@@ -305,7 +305,7 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) verifica associação com expedição (gestor ou responsável)
-    if (perfil !== 'gestor expedicao') {
+    if (perfil !== 'expedicao') {
       await checkExpedicao(user);
     }
 
@@ -410,9 +410,11 @@ function restoreSidebar() {
 
 function normalizePerfil(perfil) {
   const p = (perfil || '').toLowerCase().trim();
-  if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
-  if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
-  if (['usuario basico', 'cliente'].includes(p)) return 'cliente';
+  if (!p) return '';
+  const base = p.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (['adm', 'admin', 'administrador'].includes(base)) return 'adm';
+  if (['usuario completo', 'usuario'].includes(base)) return 'usuario';
+  if (['usuario basico', 'cliente'].includes(base)) return 'cliente';
   if (
     [
       'gestor',
@@ -420,10 +422,12 @@ function normalizePerfil(perfil) {
       'responsavel',
       'gestor financeiro',
       'responsavel financeiro',
-    ].includes(p)
+    ].includes(base)
   )
     return 'gestor';
-  return p;
+  if (['expedicao', 'gestor expedicao', 'gestor de expedicao'].includes(base))
+    return 'expedicao';
+  return base;
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = normalizePerfil(perfil);
@@ -478,7 +482,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-sku-associado',
       'menu-desempenho',
     ],
-    'gestor expedicao': [
+    expedicao: [
       'menu-expedicao',
       'menu-configuracoes',
       'menu-comunicacao',

@@ -57,7 +57,7 @@
             <select id="perfil" class="w-full p-2 border rounded">
               <option value="Usuario Completo">Usuário Completo</option>
               <option value="Usuario Basico">Usuário Básico</option>
-              <option value="Gestor Expedicao">Gestor Expedição</option>
+              <option value="Expedicao">Expedição</option>
               <option value="Responsavel Financeiro">
                 Responsável Financeiro
               </option>
@@ -119,6 +119,42 @@
       });
       const form = document.getElementById('userForm');
       const lista = document.getElementById('listaUsuarios');
+      const perfilSelect = document.getElementById('perfil');
+
+      const normalizarPerfilValor = (valor) =>
+        (valor || '')
+          .toString()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
+
+      const obterValorSelectPerfil = (valor) => {
+        const normalizado = normalizarPerfilValor(valor);
+        if (!normalizado) return 'Usuario Completo';
+        const mapa = {
+          adm: 'ADM',
+          admin: 'ADM',
+          administrador: 'ADM',
+          'usuario completo': 'Usuario Completo',
+          usuario: 'Usuario Completo',
+          'usuario basico': 'Usuario Basico',
+          cliente: 'Usuario Basico',
+          'responsavel financeiro': 'Responsavel Financeiro',
+          responsavel: 'Responsavel Financeiro',
+          expedicao: 'Expedicao',
+          'gestor expedicao': 'Expedicao',
+          'gestor de expedicao': 'Expedicao',
+        };
+        return (
+          mapa[normalizado] ||
+          Array.from(perfilSelect.options).find(
+            (opt) => normalizarPerfilValor(opt.value) === normalizado,
+          )?.value ||
+          valor ||
+          'Usuario Completo'
+        );
+      };
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -136,7 +172,7 @@
           alert('Informe no máximo 2 e-mails de gestores de expedição.');
           return;
         }
-        const perfil = document.getElementById('perfil').value;
+        const perfil = perfilSelect.value;
 
         if (uid && nome && email) {
           const { encryptString } = await import('./crypto.js');
@@ -209,8 +245,7 @@
             document.getElementById('nome').value = nome === 'N/A' ? '' : nome;
             document.getElementById('email').value = emailRaw;
             document.getElementById('emailExpedicao').value = respArr.join(', ');
-            document.getElementById('perfil').value =
-              perfil || 'Usuario Completo';
+            perfilSelect.value = obterValorSelectPerfil(perfil);
           });
           const delBtn = document.createElement('button');
           delBtn.className = 'bg-red-500 text-white px-2 py-1 rounded';
