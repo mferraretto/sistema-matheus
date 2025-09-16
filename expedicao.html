@@ -173,7 +173,6 @@
     let attentionOnly = false;
     const equipeUsuarios = new Map();
     let checklistRows = [];
-    const ownerRowCleanupHandlers = [];
 
     function getResumoTimeWindow() {
       const now = new Date();
@@ -820,14 +819,6 @@
 
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
-      ownerRowCleanupHandlers.forEach(fn => {
-        try {
-          fn();
-        } catch (err) {
-          console.error('Erro ao limpar eventos de linhas de etiquetas:', err);
-        }
-      });
-      ownerRowCleanupHandlers.length = 0;
       list.innerHTML = '';
       const filter = currentFilter;
       const snap = await db
@@ -897,33 +888,14 @@
           const title = document.createElement('h2');
           title.className = 'font-semibold text-gray-700';
           title.textContent = owner;
-          const rowContainer = document.createElement('div');
-          rowContainer.className = 'expedicao-owner-row';
-          const prevBtn = document.createElement('button');
-          prevBtn.type = 'button';
-          prevBtn.className = 'expedicao-owner-row__nav expedicao-owner-row__nav--prev';
-          prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
-          prevBtn.setAttribute('aria-label', 'Ver etiquetas anteriores');
-          const nextBtn = document.createElement('button');
-          nextBtn.type = 'button';
-          nextBtn.className = 'expedicao-owner-row__nav expedicao-owner-row__nav--next';
-          nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
-          nextBtn.setAttribute('aria-label', 'Ver próximas etiquetas');
-          const viewport = document.createElement('div');
-          viewport.className = 'expedicao-owner-row__viewport';
           const row = document.createElement('div');
-          row.className = 'expedicao-owner-row__list';
+          row.className = 'flex flex-row flex-nowrap gap-4 overflow-x-auto';
           grouped[owner].forEach(r => {
             row.appendChild(createPdfCard(r.doc, r.ownerName));
           });
-          viewport.appendChild(row);
-          rowContainer.appendChild(prevBtn);
-          rowContainer.appendChild(viewport);
-          rowContainer.appendChild(nextBtn);
           wrapper.appendChild(title);
-          wrapper.appendChild(rowContainer);
+          wrapper.appendChild(row);
           list.appendChild(wrapper);
-          setupOwnerRowNavigation(rowContainer);
         });
       } else {
         list.className = viewMode === 'cards'
@@ -938,103 +910,6 @@
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
       }
       await calcularTotalPedidosDia();
-    }
-
-    function setupOwnerRowNavigation(rowContainer) {
-      const viewport = rowContainer.querySelector('.expedicao-owner-row__viewport');
-      const list = rowContainer.querySelector('.expedicao-owner-row__list');
-      const prevBtn = rowContainer.querySelector('.expedicao-owner-row__nav--prev');
-      const nextBtn = rowContainer.querySelector('.expedicao-owner-row__nav--next');
-      if (!viewport || !list || !prevBtn || !nextBtn) return;
-
-      const cleanupFns = [];
-      const addCleanup = fn => cleanupFns.push(fn);
-
-      const updateNavState = () => {
-        const hasOverflow = viewport.scrollWidth > viewport.clientWidth + 1;
-        rowContainer.classList.toggle('expedicao-owner-row--has-overflow', hasOverflow);
-        if (!hasOverflow) {
-          prevBtn.disabled = true;
-          nextBtn.disabled = true;
-          return;
-        }
-        prevBtn.disabled = viewport.scrollLeft <= 0;
-        nextBtn.disabled = viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 1;
-      };
-
-      const getScrollAmount = () => {
-        const firstCard = list.querySelector('.expedicao-pdf-card');
-        if (!firstCard) return viewport.clientWidth;
-        const styles = window.getComputedStyle(firstCard);
-        const marginStart = parseFloat(styles.marginInlineStart || styles.marginLeft || '0') || 0;
-        const marginEnd = parseFloat(styles.marginInlineEnd || styles.marginRight || '0') || 0;
-        return firstCard.offsetWidth + marginStart + marginEnd;
-      };
-
-      const onPrev = () => {
-        viewport.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
-      };
-      const onNext = () => {
-        viewport.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
-      };
-      const onScroll = () => updateNavState();
-      const onWheel = event => {
-        if (event.ctrlKey) return;
-        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
-          ? event.deltaX
-          : event.deltaY;
-        if (delta === 0) return;
-        event.preventDefault();
-        viewport.scrollBy({ left: delta, behavior: 'smooth' });
-      };
-
-      prevBtn.addEventListener('click', onPrev);
-      addCleanup(() => prevBtn.removeEventListener('click', onPrev));
-      nextBtn.addEventListener('click', onNext);
-      addCleanup(() => nextBtn.removeEventListener('click', onNext));
-      viewport.addEventListener('scroll', onScroll);
-      addCleanup(() => viewport.removeEventListener('scroll', onScroll));
-      let wheelListenerOptions = { passive: false };
-      try {
-        viewport.addEventListener('wheel', onWheel, wheelListenerOptions);
-      } catch (err) {
-        viewport.addEventListener('wheel', onWheel);
-        wheelListenerOptions = null;
-      }
-      addCleanup(() => {
-        if (wheelListenerOptions) {
-          viewport.removeEventListener('wheel', onWheel, wheelListenerOptions);
-        } else {
-          viewport.removeEventListener('wheel', onWheel);
-        }
-      });
-
-      if (typeof ResizeObserver !== 'undefined') {
-        const observer = new ResizeObserver(() => updateNavState());
-        observer.observe(viewport);
-        addCleanup(() => observer.disconnect());
-      } else {
-        const onResize = () => updateNavState();
-        window.addEventListener('resize', onResize);
-        addCleanup(() => window.removeEventListener('resize', onResize));
-      }
-
-      ownerRowCleanupHandlers.push(() => {
-        cleanupFns.forEach(fn => {
-          try {
-            fn();
-          } catch (err) {
-            console.error('Erro ao remover eventos de navegação da linha:', err);
-          }
-        });
-        cleanupFns.length = 0;
-      });
-
-      prevBtn.disabled = true;
-      nextBtn.disabled = true;
-      viewport.scrollLeft = 0;
-      updateNavState();
-      requestAnimationFrame(() => updateNavState());
     }
 
     async function verificarDia() {
