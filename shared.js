@@ -540,7 +540,7 @@ document.addEventListener('navbarLoaded', () => {
       return;
     }
     if (!searchPages.length) collectSearchPages();
-        const manualMatches = manualSearchEntries.filter((entry) =>
+    const manualMatches = manualSearchEntries.filter((entry) =>
       entry.keywords.some((keyword) =>
         normalizedQuery.includes(normalizeSearchTerm(keyword)),
       ),
@@ -548,7 +548,7 @@ document.addEventListener('navbarLoaded', () => {
     const filtered = searchPages.filter((p) =>
       normalizeSearchTerm(p.title).includes(normalizedQuery),
     );
- const manualTitleMatches = manualSearchEntries.filter((entry) =>
+    const manualTitleMatches = manualSearchEntries.filter((entry) =>
       normalizeSearchTerm(entry.title).includes(normalizedQuery),
     );
     const combined = uniqueByHref([
