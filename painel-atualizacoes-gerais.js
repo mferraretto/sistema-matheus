@@ -96,6 +96,61 @@ const reuniaoParticipantesVazioEl = document.getElementById(
 );
 const reuniaoModalStatusEl = document.getElementById('reuniaoModalStatus');
 const formReuniao = document.getElementById('formReuniao');
+const tabButtons = document.querySelectorAll('[data-tab-target]');
+const tabPanels = document.querySelectorAll('[data-tab-panel]');
+const muralResumoDestinatariosEl = document.getElementById(
+  'muralResumoDestinatarios',
+);
+const muralResumoProximaReuniaoEl = document.getElementById(
+  'muralResumoProximaReuniao',
+);
+const muralMensagemDestaqueTextoEl = document.getElementById(
+  'muralMensagemDestaqueTexto',
+);
+const muralMensagemDestaqueAutorEl = document.getElementById(
+  'muralMensagemDestaqueAutor',
+);
+const muralMensagensListaEl = document.getElementById('muralMensagensLista');
+const muralMensagensVazioEl = document.getElementById('muralMensagensVazio');
+const muralProblemasListaEl = document.getElementById('muralProblemasLista');
+const muralProblemasVazioEl = document.getElementById('muralProblemasVazio');
+const muralReunioesListaEl = document.getElementById('muralReunioesLista');
+const muralReunioesVazioEl = document.getElementById('muralReunioesVazio');
+const muralProdutosListaEl = document.getElementById('muralProdutosLista');
+const muralProdutosVazioEl = document.getElementById('muralProdutosVazio');
+const modalDestinatariosEl = document.getElementById(
+  'modalDestinatariosMensagem',
+);
+const modalDestinatariosListaEl = document.getElementById(
+  'destinatariosMensagemLista',
+);
+const modalDestinatariosVazioEl = document.getElementById(
+  'destinatariosMensagemVazio',
+);
+const modalDestinatariosStatusEl = document.getElementById(
+  'destinatariosMensagemStatus',
+);
+const modalDestinatariosMensagemResumoEl = document.getElementById(
+  'modalDestinatariosMensagemResumo',
+);
+const modalDestinatariosFecharBtn = document.getElementById(
+  'modalDestinatariosFechar',
+);
+const modalDestinatariosCancelarBtn = document.getElementById(
+  'modalDestinatariosCancelar',
+);
+const destinatariosSelecionarTodosBtn = document.getElementById(
+  'destinatariosSelecionarTodos',
+);
+const destinatariosLimparSelecaoBtn = document.getElementById(
+  'destinatariosLimparSelecao',
+);
+const modalDestinatariosConfirmarBtn = document.getElementById(
+  'modalDestinatariosConfirmar',
+);
+const formDestinatariosMensagem = document.getElementById(
+  'formDestinatariosMensagem',
+);
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -111,6 +166,11 @@ let reunioesDados = [];
 let reunioesPorDia = new Map();
 let dataReuniaoSelecionada = '';
 let reuniaoParticipantesSelecionados = new Set();
+let mensagensDados = [];
+let problemasDados = [];
+let produtosDados = [];
+let destinatariosMensagemSelecionados = new Set();
+let mensagemEmPreparacao = '';
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -168,6 +228,14 @@ function formatDate(value, includeTime = true) {
 function capitalizeFirstLetter(text) {
   if (!text) return '';
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function truncarTexto(texto, limite = 120) {
+  if (!texto && texto !== 0) return '';
+  const valor = String(texto).trim();
+  if (!valor) return '';
+  if (valor.length <= limite) return valor;
+  return `${valor.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
 }
 
 function toDateKey(date) {
@@ -365,8 +433,10 @@ async function carregarDetalhesParticipantes(uids = []) {
 
   renderizarParticipantesDisponiveis();
   renderizarParticipantesModalReuniao();
+  renderizarDestinatariosMensagemModal();
   atualizarCalendarioReunioes();
   renderizarListaReunioes();
+  atualizarMuralHero();
 }
 
 function renderizarParticipantesDisponiveis() {
@@ -472,6 +542,187 @@ function atualizarResumoDestinatarios() {
       mensagemEscopoEl.textContent = `Compartilhado com ${selecionados.length} destinatários selecionados.`;
     }
   }
+
+  atualizarResumoModalDestinatarios();
+  atualizarMuralHero();
+}
+
+function atualizarResumoModalDestinatarios() {
+  if (!modalDestinatariosStatusEl) return;
+  const modalAtivo =
+    modalDestinatariosEl && !modalDestinatariosEl.classList.contains('hidden');
+  if (!modalAtivo) {
+    if (modalDestinatariosStatusEl.textContent) {
+      setStatus(modalDestinatariosStatusEl, '');
+    }
+    return;
+  }
+
+  if (!participantesDetalhes.length) {
+    setStatus(
+      modalDestinatariosStatusEl,
+      'Nenhum destinatário disponível para envio.',
+      true,
+    );
+    return;
+  }
+
+  const totalSelecionados = destinatariosMensagemSelecionados.size;
+  if (!totalSelecionados) {
+    setStatus(
+      modalDestinatariosStatusEl,
+      'Selecione ao menos um destinatário ou utilize Enviar para todos.',
+      false,
+    );
+    return;
+  }
+
+  const totalDisponiveis = participantesDetalhes.length;
+  if (totalSelecionados >= totalDisponiveis) {
+    setStatus(
+      modalDestinatariosStatusEl,
+      'Enviar para todos os contatos conectados.',
+      false,
+    );
+    return;
+  }
+
+  setStatus(
+    modalDestinatariosStatusEl,
+    `Enviar para ${totalSelecionados} ${
+      totalSelecionados === 1
+        ? 'destinatário selecionado'
+        : 'destinatários selecionados'
+    }.`,
+    false,
+  );
+}
+
+function renderizarDestinatariosMensagemModal() {
+  if (!modalDestinatariosListaEl) return;
+
+  modalDestinatariosListaEl.innerHTML = '';
+
+  if (!participantesDetalhes.length) {
+    modalDestinatariosVazioEl?.classList.remove('hidden');
+    atualizarResumoModalDestinatarios();
+    return;
+  }
+
+  modalDestinatariosVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+
+  participantesDetalhes.forEach((info) => {
+    const item = document.createElement('label');
+    item.className =
+      'flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-300';
+    item.dataset.uid = info.uid;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className =
+      'mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500';
+    checkbox.checked = destinatariosMensagemSelecionados.has(info.uid);
+    checkbox.addEventListener('change', (event) => {
+      if (event.target.checked) {
+        destinatariosMensagemSelecionados.add(info.uid);
+      } else {
+        destinatariosMensagemSelecionados.delete(info.uid);
+      }
+      atualizarResumoModalDestinatarios();
+    });
+
+    const content = document.createElement('div');
+    content.className = 'flex-1 min-w-0';
+
+    const nomeEl = document.createElement('p');
+    nomeEl.className = 'text-sm font-medium text-gray-800';
+    if (info.isAtual) {
+      nomeEl.textContent = `${info.nome || 'Você'} (você)`;
+    } else {
+      nomeEl.textContent = info.nome || 'Usuário';
+    }
+
+    const detalheEl = document.createElement('p');
+    detalheEl.className = 'text-xs text-gray-500';
+    if (info.email && info.papel) {
+      detalheEl.textContent = `${info.email} • ${info.papel}`;
+    } else if (info.email) {
+      detalheEl.textContent = info.email;
+    } else if (info.papel) {
+      detalheEl.textContent = info.papel;
+    } else {
+      detalheEl.textContent = 'Detalhes não informados';
+    }
+
+    content.appendChild(nomeEl);
+    content.appendChild(detalheEl);
+
+    item.appendChild(checkbox);
+    item.appendChild(content);
+    frag.appendChild(item);
+  });
+
+  modalDestinatariosListaEl.appendChild(frag);
+  atualizarResumoModalDestinatarios();
+}
+
+function abrirModalDestinatariosMensagem(texto) {
+  if (!modalDestinatariosEl) return;
+
+  mensagemEmPreparacao = texto;
+  setStatus(modalDestinatariosStatusEl, '');
+
+  const baseSelecao = Array.isArray(participantesCompartilhamento)
+    ? participantesCompartilhamento
+    : [];
+  destinatariosMensagemSelecionados = new Set(
+    baseSelecao.filter((uid) => typeof uid === 'string' && uid),
+  );
+
+  if (!destinatariosMensagemSelecionados.size) {
+    participantesDetalhes
+      .map((info) => info.uid)
+      .filter((uid) => typeof uid === 'string' && uid)
+      .forEach((uid) => destinatariosMensagemSelecionados.add(uid));
+  }
+
+  if (modalDestinatariosMensagemResumoEl) {
+    modalDestinatariosMensagemResumoEl.textContent = truncarTexto(texto, 110);
+  }
+
+  modalDestinatariosEl.classList.remove('hidden');
+  modalDestinatariosEl.classList.add('flex');
+  modalDestinatariosEl.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('overflow-hidden');
+
+  renderizarDestinatariosMensagemModal();
+}
+
+function fecharModalDestinatariosMensagem() {
+  if (!modalDestinatariosEl) return;
+  modalDestinatariosEl.classList.add('hidden');
+  modalDestinatariosEl.classList.remove('flex');
+  modalDestinatariosEl.setAttribute('aria-hidden', 'true');
+  if (!modalReuniaoEl || modalReuniaoEl.classList.contains('hidden')) {
+    document.body.classList.remove('overflow-hidden');
+  }
+  mensagemEmPreparacao = '';
+  setStatus(modalDestinatariosStatusEl, '');
+}
+
+function selecionarTodosDestinatariosModal() {
+  destinatariosMensagemSelecionados = new Set(
+    participantesDetalhes
+      .map((info) => info.uid)
+      .filter((uid) => typeof uid === 'string' && uid),
+  );
+  renderizarDestinatariosMensagemModal();
+}
+
+function limparSelecaoDestinatariosModal() {
+  destinatariosMensagemSelecionados.clear();
+  renderizarDestinatariosMensagemModal();
 }
 
 function obterParticipantesParaEnvio() {
@@ -495,6 +746,26 @@ function limparSelecaoDestinatarios() {
       input.checked = false;
     });
   atualizarResumoDestinatarios();
+}
+
+function ativarAba(targetId) {
+  if (!targetId) return;
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.tabTarget === targetId;
+    button.classList.toggle('opacity-60', !isActive);
+    button.classList.toggle('opacity-100', isActive);
+    button.classList.toggle('ring-2', isActive);
+    button.classList.toggle('ring-offset-2', isActive);
+    button.classList.toggle('ring-blue-200', isActive);
+    button.classList.toggle('shadow-lg', isActive);
+    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    button.setAttribute('tabindex', isActive ? '0' : '-1');
+  });
+  tabPanels.forEach((panel) => {
+    const isActive = panel.dataset.tabPanel === targetId;
+    panel.classList.toggle('hidden', !isActive);
+    panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
 }
 
 function obterDataHoraReuniao(reuniao) {
@@ -635,6 +906,275 @@ function renderizarListaReunioes() {
   });
 
   listaReunioesEl.appendChild(frag);
+}
+
+function obterProximaReuniao() {
+  const agora = new Date();
+  const candidatos = reunioesDados
+    .map((reuniao) => ({
+      ...reuniao,
+      inicio: obterDataHoraReuniao(reuniao),
+    }))
+    .filter(
+      (reuniao) =>
+        reuniao.inicio instanceof Date && !Number.isNaN(reuniao.inicio),
+    )
+    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+  return (
+    candidatos.find((item) => item.inicio.getTime() >= agora.getTime()) || null
+  );
+}
+
+function atualizarMuralHero() {
+  if (muralMensagemDestaqueTextoEl) {
+    if (mensagensDados.length) {
+      const mensagem = mensagensDados[0];
+      muralMensagemDestaqueTextoEl.textContent =
+        truncarTexto(mensagem.texto, 160) ||
+        'Compartilhe uma atualização para iniciar o dia.';
+      const detalhes = [];
+      if (mensagem.autor) detalhes.push(`por ${mensagem.autor}`);
+      if (mensagem.createdAt)
+        detalhes.push(formatDate(mensagem.createdAt, true));
+      muralMensagemDestaqueAutorEl.textContent = detalhes.join(' • ');
+    } else {
+      muralMensagemDestaqueTextoEl.textContent =
+        'Compartilhe uma atualização para iniciar o dia.';
+      muralMensagemDestaqueAutorEl.textContent =
+        'As mensagens aparecerão aqui assim que forem enviadas.';
+    }
+  }
+
+  if (muralResumoDestinatariosEl) {
+    const total =
+      participantesDetalhes.length || participantesCompartilhamento.length;
+    if (total) {
+      muralResumoDestinatariosEl.textContent = `${total} ${
+        total === 1 ? 'destinatário' : 'destinatários'
+      }`;
+    } else {
+      muralResumoDestinatariosEl.textContent =
+        'Nenhum destinatário configurado';
+    }
+  }
+
+  if (muralResumoProximaReuniaoEl) {
+    const proxima = obterProximaReuniao();
+    if (proxima) {
+      const inicio = obterDataHoraReuniao(proxima);
+      const dataTexto = inicio ? formatLongDate(inicio) : '';
+      const horaTexto =
+        normalizeTimeValue(proxima.hora) ||
+        (inicio ? formatHourFromDate(inicio) : '');
+      const participantesResumo = resumirNomesParticipantes(
+        obterNomesParticipantesReuniao(proxima),
+      );
+      const partes = [];
+      if (dataTexto) partes.push(dataTexto);
+      if (horaTexto) partes.push(`às ${horaTexto}`);
+      if (participantesResumo) partes.push(participantesResumo);
+      muralResumoProximaReuniaoEl.textContent = partes.join(' • ');
+    } else {
+      muralResumoProximaReuniaoEl.textContent =
+        'Nenhuma reunião futura agendada.';
+    }
+  }
+}
+
+function atualizarMuralMensagens() {
+  if (!muralMensagensListaEl) return;
+  muralMensagensListaEl.innerHTML = '';
+
+  if (!mensagensDados.length) {
+    muralMensagensVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  muralMensagensVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+  mensagensDados.slice(0, 4).forEach((mensagem) => {
+    const card = document.createElement('article');
+    card.className =
+      'rounded-xl border border-blue-100 bg-blue-50/40 p-4 shadow-sm';
+
+    const textoEl = document.createElement('p');
+    textoEl.className = 'text-sm text-gray-700';
+    textoEl.textContent = truncarTexto(mensagem.texto, 160);
+    card.appendChild(textoEl);
+
+    const metaEl = document.createElement('p');
+    metaEl.className =
+      'mt-2 text-[11px] uppercase tracking-wide text-blue-700/70';
+    const detalhes = [];
+    if (mensagem.autor) detalhes.push(mensagem.autor);
+    if (mensagem.createdAt) detalhes.push(formatDate(mensagem.createdAt, true));
+    metaEl.textContent = detalhes.join(' • ');
+    if (metaEl.textContent) card.appendChild(metaEl);
+
+    frag.appendChild(card);
+  });
+  muralMensagensListaEl.appendChild(frag);
+}
+
+function atualizarMuralProblemas() {
+  if (!muralProblemasListaEl) return;
+  muralProblemasListaEl.innerHTML = '';
+
+  if (!problemasDados.length) {
+    muralProblemasVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  muralProblemasVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+  problemasDados.slice(0, 4).forEach((problema) => {
+    const card = document.createElement('article');
+    card.className =
+      'rounded-xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm';
+
+    const descricaoEl = document.createElement('p');
+    descricaoEl.className = 'text-sm font-semibold text-amber-700';
+    descricaoEl.textContent =
+      truncarTexto(problema.problema, 150) || 'Problema sem descrição';
+    card.appendChild(descricaoEl);
+
+    const detalhes = [];
+    if (problema.setor) detalhes.push(`Setor ${problema.setor}`);
+    if (problema.responsavel)
+      detalhes.push(`Responsável ${problema.responsavel}`);
+    if (detalhes.length) {
+      const detalhesEl = document.createElement('p');
+      detalhesEl.className = 'mt-2 text-xs text-amber-700/80';
+      detalhesEl.textContent = detalhes.join(' • ');
+      card.appendChild(detalhesEl);
+    }
+
+    if (problema.solucao) {
+      const solucaoEl = document.createElement('p');
+      solucaoEl.className =
+        'mt-2 rounded-lg bg-white/70 p-2 text-xs text-amber-700';
+      solucaoEl.textContent = truncarTexto(`Solução: ${problema.solucao}`, 160);
+      card.appendChild(solucaoEl);
+    }
+
+    const datas = [];
+    if (problema.dataOcorrencia)
+      datas.push(`Registro ${formatDate(problema.dataOcorrencia, false)}`);
+    if (problema.createdAt)
+      datas.push(`Atualizado ${formatDate(problema.createdAt, true)}`);
+    if (datas.length) {
+      const dataEl = document.createElement('p');
+      dataEl.className = 'mt-2 text-[11px] text-amber-600/80';
+      dataEl.textContent = datas.join(' • ');
+      card.appendChild(dataEl);
+    }
+
+    frag.appendChild(card);
+  });
+  muralProblemasListaEl.appendChild(frag);
+}
+
+function atualizarMuralProdutos() {
+  if (!muralProdutosListaEl) return;
+  muralProdutosListaEl.innerHTML = '';
+
+  if (!produtosDados.length) {
+    muralProdutosVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  muralProdutosVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+  produtosDados.slice(0, 4).forEach((produto) => {
+    const card = document.createElement('article');
+    card.className =
+      'rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-sm';
+
+    const nomeEl = document.createElement('p');
+    nomeEl.className = 'text-sm font-semibold text-emerald-700';
+    nomeEl.textContent = produto.nome || 'Produto sem nome';
+    card.appendChild(nomeEl);
+
+    if (produto.observacoes) {
+      const obsEl = document.createElement('p');
+      obsEl.className = 'mt-2 text-xs text-emerald-700/80';
+      obsEl.textContent = truncarTexto(produto.observacoes, 150);
+      card.appendChild(obsEl);
+    }
+
+    const detalhes = [];
+    if (produto.autor) detalhes.push(`Por ${produto.autor}`);
+    if (produto.createdAt) detalhes.push(formatDate(produto.createdAt, true));
+    if (detalhes.length) {
+      const detalheEl = document.createElement('p');
+      detalheEl.className = 'mt-2 text-[11px] text-emerald-600/80';
+      detalheEl.textContent = detalhes.join(' • ');
+      card.appendChild(detalheEl);
+    }
+
+    frag.appendChild(card);
+  });
+  muralProdutosListaEl.appendChild(frag);
+}
+
+function atualizarMuralReunioes() {
+  if (!muralReunioesListaEl) return;
+  muralReunioesListaEl.innerHTML = '';
+
+  const proximas = reunioesDados
+    .map((reuniao) => ({
+      ...reuniao,
+      inicio: obterDataHoraReuniao(reuniao),
+    }))
+    .filter(
+      (reuniao) =>
+        reuniao.inicio instanceof Date && !Number.isNaN(reuniao.inicio),
+    )
+    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+
+  if (!proximas.length) {
+    muralReunioesVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  muralReunioesVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+  proximas.slice(0, 4).forEach((reuniao) => {
+    const card = document.createElement('article');
+    card.className =
+      'rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 shadow-sm';
+
+    const dataEl = document.createElement('p');
+    dataEl.className = 'text-sm font-semibold text-indigo-700';
+    const inicio = reuniao.inicio;
+    const dataTexto = inicio ? formatShortDate(inicio) : '';
+    const horaTexto =
+      normalizeTimeValue(reuniao.hora) ||
+      (inicio ? formatHourFromDate(inicio) : '');
+    dataEl.textContent = horaTexto ? `${dataTexto} • ${horaTexto}` : dataTexto;
+    card.appendChild(dataEl);
+
+    const descricao = (reuniao.descricao || '').toString().trim();
+    if (descricao) {
+      const descricaoEl = document.createElement('p');
+      descricaoEl.className = 'mt-2 text-sm text-gray-700';
+      descricaoEl.textContent = truncarTexto(descricao, 140);
+      card.appendChild(descricaoEl);
+    }
+
+    const participantesResumo = resumirNomesParticipantes(
+      obterNomesParticipantesReuniao(reuniao),
+    );
+    if (participantesResumo) {
+      const participantesEl = document.createElement('p');
+      participantesEl.className = 'mt-2 text-xs text-indigo-700/80';
+      participantesEl.textContent = participantesResumo;
+      card.appendChild(participantesEl);
+    }
+
+    frag.appendChild(card);
+  });
+  muralReunioesListaEl.appendChild(frag);
 }
 
 function obterDiasCalendario(baseDate) {
@@ -930,7 +1470,12 @@ function fecharModalReuniao() {
   modalReuniaoEl.classList.add('hidden');
   modalReuniaoEl.classList.remove('flex');
   modalReuniaoEl.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('overflow-hidden');
+  if (
+    !modalDestinatariosEl ||
+    modalDestinatariosEl.classList.contains('hidden')
+  ) {
+    document.body.classList.remove('overflow-hidden');
+  }
   dataReuniaoSelecionada = '';
   reuniaoParticipantesSelecionados.clear();
   setStatus(reuniaoModalStatusEl, '');
@@ -1459,20 +2004,37 @@ function carregarMensagens() {
     mensagensRef,
     (snap) => {
       listaMensagensEl.innerHTML = '';
+      mensagensDados = [];
       if (snap.empty) {
         mensagensVazioEl?.classList.remove('hidden');
+        atualizarMuralMensagens();
+        atualizarMuralHero();
         return;
       }
       mensagensVazioEl?.classList.add('hidden');
       const frag = document.createDocumentFragment();
       snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        mensagensDados.push({
+          id: docSnap.id,
+          texto: (data.texto || '').toString(),
+          autor: data.autorNome || data.responsavelNome || '',
+          createdAt:
+            data.createdAt?.toDate?.() ||
+            (data.createdAt instanceof Date ? data.createdAt : null),
+        });
         frag.appendChild(renderMensagem(docSnap));
       });
       listaMensagensEl.appendChild(frag);
+      atualizarMuralMensagens();
+      atualizarMuralHero();
     },
     (err) => {
       console.error('Erro ao carregar mensagens:', err);
       mensagensVazioEl?.classList.remove('hidden');
+      mensagensDados = [];
+      atualizarMuralMensagens();
+      atualizarMuralHero();
     },
   );
 }
@@ -1491,18 +2053,37 @@ function carregarProblemas() {
     problemasRef,
     (snap) => {
       listaProblemasEl.innerHTML = '';
+      problemasDados = [];
       if (snap.empty) {
         problemasVazioEl?.classList.remove('hidden');
+        atualizarMuralProblemas();
         return;
       }
       problemasVazioEl?.classList.add('hidden');
       const frag = document.createDocumentFragment();
-      snap.forEach((docSnap) => frag.appendChild(renderProblema(docSnap)));
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        problemasDados.push({
+          id: docSnap.id,
+          problema: (data.problema || '').toString(),
+          setor: (data.setor || '').toString(),
+          responsavel: (data.responsavel || '').toString(),
+          solucao: (data.solucao || '').toString(),
+          dataOcorrencia: data.dataOcorrencia || '',
+          createdAt:
+            data.createdAt?.toDate?.() ||
+            (data.createdAt instanceof Date ? data.createdAt : null),
+        });
+        frag.appendChild(renderProblema(docSnap));
+      });
       listaProblemasEl.appendChild(frag);
+      atualizarMuralProblemas();
     },
     (err) => {
       console.error('Erro ao carregar problemas:', err);
       problemasVazioEl?.classList.remove('hidden');
+      problemasDados = [];
+      atualizarMuralProblemas();
     },
   );
 }
@@ -1520,13 +2101,27 @@ function carregarProdutos() {
     produtosRef,
     (snap) => {
       listaProdutosEl.innerHTML = '';
+      produtosDados = [];
       if (snap.empty) {
         produtosVazioEl?.classList.remove('hidden');
+        atualizarMuralProdutos();
         return;
       }
       produtosVazioEl?.classList.add('hidden');
       const itens = [];
-      snap.forEach((docSnap) => itens.push(docSnap));
+      snap.forEach((docSnap) => {
+        itens.push(docSnap);
+        const data = docSnap.data() || {};
+        produtosDados.push({
+          id: docSnap.id,
+          nome: (data.nome || '').toString(),
+          observacoes: (data.observacoes || '').toString(),
+          autor: data.autorNome || '',
+          createdAt:
+            data.createdAt?.toDate?.() ||
+            (data.createdAt instanceof Date ? data.createdAt : null),
+        });
+      });
       itens
         .sort((a, b) => {
           const nomeA = (a.data()?.nome || '').toLowerCase();
@@ -1538,10 +2133,13 @@ function carregarProdutos() {
         .forEach((docSnap) =>
           listaProdutosEl.appendChild(renderProduto(docSnap)),
         );
+      atualizarMuralProdutos();
     },
     (err) => {
       console.error('Erro ao carregar produtos:', err);
       produtosVazioEl?.classList.remove('hidden');
+      produtosDados = [];
+      atualizarMuralProdutos();
     },
   );
 }
@@ -1601,6 +2199,8 @@ function carregarReunioes() {
       atualizarMapaReunioes();
       atualizarCalendarioReunioes();
       renderizarListaReunioes();
+      atualizarMuralReunioes();
+      atualizarMuralHero();
     },
     (err) => {
       console.error('Erro ao carregar reuniões:', err);
@@ -1608,6 +2208,8 @@ function carregarReunioes() {
       atualizarMapaReunioes();
       atualizarCalendarioReunioes();
       renderizarListaReunioes();
+      atualizarMuralReunioes();
+      atualizarMuralHero();
       showTemporaryStatus(
         reunioesStatusEl,
         'Não foi possível carregar o calendário de reuniões.',
@@ -1617,7 +2219,7 @@ function carregarReunioes() {
   );
 }
 
-async function enviarMensagem(event) {
+function enviarMensagem(event) {
   event.preventDefault();
   if (!currentUser) return;
   const texto = mensagemInput?.value.trim();
@@ -1629,30 +2231,84 @@ async function enviarMensagem(event) {
     );
     return;
   }
+  abrirModalDestinatariosMensagem(texto);
+}
+
+async function confirmarEnvioMensagem(event) {
+  event.preventDefault();
+  if (!currentUser) return;
+
+  const textoAtual = mensagemEmPreparacao || mensagemInput?.value.trim();
+  if (!textoAtual) {
+    fecharModalDestinatariosMensagem();
+    showTemporaryStatus(
+      mensagemStatusEl,
+      'Digite uma mensagem antes de enviar.',
+      true,
+    );
+    return;
+  }
+
+  const baseDestinatarios = destinatariosMensagemSelecionados.size
+    ? Array.from(destinatariosMensagemSelecionados)
+    : participantesCompartilhamento;
+  const destino = new Set(
+    (baseDestinatarios || []).filter((uid) => typeof uid === 'string' && uid),
+  );
+  if (currentUser?.uid) {
+    destino.add(currentUser.uid);
+  }
+
+  if (!destino.size) {
+    setStatus(
+      modalDestinatariosStatusEl,
+      'Nenhum destinatário disponível para envio.',
+      true,
+    );
+    return;
+  }
+
   try {
-    const participantesDestino = obterParticipantesParaEnvio();
+    if (modalDestinatariosConfirmarBtn) {
+      modalDestinatariosConfirmarBtn.disabled = true;
+      modalDestinatariosConfirmarBtn.classList.add(
+        'opacity-60',
+        'cursor-not-allowed',
+      );
+    }
     await addDoc(collection(db, 'painelAtualizacoesGerais'), {
       categoria: 'mensagem',
-      texto,
+      texto: textoAtual,
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
       responsavelUid: currentUser.uid,
       responsavelNome: nomeResponsavel,
-      participantes: participantesDestino,
+      participantes: Array.from(destino),
       createdAt: serverTimestamp(),
     });
     mensagemInput.value = '';
+    destinatariosMensagemSelecionados.clear();
+    mensagemEmPreparacao = '';
+    fecharModalDestinatariosMensagem();
     showTemporaryStatus(
       mensagemStatusEl,
       'Mensagem compartilhada com a equipe.',
     );
   } catch (err) {
     console.error('Erro ao enviar mensagem:', err);
-    showTemporaryStatus(
-      mensagemStatusEl,
-      'Não foi possível registrar a mensagem. Tente novamente.',
+    setStatus(
+      modalDestinatariosStatusEl,
+      'Não foi possível enviar a mensagem. Tente novamente.',
       true,
     );
+  } finally {
+    if (modalDestinatariosConfirmarBtn) {
+      modalDestinatariosConfirmarBtn.disabled = false;
+      modalDestinatariosConfirmarBtn.classList.remove(
+        'opacity-60',
+        'cursor-not-allowed',
+      );
+    }
   }
 }
 
@@ -1735,6 +2391,7 @@ async function registrarProduto(event) {
 }
 
 formMensagem?.addEventListener('submit', enviarMensagem);
+formDestinatariosMensagem?.addEventListener('submit', confirmarEnvioMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
 limparParticipantesBtn?.addEventListener('click', limparSelecaoDestinatarios);
@@ -1746,9 +2403,51 @@ modalReuniaoEl?.addEventListener('click', (event) => {
     fecharModalReuniao();
   }
 });
+modalDestinatariosFecharBtn?.addEventListener(
+  'click',
+  fecharModalDestinatariosMensagem,
+);
+modalDestinatariosCancelarBtn?.addEventListener(
+  'click',
+  fecharModalDestinatariosMensagem,
+);
+modalDestinatariosEl?.addEventListener('click', (event) => {
+  if (event.target === modalDestinatariosEl) {
+    fecharModalDestinatariosMensagem();
+  }
+});
+destinatariosSelecionarTodosBtn?.addEventListener(
+  'click',
+  selecionarTodosDestinatariosModal,
+);
+destinatariosLimparSelecaoBtn?.addEventListener(
+  'click',
+  limparSelecaoDestinatariosModal,
+);
+tabButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    ativarAba(button.dataset.tabTarget);
+  });
+});
+if (tabButtons.length) {
+  const inicial =
+    Array.from(tabButtons).find(
+      (btn) => btn.getAttribute('aria-selected') === 'true',
+    )?.dataset.tabTarget || tabButtons[0].dataset.tabTarget;
+  ativarAba(inicial);
+}
 document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  let fechado = false;
   if (
-    event.key === 'Escape' &&
+    modalDestinatariosEl &&
+    !modalDestinatariosEl.classList.contains('hidden')
+  ) {
+    fecharModalDestinatariosMensagem();
+    fechado = true;
+  }
+  if (
+    !fechado &&
     modalReuniaoEl &&
     !modalReuniaoEl.classList.contains('hidden')
   ) {
