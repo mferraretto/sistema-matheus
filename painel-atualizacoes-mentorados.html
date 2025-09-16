@@ -242,11 +242,33 @@
             </div>
           </form>
           <div>
-            <h3
-              class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+            <div
+              class="flex flex-wrap items-center justify-between gap-2"
             >
-              Produtos cadastrados
-            </h3>
+              <h3
+                class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+              >
+                Produtos cadastrados
+              </h3>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  id="exportarPecasBtn"
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <i class="fa-solid fa-file-excel mr-2"></i>
+                  Exportar Excel
+                </button>
+                <button
+                  id="sincronizarCustosBtn"
+                  type="button"
+                  class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <i class="fa-solid fa-arrows-rotate mr-2"></i>
+                  Atualizar custos
+                </button>
+              </div>
+            </div>
             <div id="listaProdutos" class="mt-3 space-y-3"></div>
             <p id="produtosVazio" class="text-sm text-gray-500 hidden">
               Nenhum produto em linha cadastrado até o momento.

@@ -16,13 +16,15 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  setDoc,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
   getAuth,
   onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { carregarUsuariosFinanceiros } from './responsavel-financeiro.js';
+import { encryptString, decryptString } from './crypto.js';
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -52,6 +54,8 @@ const produtoStatusEl = document.getElementById('produtoStatus');
 const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
+const exportarPecasBtn = document.getElementById('exportarPecasBtn');
+const sincronizarCustosBtn = document.getElementById('sincronizarCustosBtn');
 
 const VISIBILIDADE_GLOBAL_ID = '__todos_conectados__';
 
@@ -358,6 +362,403 @@ function atualizarListaProdutos() {
   });
   listaProdutosEl.appendChild(frag);
   atualizarStatusProdutos();
+}
+
+let xlsxLoaderPromise = null;
+
+async function ensureXlsxLoaded() {
+  if (window.XLSX) return window.XLSX;
+  if (!xlsxLoaderPromise) {
+    xlsxLoaderPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => resolve(window.XLSX);
+      script.onerror = () =>
+        reject(new Error('Falha ao carregar biblioteca XLSX.'));
+      document.head.appendChild(script);
+    });
+  }
+  try {
+    const lib = await xlsxLoaderPromise;
+    return lib;
+  } catch (err) {
+    xlsxLoaderPromise = null;
+    throw err;
+  }
+}
+
+function normalizarSkuChave(valor) {
+  const texto = String(valor ?? '')
+    .trim()
+    .toUpperCase();
+  return texto || '';
+}
+
+function converterNumero(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor) ? valor : null;
+  }
+  const texto = String(valor)
+    .trim()
+    .replace(/\.(?=\d{3}(?:\D|$))/g, '')
+    .replace(',', '.')
+    .replace(/[^\d.-]/g, '');
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+function numerosSaoQuaseIguais(a, b, tolerancia = 0.009) {
+  const numA = converterNumero(a);
+  const numB = converterNumero(b);
+  if (numA === null || numB === null) return false;
+  return Math.abs(numA - numB) <= tolerancia;
+}
+
+function calcularPrecosComNovoCusto(produto = {}, novoCusto) {
+  const custoConvertido = converterNumero(novoCusto);
+  const custoNumero = Number.isFinite(custoConvertido) ? custoConvertido : 0;
+
+  let percentualTotal = 0;
+  let valorFixoTotal = 0;
+
+  if (produto && typeof produto === 'object' && produto.taxas) {
+    Object.entries(produto.taxas).forEach(([chave, valor]) => {
+      const numero = converterNumero(valor);
+      if (numero === null) return;
+      if (String(chave).includes('%')) {
+        percentualTotal += numero;
+      } else {
+        valorFixoTotal += numero;
+      }
+    });
+  }
+
+  const denominador = 1 - percentualTotal / 100;
+  let precoMinimo = custoNumero;
+  if (Number.isFinite(valorFixoTotal)) {
+    if (denominador > 0.000001) {
+      precoMinimo = (custoNumero + valorFixoTotal) / denominador;
+    } else {
+      precoMinimo = custoNumero + valorFixoTotal;
+    }
+  }
+
+  const precoPromo = precoMinimo;
+  const precoMedio = precoMinimo * 1.05;
+  const precoIdeal = precoMinimo * 1.1;
+
+  const arredondar = (valor) =>
+    Number.isFinite(valor) ? Number(valor.toFixed(2)) : 0;
+
+  return {
+    custo: arredondar(custoNumero),
+    precoMinimo: arredondar(precoMinimo),
+    precoPromo: arredondar(precoPromo),
+    precoMedio: arredondar(precoMedio),
+    precoIdeal: arredondar(precoIdeal),
+  };
+}
+
+function coletarItensParaExportacao() {
+  const itens = [];
+  if (Array.isArray(importadosProdutosCache)) {
+    importadosProdutosCache.forEach((item) => {
+      const sobraNumero = converterNumero(item.sobra);
+      itens.push({
+        Data:
+          formatDate(
+            item.dataReferencia ||
+              item.atualizadoEm ||
+              ultimaImportacaoMeta?.dataReferencia,
+            false,
+          ) || '',
+        SKU: item.sku || '',
+        Produto: obterNomeProduto(item),
+        Sobra:
+          sobraNumero !== null
+            ? Number((Math.round(sobraNumero * 100) / 100).toFixed(2))
+            : '',
+      });
+    });
+  }
+
+  if (Array.isArray(manualProdutosCache)) {
+    manualProdutosCache.forEach((item) => {
+      itens.push({
+        Data: formatDate(item.createdAt, false) || '',
+        SKU: item.sku || '',
+        Produto: obterNomeProduto(item),
+        Sobra: '',
+      });
+    });
+  }
+
+  return itens;
+}
+
+function obterItensParaSincronizacao() {
+  const mapa = new Map();
+  if (!Array.isArray(importadosProdutosCache)) return mapa;
+  importadosProdutosCache.forEach((item) => {
+    const skuNormalizado = normalizarSkuChave(item.sku);
+    if (!skuNormalizado) return;
+    const sobraNumero = converterNumero(item.sobra);
+    if (sobraNumero === null) return;
+    const custoNormalizado = Math.round(sobraNumero * 100) / 100;
+    mapa.set(skuNormalizado, {
+      skuOriginal: item.sku || '',
+      custo: custoNormalizado,
+      item,
+    });
+  });
+  return mapa;
+}
+
+async function buscarProdutosPorSkus(uid, itensMap) {
+  const encontrados = new Map();
+  if (!uid || !itensMap.size) return encontrados;
+
+  let snap;
+  try {
+    snap = await getDocs(collection(db, 'uid', uid, 'produtos'));
+  } catch (err) {
+    console.error(
+      'Erro ao carregar produtos cadastrados para comparação de SKUs:',
+      err,
+    );
+    throw err;
+  }
+
+  const candidatosSenha = [];
+  const passLocal = getPassphrase();
+  if (passLocal) candidatosSenha.push(passLocal);
+  if (uid) {
+    candidatosSenha.push(`chave-${uid}`);
+    candidatosSenha.push(uid);
+  }
+
+  for (const docSnap of snap.docs) {
+    const docData = docSnap.data() || {};
+    let dadosProduto = docData;
+    let descriptografado = false;
+
+    if (docData.encrypted) {
+      for (const senha of candidatosSenha) {
+        if (!senha) continue;
+        try {
+          const texto = await decryptString(docData.encrypted, senha);
+          if (texto) {
+            dadosProduto = JSON.parse(texto);
+            descriptografado = true;
+            break;
+          }
+        } catch (err) {
+          // tenta próximo candidato
+        }
+      }
+      if (!descriptografado) {
+        console.warn(
+          `Não foi possível descriptografar o produto ${docSnap.id} para sincronização de custos.`,
+        );
+        continue;
+      }
+    }
+
+    if (!dadosProduto || typeof dadosProduto !== 'object') continue;
+    const skuNormalizado = normalizarSkuChave(
+      dadosProduto.sku || docData.sku || docSnap.id,
+    );
+    if (!skuNormalizado || !itensMap.has(skuNormalizado)) continue;
+
+    encontrados.set(skuNormalizado, {
+      ref: docSnap.ref,
+      data: dadosProduto,
+      raw: docData,
+      encrypted: Boolean(docData.encrypted),
+    });
+  }
+
+  return encontrados;
+}
+
+async function atualizarProdutosComSobras(uid, itensMap) {
+  const encontrados = await buscarProdutosPorSkus(uid, itensMap);
+  let encontradosTotal = 0;
+  let atualizados = 0;
+  const senhaCriptografia = getPassphrase() || `chave-${uid}`;
+
+  for (const [skuNormalizado, itemImportado] of itensMap.entries()) {
+    const produtoExistente = encontrados.get(skuNormalizado);
+    if (!produtoExistente) continue;
+    encontradosTotal += 1;
+
+    const dadosAtuais = produtoExistente.data || {};
+    const precosAtualizados = calcularPrecosComNovoCusto(
+      dadosAtuais,
+      itemImportado.custo,
+    );
+
+    const jaAtualizado =
+      numerosSaoQuaseIguais(dadosAtuais.custo, precosAtualizados.custo) &&
+      numerosSaoQuaseIguais(
+        dadosAtuais.precoMinimo,
+        precosAtualizados.precoMinimo,
+      ) &&
+      numerosSaoQuaseIguais(
+        dadosAtuais.precoIdeal,
+        precosAtualizados.precoIdeal,
+      ) &&
+      numerosSaoQuaseIguais(
+        dadosAtuais.precoMedio,
+        precosAtualizados.precoMedio,
+      ) &&
+      numerosSaoQuaseIguais(
+        dadosAtuais.precoPromo,
+        precosAtualizados.precoPromo,
+      );
+
+    if (jaAtualizado) {
+      continue;
+    }
+
+    const payloadAtualizado = {
+      ...dadosAtuais,
+      ...precosAtualizados,
+      custo: precosAtualizados.custo,
+      atualizadoEm: new Date().toISOString(),
+    };
+
+    try {
+      if (produtoExistente.encrypted) {
+        const encryptedPayload = await encryptString(
+          JSON.stringify(payloadAtualizado),
+          senhaCriptografia,
+        );
+        await setDoc(
+          produtoExistente.ref,
+          {
+            uid,
+            encrypted: encryptedPayload,
+          },
+          { merge: true },
+        );
+      } else {
+        await setDoc(produtoExistente.ref, payloadAtualizado, { merge: true });
+      }
+      atualizados += 1;
+    } catch (err) {
+      console.error(
+        `Erro ao atualizar custo do produto ${skuNormalizado}:`,
+        err,
+      );
+    }
+  }
+
+  return { encontrados: encontradosTotal, atualizados };
+}
+
+async function exportarPecasEmLinha() {
+  const itens = coletarItensParaExportacao();
+  if (!itens.length) {
+    showTemporaryStatus(
+      produtoStatusEl,
+      'Não há peças em linha disponíveis para exportação no momento.',
+      true,
+    );
+    return;
+  }
+
+  exportarPecasBtn?.setAttribute('disabled', 'true');
+  try {
+    const XLSX = await ensureXlsxLoaded();
+    if (!XLSX) throw new Error('Biblioteca XLSX indisponível.');
+    const ws = XLSX.utils.json_to_sheet(itens);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Peças');
+    XLSX.writeFile(wb, 'pecas_em_linha.xlsx');
+    showTemporaryStatus(
+      produtoStatusEl,
+      `Planilha exportada com ${itens.length} peça${
+        itens.length === 1 ? '' : 's'
+      } em linha.`,
+    );
+  } catch (err) {
+    console.error('Erro ao exportar peças em linha:', err);
+    showTemporaryStatus(
+      produtoStatusEl,
+      'Não foi possível exportar a planilha de peças em linha.',
+      true,
+    );
+  } finally {
+    exportarPecasBtn?.removeAttribute('disabled');
+  }
+}
+
+async function sincronizarCustosComSobras() {
+  if (!currentUser) {
+    showTemporaryStatus(
+      produtoStatusEl,
+      'É necessário estar autenticado para atualizar os custos dos produtos.',
+      true,
+    );
+    return;
+  }
+
+  const itensMap = obterItensParaSincronizacao();
+  if (!itensMap.size) {
+    showTemporaryStatus(
+      produtoStatusEl,
+      'Nenhuma peça importada com SKU e sobra disponível para sincronizar.',
+      true,
+    );
+    return;
+  }
+
+  sincronizarCustosBtn?.setAttribute('disabled', 'true');
+  setStatus(
+    produtoStatusEl,
+    'Atualizando custos e precificação com base nas sobras...',
+    false,
+  );
+
+  try {
+    const resultado = await atualizarProdutosComSobras(
+      currentUser.uid,
+      itensMap,
+    );
+    const naoEncontrados = itensMap.size - resultado.encontrados;
+    const partes = [];
+    partes.push(
+      `Custos recalculados para ${resultado.atualizados} produto${
+        resultado.atualizados === 1 ? '' : 's'
+      }`,
+    );
+    if (naoEncontrados > 0) {
+      partes.push(
+        `${naoEncontrados} SKU${naoEncontrados === 1 ? '' : 's'} não encontrado${
+          naoEncontrados === 1 ? '' : 's'
+        } nos produtos cadastrados`,
+      );
+    }
+    showTemporaryStatus(
+      produtoStatusEl,
+      partes.join('. ') + '.',
+      naoEncontrados > 0,
+    );
+    setTimeout(() => atualizarStatusProdutos(), 5200);
+  } catch (err) {
+    console.error('Erro ao sincronizar custos com sobras:', err);
+    showTemporaryStatus(
+      produtoStatusEl,
+      'Não foi possível atualizar os custos com base nas sobras importadas.',
+      true,
+    );
+    setTimeout(() => atualizarStatusProdutos(), 5200);
+  } finally {
+    sincronizarCustosBtn?.removeAttribute('disabled');
+  }
 }
 
 function monitorarItensImportados(importacaoRef) {
@@ -1044,6 +1445,8 @@ async function registrarProduto(event) {
 formMensagem?.addEventListener('submit', enviarMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
+exportarPecasBtn?.addEventListener('click', exportarPecasEmLinha);
+sincronizarCustosBtn?.addEventListener('click', sincronizarCustosComSobras);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
