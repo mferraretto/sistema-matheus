@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+    <script src="expedicao-notifier.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -1110,6 +1111,7 @@
       }
       try {
         const selecionado = await escolherGestorEmail(gestoresEmails);
+        const foraHorarioAtual = foraDoHorario();
         const docRef = await db.collection('pdfDocs').add({
           ownerUid: currentUser.uid,
           ownerEmail: currentUser.email,
@@ -1118,12 +1120,30 @@
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           name: file.name,
           status: 'nao_impresso',
-          foraHorario: foraDoHorario()
+          foraHorario: foraHorarioAtual
         });
         const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
         await fileRef.put(file);
         const url = await fileRef.getDownloadURL();
         await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        if (
+          window.ExpedicaoNotifier &&
+          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+        ) {
+          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+            db,
+            firebase,
+            currentUser,
+            destinatarioEmails: selecionado,
+            destinatarioUids: responsavelExpedicaoUid
+              ? [responsavelExpedicaoUid]
+              : [],
+            arquivoNome: file.name,
+            foraHorario: foraHorarioAtual,
+            origem: 'Expedição - Upload manual',
+            pdfDocId: docRef.id,
+          });
+        }
         await processManualLabel(file);
         manualPdfInput.value = '';
         showToast('Etiqueta salva');

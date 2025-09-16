@@ -81,6 +81,7 @@
   </div>
 </div>
 
+<script src="expedicao-notifier.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -158,18 +159,19 @@
             });
         }
 
-        async function savePdf(blob, name) {
+        async function savePdf(blob, name, meta = {}) {
             if (!currentUser) return;
             const gestoresRaw = document.getElementById('gestoresEmails').value || '';
             const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
             const selecionado = await escolherGestorEmail(gestoresEmails);
+            const foraHorarioAtual = foraDoHorario();
             const docRef = await db.collection('pdfDocs').add({
                 ownerUid: currentUser.uid,
                 ownerEmail: currentUser.email,
                 gestoresExpedicaoEmails: selecionado,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 name: name,
-                foraHorario: foraDoHorario()
+                foraHorario: foraHorarioAtual
             });
             const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
             await fileRef.put(blob);
@@ -190,6 +192,28 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+            }
+            if (
+              window.ExpedicaoNotifier &&
+              typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+            ) {
+              await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+                db,
+                firebase,
+                currentUser,
+                destinatarioEmails: selecionado,
+                destinatarioUids: [responsavelExpedicaoUid],
+                arquivoNome: name,
+                totalEtiquetas: Number.isFinite(meta.totalEtiquetas)
+                  ? Number(meta.totalEtiquetas)
+                  : undefined,
+                totalPaginas: Number.isFinite(meta.totalPaginas)
+                  ? Number(meta.totalPaginas)
+                  : undefined,
+                foraHorario: foraHorarioAtual,
+                origem: 'ZPL Import (Gemini)',
+                pdfDocId: docRef.id,
+              });
             }
         }
 
@@ -402,7 +426,7 @@
 
                 const fileName = `etiquetas-combinadas-${Date.now()}.pdf`;
 
-                await savePdf(pdfBlob, fileName);
+                await savePdf(pdfBlob, fileName, { totalEtiquetas: totalLabels });
                 await savePrintedSkuQuantities(allExtractedItems);
 
                 successMessage.textContent = 'Processo concluído e salvo.';
