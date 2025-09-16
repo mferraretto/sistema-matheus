@@ -627,6 +627,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const atualizacoes = getLi('menu-atualizacoes');
     const financeiro = getLi('menu-financeiro');
     const saques = getLi('menu-saques');
+    const produtosPrecos = getLi('menu-produtos-precos');
     const gestao = getLi('menu-gestao');
     const acompGestor = getLi('menu-acompanhamento-gestor');
     const mentoria = getLi('menu-mentoria');
@@ -669,7 +670,10 @@ document.addEventListener('sidebarLoaded', async () => {
       return mainLi;
     }
 
-    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [saques]);
+    const financeiroGroup = createGroup(financeiro, 'menuFinanceiro', [
+      saques,
+      produtosPrecos,
+    ]);
     const gestaoGroup = createGroup(gestao, 'menuGestao', [
       acompGestor,
       mentoria,

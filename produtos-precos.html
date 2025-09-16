@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Produtos/Preços</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20240826" />
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    <div class="app-container">
+      <div id="sidebar-container"></div>
+      <div id="navbar-container"></div>
+      <main class="main-content p-4 space-y-6">
+        <div
+          id="toastContainer"
+          class="fixed top-4 right-4 z-50 space-y-2"
+        ></div>
+
+        <header class="flex flex-col gap-2">
+          <h1 class="text-2xl font-semibold text-gray-800">Produtos/Preços</h1>
+          <p class="text-sm text-gray-500">
+            Importe planilhas de preços com as colunas <strong>SKU</strong>,
+            <strong>Produto</strong> e <strong>Sobra (R$)</strong> para
+            disponibilizar os dados aos usuários associados.
+          </p>
+        </header>
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Importar planilha</h2>
+            <span class="text-xs text-gray-500"
+              >Arquivos suportados: .xlsx, .xls ou .csv</span
+            >
+          </div>
+          <div class="card-body space-y-4">
+            <div
+              class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end"
+            >
+              <label class="block">
+                <span class="text-sm font-medium text-gray-700"
+                  >Arquivo da planilha</span
+                >
+                <input
+                  type="file"
+                  id="planilhaPrecos"
+                  accept=".xlsx,.xls,.csv"
+                  class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                />
+              </label>
+              <button
+                id="btnImportarPlanilha"
+                class="inline-flex h-11 items-center justify-center rounded-lg bg-indigo-600 px-6 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                Importar planilha
+              </button>
+            </div>
+            <p class="text-xs text-gray-500">
+              Após selecionar o arquivo será solicitado o preenchimento da data
+              de referência da planilha.
+            </p>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between">
+            <h2 class="text-lg font-semibold">
+              Usuários que receberão os preços
+            </h2>
+            <span id="destinatariosTotal" class="text-xs text-gray-500"></span>
+          </div>
+          <div
+            id="destinatariosList"
+            class="card-body flex flex-wrap gap-2 text-sm text-gray-700"
+          ></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Histórico de importações</h2>
+            <button
+              id="btnRecarregarHistorico"
+              class="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              Recarregar
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th class="px-4 py-3">Data referência</th>
+                    <th class="px-4 py-3">Importado em</th>
+                    <th class="px-4 py-3">Arquivo</th>
+                    <th class="px-4 py-3 text-center">Produtos</th>
+                    <th class="px-4 py-3">Destinatários</th>
+                    <th class="px-4 py-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="historicoImportacoes"
+                  class="divide-y divide-gray-100"
+                ></tbody>
+              </table>
+            </div>
+            <p id="historicoVazio" class="mt-4 hidden text-sm text-gray-500">
+              Nenhuma planilha importada até o momento.
+            </p>
+          </div>
+        </section>
+
+        <section id="detalhesImportacaoCard" class="card hidden">
+          <div class="card-header flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-semibold">Itens importados</h2>
+              <p id="detalhesImportacaoInfo" class="text-xs text-gray-500"></p>
+            </div>
+            <button
+              id="btnFecharDetalhes"
+              class="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              Fechar
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th class="px-4 py-2">#</th>
+                    <th class="px-4 py-2">SKU</th>
+                    <th class="px-4 py-2">Produto</th>
+                    <th class="px-4 py-2 text-right">Sobra (R$)</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="detalhesImportacaoTabela"
+                  class="divide-y divide-gray-100"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
+      window.CUSTOM_NAVBAR_PATH = '/partials/navbar.html';
+    </script>
+    <script src="shared.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="produtos-precos.js"></script>
+  </body>
+</html>
