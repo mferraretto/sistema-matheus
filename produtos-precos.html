@@ -60,16 +60,26 @@
                   class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </label>
-              <button
-                id="btnImportarPlanilha"
-                class="inline-flex h-11 items-center justify-center rounded-lg bg-indigo-600 px-6 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              >
-                Importar planilha
-              </button>
+              <div class="flex flex-col gap-2 md:items-end">
+                <button
+                  id="btnImportarPlanilha"
+                  class="inline-flex h-11 items-center justify-center rounded-lg bg-indigo-600 px-6 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  Importar planilha
+                </button>
+                <a
+                  href="samples/produtos-precos-modelo.csv"
+                  download
+                  class="inline-flex h-11 items-center justify-center rounded-lg border border-indigo-200 bg-white px-6 text-sm font-medium text-indigo-600 transition hover:border-indigo-300 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  Baixar modelo de planilha
+                </a>
+              </div>
             </div>
             <p class="text-xs text-gray-500">
               Após selecionar o arquivo será solicitado o preenchimento da data
-              de referência da planilha.
+              de referência da planilha. Utilize o modelo para conferir o nome
+              das colunas e a formatação esperada.
             </p>
           </div>
         </section>
