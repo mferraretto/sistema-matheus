@@ -15,8 +15,81 @@
   <div id="navbar-container"></div>
   <main class="main-content p-4 space-y-6">
     <div class="card">
-      <div class="card-header"><h2 class="text-xl font-bold">Perfil do Mentorado</h2></div>
-      <div id="perfilMentoradoList" class="card-body space-y-4"></div>
+      <div class="card-header flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="text-xl font-bold">Perfil do Mentorado</h2>
+          <p class="text-sm text-gray-500">
+            Visualize, edite e cadastre vendedores ou mentorados vinculados ao seu acompanhamento financeiro.
+          </p>
+        </div>
+        <span id="perfilMentoradoStatus" class="text-sm text-gray-500"></span>
+      </div>
+      <div class="card-body space-y-6">
+        <section id="novoMentoradoSection" class="space-y-4">
+          <div>
+            <h3 class="text-lg font-semibold">Cadastrar novo vendedor/mentorado</h3>
+            <p class="text-sm text-gray-500">
+              Informe os dados básicos para iniciar o acompanhamento desse profissional.
+            </p>
+          </div>
+          <form id="novoMentoradoForm" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div class="space-y-1">
+              <label for="novoMentoradoNome" class="text-sm font-medium text-gray-700">Nome</label>
+              <input
+                id="novoMentoradoNome"
+                name="novoNome"
+                type="text"
+                class="form-control"
+                placeholder="Digite o nome"
+                required
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="novoMentoradoEmail" class="text-sm font-medium text-gray-700">E-mail</label>
+              <input
+                id="novoMentoradoEmail"
+                name="novoEmail"
+                type="email"
+                class="form-control"
+                placeholder="email@empresa.com"
+                required
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="novoMentoradoDataInicio" class="text-sm font-medium text-gray-700">Data de início</label>
+              <input
+                id="novoMentoradoDataInicio"
+                name="novoDataInicio"
+                type="date"
+                class="form-control"
+              />
+            </div>
+            <div class="space-y-1">
+              <label for="novoMentoradoContato" class="text-sm font-medium text-gray-700">Contato</label>
+              <input
+                id="novoMentoradoContato"
+                name="novoContato"
+                type="text"
+                class="form-control"
+                placeholder="Telefone, WhatsApp ou outro canal"
+              />
+            </div>
+            <div class="md:col-span-1 lg:col-span-4 flex justify-end gap-2">
+              <button type="reset" class="btn btn-secondary px-4 py-2">Limpar</button>
+              <button type="submit" class="btn btn-primary px-4 py-2">Salvar cadastro</button>
+            </div>
+          </form>
+        </section>
+        <section class="space-y-3">
+          <div>
+            <h3 class="text-lg font-semibold">Mentorados vinculados</h3>
+            <p class="text-sm text-gray-500">
+              A lista abaixo reúne cadastros criados por você e usuários que indicaram seu e-mail como responsável financeiro.
+            </p>
+          </div>
+          <div id="perfilMentoradoList" class="space-y-4"></div>
+        </section>
+      </div>
     </div>
   </main>
   <script>window.CUSTOM_SIDEBAR_PATH='/partials/sidebar.html';
