@@ -578,7 +578,6 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-gestao',
     'menu-financeiro',
     'menu-atualizacoes',
-    'menu-painel-geral',
     'menu-comunicacao',
     'menu-saques',
     'menu-acompanhamento-gestor',
@@ -591,7 +590,7 @@ document.addEventListener('sidebarLoaded', async () => {
   ];
 
   const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(
-    (id) => !['menu-comunicacao', 'menu-painel-geral'].includes(id),
+    (id) => id !== 'menu-comunicacao',
   );
 
   function showOnly(ids) {
@@ -623,7 +622,6 @@ document.addEventListener('sidebarLoaded', async () => {
       return el ? el.closest('li') : null;
     };
 
-    const painelGeral = getLi('menu-painel-geral');
     const atualizacoes = getLi('menu-atualizacoes');
     const financeiro = getLi('menu-financeiro');
     const saques = getLi('menu-saques');
@@ -682,7 +680,6 @@ document.addEventListener('sidebarLoaded', async () => {
 
     menu.innerHTML = '';
     [
-      painelGeral,
       atualizacoes,
       financeiroGroup,
       gestaoGroup,
