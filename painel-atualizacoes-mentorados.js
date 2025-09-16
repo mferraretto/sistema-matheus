@@ -8,6 +8,7 @@ import {
   collectionGroup,
   doc,
   addDoc,
+  deleteDoc,
   getDoc,
   getDocs,
   onSnapshot,
@@ -1150,7 +1151,54 @@ function renderMensagem(docSnap) {
 
   item.appendChild(badge);
   item.appendChild(content);
+
+  if (currentUser?.uid && data.autorUid === currentUser.uid) {
+    const actions = document.createElement('div');
+    actions.className = 'mt-3 flex justify-end';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className =
+      'text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-semibold';
+    deleteBtn.innerHTML =
+      '<i class="fa-solid fa-trash-can"></i><span>Excluir mensagem</span>';
+    deleteBtn.addEventListener('click', async () => {
+      if (!window.confirm('Deseja realmente excluir esta mensagem?')) {
+        return;
+      }
+      deleteBtn.disabled = true;
+      deleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      try {
+        await excluirMensagemMentorados(docSnap.id);
+      } catch (err) {
+        deleteBtn.disabled = false;
+        deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+    actions.appendChild(deleteBtn);
+    item.appendChild(actions);
+  }
   return item;
+}
+
+async function excluirMensagemMentorados(id) {
+  if (!currentUser) return;
+  try {
+    await deleteDoc(doc(db, 'painelAtualizacoesMentorados', id));
+    showTemporaryStatus(
+      mensagemStatusEl,
+      'Mensagem excluída com sucesso.',
+      false,
+      4000,
+    );
+  } catch (err) {
+    console.error('Erro ao excluir mensagem:', err);
+    showTemporaryStatus(
+      mensagemStatusEl,
+      'Não foi possível excluir a mensagem. Tente novamente.',
+      true,
+    );
+    throw err;
+  }
 }
 
 function renderProblema(docSnap) {

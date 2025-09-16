@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   getDocs,
   getDoc,
@@ -26,6 +27,7 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
+  deleteObject,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
@@ -525,6 +527,34 @@ function carregarAtualizacoes() {
   });
 }
 
+async function excluirAtualizacao(id, data) {
+  try {
+    await deleteDoc(doc(db, 'financeiroAtualizacoes', id));
+  } catch (err) {
+    console.error('Erro ao excluir atualização:', err);
+    showNotification('Não foi possível excluir a atualização.', 'error');
+    throw err;
+  }
+
+  const anexos = Array.isArray(data.anexos) ? data.anexos : [];
+  if (anexos.length) {
+    const tarefas = anexos
+      .filter((anexo) => anexo?.nome)
+      .map((anexo) => {
+        const caminho = `financeiroAtualizacoes/${data.autorUid}/${id}/${anexo.nome}`;
+        return deleteObject(ref(storage, caminho)).catch((erro) => {
+          console.warn(
+            `Não foi possível remover o anexo "${anexo.nome}" da atualização ${id}.`,
+            erro,
+          );
+        });
+      });
+    await Promise.all(tarefas);
+  }
+
+  showNotification('Atualização excluída com sucesso.', 'success');
+}
+
 function renderCard(id, data) {
   const card = document.createElement('div');
   card.className = 'card p-4';
@@ -543,5 +573,35 @@ function renderCard(id, data) {
     <p class="mb-2">${data.descricao || ''}</p>
     ${anexosHtml}
   `;
+
+  if (
+    currentUser?.uid &&
+    data?.autorUid === currentUser.uid &&
+    data?.tipo === 'atualizacao'
+  ) {
+    const actions = document.createElement('div');
+    actions.className = 'mt-3 flex justify-end';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className =
+      'text-sm text-red-600 hover:text-red-700 flex items-center gap-1';
+    deleteBtn.innerHTML =
+      '<i class="fa-solid fa-trash-can"></i><span>Excluir mensagem</span>';
+    deleteBtn.addEventListener('click', async () => {
+      if (!window.confirm('Tem certeza que deseja excluir esta mensagem?')) {
+        return;
+      }
+      deleteBtn.disabled = true;
+      deleteBtn.classList.add('opacity-50');
+      try {
+        await excluirAtualizacao(id, data);
+      } catch (err) {
+        deleteBtn.disabled = false;
+        deleteBtn.classList.remove('opacity-50');
+      }
+    });
+    actions.appendChild(deleteBtn);
+    card.appendChild(actions);
+  }
   return card;
 }
