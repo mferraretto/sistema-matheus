@@ -894,43 +894,13 @@ function initNotificationListener(uid) {
     (snap) => {
       expNotifs = [];
       snap.forEach((docSnap) => {
-        const d = docSnap.data() || {};
-        const tipo = d.tipo || 'sobras';
-        const ts = d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0;
-        let texto = '';
-        let url = 'expedicao.html';
-        if (tipo === 'status') {
-          const statusChave = d.status || '';
-          const statusLabel =
-            d.statusLabel ||
-            (statusChave === 'impresso'
-              ? 'Impresso'
-              : statusChave === 'concluido'
-                ? 'Concluído'
-                : statusChave || 'Atualizado');
-          const responsavel =
-            d.responsavelNome ||
-            d.gestorNome ||
-            d.responsavelEmail ||
-            d.gestorEmail ||
-            'Equipe de expedição';
-          const arquivoNome = d.arquivoNome || d.arquivoId || 'sua etiqueta';
-          texto = `${responsavel} marcou a etiqueta ${arquivoNome} como ${statusLabel}.`;
-          if (d.arquivoUrl) {
-            url = d.arquivoUrl;
-          } else if (d.arquivoId) {
-            url = `expedicao.html?etiqueta=${d.arquivoId}`;
-          }
-        } else {
-          const gestor = d.gestorNome || d.gestorEmail || 'Expedição';
-          const motivo = d.motivo ? ` Motivo: ${d.motivo}` : '';
-          texto = `${gestor} - ${d.quantidade || 0} etiqueta(s) não enviadas.${motivo}`;
-        }
+        const d = docSnap.data();
+        const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
         expNotifs.push({
           id: `exp:${docSnap.id}`,
           text: texto,
-          ts,
-          url,
+          ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0,
+          url: 'expedicao.html',
         });
       });
       render();

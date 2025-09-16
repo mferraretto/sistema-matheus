@@ -1007,10 +1007,8 @@
         }
         if (!destinatarios.length) return;
         await db.collection('expedicaoMensagens').add({
-          tipo: 'sobras',
           gestorUid: currentUser.uid,
           gestorEmail: currentUser.email,
-          gestorNome: currentUserName || currentUser.email,
           quantidade: qtd,
           motivo,
           destinatarios,
@@ -1018,53 +1016,6 @@
         });
       } catch (e) {
         console.error('Erro ao notificar usuários de sobras:', e);
-      }
-    }
-
-    async function notificarStatusEtiqueta(docId, dadosEtiqueta, novoStatus, statusAnterior = null) {
-      if (!currentUser) return;
-      const statusLegiveis = {
-        impresso: 'Impresso',
-        concluido: 'Concluído'
-      };
-      if (!statusLegiveis[novoStatus]) return;
-      try {
-        let destinatarioUid = dadosEtiqueta.ownerUid || null;
-        if (!destinatarioUid && dadosEtiqueta.ownerEmail) {
-          try {
-            const snap = await db
-              .collection('uid')
-              .where('email', '==', dadosEtiqueta.ownerEmail)
-              .limit(1)
-              .get();
-            if (!snap.empty) destinatarioUid = snap.docs[0].id;
-          } catch (err) {
-            console.error('Erro ao buscar UID do dono da etiqueta:', err);
-          }
-        }
-        if (!destinatarioUid || destinatarioUid === currentUser.uid) return;
-        const anterior = statusAnterior ?? dadosEtiqueta.status ?? 'nao_impresso';
-        if (anterior === novoStatus) return;
-        const destinatarios = [destinatarioUid];
-        await db.collection('expedicaoMensagens').add({
-          tipo: 'status',
-          status: novoStatus,
-          statusLabel: statusLegiveis[novoStatus],
-          arquivoId: docId,
-          arquivoNome: dadosEtiqueta.name || '',
-          arquivoUrl: dadosEtiqueta.url || '',
-          ownerUid: destinatarioUid,
-          ownerEmail: dadosEtiqueta.ownerEmail || '',
-          gestorUid: currentUser.uid,
-          gestorEmail: currentUser.email,
-          responsavelUid: currentUser.uid,
-          responsavelEmail: currentUser.email,
-          responsavelNome: currentUserName || currentUser.email,
-          destinatarios,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch (e) {
-        console.error('Erro ao notificar status da etiqueta:', e);
       }
     }
 
@@ -1420,28 +1371,10 @@
         checkbox.checked = !checked;
         return;
       }
-      const novoStatus = checked ? 'impresso' : 'nao_impresso';
-      const docRef = db.collection('pdfDocs').doc(id);
-      let dadosEtiqueta = null;
-      let statusAnterior = null;
-      if (novoStatus === 'impresso') {
-        try {
-          const snap = await docRef.get();
-          if (snap.exists) {
-            dadosEtiqueta = snap.data() || {};
-            statusAnterior = dadosEtiqueta.status || 'nao_impresso';
-          }
-        } catch (e) {
-          console.error('Erro ao obter etiqueta para notificação:', e);
-        }
-      }
-      await docRef.update({ status: novoStatus });
+      await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
       if (card) {
         card.classList.remove('expedicao-pdf-card--pending', 'expedicao-pdf-card--printed', 'expedicao-pdf-card--done');
         card.classList.add(checked ? 'expedicao-pdf-card--printed' : 'expedicao-pdf-card--pending');
-      }
-      if (novoStatus === 'impresso' && dadosEtiqueta) {
-        await notificarStatusEtiqueta(id, dadosEtiqueta, novoStatus, statusAnterior);
       }
       showToast('Status atualizado');
     }
@@ -1453,22 +1386,7 @@
       const confirmMsg = `Deseja marcar como ${newStatus === 'impresso' ? 'impresso' : 'não impresso'}?`;
       if (!confirm(confirmMsg)) return;
 
-      const docRef = db.collection('pdfDocs').doc(id);
-      let dadosEtiqueta = null;
-      let statusAnterior = null;
-      if (newStatus === 'impresso') {
-        try {
-          const snap = await docRef.get();
-          if (snap.exists) {
-            dadosEtiqueta = snap.data() || {};
-            statusAnterior = dadosEtiqueta.status || 'nao_impresso';
-          }
-        } catch (e) {
-          console.error('Erro ao obter etiqueta para notificação:', e);
-        }
-      }
-
-      await docRef.update({ status: newStatus });
+      await db.collection('pdfDocs').doc(id).update({ status: newStatus });
 
       button.dataset.status = newStatus;
       const statusMap = {
@@ -1516,29 +1434,13 @@
         }
       }
 
-      if (newStatus === 'impresso' && dadosEtiqueta) {
-        await notificarStatusEtiqueta(id, dadosEtiqueta, newStatus, statusAnterior);
-      }
-
       showToast('Status atualizado');
     }
     window.toggleImpressoCard = toggleImpressoCard;
 
     async function updateStatus(id, select, card) {
       const newStatus = select.value;
-      const docRef = db.collection('pdfDocs').doc(id);
-      let dadosEtiqueta = null;
-      let statusAnterior = null;
-      try {
-        const snap = await docRef.get();
-        if (snap.exists) {
-          dadosEtiqueta = snap.data() || {};
-          statusAnterior = dadosEtiqueta.status || 'nao_impresso';
-        }
-      } catch (e) {
-        console.error('Erro ao obter etiqueta para atualização de status:', e);
-      }
-      await docRef.update({ status: newStatus });
+      await db.collection('pdfDocs').doc(id).update({ status: newStatus });
       const badge = card.querySelector('.status-badge');
       const statusInfo = {
         nao_impresso: { text: 'Não impresso', color: 'bg-yellow-500' },
@@ -1552,9 +1454,6 @@
       if (newStatus === 'concluido' && currentFilter === 'all') {
         card.remove();
       }
-      if (dadosEtiqueta && (newStatus === 'impresso' || newStatus === 'concluido')) {
-        await notificarStatusEtiqueta(id, dadosEtiqueta, newStatus, statusAnterior);
-      }
       showToast('Status atualizado');
       carregarEtiquetas();
     }
@@ -1565,7 +1464,6 @@
         const docRef = db.collection('pdfDocs').doc(id);
         const snap = await docRef.get();
         const data = snap.data() || {};
-        const statusAnterior = data.status || 'nao_impresso';
 
         if (data.status !== 'impresso') {
           const items = (data.skus || data.skuList || []).map(s => ({ sku: s, quantidade: 1 }));
@@ -1602,7 +1500,6 @@
         }
 
         await docRef.update({ status: 'concluido' });
-        await notificarStatusEtiqueta(id, data, 'concluido', statusAnterior);
         if (card) card.remove();
         showToast('Marcado como concluído');
       } catch (e) {
