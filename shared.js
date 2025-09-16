@@ -579,6 +579,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-financeiro',
     'menu-atualizacoes',
     'menu-painel-atualizacoes-gerais',
+    'menu-painel-atualizacoes-mentorados',
     'menu-comunicacao',
     'menu-saques',
     'menu-acompanhamento-gestor',
@@ -637,6 +638,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const equipes = getLi('menu-equipes');
     const desempenho = getLi('menu-desempenho');
     const painelAtualizacoes = getLi('menu-painel-atualizacoes-gerais');
+    const painelMentorados = getLi('menu-painel-atualizacoes-mentorados');
 
     function createGroup(mainLi, submenuId, items) {
       if (!mainLi) return null;
@@ -685,6 +687,7 @@ document.addEventListener('sidebarLoaded', async () => {
     [
       atualizacoes,
       painelAtualizacoes,
+      painelMentorados,
       financeiroGroup,
       gestaoGroup,
       comunicacaoGroup,

@@ -463,6 +463,7 @@ function applyPerfilRestrictions(perfil) {
     gestor: [
       'menu-atualizacoes',
       'menu-painel-atualizacoes-gerais',
+      'menu-painel-atualizacoes-mentorados',
       'menu-financeiro',
       'menu-saques',
       'menu-gestao',
