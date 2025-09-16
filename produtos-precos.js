@@ -305,8 +305,23 @@ async function handleImportacao() {
       return;
     }
 
+    const sincronizacao = await atualizarPrecosSistema(
+      itens,
+      dataReferencia,
+      arquivo.name,
+    );
+
     await salvarImportacao(itens, dataReferencia, arquivo.name);
-    showToast('Planilha importada com sucesso!', 'success');
+
+    let mensagem = 'Planilha importada com sucesso!';
+    if (sincronizacao?.atualizados) {
+      const plural = sincronizacao.atualizados === 1 ? '' : 's';
+      mensagem += ` ${sincronizacao.atualizados} preço${plural} atualizado${plural}.`;
+    } else if (sincronizacao?.encontrados) {
+      mensagem += ' Nenhum preço existente precisava de atualização.';
+    }
+
+    showToast(mensagem, 'success');
     if (elements.fileInput) elements.fileInput.value = '';
     await carregarHistorico();
   } catch (err) {
@@ -435,6 +450,252 @@ function converterNumero(valor) {
   return Number.isFinite(numero) ? numero : null;
 }
 
+function normalizarSkuChave(valor) {
+  return String(valor || '')
+    .trim()
+    .toUpperCase();
+}
+
+function numerosSaoQuaseIguais(a, b, tolerancia = 0.009) {
+  if (a == null || b == null) return false;
+  const numA = Number(a);
+  const numB = Number(b);
+  if (!Number.isFinite(numA) || !Number.isFinite(numB)) return false;
+  return Math.abs(numA - numB) <= tolerancia;
+}
+
+const CAMPOS_PRECO_PRIORIDADE = [
+  'precoTabela',
+  'precoMinimo',
+  'preco',
+  'precoVenda',
+  'precoAtual',
+  'valor',
+  'sobra',
+];
+
+function extrairCampoPreco(dados) {
+  if (!dados || typeof dados !== 'object') {
+    return { campo: 'precoTabela', valor: null };
+  }
+
+  for (const campo of CAMPOS_PRECO_PRIORIDADE) {
+    if (!Object.prototype.hasOwnProperty.call(dados, campo)) continue;
+    const valor = converterNumero(dados[campo]);
+    if (valor != null) {
+      return { campo, valor };
+    }
+  }
+
+  return { campo: 'precoTabela', valor: null };
+}
+
+async function atualizarPrecosSistema(produtos, dataReferencia, arquivoNome) {
+  if (!Array.isArray(produtos) || !produtos.length) {
+    return { atualizados: 0, encontrados: 0 };
+  }
+
+  const itensMap = new Map();
+  produtos.forEach((item) => {
+    const skuChave = normalizarSkuChave(item.sku);
+    if (!skuChave) return;
+    const precoRaw =
+      typeof item.sobra === 'number' ? item.sobra : converterNumero(item.sobra);
+    if (precoRaw == null) return;
+    const precoNormalizado = Math.round(precoRaw * 100) / 100;
+    itensMap.set(skuChave, {
+      ...item,
+      preco: precoNormalizado,
+      skuNormalizado: skuChave,
+      skuOriginal: String(item.sku || '').trim(),
+    });
+  });
+
+  if (!itensMap.size) {
+    return { atualizados: 0, encontrados: 0 };
+  }
+
+  const uids = Array.from(
+    new Set(
+      (state.destinatarios || [])
+        .map((dest) => dest?.uid)
+        .filter((uid) => typeof uid === 'string' && uid),
+    ),
+  );
+
+  if (!uids.length) {
+    return { atualizados: 0, encontrados: 0 };
+  }
+
+  let totalAtualizados = 0;
+  let totalEncontrados = 0;
+
+  for (const uid of uids) {
+    try {
+      const resultado = await atualizarPrecosParaUid(
+        uid,
+        itensMap,
+        dataReferencia,
+        arquivoNome,
+      );
+      totalAtualizados += resultado.atualizados;
+      totalEncontrados += resultado.encontrados;
+    } catch (err) {
+      console.warn(`Falha ao atualizar preços para ${uid}:`, err);
+    }
+  }
+
+  return { atualizados: totalAtualizados, encontrados: totalEncontrados };
+}
+
+async function atualizarPrecosParaUid(
+  uid,
+  itensMap,
+  dataReferencia,
+  arquivoNome,
+) {
+  if (!uid) return { atualizados: 0, encontrados: 0 };
+
+  const existentes = await buscarProdutosExistentes(uid, itensMap);
+  if (!existentes.size) {
+    return { atualizados: 0, encontrados: 0 };
+  }
+
+  const batch = criarBatchManager();
+  let encontrados = 0;
+
+  for (const [skuChave, item] of itensMap.entries()) {
+    const existente = existentes.get(skuChave);
+    if (!existente) continue;
+
+    encontrados++;
+    const novoPreco = item.preco;
+    if (novoPreco == null) continue;
+
+    const { campo, valor: precoAtual } = extrairCampoPreco(existente.data);
+    if (precoAtual != null && numerosSaoQuaseIguais(precoAtual, novoPreco)) {
+      continue;
+    }
+
+    const updateData = {
+      precoTabela: novoPreco,
+      precoTabelaAtualizadoEm: serverTimestamp(),
+      precoTabelaFonte: 'importacao-produtos-precos',
+    };
+
+    if (campo && campo !== 'precoTabela') {
+      updateData[campo] = novoPreco;
+    }
+    if (dataReferencia) {
+      updateData.precoTabelaReferencia = dataReferencia;
+    }
+    if (arquivoNome) {
+      updateData.precoTabelaArquivo = arquivoNome;
+    }
+    if (state.currentUser?.uid) {
+      updateData.precoTabelaAtualizadoPor = state.currentUser.uid;
+    }
+    if (state.currentUser?.email) {
+      updateData.precoTabelaAtualizadoPorEmail = state.currentUser.email;
+    }
+    if (state.currentUser?.displayName) {
+      updateData.precoTabelaAtualizadoPorNome = state.currentUser.displayName;
+    }
+    if (item.produto && !existente.data.produto) {
+      updateData.produto = item.produto;
+    }
+
+    await batch.update(existente.ref, updateData);
+  }
+
+  await batch.finalize();
+
+  return { atualizados: batch.getTotal(), encontrados };
+}
+
+async function buscarProdutosExistentes(uid, itensMap) {
+  const encontrados = new Map();
+  const produtosCol = collection(db, 'uid', uid, 'produtos');
+  const skusOriginais = Array.from(
+    new Set(
+      Array.from(itensMap.values())
+        .map((item) => String(item.skuOriginal || item.sku || '').trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const chunkSize = 10;
+  for (let i = 0; i < skusOriginais.length; i += chunkSize) {
+    const chunk = skusOriginais.slice(i, i + chunkSize);
+    if (!chunk.length) continue;
+    try {
+      const q = query(produtosCol, where('sku', 'in', chunk));
+      const snap = await getDocs(q);
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const skuDoc = normalizarSkuChave(data.sku || docSnap.id);
+        if (!skuDoc || encontrados.has(skuDoc)) return;
+        encontrados.set(skuDoc, {
+          ref: doc(db, 'uid', uid, 'produtos', docSnap.id),
+          data,
+        });
+      });
+    } catch (err) {
+      console.warn(`Falha na consulta de produtos por SKU (${uid}):`, err);
+      break;
+    }
+  }
+
+  if (encontrados.size < itensMap.size) {
+    try {
+      const snapTodos = await getDocs(produtosCol);
+      snapTodos.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const skuDoc = normalizarSkuChave(data.sku || docSnap.id);
+        if (!skuDoc || encontrados.has(skuDoc)) return;
+        encontrados.set(skuDoc, {
+          ref: doc(db, 'uid', uid, 'produtos', docSnap.id),
+          data,
+        });
+      });
+    } catch (err) {
+      console.warn(`Falha ao carregar produtos cadastrados (${uid}):`, err);
+    }
+  }
+
+  return encontrados;
+}
+
+function criarBatchManager() {
+  let batch = writeBatch(db);
+  let operacoes = 0;
+  let total = 0;
+
+  async function commitInterno() {
+    if (operacoes === 0) return;
+    await batch.commit();
+    batch = writeBatch(db);
+    operacoes = 0;
+  }
+
+  return {
+    async update(ref, data) {
+      batch.update(ref, data);
+      operacoes += 1;
+      total += 1;
+      if (operacoes >= 450) {
+        await commitInterno();
+      }
+    },
+    async finalize() {
+      await commitInterno();
+    },
+    getTotal() {
+      return total;
+    },
+  };
+}
+
 async function salvarImportacao(produtos, dataReferencia, arquivoNome) {
   if (!state.currentUser) return;
   const importId = `${dataReferencia}-${Date.now()}`;
@@ -472,6 +733,8 @@ async function salvarImportacao(produtos, dataReferencia, arquivoNome) {
     });
     await salvarItensImportados(destinoRef, produtos, dataReferencia, importId);
   }
+
+  return importId;
 }
 
 async function salvarItensImportados(
