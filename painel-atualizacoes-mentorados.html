@@ -23,24 +23,28 @@
       <div id="sidebar-container"></div>
       <div id="navbar-container"></div>
 
-      <main class="main-content p-4 space-y-6">
-        <header
-          class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+      <main class="main-content p-4">
+        <div
+          class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
         >
-          <div>
-            <h1 class="text-2xl font-bold">
-              Painel de Atualizações Vendedores/Mentorados
-            </h1>
-            <p class="text-sm text-gray-600">
-              Centralize comunicados rápidos para os vendedores e mentorados,
-              reporte problemas dos setores e mantenha a equipe alinhada com as
-              peças em linha.
-            </p>
-          </div>
-          <div id="painelStatus" class="text-sm text-gray-500"></div>
-        </header>
+          <div class="space-y-6">
+            <header
+              class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <h1 class="text-2xl font-bold">
+                  Painel de Atualizações Vendedores/Mentorados
+                </h1>
+                <p class="text-sm text-gray-600">
+                  Centralize comunicados rápidos para os vendedores e
+                  mentorados, reporte problemas dos setores e mantenha a equipe
+                  alinhada com as peças em linha.
+                </p>
+              </div>
+              <div id="painelStatus" class="text-sm text-gray-500"></div>
+            </header>
 
-        <section class="card p-5 space-y-4">
+            <section class="card p-5 space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h2 class="text-xl font-semibold flex items-center gap-2">
               <span class="text-blue-600"
@@ -91,9 +95,9 @@
               Nenhuma mensagem registrada até o momento.
             </p>
           </div>
-        </section>
+            </section>
 
-        <section class="card p-5 space-y-5">
+            <section class="card p-5 space-y-5">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h2 class="text-xl font-semibold flex items-center gap-2">
               <span class="text-amber-500"
@@ -192,9 +196,9 @@
               Nenhum problema registrado.
             </p>
           </div>
-        </section>
+            </section>
 
-        <section class="card p-5 space-y-5">
+            <section class="card p-5 space-y-5">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h2 class="text-xl font-semibold flex items-center gap-2">
               <span class="text-emerald-500"
@@ -274,7 +278,60 @@
               Nenhum produto em linha cadastrado até o momento.
             </p>
           </div>
-        </section>
+            </section>
+          </div>
+
+          <aside class="space-y-6" aria-label="Seleção de destinatários">
+            <section class="card p-5 space-y-4">
+              <div class="flex flex-col gap-3">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="space-y-1">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
+                      <span class="text-indigo-500"
+                        ><i class="fa-solid fa-user-group"></i
+                      ></span>
+                      Destinatários
+                    </h2>
+                    <p class="text-xs text-gray-500 leading-relaxed">
+                      Selecione quem receberá as mensagens e atualizações. Se
+                      nenhuma pessoa for marcada, enviaremos para todos os
+                      perfis conectados automaticamente.
+                    </p>
+                  </div>
+                  <div class="flex flex-col gap-2 shrink-0">
+                    <button
+                      id="destinatariosSelecionarTodos"
+                      type="button"
+                      class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+                    >
+                      Marcar todos
+                    </button>
+                    <button
+                      id="destinatariosLimpar"
+                      type="button"
+                      class="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500">
+                  Use a lista abaixo para direcionar um comunicado a pessoas
+                  específicas ou deixe tudo desmarcado para falar com toda a
+                  rede conectada.
+                </p>
+              </div>
+              <div
+                id="destinatariosStatus"
+                class="text-xs text-gray-500"
+              ></div>
+              <div
+                id="destinatariosLista"
+                class="space-y-2 max-h-96 overflow-y-auto pr-1"
+              ></div>
+            </section>
+          </aside>
+        </div>
       </main>
 
       <script>

@@ -52,6 +52,12 @@ const produtoStatusEl = document.getElementById('produtoStatus');
 const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
+const destinatariosListaEl = document.getElementById('destinatariosLista');
+const destinatariosStatusEl = document.getElementById('destinatariosStatus');
+const destinatariosSelecionarTodosBtn = document.getElementById(
+  'destinatariosSelecionarTodos',
+);
+const destinatariosLimparBtn = document.getElementById('destinatariosLimpar');
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -59,6 +65,8 @@ let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
 let nomeResponsavel = '';
+const destinatariosSelecionados = new Set();
+let participantesDetalhes = [];
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -111,6 +119,246 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function obterPrimeiroValorTexto(dados = {}, chaves = []) {
+  for (const chave of chaves) {
+    const valor = dados?.[chave];
+    if (typeof valor === 'string' && valor.trim()) {
+      return valor.trim();
+    }
+  }
+  return '';
+}
+
+function extrairNomeParticipante(usuarioData = {}, uidData = {}) {
+  const nomeUsuario = obterPrimeiroValorTexto(usuarioData, [
+    'nomeFantasia',
+    'nome',
+    'responsavel',
+    'responsavelFinanceiroNome',
+    'responsavelExpedicaoNome',
+    'gestorNome',
+    'responsavelEquipeNome',
+    'responsavelMentoriaNome',
+    'mentorNome',
+    'apelido',
+    'razaoSocial',
+    'nomeEmpresa',
+    'contatoNome',
+  ]);
+  if (nomeUsuario) return nomeUsuario;
+  return obterPrimeiroValorTexto(uidData, [
+    'displayName',
+    'nome',
+    'nomeCompleto',
+    'nomeFantasia',
+  ]);
+}
+
+function extrairEmailParticipante(usuarioData = {}, uidData = {}) {
+  return (
+    obterPrimeiroValorTexto(usuarioData, ['email']) ||
+    obterPrimeiroValorTexto(uidData, ['email']) ||
+    ''
+  );
+}
+
+function extrairPerfilParticipante(usuarioData = {}, uidData = {}) {
+  return (
+    obterPrimeiroValorTexto(usuarioData, ['perfil', 'tipo', 'papel']) ||
+    obterPrimeiroValorTexto(uidData, ['perfil', 'tipo']) ||
+    ''
+  );
+}
+
+async function carregarParticipantesDetalhes(uids = []) {
+  const unicos = Array.from(
+    new Set(
+      (uids || [])
+        .map((uid) => (typeof uid === 'string' ? uid.trim() : ''))
+        .filter((uid) => Boolean(uid)),
+    ),
+  );
+  if (!unicos.length) return [];
+
+  const detalhes = await Promise.all(
+    unicos.map(async (uid) => {
+      try {
+        const [usuarioSnap, uidSnap] = await Promise.all([
+          getDoc(doc(db, 'usuarios', uid)),
+          getDoc(doc(db, 'uid', uid)),
+        ]);
+        const usuarioData = usuarioSnap.exists() ? usuarioSnap.data() : {};
+        const uidData = uidSnap.exists() ? uidSnap.data() : {};
+        const nome = extrairNomeParticipante(usuarioData, uidData);
+        const email = extrairEmailParticipante(usuarioData, uidData);
+        const perfil = extrairPerfilParticipante(usuarioData, uidData);
+        return {
+          uid,
+          nome: nome || email || `Usuário ${uid.slice(0, 6)}`,
+          email,
+          perfil,
+        };
+      } catch (err) {
+        console.error(`Erro ao carregar dados do participante ${uid}:`, err);
+        return {
+          uid,
+          nome: `Usuário ${uid.slice(0, 6)}`,
+          email: '',
+          perfil: '',
+        };
+      }
+    }),
+  );
+
+  return detalhes.filter((item) => item && item.uid);
+}
+
+function renderizarListaDestinatarios() {
+  if (!destinatariosListaEl) return;
+  destinatariosListaEl.innerHTML = '';
+  if (!participantesDetalhes.length) return;
+
+  const fragment = document.createDocumentFragment();
+  participantesDetalhes.forEach((detalhe) => {
+    const label = document.createElement('label');
+    label.className =
+      'flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition cursor-pointer';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className =
+      'mt-1 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500';
+    checkbox.checked = destinatariosSelecionados.has(detalhe.uid);
+    checkbox.dataset.uid = detalhe.uid;
+    checkbox.addEventListener('change', (event) => {
+      alternarDestinatario(detalhe.uid, event.target.checked);
+    });
+
+    const content = document.createElement('div');
+    content.className = 'flex-1 min-w-0';
+
+    const titulo = document.createElement('p');
+    titulo.className = 'text-sm font-medium text-gray-700';
+    titulo.textContent =
+      detalhe.uid === currentUser?.uid
+        ? `${detalhe.nome} (você)`
+        : detalhe.nome;
+    content.appendChild(titulo);
+
+    const meta = [];
+    if (detalhe.perfil) meta.push(detalhe.perfil);
+    if (detalhe.email) meta.push(detalhe.email);
+    if (meta.length) {
+      const metaEl = document.createElement('p');
+      metaEl.className = 'text-xs text-gray-500';
+      metaEl.textContent = meta.join(' • ');
+      content.appendChild(metaEl);
+    }
+
+    label.appendChild(checkbox);
+    label.appendChild(content);
+    fragment.appendChild(label);
+  });
+
+  destinatariosListaEl.appendChild(fragment);
+}
+
+function alternarDestinatario(uid, selecionado) {
+  if (!uid) return;
+  if (selecionado) destinatariosSelecionados.add(uid);
+  else destinatariosSelecionados.delete(uid);
+  atualizarEscopoMensagem();
+}
+
+async function prepararDestinatarios(uids = []) {
+  if (!destinatariosListaEl) return;
+  const idsValidos = Array.from(
+    new Set(
+      (uids || [])
+        .map((uid) => (typeof uid === 'string' ? uid.trim() : ''))
+        .filter((uid) => Boolean(uid)),
+    ),
+  );
+
+  if (currentUser?.uid && !idsValidos.includes(currentUser.uid)) {
+    idsValidos.push(currentUser.uid);
+  }
+
+  if (!idsValidos.length) {
+    participantesDetalhes = [];
+    destinatariosSelecionados.clear();
+    destinatariosListaEl.innerHTML = '';
+    setStatus(
+      destinatariosStatusEl,
+      'Nenhum contato conectado foi encontrado.',
+    );
+    atualizarEscopoMensagem();
+    return;
+  }
+
+  setStatus(destinatariosStatusEl, 'Carregando lista de contatos...');
+  try {
+    participantesDetalhes = (await carregarParticipantesDetalhes(idsValidos))
+      .filter((item) => item && item.uid)
+      .sort((a, b) =>
+        a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }),
+      );
+
+    const validosSet = new Set(participantesDetalhes.map((item) => item.uid));
+    Array.from(destinatariosSelecionados).forEach((uid) => {
+      if (!validosSet.has(uid)) destinatariosSelecionados.delete(uid);
+    });
+
+    if (!participantesDetalhes.length) {
+      destinatariosListaEl.innerHTML = '';
+      setStatus(
+        destinatariosStatusEl,
+        'Nenhum contato conectado foi encontrado.',
+      );
+    } else {
+      renderizarListaDestinatarios();
+      setStatus(destinatariosStatusEl, '');
+    }
+  } catch (err) {
+    console.error('Erro ao carregar detalhes dos participantes:', err);
+    participantesDetalhes = [];
+    destinatariosSelecionados.clear();
+    destinatariosListaEl.innerHTML = '';
+    setStatus(
+      destinatariosStatusEl,
+      'Não foi possível carregar a lista de contatos.',
+      true,
+    );
+  }
+
+  atualizarEscopoMensagem();
+}
+
+function selecionarTodosDestinatarios() {
+  if (!participantesDetalhes.length) return;
+  participantesDetalhes.forEach(({ uid }) =>
+    destinatariosSelecionados.add(uid),
+  );
+  renderizarListaDestinatarios();
+  atualizarEscopoMensagem();
+}
+
+function limparSelecaoDestinatarios() {
+  if (!destinatariosSelecionados.size) return;
+  destinatariosSelecionados.clear();
+  renderizarListaDestinatarios();
+  atualizarEscopoMensagem();
+}
+
+function obterParticipantesParaEnvio() {
+  const selecionados = Array.from(destinatariosSelecionados);
+  if (!selecionados.length) {
+    return Array.from(new Set(participantesCompartilhamento || []));
+  }
+  if (currentUser?.uid) selecionados.push(currentUser.uid);
+  return Array.from(new Set(selecionados));
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -348,16 +596,62 @@ async function montarEscopoCompartilhamento(user) {
   return { participantes: Array.from(participantes), perfil };
 }
 
-function atualizarEscopoMensagem(participantes) {
+function atualizarEscopoMensagem() {
   if (!mensagemEscopoEl) return;
-  if (!participantes || participantes.length === 0) {
-    mensagemEscopoEl.textContent = '';
+
+  if (!participantesDetalhes.length) {
+    mensagemEscopoEl.textContent =
+      'Selecione os destinatários para direcionar a atualização.';
     return;
   }
-  const quantidade = participantes.length;
-  mensagemEscopoEl.textContent = `Compartilhado com ${quantidade} integrante${
-    quantidade > 1 ? 's' : ''
-  } da equipe.`;
+
+  if (!destinatariosSelecionados.size) {
+    const total = participantesDetalhes.length;
+    mensagemEscopoEl.textContent =
+      total === 1
+        ? 'A atualização será compartilhada com o contato conectado.'
+        : `A atualização será compartilhada com todos os ${total} contatos conectados.`;
+    return;
+  }
+
+  const nomes = participantesDetalhes
+    .filter(({ uid }) => destinatariosSelecionados.has(uid))
+    .map((detalhe) =>
+      detalhe.uid === currentUser?.uid ? 'você' : detalhe.nome,
+    )
+    .filter((nome) => Boolean(nome));
+
+  if (!nomes.length) {
+    mensagemEscopoEl.textContent =
+      'Selecione os destinatários que receberão a atualização.';
+    return;
+  }
+
+  const limitePreview = 3;
+  const preview = nomes.slice(0, limitePreview);
+  const restante = nomes.length - preview.length;
+
+  let descricao = '';
+  if (typeof Intl !== 'undefined' && Intl.ListFormat) {
+    descricao = new Intl.ListFormat('pt-BR', {
+      style: 'long',
+      type: 'conjunction',
+    }).format(preview);
+  } else if (preview.length === 1) {
+    [descricao] = preview;
+  } else if (preview.length === 2) {
+    descricao = `${preview[0]} e ${preview[1]}`;
+  } else {
+    descricao = `${preview.slice(0, -1).join(', ')} e ${
+      preview[preview.length - 1]
+    }`;
+  }
+
+  if (restante > 0) {
+    descricao += ` e mais ${restante} contato${restante > 1 ? 's' : ''}`;
+  }
+
+  mensagemEscopoEl.textContent = `A atualização será compartilhada com ${descricao}.`;
 }
 
 function renderMensagem(docSnap) {
@@ -602,7 +896,7 @@ async function enviarMensagem(event) {
       autorNome: nomeResponsavel,
       responsavelUid: currentUser.uid,
       responsavelNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: obterParticipantesParaEnvio(),
       createdAt: serverTimestamp(),
     });
     mensagemInput.value = '';
@@ -646,7 +940,7 @@ async function registrarProblema(event) {
       dataOcorrencia,
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: obterParticipantesParaEnvio(),
       createdAt: serverTimestamp(),
     });
     formProblema.reset();
@@ -681,7 +975,7 @@ async function registrarProduto(event) {
       observacoes: observacoes || '',
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: obterParticipantesParaEnvio(),
       createdAt: serverTimestamp(),
     });
     formProduto?.reset();
@@ -699,6 +993,11 @@ async function registrarProduto(event) {
 formMensagem?.addEventListener('submit', enviarMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
+destinatariosSelecionarTodosBtn?.addEventListener(
+  'click',
+  selecionarTodosDestinatarios,
+);
+destinatariosLimparBtn?.addEventListener('click', limparSelecaoDestinatarios);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -708,40 +1007,44 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   nomeResponsavel = user.displayName || user.email || 'Usuário';
   setStatus(painelStatusEl, 'Carregando configurações da equipe...');
+  let participantes = [];
   try {
-    const { participantes } = await montarEscopoCompartilhamento(user);
-    participantesCompartilhamento = participantes.length
-      ? participantes
-      : [user.uid];
-    atualizarEscopoMensagem(participantesCompartilhamento);
-    setStatus(painelStatusEl, '');
-
-    try {
-      const { isGestor, isResponsavelFinanceiro } =
-        await carregarUsuariosFinanceiros(db, user);
-      const podeGerirProdutos = isGestor || isResponsavelFinanceiro;
-      if (podeGerirProdutos) {
-        formProduto?.classList.remove('hidden');
-        produtosAvisoEl?.classList.add('hidden');
-      } else {
-        formProduto?.classList.add('hidden');
-        produtosAvisoEl?.classList.remove('hidden');
-      }
-    } catch (err) {
-      console.error('Erro ao verificar permissões financeiras:', err);
-      formProduto?.classList.add('hidden');
-      produtosAvisoEl?.classList.remove('hidden');
-    }
-
-    carregarMensagens();
-    carregarProblemas();
-    carregarProdutos();
+    ({ participantes } = await montarEscopoCompartilhamento(user));
   } catch (err) {
     console.error('Erro ao preparar painel de atualizações gerais:', err);
     setStatus(
       painelStatusEl,
-      'Não foi possível carregar o compartilhamento da equipe.',
+      'Não foi possível carregar o compartilhamento da equipe. Exibindo dados vinculados à sua conta.',
       true,
     );
   }
+
+  participantesCompartilhamento = participantes.length
+    ? participantes
+    : [user.uid];
+  await prepararDestinatarios(participantesCompartilhamento);
+  if (!painelStatusEl?.classList?.contains('text-red-600')) {
+    setStatus(painelStatusEl, '');
+  }
+
+  try {
+    const { isGestor, isResponsavelFinanceiro } =
+      await carregarUsuariosFinanceiros(db, user);
+    const podeGerirProdutos = isGestor || isResponsavelFinanceiro;
+    if (podeGerirProdutos) {
+      formProduto?.classList.remove('hidden');
+      produtosAvisoEl?.classList.add('hidden');
+    } else {
+      formProduto?.classList.add('hidden');
+      produtosAvisoEl?.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Erro ao verificar permissões financeiras:', err);
+    formProduto?.classList.add('hidden');
+    produtosAvisoEl?.classList.remove('hidden');
+  }
+
+  carregarMensagens();
+  carregarProblemas();
+  carregarProdutos();
 });
