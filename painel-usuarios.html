@@ -57,7 +57,7 @@
             <select id="perfil" class="w-full p-2 border rounded">
               <option value="Usuario Completo">Usuário Completo</option>
               <option value="Usuario Basico">Usuário Básico</option>
-              <option value="Gestor Expedicao">Gestor Expedição</option>
+              <option value="Expedicao">Expedição</option>
               <option value="Responsavel Financeiro">
                 Responsável Financeiro
               </option>
@@ -87,6 +87,14 @@
         firebase.initializeApp(firebaseConfig);
       }
       const db = firebase.firestore();
+      const EXPEDICAO_PERFIS = [
+        'expedicao',
+        'expedição',
+        'gestor expedicao',
+        'gestor expedição',
+        'gestor de expedicao',
+        'gestor de expedição',
+      ];
 
       firebase.auth().onAuthStateChanged(async (user) => {
         if (!user) {
@@ -192,13 +200,18 @@
                 : uidData.responsavelExpedicaoEmail || resp;
             }
           }
+          const perfilLower = (perfil || '').toLowerCase();
+          if (EXPEDICAO_PERFIS.includes(perfilLower)) {
+            perfil = 'Expedicao';
+          }
+          const perfilLabel = perfil === 'Expedicao' ? 'Expedição' : perfil;
           const emailRaw = userInfo.email || '';
           const email = emailRaw || 'N/A';
           const item = document.createElement('li');
           item.className =
             'p-2 bg-gray-50 border rounded flex justify-between items-center';
           const infoSpan = document.createElement('span');
-          infoSpan.innerText = `UID: ${userDoc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${nome} | Perfil: ${perfil}`;
+          infoSpan.innerText = `UID: ${userDoc.id} | Email: ${email} | Resp Exp: ${resp} | Nome: ${nome} | Perfil: ${perfilLabel}`;
           const btnContainer = document.createElement('div');
           btnContainer.className = 'flex space-x-2';
           const editBtn = document.createElement('button');
@@ -210,7 +223,7 @@
             document.getElementById('email').value = emailRaw;
             document.getElementById('emailExpedicao').value = respArr.join(', ');
             document.getElementById('perfil').value =
-              perfil || 'Usuario Completo';
+              perfil === 'N/A' ? 'Usuario Completo' : perfil || 'Usuario Completo';
           });
           const delBtn = document.createElement('button');
           delBtn.className = 'bg-red-500 text-white px-2 py-1 rounded';
