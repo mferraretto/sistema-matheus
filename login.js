@@ -466,6 +466,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-painel-atualizacoes-mentorados',
       'menu-financeiro',
       'menu-saques',
+      'menu-produtos-precos',
       'menu-gestao',
       'menu-acompanhamento-gestor',
       'menu-mentoria',
