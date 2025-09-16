@@ -468,6 +468,43 @@ window.toggleSidebar = window.toggleSidebar || toggleSidebar;
 window.ensureLayout = ensureLayout;
 
 let searchPages = [];
+const manualSearchEntries = [
+  {
+    title: 'Manual • Faturamento Diário',
+    href: '/manual/faturamento.html',
+    keywords: [
+      'manual faturamento',
+      'faturamento',
+      'faturamento diario',
+      'faturamento liquido',
+      'como tiro o faturamento',
+      'como calcular o faturamento',
+      'como faco para descobrir meu faturamento',
+      'o que entra no calculo do faturamento',
+      'como calcular o faturamento liquido',
+      'calculo do faturamento',
+    ],
+  },
+];
+
+function normalizeSearchTerm(str) {
+  return (str || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function uniqueByHref(list) {
+  const seen = new Set();
+  return list.filter((item) => {
+    if (!item || !item.href) return false;
+    if (seen.has(item.href)) return false;
+    seen.add(item.href);
+    return true;
+  });
+}
 
 function collectSearchPages() {
   searchPages = Array.from(document.querySelectorAll('#sidebar a.sidebar-link'))
@@ -495,23 +532,37 @@ document.addEventListener('navbarLoaded', () => {
   if (!input || !results) return;
 
   function renderResults() {
-    const q = input.value.trim().toLowerCase();
-    if (!q) {
+    const rawQuery = input.value.trim();
+    const normalizedQuery = normalizeSearchTerm(rawQuery);
+    if (!normalizedQuery) {
       results.innerHTML = '';
       results.classList.add('hidden');
       return;
     }
     if (!searchPages.length) collectSearchPages();
-    const filtered = searchPages.filter((p) =>
-      p.title.toLowerCase().includes(q),
+        const manualMatches = manualSearchEntries.filter((entry) =>
+      entry.keywords.some((keyword) =>
+        normalizedQuery.includes(normalizeSearchTerm(keyword)),
+      ),
     );
-    if (!filtered.length) {
+    const filtered = searchPages.filter((p) =>
+      normalizeSearchTerm(p.title).includes(normalizedQuery),
+    );
+ const manualTitleMatches = manualSearchEntries.filter((entry) =>
+      normalizeSearchTerm(entry.title).includes(normalizedQuery),
+    );
+    const combined = uniqueByHref([
+      ...manualMatches,
+      ...filtered,
+      ...manualTitleMatches,
+    ]);
+    if (!combined.length) {
       results.innerHTML =
         '<div class="px-3 py-2 text-sm text-gray-500">Nenhum resultado</div>';
       results.classList.remove('hidden');
       return;
     }
-    results.innerHTML = filtered
+    results.innerHTML = combined
       .map((p) => `<a href="${p.href}">${p.title}</a>`)
       .join('');
     results.classList.remove('hidden');
