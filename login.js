@@ -413,20 +413,10 @@ function restoreSidebar() {
 }
 
 function normalizePerfil(perfil) {
-  const raw = (perfil || '').toString().toLowerCase().trim();
-  if (!raw) return raw;
-
-  const sanitized = raw
-    .normalize('NFD')
-    .replace(new RegExp('[\\u0300-\\u036f]', 'g'), '');
-
-  if (['gestor expedicao', 'gestor de expedicao'].includes(sanitized)) {
-    return 'gestor expedicao';
-  }
-
-  if (['adm', 'admin', 'administrador'].includes(sanitized)) return 'adm';
-  if (['usuario completo', 'usuario'].includes(sanitized)) return 'usuario';
-  if (['usuario basico', 'cliente'].includes(sanitized)) return 'cliente';
+  const p = (perfil || '').toLowerCase().trim();
+  if (['adm', 'admin', 'administrador'].includes(p)) return 'adm';
+  if (['usuario completo', 'usuario'].includes(p)) return 'usuario';
+  if (['usuario basico', 'cliente'].includes(p)) return 'cliente';
   if (
     [
       'gestor',
@@ -434,10 +424,10 @@ function normalizePerfil(perfil) {
       'responsavel',
       'gestor financeiro',
       'responsavel financeiro',
-    ].includes(sanitized)
+    ].includes(p)
   )
     return 'gestor';
-  return sanitized;
+  return p;
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = normalizePerfil(perfil);
@@ -513,21 +503,13 @@ function applyPerfilRestrictions(perfil) {
     });
   }
 
-  const aliasPerfis = {
-    'gestor expedicao': ['gestor', 'usuario'],
-  };
-
   document.querySelectorAll('[data-perfil]').forEach((el) => {
     const allowedPerfis = (el.getAttribute('data-perfil') || '')
       .toLowerCase()
       .split(',')
       .map((p) => normalizePerfil(p));
     const show =
-      currentPerfil === 'adm' ||
-      allowedPerfis.includes(currentPerfil) ||
-      (aliasPerfis[currentPerfil] || []).some((alias) =>
-        allowedPerfis.includes(alias),
-      );
+      currentPerfil === 'adm' || allowedPerfis.includes(currentPerfil);
     if (!show) {
       el.classList.add('hidden');
     } else {
