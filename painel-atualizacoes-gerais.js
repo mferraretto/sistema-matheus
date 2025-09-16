@@ -17,6 +17,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  documentId,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
   getAuth,
@@ -53,6 +54,12 @@ const produtoStatusEl = document.getElementById('produtoStatus');
 const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
+const participantesListaEl = document.getElementById('participantesLista');
+const participantesResumoEl = document.getElementById('participantesResumo');
+const participantesVazioEl = document.getElementById('participantesVazio');
+const limparParticipantesBtn = document.getElementById(
+  'limparParticipantesBtn',
+);
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -60,6 +67,9 @@ let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
 let nomeResponsavel = '';
+let participantesDetalhes = [];
+let participantesPorUid = new Map();
+let participantesSelecionados = new Set();
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -112,6 +122,236 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function montarDetalhesParticipante(uid, data = {}) {
+  const nomeFonte =
+    data.nomeCompleto ||
+    data.nome ||
+    data.displayName ||
+    data.nomeFantasia ||
+    data.razaoSocial ||
+    data.fantasia ||
+    data.usuario ||
+    data.email ||
+    '';
+  const papelFonte =
+    data.perfil ||
+    data.funcao ||
+    data.cargo ||
+    data.papel ||
+    data.tipo ||
+    data.role ||
+    data.departamento ||
+    '';
+  const emailFonte =
+    data.email ||
+    data.usuarioEmail ||
+    data.loginEmail ||
+    data.contatoEmail ||
+    '';
+
+  const nome = String(nomeFonte || '').trim() || `Usuário ${uid.slice(0, 6)}`;
+  const papel = String(papelFonte || '').trim();
+  const email = String(emailFonte || '').trim();
+
+  return {
+    uid,
+    nome,
+    papel,
+    email,
+    isAtual: currentUser?.uid === uid,
+  };
+}
+
+async function carregarDetalhesParticipantes(uids = []) {
+  const validos = Array.from(
+    new Set((uids || []).filter((uid) => typeof uid === 'string' && uid)),
+  );
+
+  const detalhesMap = new Map();
+  const buscarEmColecao = async (colecao, ids) => {
+    for (let i = 0; i < ids.length; i += 10) {
+      const lote = ids.slice(i, i + 10);
+      if (!lote.length) continue;
+      try {
+        const snap = await getDocs(
+          query(collection(db, colecao), where(documentId(), 'in', lote)),
+        );
+        snap.forEach((docSnap) => {
+          const uid = docSnap.id;
+          const data = docSnap.data() || {};
+          detalhesMap.set(uid, montarDetalhesParticipante(uid, data));
+        });
+      } catch (err) {
+        console.error(
+          `Erro ao carregar participantes (${colecao}) para seleção:`,
+          err,
+        );
+      }
+    }
+  };
+
+  if (validos.length) {
+    await buscarEmColecao('usuarios', validos);
+    const faltantes = validos.filter((uid) => !detalhesMap.has(uid));
+    if (faltantes.length) {
+      await buscarEmColecao('uid', faltantes);
+    }
+    const aindaFaltando = validos.filter((uid) => !detalhesMap.has(uid));
+    aindaFaltando.forEach((uid) => {
+      detalhesMap.set(uid, {
+        uid,
+        nome: `Usuário ${uid.slice(0, 6)}`,
+        papel: 'Perfil não identificado',
+        email: '',
+        isAtual: currentUser?.uid === uid,
+      });
+    });
+  }
+
+  participantesPorUid = detalhesMap;
+  participantesDetalhes = Array.from(detalhesMap.values()).sort((a, b) => {
+    if (a.isAtual && !b.isAtual) return -1;
+    if (!a.isAtual && b.isAtual) return 1;
+    return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+  });
+
+  participantesSelecionados = new Set(
+    Array.from(participantesSelecionados).filter((uid) =>
+      participantesPorUid.has(uid),
+    ),
+  );
+
+  renderizarParticipantesDisponiveis();
+}
+
+function renderizarParticipantesDisponiveis() {
+  if (!participantesListaEl) {
+    atualizarResumoDestinatarios();
+    return;
+  }
+
+  participantesListaEl.innerHTML = '';
+
+  if (!participantesDetalhes.length) {
+    participantesVazioEl?.classList.remove('hidden');
+    atualizarResumoDestinatarios();
+    return;
+  }
+
+  participantesVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+
+  participantesDetalhes.forEach((info) => {
+    const item = document.createElement('label');
+    item.className =
+      'flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:border-blue-300';
+    item.dataset.uid = info.uid;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className =
+      'mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500';
+    checkbox.checked = participantesSelecionados.has(info.uid);
+    checkbox.addEventListener('change', (event) => {
+      if (event.target.checked) {
+        participantesSelecionados.add(info.uid);
+      } else {
+        participantesSelecionados.delete(info.uid);
+      }
+      atualizarResumoDestinatarios();
+    });
+
+    const content = document.createElement('div');
+    content.className = 'flex-1 min-w-0';
+
+    const nomeEl = document.createElement('p');
+    nomeEl.className = 'text-sm font-medium text-gray-800';
+    if (info.isAtual) {
+      nomeEl.textContent = `${info.nome || 'Você'} (você)`;
+    } else {
+      nomeEl.textContent = info.nome || 'Usuário';
+    }
+
+    const detalheEl = document.createElement('p');
+    detalheEl.className = 'text-xs text-gray-500';
+    if (info.papel && info.email) {
+      detalheEl.textContent = `${info.papel} • ${info.email}`;
+    } else if (info.papel) {
+      detalheEl.textContent = info.papel;
+    } else if (info.email) {
+      detalheEl.textContent = info.email;
+    } else {
+      detalheEl.textContent = 'Sem detalhes adicionais';
+    }
+
+    content.appendChild(nomeEl);
+    content.appendChild(detalheEl);
+
+    item.appendChild(checkbox);
+    item.appendChild(content);
+    frag.appendChild(item);
+  });
+
+  participantesListaEl.appendChild(frag);
+  atualizarResumoDestinatarios();
+}
+
+function atualizarResumoDestinatarios() {
+  const selecionados = Array.from(participantesSelecionados);
+  const totalDisponiveis = participantesDetalhes.length;
+
+  if (participantesResumoEl) {
+    if (!totalDisponiveis) {
+      participantesResumoEl.textContent =
+        'Nenhum participante disponível para seleção.';
+    } else if (!selecionados.length) {
+      participantesResumoEl.textContent = `Nenhum destinatário selecionado. As atualizações alcançarão todos os ${totalDisponiveis} integrantes conectados.`;
+    } else if (selecionados.length === 1) {
+      const info = participantesPorUid.get(selecionados[0]);
+      const nome = info?.nome || '1 usuário';
+      participantesResumoEl.textContent = `Enviando somente para ${nome}.`;
+    } else {
+      participantesResumoEl.textContent = `Enviando para ${selecionados.length} destinatários selecionados.`;
+    }
+  }
+
+  if (mensagemEscopoEl) {
+    if (!selecionados.length) {
+      mensagemEscopoEl.textContent =
+        'Compartilhado com todos os perfis conectados.';
+    } else if (selecionados.length === 1) {
+      const info = participantesPorUid.get(selecionados[0]);
+      const nome = info?.nome || '1 usuário';
+      mensagemEscopoEl.textContent = `Compartilhado somente com ${nome}.`;
+    } else {
+      mensagemEscopoEl.textContent = `Compartilhado com ${selecionados.length} destinatários selecionados.`;
+    }
+  }
+}
+
+function obterParticipantesParaEnvio() {
+  if (!participantesSelecionados.size) {
+    return participantesCompartilhamento;
+  }
+  const destino = new Set(participantesSelecionados);
+  if (currentUser?.uid) destino.add(currentUser.uid);
+  return Array.from(destino);
+}
+
+function limparSelecaoDestinatarios() {
+  if (!participantesSelecionados.size) {
+    atualizarResumoDestinatarios();
+    return;
+  }
+  participantesSelecionados.clear();
+  participantesListaEl
+    ?.querySelectorAll('input[type="checkbox"]')
+    .forEach((input) => {
+      input.checked = false;
+    });
+  atualizarResumoDestinatarios();
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -349,16 +589,8 @@ async function montarEscopoCompartilhamento(user) {
   return { participantes: Array.from(participantes), perfil };
 }
 
-function atualizarEscopoMensagem(participantes) {
-  if (!mensagemEscopoEl) return;
-  if (!participantes || participantes.length === 0) {
-    mensagemEscopoEl.textContent = '';
-    return;
-  }
-  const quantidade = participantes.length;
-  mensagemEscopoEl.textContent = `Compartilhado com ${quantidade} integrante${
-    quantidade > 1 ? 's' : ''
-  } da equipe.`;
+function atualizarEscopoMensagem() {
+  atualizarResumoDestinatarios();
 }
 
 function renderMensagem(docSnap) {
@@ -643,6 +875,7 @@ async function enviarMensagem(event) {
     return;
   }
   try {
+    const participantesDestino = obterParticipantesParaEnvio();
     await addDoc(collection(db, 'painelAtualizacoesGerais'), {
       categoria: 'mensagem',
       texto,
@@ -650,7 +883,7 @@ async function enviarMensagem(event) {
       autorNome: nomeResponsavel,
       responsavelUid: currentUser.uid,
       responsavelNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: participantesDestino,
       createdAt: serverTimestamp(),
     });
     mensagemInput.value = '';
@@ -685,6 +918,7 @@ async function registrarProblema(event) {
     return;
   }
   try {
+    const participantesDestino = obterParticipantesParaEnvio();
     await addDoc(collection(db, 'painelAtualizacoesGerais'), {
       categoria: 'problema',
       problema,
@@ -694,7 +928,7 @@ async function registrarProblema(event) {
       dataOcorrencia,
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: participantesDestino,
       createdAt: serverTimestamp(),
     });
     formProblema.reset();
@@ -723,13 +957,14 @@ async function registrarProduto(event) {
     return;
   }
   try {
+    const participantesDestino = obterParticipantesParaEnvio();
     await addDoc(collection(db, 'painelAtualizacoesGerais'), {
       categoria: 'produto',
       nome,
       observacoes: observacoes || '',
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
-      participantes: participantesCompartilhamento,
+      participantes: participantesDestino,
       createdAt: serverTimestamp(),
     });
     formProduto?.reset();
@@ -747,6 +982,7 @@ async function registrarProduto(event) {
 formMensagem?.addEventListener('submit', enviarMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
+limparParticipantesBtn?.addEventListener('click', limparSelecaoDestinatarios);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -758,10 +994,10 @@ onAuthStateChanged(auth, async (user) => {
   setStatus(painelStatusEl, 'Carregando configurações da equipe...');
   try {
     const { participantes } = await montarEscopoCompartilhamento(user);
-    participantesCompartilhamento = participantes.length
-      ? participantes
-      : [user.uid];
-    atualizarEscopoMensagem(participantesCompartilhamento);
+    const baseParticipantes = participantes.length ? participantes : [user.uid];
+    participantesCompartilhamento = Array.from(new Set(baseParticipantes));
+    await carregarDetalhesParticipantes(participantesCompartilhamento);
+    atualizarEscopoMensagem();
     setStatus(painelStatusEl, '');
 
     try {
@@ -791,5 +1027,8 @@ onAuthStateChanged(auth, async (user) => {
       'Não foi possível carregar o compartilhamento da equipe.',
       true,
     );
+    participantesCompartilhamento = currentUser?.uid ? [currentUser.uid] : [];
+    await carregarDetalhesParticipantes(participantesCompartilhamento);
+    atualizarEscopoMensagem();
   }
 });
