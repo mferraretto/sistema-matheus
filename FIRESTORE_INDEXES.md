@@ -45,11 +45,10 @@ query(
 
 ## Painel de Atualizações Vendedores/Mentorados
 
-Assim como o painel geral, a área dedicada a vendedores e mentorados usa um único conjunto de dados para armazenar mensagens, problemas e produtos. As consultas seguem o mesmo padrão de filtros por categoria e participantes, ordenando pela data de criação. Crie o índice composto a seguir:
+Assim como o painel geral, a área dedicada a vendedores e mentorados usa um único conjunto de dados para armazenar mensagens, problemas e produtos. As consultas filtram apenas pela categoria desejada e ordenam pela data de criação para garantir que todos os perfis conectados recebam as mesmas informações. Crie o índice composto a seguir:
 
 - Collection: `painelAtualizacoesMentorados`
 - Fields:
-  - `participantes` array-contains
   - `categoria` ascending
   - `createdAt` descending
 
@@ -59,7 +58,6 @@ Esse índice atende, por exemplo, à consulta utilizada em `painel-atualizacoes-
 query(
   collection(db, 'painelAtualizacoesMentorados'),
   where('categoria', '==', 'mensagem'),
-  where('participantes', 'array-contains', currentUser.uid),
   orderBy('createdAt', 'desc')
 )
 ```
