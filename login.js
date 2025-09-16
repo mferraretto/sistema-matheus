@@ -660,6 +660,7 @@ function initNotificationListener(uid) {
 
     const unread = all.filter((n) => !readNotifications.has(n.id));
     const read = all.filter((n) => readNotifications.has(n.id));
+    const recentRead = read.slice(0, 3);
     const unreadCount = unread.length;
 
     if (unreadCount > 0) {
@@ -737,12 +738,15 @@ function initNotificationListener(uid) {
       list.appendChild(emptyUnread);
     }
 
-    if (read.length) {
+    if (recentRead.length) {
       const title = document.createElement('div');
       title.className = 'px-4 pt-3 pb-1 text-xs font-semibold text-gray-400';
-      title.textContent = 'Notificações lidas';
+      title.textContent =
+        recentRead.length < read.length
+          ? 'Últimas notificações lidas'
+          : 'Notificações lidas';
       list.appendChild(title);
-      read.forEach((notif) => {
+      recentRead.forEach((notif) => {
         list.appendChild(createItem(notif, true));
       });
     }
