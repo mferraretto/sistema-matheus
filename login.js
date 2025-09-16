@@ -28,6 +28,7 @@ import {
   serverTimestamp,
   onSnapshot,
   orderBy,
+  limit,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
   firebaseConfig,
@@ -100,6 +101,7 @@ if (typeof window !== 'undefined') {
   window.loadUserProfile = loadUserProfile;
   window.clearUserProfileCache = clearUserProfileCache;
 }
+const VISIBILIDADE_GLOBAL_ID = '__todos_conectados__';
 let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
@@ -107,6 +109,8 @@ let isExpedicao = false;
 let notifUnsub = null;
 let expNotifUnsub = null;
 let updNotifUnsub = null;
+let painelGeralNotifUnsub = null;
+let painelMentNotifUnsub = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -568,16 +572,24 @@ function initNotificationListener(uid) {
   if (notifUnsub) notifUnsub();
   if (expNotifUnsub) expNotifUnsub();
   if (updNotifUnsub) updNotifUnsub();
+  if (painelGeralNotifUnsub) painelGeralNotifUnsub();
+  if (painelMentNotifUnsub) painelMentNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
   let updNotifs = [];
+  let painelGeralNotifs = [];
+  let painelMentNotifs = [];
 
   const render = () => {
     list.innerHTML = '';
-    const all = [...finNotifs, ...expNotifs, ...updNotifs].sort(
-      (a, b) => b.ts - a.ts,
-    );
+    const all = [
+      ...finNotifs,
+      ...expNotifs,
+      ...updNotifs,
+      ...painelGeralNotifs,
+      ...painelMentNotifs,
+    ].sort((a, b) => b.ts - a.ts);
     let count = 0;
     all.forEach((n) => {
       const item = document.createElement('div');
@@ -650,6 +662,76 @@ function initNotificationListener(uid) {
     },
   );
 
+  const painelTexto = (data, origem) => {
+    const autor = data.autorNome || data.autorEmail || 'Equipe';
+    const mensagem = data.texto || data.descricao || '';
+    if (mensagem) {
+      return `[${origem}] ${autor}: ${mensagem}`;
+    }
+    return `[${origem}] ${autor} compartilhou uma atualização.`;
+  };
+
+  const painelGeralQuery = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'mensagem'),
+    where('participantes', 'array-contains', uid),
+    orderBy('createdAt', 'desc'),
+    limit(20),
+  );
+  painelGeralNotifUnsub = onSnapshot(
+    painelGeralQuery,
+    (snap) => {
+      painelGeralNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        if (data.autorUid === uid) return;
+        painelGeralNotifs.push({
+          text: painelTexto(data, 'Painel Geral'),
+          ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações do painel geral:', err);
+    },
+  );
+
+  const painelMentQuery = query(
+    collection(db, 'painelAtualizacoesMentorados'),
+    where('categoria', '==', 'mensagem'),
+    orderBy('createdAt', 'desc'),
+    limit(20),
+  );
+  painelMentNotifUnsub = onSnapshot(
+    painelMentQuery,
+    (snap) => {
+      painelMentNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const participantes = Array.isArray(data.participantes)
+          ? data.participantes
+          : [];
+        const permitido =
+          participantes.includes(uid) ||
+          participantes.includes(VISIBILIDADE_GLOBAL_ID);
+        if (!permitido) return;
+        if (data.autorUid === uid) return;
+        painelMentNotifs.push({
+          text: painelTexto(data, 'Painel Mentorados'),
+          ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error(
+        'Erro no listener de notificações do painel de mentorados:',
+        err,
+      );
+    },
+  );
+
   const qExp = query(
     collection(db, 'expedicaoMensagens'),
     where('destinatarios', 'array-contains', uid),
@@ -704,6 +786,14 @@ function checkLogin() {
       if (updNotifUnsub) {
         updNotifUnsub();
         updNotifUnsub = null;
+      }
+      if (painelGeralNotifUnsub) {
+        painelGeralNotifUnsub();
+        painelGeralNotifUnsub = null;
+      }
+      if (painelMentNotifUnsub) {
+        painelMentNotifUnsub();
+        painelMentNotifUnsub = null;
       }
       if (!onLoginPage) window.location.href = 'login.html';
     }
