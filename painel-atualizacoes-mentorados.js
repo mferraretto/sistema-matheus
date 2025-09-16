@@ -60,6 +60,13 @@ let participantesCompartilhamento = [VISIBILIDADE_GLOBAL_ID];
 let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
+let produtosImportacoesUnsub = null;
+let produtosImportadosUnsub = null;
+let manualProdutosCache = [];
+let importadosProdutosCache = [];
+let ultimaImportacaoMeta = null;
+let manualProdutosPronto = false;
+let importadosProdutosPronto = false;
 let nomeResponsavel = '';
 
 function setStatus(element, message = '', isError = false) {
@@ -113,6 +120,347 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function formatCurrency(value) {
+  if (value === null || value === undefined) return '';
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  return number.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  });
+}
+
+function obterNomeProduto(item) {
+  if (!item || typeof item !== 'object') return '';
+  return item.nome || item.produto || '';
+}
+
+function compararProdutosPorNome(a, b) {
+  const nomeA = obterNomeProduto(a).toLowerCase();
+  const nomeB = obterNomeProduto(b).toLowerCase();
+  if (nomeA && nomeB && nomeA !== nomeB) {
+    return nomeA.localeCompare(nomeB, 'pt-BR');
+  }
+  if (nomeA && !nomeB) return -1;
+  if (!nomeA && nomeB) return 1;
+
+  const skuA = (a?.sku || '').toLowerCase();
+  const skuB = (b?.sku || '').toLowerCase();
+  if (skuA && skuB && skuA !== skuB) {
+    return skuA.localeCompare(skuB, 'pt-BR');
+  }
+  if (skuA && !skuB) return -1;
+  if (!skuA && skuB) return 1;
+
+  if (typeof a?.ordem === 'number' && typeof b?.ordem === 'number') {
+    return a.ordem - b.ordem;
+  }
+
+  return 0;
+}
+
+function renderProdutoCard(item) {
+  if (item?.tipo === 'importado') {
+    return renderProdutoImportado(item);
+  }
+  return renderProdutoManual(item);
+}
+
+function renderProdutoManual(item = {}) {
+  const card = document.createElement('article');
+  card.className =
+    'bg-white border border-emerald-100 rounded-lg p-3 shadow-sm';
+
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between text-sm text-gray-700';
+
+  const nomeEl = document.createElement('span');
+  nomeEl.className = 'font-semibold';
+  nomeEl.textContent = item.nome || 'Produto sem nome';
+  header.appendChild(nomeEl);
+
+  if (item.autorNome) {
+    const autorEl = document.createElement('span');
+    autorEl.className = 'text-xs text-gray-500';
+    autorEl.textContent = `Por ${item.autorNome}`;
+    header.appendChild(autorEl);
+  }
+
+  card.appendChild(header);
+
+  if (item.observacoes) {
+    const obs = document.createElement('p');
+    obs.className = 'mt-2 text-sm text-gray-600 whitespace-pre-line';
+    obs.textContent = item.observacoes;
+    card.appendChild(obs);
+  }
+
+  if (item.createdAt) {
+    const dataCriacao = document.createElement('p');
+    dataCriacao.className = 'mt-2 text-[11px] text-gray-400';
+    dataCriacao.textContent = `Atualizado em ${formatDate(item.createdAt, true)}`;
+    card.appendChild(dataCriacao);
+  }
+
+  return card;
+}
+
+function renderProdutoImportado(item = {}) {
+  const card = document.createElement('article');
+  card.className =
+    'bg-white border border-emerald-100 rounded-lg p-3 shadow-sm space-y-2';
+
+  const header = document.createElement('div');
+  header.className = 'flex items-start justify-between gap-2';
+
+  const nomeEl = document.createElement('span');
+  nomeEl.className = 'font-semibold text-sm text-gray-800';
+  nomeEl.textContent = obterNomeProduto(item) || 'Produto sem nome';
+  header.appendChild(nomeEl);
+
+  const precoTexto = formatCurrency(item.sobra);
+  if (precoTexto) {
+    const precoEl = document.createElement('span');
+    precoEl.className =
+      'text-sm font-semibold text-emerald-600 whitespace-nowrap';
+    precoEl.textContent = precoTexto;
+    header.appendChild(precoEl);
+  }
+
+  card.appendChild(header);
+
+  if (item.sku) {
+    const skuRow = document.createElement('p');
+    skuRow.className = 'text-xs text-gray-600';
+    const label = document.createElement('span');
+    label.className = 'font-medium text-gray-700';
+    label.textContent = 'SKU: ';
+    const skuValue = document.createElement('span');
+    skuValue.className = 'font-mono text-gray-700';
+    skuValue.textContent = item.sku;
+    skuRow.appendChild(label);
+    skuRow.appendChild(skuValue);
+    card.appendChild(skuRow);
+  }
+
+  const footer = document.createElement('div');
+  footer.className = 'text-[11px] text-gray-400 flex flex-wrap gap-x-2 gap-y-1';
+
+  const dataReferencia =
+    item.dataReferencia || ultimaImportacaoMeta?.dataReferencia || '';
+  const referenciaFormatada = formatDate(dataReferencia, false);
+  if (referenciaFormatada) {
+    const referenciaEl = document.createElement('span');
+    referenciaEl.textContent = `Referência: ${referenciaFormatada}`;
+    footer.appendChild(referenciaEl);
+  }
+
+  const atualizadoEm = item.atualizadoEm || ultimaImportacaoMeta?.criadoEm;
+  const atualizadoFormatado = formatDate(atualizadoEm, true);
+  if (atualizadoFormatado) {
+    const atualizadoEl = document.createElement('span');
+    atualizadoEl.textContent = `Atualizado em ${atualizadoFormatado}`;
+    footer.appendChild(atualizadoEl);
+  }
+
+  const origemEl = document.createElement('span');
+  origemEl.textContent = 'Origem: Produtos/Preços';
+  footer.appendChild(origemEl);
+
+  if (footer.childElementCount) {
+    card.appendChild(footer);
+  }
+
+  return card;
+}
+
+function atualizarStatusProdutos() {
+  if (!produtoStatusEl) return;
+
+  if (!manualProdutosPronto && !importadosProdutosPronto) {
+    setStatus(produtoStatusEl, 'Carregando peças em linha...', false);
+    return;
+  }
+
+  const partes = [];
+
+  if (importadosProdutosCache.length) {
+    const total = importadosProdutosCache.length;
+    const descricao = [];
+    descricao.push(
+      `${total} peça${total === 1 ? '' : 's'} importada${
+        total === 1 ? '' : 's'
+      }`,
+    );
+
+    const dataReferencia =
+      ultimaImportacaoMeta?.dataReferencia ||
+      importadosProdutosCache[0]?.dataReferencia;
+    const referenciaFormatada = formatDate(dataReferencia, false);
+    if (referenciaFormatada) {
+      descricao.push(`referência ${referenciaFormatada}`);
+    }
+
+    const atualizadoEm =
+      ultimaImportacaoMeta?.criadoEm ||
+      importadosProdutosCache[0]?.atualizadoEm;
+    const atualizadoFormatado = formatDate(atualizadoEm, true);
+    if (atualizadoFormatado) {
+      descricao.push(`disponível desde ${atualizadoFormatado}`);
+    }
+
+    partes.push(descricao.join(' • '));
+  }
+
+  if (manualProdutosCache.length) {
+    const total = manualProdutosCache.length;
+    partes.push(
+      `${total} peça${total === 1 ? '' : 's'} cadastrada manualmente`,
+    );
+  }
+
+  if (!partes.length) {
+    setStatus(produtoStatusEl, '', false);
+    return;
+  }
+
+  setStatus(produtoStatusEl, partes.join(' | '), false);
+}
+
+function atualizarListaProdutos() {
+  if (!listaProdutosEl) return;
+
+  listaProdutosEl.innerHTML = '';
+
+  const itensImportados = [...importadosProdutosCache].sort(
+    compararProdutosPorNome,
+  );
+  const itensManuais = [...manualProdutosCache].sort(compararProdutosPorNome);
+  const todos = [...itensImportados, ...itensManuais];
+
+  if (!todos.length) {
+    if (manualProdutosPronto && importadosProdutosPronto) {
+      produtosVazioEl?.classList.remove('hidden');
+    } else {
+      produtosVazioEl?.classList.add('hidden');
+    }
+    atualizarStatusProdutos();
+    return;
+  }
+
+  produtosVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+  todos.forEach((item) => {
+    frag.appendChild(renderProdutoCard(item));
+  });
+  listaProdutosEl.appendChild(frag);
+  atualizarStatusProdutos();
+}
+
+function monitorarItensImportados(importacaoRef) {
+  produtosImportadosUnsub?.();
+  importadosProdutosPronto = false;
+
+  if (!importacaoRef) {
+    importadosProdutosCache = [];
+    importadosProdutosPronto = true;
+    atualizarListaProdutos();
+    return;
+  }
+
+  const itensRef = query(
+    collection(importacaoRef, 'itens'),
+    orderBy('ordem', 'asc'),
+  );
+
+  produtosImportadosUnsub = onSnapshot(
+    itensRef,
+    (snap) => {
+      importadosProdutosCache = snap.docs.map((docSnap) => {
+        const data = docSnap.data() || {};
+        return {
+          tipo: 'importado',
+          id: docSnap.id,
+          produto: data.produto || data.nome || '',
+          nome: data.produto || data.nome || '',
+          sku: data.sku || '',
+          sobra: data.sobra ?? null,
+          ordem: data.ordem ?? null,
+          dataReferencia:
+            data.dataReferencia || ultimaImportacaoMeta?.dataReferencia || '',
+          atualizadoEm: data.atualizadoEm || ultimaImportacaoMeta?.criadoEm,
+        };
+      });
+      importadosProdutosPronto = true;
+      atualizarListaProdutos();
+    },
+    (err) => {
+      console.error('Erro ao carregar itens importados:', err);
+      setStatus(
+        produtoStatusEl,
+        'Não foi possível carregar as peças importadas.',
+        true,
+      );
+      importadosProdutosCache = [];
+      importadosProdutosPronto = true;
+      atualizarListaProdutos();
+    },
+  );
+}
+
+function monitorarUltimaImportacao() {
+  produtosImportacoesUnsub?.();
+  produtosImportadosUnsub?.();
+  ultimaImportacaoMeta = null;
+  importadosProdutosCache = [];
+  importadosProdutosPronto = false;
+
+  if (!currentUser) {
+    atualizarListaProdutos();
+    return;
+  }
+
+  const importacoesRef = query(
+    collection(db, 'uid', currentUser.uid, 'produtosPrecos'),
+    orderBy('criadoEm', 'desc'),
+    limit(1),
+  );
+
+  produtosImportacoesUnsub = onSnapshot(
+    importacoesRef,
+    (snap) => {
+      if (snap.empty) {
+        ultimaImportacaoMeta = null;
+        importadosProdutosCache = [];
+        importadosProdutosPronto = true;
+        produtosImportadosUnsub?.();
+        produtosImportadosUnsub = null;
+        atualizarListaProdutos();
+        return;
+      }
+
+      const docSnap = snap.docs[0];
+      ultimaImportacaoMeta = { id: docSnap.id, ...(docSnap.data() || {}) };
+      monitorarItensImportados(docSnap.ref);
+    },
+    (err) => {
+      console.error('Erro ao carregar importações de produtos/preços:', err);
+      setStatus(
+        produtoStatusEl,
+        'Não foi possível carregar as peças importadas.',
+        true,
+      );
+      ultimaImportacaoMeta = null;
+      importadosProdutosCache = [];
+      importadosProdutosPronto = true;
+      produtosImportadosUnsub?.();
+      produtosImportadosUnsub = null;
+      atualizarListaProdutos();
+    },
+  );
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -463,41 +811,6 @@ function renderProblema(docSnap) {
   return card;
 }
 
-function renderProduto(docSnap) {
-  const data = docSnap.data() || {};
-  const card = document.createElement('article');
-  card.className =
-    'bg-white border border-emerald-100 rounded-lg p-3 shadow-sm';
-
-  const header = document.createElement('div');
-  header.className = 'flex items-center justify-between text-sm text-gray-700';
-  const nomeEl = document.createElement('span');
-  nomeEl.className = 'font-semibold';
-  nomeEl.textContent = data.nome || 'Produto sem nome';
-  const autorEl = document.createElement('span');
-  autorEl.className = 'text-xs text-gray-500';
-  autorEl.textContent = data.autorNome ? `Por ${data.autorNome}` : '';
-  header.appendChild(nomeEl);
-  header.appendChild(autorEl);
-  card.appendChild(header);
-
-  if (data.observacoes) {
-    const obs = document.createElement('p');
-    obs.className = 'mt-2 text-sm text-gray-600 whitespace-pre-line';
-    obs.textContent = data.observacoes;
-    card.appendChild(obs);
-  }
-
-  const dataCriacao = document.createElement('p');
-  dataCriacao.className = 'mt-2 text-[11px] text-gray-400';
-  dataCriacao.textContent = data.createdAt
-    ? `Atualizado em ${formatDate(data.createdAt, true)}`
-    : '';
-  card.appendChild(dataCriacao);
-
-  return card;
-}
-
 function carregarMensagens() {
   if (!currentUser) return;
   mensagensUnsub?.();
@@ -560,40 +873,58 @@ function carregarProblemas() {
 
 function carregarProdutos() {
   if (!currentUser) return;
+
   produtosUnsub?.();
+  produtosImportacoesUnsub?.();
+  produtosImportadosUnsub?.();
+
+  manualProdutosCache = [];
+  importadosProdutosCache = [];
+  manualProdutosPronto = false;
+  importadosProdutosPronto = false;
+  ultimaImportacaoMeta = null;
+
+  if (listaProdutosEl) listaProdutosEl.innerHTML = '';
+  produtosVazioEl?.classList.add('hidden');
+  setStatus(produtoStatusEl, 'Carregando peças em linha...', false);
+
   const produtosRef = query(
     collection(db, 'painelAtualizacoesMentorados'),
     where('categoria', '==', 'produto'),
     orderBy('createdAt', 'desc'),
   );
+
   produtosUnsub = onSnapshot(
     produtosRef,
     (snap) => {
-      listaProdutosEl.innerHTML = '';
-      if (snap.empty) {
-        produtosVazioEl?.classList.remove('hidden');
-        return;
-      }
-      produtosVazioEl?.classList.add('hidden');
-      const itens = [];
-      snap.forEach((docSnap) => itens.push(docSnap));
-      itens
-        .sort((a, b) => {
-          const nomeA = (a.data()?.nome || '').toLowerCase();
-          const nomeB = (b.data()?.nome || '').toLowerCase();
-          if (nomeA < nomeB) return -1;
-          if (nomeA > nomeB) return 1;
-          return 0;
-        })
-        .forEach((docSnap) =>
-          listaProdutosEl.appendChild(renderProduto(docSnap)),
-        );
+      manualProdutosPronto = true;
+      manualProdutosCache = snap.docs.map((docSnap) => {
+        const data = docSnap.data() || {};
+        return {
+          tipo: 'manual',
+          id: docSnap.id,
+          nome: data.nome || '',
+          observacoes: data.observacoes || '',
+          autorNome: data.autorNome || '',
+          createdAt: data.createdAt || null,
+        };
+      });
+      atualizarListaProdutos();
     },
     (err) => {
-      console.error('Erro ao carregar produtos:', err);
-      produtosVazioEl?.classList.remove('hidden');
+      console.error('Erro ao carregar produtos cadastrados manualmente:', err);
+      manualProdutosCache = [];
+      manualProdutosPronto = true;
+      setStatus(
+        produtoStatusEl,
+        'Não foi possível carregar os produtos cadastrados manualmente.',
+        true,
+      );
+      atualizarListaProdutos();
     },
   );
+
+  monitorarUltimaImportacao();
 }
 
 async function enviarMensagem(event) {
