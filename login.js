@@ -106,6 +106,11 @@ let wasLoggedIn = false;
 let authListenerRegistered = false;
 let explicitLogout = false;
 let isExpedicao = false;
+const EXPEDICAO_ALLOWED_MENU_IDS = [
+  'menu-expedicao',
+  'menu-configuracoes',
+  'menu-painel-atualizacoes-gerais',
+];
 let notifUnsub = null;
 let expNotifUnsub = null;
 let updNotifUnsub = null;
@@ -370,16 +375,15 @@ function hideUserArea() {
   restoreSidebar();
 }
 
-function applyExpedicaoSidebar() {
+function applyExpedicaoSidebar(extraAllowedIds = []) {
+  const allowedIds = Array.from(
+    new Set([...EXPEDICAO_ALLOWED_MENU_IDS, ...extraAllowedIds]),
+  );
+
   const filter = () => {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
-    const allowedIds = [
-      'menu-expedicao',
-      'menu-configuracoes',
-      'menu-comunicacao',
-    ];
     const allowedLis = allowedIds
       .map((id) => document.getElementById(id)?.closest('li'))
       .filter(Boolean);
@@ -396,6 +400,11 @@ function applyExpedicaoSidebar() {
     const submenu = document.getElementById('menuExpedicao');
     if (submenu) {
       submenu.style.maxHeight = submenu.scrollHeight + 'px';
+    }
+
+    const configMenu = document.getElementById('menuConfiguracoes');
+    if (configMenu) {
+      configMenu.style.maxHeight = configMenu.scrollHeight + 'px';
     }
   };
 
@@ -435,7 +444,11 @@ function normalizePerfil(perfil) {
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = normalizePerfil(perfil);
-  if (!currentPerfil || currentPerfil === 'expedicao') return;
+  if (!currentPerfil) return;
+  if (currentPerfil === 'expedicao') {
+    applyExpedicaoSidebar();
+    return;
+  }
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
 
@@ -486,13 +499,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-sku-associado',
       'menu-desempenho',
     ],
-    expedicao: [
-      'menu-expedicao',
-      'menu-configuracoes',
-      'menu-comunicacao',
-      'menu-painel-atualizacoes-gerais',
-      'menu-painel-atualizacoes-mentorados',
-    ],
+    expedicao: EXPEDICAO_ALLOWED_MENU_IDS,
   };
 
   const allowed = nivelMenus[currentPerfil];
@@ -548,7 +555,7 @@ async function checkExpedicao(user) {
     }
     if (!snap.empty) {
       isExpedicao = true;
-      applyExpedicaoSidebar();
+      applyExpedicaoSidebar(['menu-comunicacao']);
       const path = window.location.pathname.toLowerCase();
       if (!path.endsWith('/expedicao.html')) {
         window.location.href = 'expedicao.html';
