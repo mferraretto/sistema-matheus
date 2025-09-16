@@ -1234,7 +1234,7 @@
         concluido: { text: 'Concluído', icon: 'fa-check', color: 'text-green-600', border: 'border-green-500' }
       };
       const div = document.createElement('div');
-      div.className = 'pdf-card ticket-card p-4 flex flex-col h-full' + (attention ? ' border-red-500 border-2' : '');
+      div.className = 'pdf-card ticket-card p-4 flex flex-col' + (attention ? ' border-red-500 border-2' : '');
       div.innerHTML = `
         <div class="flex justify-between items-center mb-4">
           <span class="font-semibold text-gray-800">${owner}</span>
