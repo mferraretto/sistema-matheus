@@ -21,3 +21,24 @@ query(
   limit(PAGE_SIZE)
 )
 ```
+
+## Painel de Atualizações Gerais
+
+O painel consolidado utiliza um único conjunto de dados para mensagens, problemas e produtos. Cada consulta filtra pela categoria desejada e pelos participantes autorizados, ordenando pela data de criação. Crie o índice composto abaixo:
+
+- Collection: `painelAtualizacoesGerais`
+- Fields:
+  - `participantes` array-contains
+  - `categoria` ascending
+  - `createdAt` descending
+
+Esse índice atende, por exemplo, à consulta de mensagens em `painel-atualizacoes-gerais.js`:
+
+```js
+query(
+  collection(db, 'painelAtualizacoesGerais'),
+  where('categoria', '==', 'mensagem'),
+  where('participantes', 'array-contains', currentUser.uid),
+  orderBy('createdAt', 'desc')
+)
+```
