@@ -12,6 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+  <script src="expedicao-notifier.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -580,6 +581,29 @@ firebase.auth().onAuthStateChanged(async u => {
           contadorFinal
         };
         await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+        if (
+          window.ExpedicaoNotifier &&
+          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+        ) {
+          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+            db,
+            firebase,
+            currentUser,
+            destinatarioEmails: selecionado,
+            destinatarioUids: responsavelExpedicaoUid
+              ? [responsavelExpedicaoUid]
+              : [],
+            arquivoNome: fileName,
+            totalPaginas,
+            foraHorario: foraHorarioAtual,
+            origem: 'Etiquetas PDF (OCR)',
+            pdfDocId: docRef.id,
+            additionalData: {
+              contadorInicial,
+              contadorFinal,
+            },
+          });
+        }
         await savePrintedSkuQuantities(items);
         if (Array.isArray(extraMeta.paginasResumo)) {
           await saveLabelSummary({
@@ -973,6 +997,25 @@ firebase.auth().onAuthStateChanged(async u => {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
           await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+        }
+        if (
+          window.ExpedicaoNotifier &&
+          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+        ) {
+          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+            db,
+            firebase,
+            currentUser,
+            destinatarioEmails: selecionado,
+            destinatarioUids: responsavelExpedicaoUid
+              ? [responsavelExpedicaoUid]
+              : [],
+            arquivoNome: fileName,
+            totalEtiquetas: allItems.length,
+            foraHorario: foraDoHorario(),
+            origem: 'Etiquetas Mercado Livre',
+            pdfDocId: docRef.id,
+          });
         }
       }
 

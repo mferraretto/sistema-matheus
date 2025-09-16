@@ -104,6 +104,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="expedicao-notifier.js"></script>
   <script type="module">
   import { firebaseConfig } from './firebase-config.js';
   import { createOcrWorker } from './createWorker.js';
@@ -454,7 +455,7 @@
     console.log('[savePrintedItems] saved for current user');
   }
 
-  async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario){
+  async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario, meta = {}){
     console.log('[savePdfRecord] saving record', {name, url, storagePath, responsavelUid, foraHorario});
     const record = {
       name,
@@ -468,6 +469,33 @@
       await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add(record);
     }
     console.log('[savePdfRecord] record saved');
+    if (
+      window.ExpedicaoNotifier &&
+      typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+    ) {
+      const metaEmails = Array.isArray(meta.destinatarioEmails)
+        ? meta.destinatarioEmails
+        : meta.gestorEmail
+        ? [meta.gestorEmail]
+        : [];
+      await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+        db,
+        firebase,
+        currentUser,
+        destinatarioEmails: metaEmails,
+        destinatarioUids: responsavelUid ? [responsavelUid] : [],
+        arquivoNome: name,
+        totalEtiquetas: Number.isFinite(meta.totalEtiquetas)
+          ? Number(meta.totalEtiquetas)
+          : undefined,
+        totalPaginas: Number.isFinite(meta.totalPaginas)
+          ? Number(meta.totalPaginas)
+          : undefined,
+        foraHorario,
+        origem: meta.origem || 'ZPL Import (OCR)',
+        pdfDocId: meta.pdfDocId || null,
+      });
+    }
   }
 
   // ===== Handler principal =====
@@ -590,7 +618,12 @@
       const url = await ref.getDownloadURL();
       console.log('[btnProcessar] PDF uploaded', url);
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
-      await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario);
+      await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario, {
+        destinatarioEmails: gestorEmail ? [gestorEmail] : [],
+        totalEtiquetas: totalLabels,
+        origem: 'ZPL Import (OCR)',
+        pdfDocId: metaRef.id,
+      });
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');

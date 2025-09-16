@@ -113,6 +113,7 @@ const EXPEDICAO_ALLOWED_MENU_IDS = [
 ];
 let notifUnsub = null;
 let expNotifUnsub = null;
+let expLabelNotifUnsub = null;
 let updNotifUnsub = null;
 let painelGeralNotifUnsub = null;
 let painelMentNotifUnsub = null;
@@ -583,12 +584,14 @@ function initNotificationListener(uid) {
   if (!btn || !badge || !list) return;
   if (notifUnsub) notifUnsub();
   if (expNotifUnsub) expNotifUnsub();
+  if (expLabelNotifUnsub) expLabelNotifUnsub();
   if (updNotifUnsub) updNotifUnsub();
   if (painelGeralNotifUnsub) painelGeralNotifUnsub();
   if (painelMentNotifUnsub) painelMentNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
+  let expLabelNotifs = [];
   let updNotifs = [];
   let painelGeralNotifs = [];
   let painelMentNotifs = [];
@@ -639,11 +642,35 @@ function initNotificationListener(uid) {
     return updated;
   };
 
+  const formatLabelNotification = (data) => {
+    if (!data) return 'Novo arquivo de etiquetas disponível.';
+    const autor = data.autorNome || data.autorEmail || 'Usuário';
+    const origem = data.origem || 'sistema de etiquetas';
+    const arquivo = data.arquivoNome || data.fileName || 'arquivo';
+    const totalEtiquetas = Number.isFinite(data.totalEtiquetas)
+      ? Number(data.totalEtiquetas)
+      : null;
+    const totalPaginas = Number.isFinite(data.totalPaginas)
+      ? Number(data.totalPaginas)
+      : null;
+    let quantidadeTexto = 'um arquivo de etiquetas';
+    if (totalEtiquetas !== null) {
+      quantidadeTexto =
+        totalEtiquetas === 1 ? '1 etiqueta' : `${totalEtiquetas} etiquetas`;
+    } else if (totalPaginas !== null && totalPaginas > 0) {
+      quantidadeTexto =
+        totalPaginas === 1 ? '1 página' : `${totalPaginas} páginas`;
+    }
+    const foraHorario = data.foraHorario ? ' (fora do horário padrão)' : '';
+    return `${autor} enviou ${quantidadeTexto}${foraHorario} via ${origem}: ${arquivo}`;
+  };
+
   const render = () => {
     list.innerHTML = '';
     const all = [
       ...finNotifs,
       ...expNotifs,
+      ...expLabelNotifs,
       ...updNotifs,
       ...painelGeralNotifs,
       ...painelMentNotifs,
@@ -940,6 +967,31 @@ function initNotificationListener(uid) {
     },
   );
 
+  const qExpLabels = query(
+    collection(db, 'expedicaoNotificacoes'),
+    where('destinatarios', 'array-contains', uid),
+    limit(50),
+  );
+  expLabelNotifUnsub = onSnapshot(
+    qExpLabels,
+    (snap) => {
+      expLabelNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        expLabelNotifs.push({
+          id: `explabel:${docSnap.id}`,
+          text: formatLabelNotification(data),
+          ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+          url: data.targetUrl || data.url || 'expedicao.html',
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações de etiquetas:', err);
+    },
+  );
+
   if (!btn.dataset.notifInitialized) {
     btn.addEventListener('click', () => {
       list.classList.toggle('hidden');
@@ -969,6 +1021,10 @@ function checkLogin() {
       if (expNotifUnsub) {
         expNotifUnsub();
         expNotifUnsub = null;
+      }
+      if (expLabelNotifUnsub) {
+        expLabelNotifUnsub();
+        expLabelNotifUnsub = null;
       }
       if (updNotifUnsub) {
         updNotifUnsub();
