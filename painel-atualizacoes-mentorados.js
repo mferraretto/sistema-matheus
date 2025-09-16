@@ -359,27 +359,48 @@ function atualizarEscopoMensagem() {
 function renderMensagem(docSnap) {
   const data = docSnap.data() || {};
   const item = document.createElement('article');
-  item.className = 'bg-white border border-blue-100 rounded-lg p-3 shadow-sm';
+  item.className = 'quick-message-card';
 
-  const header = document.createElement('div');
-  header.className = 'flex items-center justify-between text-xs text-gray-500';
+  const badge = document.createElement('div');
+  badge.className = 'quick-message-card__badge';
+  const badgeIcon = document.createElement('i');
+  badgeIcon.className = 'fa-solid fa-comment-dots';
+  badge.appendChild(badgeIcon);
+
+  const content = document.createElement('div');
+  content.className = 'quick-message-card__content';
+
+  const label = document.createElement('span');
+  label.className = 'quick-message-card__label';
+  label.textContent = 'Atualização rápida';
+
+  const meta = document.createElement('div');
+  meta.className = 'quick-message-card__meta';
+
+  const responsavelNome = data.responsavelNome || data.autorNome || '';
+  const autorEl = document.createElement('span');
+  autorEl.className = 'quick-message-card__author';
+  autorEl.textContent = responsavelNome
+    ? `Por ${responsavelNome}`
+    : 'Responsável não informado';
 
   const dataEl = document.createElement('span');
+  dataEl.className = 'quick-message-card__date';
   dataEl.textContent = formatDate(data.createdAt, true) || '—';
-  const respEl = document.createElement('span');
-  respEl.className = 'font-medium text-gray-600';
-  respEl.textContent =
-    data.responsavelNome || data.autorNome || 'Responsável não informado';
 
-  header.appendChild(dataEl);
-  header.appendChild(respEl);
+  meta.appendChild(autorEl);
+  meta.appendChild(dataEl);
 
   const corpo = document.createElement('p');
-  corpo.className = 'mt-2 text-sm text-gray-700 whitespace-pre-line';
+  corpo.className = 'quick-message-card__text';
   corpo.textContent = data.texto || '';
 
-  item.appendChild(header);
-  item.appendChild(corpo);
+  content.appendChild(label);
+  content.appendChild(meta);
+  content.appendChild(corpo);
+
+  item.appendChild(badge);
+  item.appendChild(content);
   return item;
 }
 
