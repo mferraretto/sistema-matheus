@@ -582,6 +582,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-painel-atualizacoes-mentorados',
     'menu-comunicacao',
     'menu-saques',
+    'menu-produtos-precos',
     'menu-acompanhamento-gestor',
     'menu-mentoria',
     'menu-perfil-mentorado',
