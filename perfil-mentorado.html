@@ -1,38 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil do Mentorado</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20240826">
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="app-container">
-  <div id="sidebar-container"></div>
-  <div id="navbar-container"></div>
-  <main class="main-content p-4 space-y-6">
-    <div class="card">
-      <div class="card-header"><h2 class="text-xl font-bold">Perfil do Mentorado</h2></div>
-      <div id="perfilMentoradoList" class="card-body space-y-4"></div>
-    </div>
-  </main>
-  <script>window.CUSTOM_SIDEBAR_PATH='/partials/sidebar.html';
-        window.CUSTOM_NAVBAR_PATH='/partials/navbar.html';</script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil do Mentorado</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20240826" />
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    <div class="app-container">
+      <div id="sidebar-container"></div>
+      <div id="navbar-container"></div>
+      <main class="main-content p-4 space-y-6">
+        <div class="card">
+          <div
+            class="card-header flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <h2 class="text-xl font-bold">
+                Cadastrar novo vendedor/mentorado
+              </h2>
+              <p class="text-sm text-gray-500">
+                Informe os dados básicos para adicionar um novo participante ao
+                seu portfólio.
+              </p>
+            </div>
+            <span id="novoMentoradoFeedback" class="text-sm"></span>
+          </div>
+          <form
+            id="novoMentoradoForm"
+            class="card-body grid gap-4 md:grid-cols-2"
+          >
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-gray-700">Nome</span>
+              <input
+                id="novoMentoradoNome"
+                type="text"
+                class="form-control"
+                placeholder="Nome completo"
+                required
+              />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-gray-700">E-mail</span>
+              <input
+                id="novoMentoradoEmail"
+                type="email"
+                class="form-control"
+                placeholder="email@exemplo.com"
+                required
+              />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-gray-700"
+                >Data de início</span
+              >
+              <input
+                id="novoMentoradoDataInicio"
+                type="date"
+                class="form-control"
+              />
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-medium text-gray-700">Contato</span>
+              <input
+                id="novoMentoradoContato"
+                type="text"
+                class="form-control"
+                placeholder="Telefone, WhatsApp ou outro canal"
+              />
+            </label>
+            <div class="md:col-span-2 flex justify-end">
+              <button type="submit" class="btn-primary px-4 py-2 rounded">
+                Cadastrar mentorado
+              </button>
+            </div>
+          </form>
+        </div>
 
-  <script src="shared.js"></script>
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="perfil-mentorado.js"></script>
-  <script type="module" src="login.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.initPerfilMentorado) {
-        window.initPerfilMentorado();
-      }
-    });
-  </script>
-  </div>
-</body>
+        <div class="card">
+          <div
+            class="card-header flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <h2 class="text-xl font-bold">Mentorados vinculados</h2>
+            <span id="mentoradosCount" class="text-sm text-gray-500"></span>
+          </div>
+          <div id="perfilMentoradoList" class="card-body space-y-4"></div>
+          <p
+            id="perfilMentoradoEmpty"
+            class="px-4 pb-4 text-sm text-gray-500 hidden"
+          >
+            Nenhum mentorado vinculado ao seu perfil até o momento.
+          </p>
+        </div>
+      </main>
+      <script>
+        window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
+        window.CUSTOM_NAVBAR_PATH = '/partials/navbar.html';
+      </script>
+
+      <script src="shared.js"></script>
+      <script type="module" src="firebase-config.js"></script>
+      <script type="module" src="perfil-mentorado.js"></script>
+      <script type="module" src="login.js"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          if (window.initPerfilMentorado) {
+            window.initPerfilMentorado();
+          }
+        });
+      </script>
+    </div>
+  </body>
 </html>
