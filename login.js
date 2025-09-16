@@ -309,7 +309,7 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) verifica associação com expedição (gestor ou responsável)
-    if (perfil !== 'expedicao') {
+    if (perfil !== 'gestor expedicao') {
       await checkExpedicao(user);
     }
 
@@ -427,35 +427,17 @@ function normalizePerfil(perfil) {
     ].includes(p)
   )
     return 'gestor';
-  if (
-    [
-      'expedicao',
-      'expedição',
-      'gestor expedicao',
-      'gestor expedição',
-      'gestor de expedicao',
-      'gestor de expedição',
-    ].includes(p)
-  )
-    return 'expedicao';
   return p;
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = normalizePerfil(perfil);
-  if (!currentPerfil) return;
+  if (!currentPerfil || currentPerfil === 'expedicao') return;
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
 
   const menuLinks = Array.from(sidebar.querySelectorAll('a[id^="menu-"]'));
   const allIds = menuLinks.map((a) => a.id);
 
-  const expedicaoMenus = [
-    'menu-expedicao',
-    'menu-configuracoes',
-    'menu-comunicacao',
-    'menu-painel-atualizacoes-gerais',
-    'menu-painel-atualizacoes-mentorados',
-  ];
   const nivelMenus = {
     adm: allIds,
     usuario: [
@@ -500,8 +482,13 @@ function applyPerfilRestrictions(perfil) {
       'menu-sku-associado',
       'menu-desempenho',
     ],
-    expedicao: expedicaoMenus,
-    'gestor expedicao': expedicaoMenus,
+    'gestor expedicao': [
+      'menu-expedicao',
+      'menu-configuracoes',
+      'menu-comunicacao',
+      'menu-painel-atualizacoes-gerais',
+      'menu-painel-atualizacoes-mentorados',
+    ],
   };
 
   const allowed = nivelMenus[currentPerfil];

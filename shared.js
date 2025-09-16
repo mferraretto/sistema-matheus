@@ -770,17 +770,6 @@ document.addEventListener('sidebarLoaded', async () => {
       ].includes(p)
     )
       return 'gestor';
-    if (
-      [
-        'expedicao',
-        'expedição',
-        'gestor expedicao',
-        'gestor expedição',
-        'gestor de expedicao',
-        'gestor de expedição',
-      ].includes(p)
-    )
-      return 'expedicao';
     return p;
   }
 
