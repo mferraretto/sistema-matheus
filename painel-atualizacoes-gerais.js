@@ -17,6 +17,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  Timestamp,
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 import {
   getAuth,
@@ -53,13 +54,42 @@ const produtoStatusEl = document.getElementById('produtoStatus');
 const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
+const reuniaoStatusEl = document.getElementById('reuniaoStatus');
+const calendarioPrincipalEl = document.getElementById('calendarioPrincipal');
+const calendarioAnteriorEl = document.getElementById('calendarioAnterior');
+const calendarioProximoEl = document.getElementById('calendarioProximo');
+const listaReunioesEl = document.getElementById('listaReunioes');
+const reunioesVazioEl = document.getElementById('reunioesVazio');
+const modalReuniaoEl = document.getElementById('modalAgendarReuniao');
+const modalReuniaoDataEl = document.getElementById('modalReuniaoData');
+const reuniaoParticipantesListaEl = document.getElementById(
+  'reuniaoParticipantesLista',
+);
+const reuniaoParticipantesVazioEl = document.getElementById(
+  'reuniaoParticipantesVazio',
+);
+const reuniaoHorarioInput = document.getElementById('reuniaoHorario');
+const reuniaoCancelarBtn = document.getElementById('reuniaoCancelarBtn');
+const reuniaoModalCloseBtn = document.getElementById('reuniaoModalClose');
+const formReuniao = document.getElementById('formReuniao');
 
 let currentUser = null;
 let participantesCompartilhamento = [];
 let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
+let reunioesUnsub = null;
 let nomeResponsavel = '';
+const participantesInfo = new Map();
+let participantesInfoCarregado = false;
+let calendarioReferencia = new Date();
+let dataSelecionadaParaReuniao = null;
+const reunioesPorData = new Map();
+let reunioesCache = [];
+const DIAS_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const MAX_REUNIOES_EXIBIDAS = 5;
+
+dataSelecionadaParaReuniao = formatDateKey(new Date());
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -112,6 +142,91 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function obterDataAPartirString(value) {
+  if (!value || typeof value !== 'string') return null;
+  const partes = value.split('-');
+  if (partes.length !== 3) return null;
+  const [anoStr, mesStr, diaStr] = partes;
+  const ano = Number(anoStr);
+  const mes = Number(mesStr);
+  const dia = Number(diaStr);
+  if (!ano || !mes || !dia) return null;
+  const date = new Date(ano, mes - 1, dia);
+  if (Number.isNaN(date.valueOf())) return null;
+  return date;
+}
+
+function capitalizeLabel(text = '') {
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function formatLongDateLabel(dateStr) {
+  const date = obterDataAPartirString(dateStr);
+  if (!date) return '';
+  const formatted = date.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+  return capitalizeLabel(formatted);
+}
+
+function extrairNomeUsuario(data = {}, fallback = '') {
+  if (!data || typeof data !== 'object') return fallback;
+  const candidatos = [
+    data.nomeCompleto,
+    data.nome,
+    data.displayName,
+    data.nomeResponsavel,
+    data.responsavelNome,
+    data.autorNome,
+    data.nomeGestor,
+    data.nomeUsuario,
+    data.apelido,
+    data.firstName && data.lastName
+      ? `${data.firstName} ${data.lastName}`
+      : undefined,
+    data.usuarioNome,
+    data.fullName,
+  ];
+  for (const candidato of candidatos) {
+    if (typeof candidato === 'string') {
+      const texto = candidato.trim();
+      if (texto) return texto;
+    }
+  }
+  return fallback;
+}
+
+function extrairEmailUsuario(data = {}, fallback = '') {
+  if (!data || typeof data !== 'object') return fallback;
+  const candidatos = [
+    data.email,
+    data.usuarioEmail,
+    data.autorEmail,
+    data.responsavelEmail,
+    data.gestorEmail,
+    data.financeiroEmail,
+  ];
+  for (const candidato of candidatos) {
+    if (typeof candidato === 'string') {
+      const texto = candidato.trim();
+      if (texto) return texto;
+    }
+  }
+  return fallback;
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -359,6 +474,659 @@ function atualizarEscopoMensagem(participantes) {
   mensagemEscopoEl.textContent = `Compartilhado com ${quantidade} integrante${
     quantidade > 1 ? 's' : ''
   } da equipe.`;
+}
+
+async function carregarParticipantesInfo(uids = []) {
+  participantesInfo.clear();
+  participantesInfoCarregado = false;
+  const set = new Set(
+    Array.isArray(uids)
+      ? uids.filter((uid) => typeof uid === 'string' && uid)
+      : [],
+  );
+  if (currentUser?.uid) {
+    set.add(currentUser.uid);
+  }
+  if (!set.size) {
+    participantesInfoCarregado = true;
+    renderParticipantesModal();
+    return;
+  }
+  const lista = Array.from(set);
+  try {
+    await Promise.all(
+      lista.map(async (uid) => {
+        let dados = null;
+        try {
+          const usuarioSnap = await getDoc(doc(db, 'usuarios', uid));
+          if (usuarioSnap.exists()) {
+            dados = usuarioSnap.data();
+          } else {
+            const uidSnap = await getDoc(doc(db, 'uid', uid));
+            if (uidSnap.exists()) dados = uidSnap.data();
+          }
+        } catch (err) {
+          console.error('Erro ao carregar participante vinculado:', err);
+        }
+
+        const emailBase =
+          uid === currentUser?.uid
+            ? currentUser?.email || ''
+            : extrairEmailUsuario(dados, '');
+        const fallbackNome =
+          uid === currentUser?.uid
+            ? nomeResponsavel || emailBase || 'Você'
+            : emailBase
+              ? emailBase.split('@')[0]
+              : `Usuário ${uid.slice(-4)}`;
+        const nome = extrairNomeUsuario(dados, fallbackNome);
+        const email =
+          uid === currentUser?.uid
+            ? currentUser?.email || emailBase
+            : emailBase;
+
+        participantesInfo.set(uid, {
+          uid,
+          nome: nome || fallbackNome,
+          email: email || '',
+        });
+      }),
+    );
+  } catch (err) {
+    console.error('Erro ao preparar participantes conectados:', err);
+  }
+  participantesInfoCarregado = true;
+  renderParticipantesModal();
+}
+
+function obterParticipantesOrdenados({ incluirAtual = false } = {}) {
+  const valores = Array.from(participantesInfo.values());
+  const filtrados = incluirAtual
+    ? valores
+    : valores.filter((info) => info.uid !== currentUser?.uid);
+  return filtrados.sort((a, b) => {
+    const nomeA = (a.nome || '').toLowerCase();
+    const nomeB = (b.nome || '').toLowerCase();
+    return nomeA.localeCompare(nomeB, 'pt-BR');
+  });
+}
+
+function renderParticipantesModal() {
+  if (!reuniaoParticipantesListaEl) return;
+  reuniaoParticipantesListaEl.innerHTML = '';
+  if (!participantesInfoCarregado) {
+    const loading = document.createElement('div');
+    loading.className = 'px-4 py-3 text-sm text-gray-500';
+    loading.textContent = 'Carregando participantes conectados...';
+    reuniaoParticipantesListaEl.appendChild(loading);
+    reuniaoParticipantesVazioEl?.classList.add('hidden');
+    return;
+  }
+
+  const participantes = obterParticipantesOrdenados();
+  if (!participantes.length) {
+    reuniaoParticipantesVazioEl?.classList.remove('hidden');
+    return;
+  }
+  reuniaoParticipantesVazioEl?.classList.add('hidden');
+
+  participantes.forEach((info) => {
+    const linha = document.createElement('label');
+    linha.className =
+      'flex items-start gap-3 px-4 py-3 hover:bg-white transition-colors cursor-pointer';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = info.uid;
+    checkbox.dataset.uid = info.uid;
+    checkbox.className =
+      'mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex-1';
+    const nomeEl = document.createElement('p');
+    nomeEl.className = 'text-sm font-medium text-gray-700';
+    nomeEl.textContent = info.nome || 'Usuário';
+    wrapper.appendChild(nomeEl);
+
+    const emailEl = document.createElement('p');
+    emailEl.className = 'text-xs text-gray-500';
+    if (info.email) {
+      emailEl.textContent = info.email;
+      wrapper.appendChild(emailEl);
+    }
+
+    linha.appendChild(checkbox);
+    linha.appendChild(wrapper);
+    reuniaoParticipantesListaEl.appendChild(linha);
+  });
+}
+
+function renderCalendarioEm(container, referencia, options = {}) {
+  if (!container || !(referencia instanceof Date)) return;
+  const { compacto = false, tituloAux = '' } = options;
+  const dataBase = new Date(referencia.getFullYear(), referencia.getMonth(), 1);
+  container.innerHTML = '';
+
+  const titulo = document.createElement('div');
+  titulo.className = 'flex items-center justify-between';
+
+  const tituloPrincipal = document.createElement('p');
+  tituloPrincipal.className = compacto
+    ? 'text-sm font-semibold text-gray-700'
+    : 'text-lg font-semibold text-gray-800';
+  tituloPrincipal.textContent = capitalizeLabel(
+    dataBase.toLocaleDateString('pt-BR', {
+      month: 'long',
+      year: 'numeric',
+    }),
+  );
+  titulo.appendChild(tituloPrincipal);
+
+  if (tituloAux) {
+    const aux = document.createElement('span');
+    aux.className = 'text-xs uppercase tracking-wide text-gray-400';
+    aux.textContent = tituloAux;
+    titulo.appendChild(aux);
+  }
+
+  container.appendChild(titulo);
+
+  const diasCabecalho = document.createElement('div');
+  diasCabecalho.className = compacto
+    ? 'grid grid-cols-7 gap-1 text-[10px] font-semibold uppercase text-gray-400'
+    : 'grid grid-cols-7 gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500';
+  DIAS_SEMANA.forEach((dia) => {
+    const span = document.createElement('span');
+    span.className = 'text-center';
+    span.textContent = dia;
+    diasCabecalho.appendChild(span);
+  });
+  container.appendChild(diasCabecalho);
+
+  const grid = document.createElement('div');
+  grid.className = compacto
+    ? 'grid grid-cols-7 gap-1 text-xs'
+    : 'grid grid-cols-7 gap-1 sm:gap-2 text-sm';
+
+  const primeiroDiaSemana = (dataBase.getDay() + 6) % 7; // Segunda-feira como início
+  const totalDiasMes = new Date(
+    dataBase.getFullYear(),
+    dataBase.getMonth() + 1,
+    0,
+  ).getDate();
+  const totalCelulas = 42;
+  const hojeKey = formatDateKey(new Date());
+
+  for (let indice = 0; indice < totalCelulas; indice += 1) {
+    const diaAtual = indice - primeiroDiaSemana + 1;
+    if (diaAtual < 1 || diaAtual > totalDiasMes) {
+      const vazio = document.createElement('div');
+      vazio.className = 'aspect-square rounded-lg';
+      grid.appendChild(vazio);
+      continue;
+    }
+
+    const dataCelula = new Date(
+      dataBase.getFullYear(),
+      dataBase.getMonth(),
+      diaAtual,
+    );
+    const dataKey = formatDateKey(dataCelula);
+    const possuiReuniao = reunioesPorData.has(dataKey);
+    const isHoje = dataKey === hojeKey;
+    const isSelecionado = dataSelecionadaParaReuniao === dataKey;
+
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.dataset.date = dataKey;
+    botao.className = compacto
+      ? 'flex flex-col items-center justify-center rounded-md border border-transparent text-xs font-medium text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors'
+      : 'flex flex-col items-center justify-center rounded-lg border border-gray-200 py-1.5 font-medium text-gray-700 hover:border-indigo-500 hover:text-indigo-600 transition-colors';
+
+    if (!compacto) {
+      botao.classList.add('aspect-square', 'sm:py-2');
+    } else {
+      botao.classList.add('aspect-square');
+    }
+
+    if (isHoje) {
+      botao.classList.add(
+        'border-indigo-500',
+        'text-indigo-600',
+        'font-semibold',
+      );
+      if (!compacto) botao.classList.add('bg-indigo-50');
+    }
+    if (isSelecionado) {
+      botao.classList.add('ring-2', 'ring-indigo-400', 'ring-offset-1');
+    }
+
+    const numero = document.createElement('span');
+    numero.textContent = String(diaAtual);
+    botao.appendChild(numero);
+
+    if (possuiReuniao) {
+      const indicador = document.createElement('span');
+      indicador.className = compacto
+        ? 'mt-0.5 h-1.5 w-1.5 rounded-full bg-indigo-500'
+        : 'mt-1 h-1.5 w-1.5 rounded-full bg-indigo-500';
+      botao.appendChild(indicador);
+    }
+
+    botao.addEventListener('click', () => {
+      abrirModalReuniao(dataKey);
+    });
+
+    grid.appendChild(botao);
+  }
+
+  container.appendChild(grid);
+}
+
+function renderCalendarios() {
+  if (!calendarioPrincipalEl) return;
+  calendarioReferencia = new Date(
+    calendarioReferencia.getFullYear(),
+    calendarioReferencia.getMonth(),
+    1,
+  );
+  const anterior = new Date(
+    calendarioReferencia.getFullYear(),
+    calendarioReferencia.getMonth() - 1,
+    1,
+  );
+  const proximo = new Date(
+    calendarioReferencia.getFullYear(),
+    calendarioReferencia.getMonth() + 1,
+    1,
+  );
+
+  renderCalendarioEm(calendarioPrincipalEl, calendarioReferencia, {
+    tituloAux: 'Mês atual',
+  });
+  renderCalendarioEm(calendarioAnteriorEl, anterior, {
+    compacto: true,
+    tituloAux: 'Mês anterior',
+  });
+  renderCalendarioEm(calendarioProximoEl, proximo, {
+    compacto: true,
+    tituloAux: 'Próximo mês',
+  });
+}
+
+function sugerirHorarioPadrao(dateKey) {
+  const data = obterDataAPartirString(dateKey);
+  if (!data) return '';
+  const hoje = new Date();
+  if (formatDateKey(hoje) === dateKey) {
+    const proximaHora = new Date();
+    proximaHora.setMinutes(0, 0, 0);
+    proximaHora.setHours(proximaHora.getHours() + 1);
+    const horas = String(proximaHora.getHours()).padStart(2, '0');
+    return `${horas}:00`;
+  }
+  return '09:00';
+}
+
+function abrirModalReuniao(dateKey) {
+  if (!dateKey) return;
+  dataSelecionadaParaReuniao = dateKey;
+  renderCalendarios();
+  if (!modalReuniaoEl) return;
+  formReuniao?.reset();
+  renderParticipantesModal();
+  if (modalReuniaoDataEl) {
+    const label = formatLongDateLabel(dateKey);
+    modalReuniaoDataEl.textContent = label ? `Para ${label}` : '';
+  }
+  if (reuniaoHorarioInput) {
+    reuniaoHorarioInput.value = sugerirHorarioPadrao(dateKey);
+  }
+  modalReuniaoEl.classList.remove('hidden');
+  modalReuniaoEl.classList.add('flex');
+  modalReuniaoEl.setAttribute('aria-hidden', 'false');
+  reuniaoHorarioInput?.focus();
+}
+
+function fecharModalReuniao() {
+  if (!modalReuniaoEl) return;
+  modalReuniaoEl.classList.add('hidden');
+  modalReuniaoEl.classList.remove('flex');
+  modalReuniaoEl.setAttribute('aria-hidden', 'true');
+  formReuniao?.reset();
+  renderParticipantesModal();
+}
+
+function obterDadosHoraReuniao(data = {}) {
+  const resultado = { dataHora: null, dataKey: '', horario: '' };
+  if (!data || typeof data !== 'object') return resultado;
+  let dataKey = '';
+  if (typeof data.dataReuniao === 'string') {
+    dataKey = data.dataReuniao;
+  }
+  let dataHora = null;
+  if (data.reuniaoTimestamp?.toDate) {
+    try {
+      dataHora = data.reuniaoTimestamp.toDate();
+    } catch (err) {
+      console.warn('Não foi possível converter reuniaoTimestamp:', err);
+    }
+  }
+  if (!dataHora && dataKey) {
+    const base = obterDataAPartirString(dataKey);
+    if (base) {
+      if (
+        typeof data.horario === 'string' &&
+        /^\d{2}:\d{2}$/.test(data.horario)
+      ) {
+        const [horaStr, minutoStr] = data.horario.split(':');
+        const hora = Number(horaStr);
+        const minuto = Number(minutoStr);
+        base.setHours(Number.isFinite(hora) ? hora : 0);
+        base.setMinutes(Number.isFinite(minuto) ? minuto : 0);
+      }
+      dataHora = base;
+    }
+  }
+  if (dataHora instanceof Date && !Number.isNaN(dataHora.valueOf())) {
+    resultado.dataHora = dataHora;
+    resultado.dataKey = dataKey || formatDateKey(dataHora);
+    const horas = String(dataHora.getHours()).padStart(2, '0');
+    const minutos = String(dataHora.getMinutes()).padStart(2, '0');
+    resultado.horario =
+      typeof data.horario === 'string' && /^\d{2}:\d{2}$/.test(data.horario)
+        ? data.horario
+        : `${horas}:${minutos}`;
+  } else {
+    resultado.dataKey = dataKey;
+    resultado.horario =
+      typeof data.horario === 'string' && /^\d{2}:\d{2}$/.test(data.horario)
+        ? data.horario
+        : '';
+  }
+  return resultado;
+}
+
+function formatParticipantesReuniao(data) {
+  const uids = Array.isArray(data?.participantes) ? data.participantes : [];
+  if (!uids.length) return '';
+  const detalhesArr = Array.isArray(data.participantesDetalhes)
+    ? data.participantesDetalhes
+    : [];
+  const detalhesMap = new Map();
+  detalhesArr.forEach((item) => {
+    if (item?.uid) detalhesMap.set(item.uid, item);
+  });
+  const nomes = uids.map((uid) => {
+    if (uid === currentUser?.uid) return 'Você';
+    const detalhe = detalhesMap.get(uid) || {};
+    if (typeof detalhe.nome === 'string' && detalhe.nome.trim()) {
+      return detalhe.nome.trim();
+    }
+    const info = participantesInfo.get(uid);
+    if (info?.nome) return info.nome;
+    const email = detalhe.email || info?.email || '';
+    if (email) return email;
+    return `Usuário ${uid.slice(-4)}`;
+  });
+  return nomes.join(', ');
+}
+
+function renderReunioesLista() {
+  if (!listaReunioesEl) return;
+  listaReunioesEl.innerHTML = '';
+  const itens = reunioesCache.map(({ id, data }) => ({
+    id,
+    data,
+    ...obterDadosHoraReuniao(data),
+  }));
+
+  const validos = itens.filter(
+    (item) =>
+      item.dataHora instanceof Date && !Number.isNaN(item.dataHora.valueOf()),
+  );
+
+  if (!validos.length) {
+    reunioesVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  const agora = new Date();
+  const hojeKey = formatDateKey(agora);
+  validos.sort((a, b) => a.dataHora.getTime() - b.dataHora.getTime());
+  const futuros = validos.filter(
+    (item) => item.dataHora >= agora || item.dataKey === hojeKey,
+  );
+  let listaParaExibir = futuros.slice(0, MAX_REUNIOES_EXIBIDAS);
+  if (!listaParaExibir.length) {
+    const passados = validos.filter((item) => item.dataHora < agora);
+    listaParaExibir = passados.slice(-MAX_REUNIOES_EXIBIDAS).reverse();
+  }
+
+  if (!listaParaExibir.length) {
+    reunioesVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  reunioesVazioEl?.classList.add('hidden');
+  const fragment = document.createDocumentFragment();
+
+  listaParaExibir.forEach((item) => {
+    const card = document.createElement('article');
+    card.className =
+      'bg-white border border-indigo-100 rounded-lg p-3 shadow-sm';
+
+    const header = document.createElement('div');
+    header.className =
+      'flex flex-wrap items-center justify-between gap-2 text-sm text-gray-700';
+
+    const dataEl = document.createElement('span');
+    dataEl.className = 'font-semibold text-gray-800';
+    if (item.dataHora instanceof Date) {
+      const dataTexto = item.dataHora.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      dataEl.textContent = item.horario
+        ? `${dataTexto} às ${item.horario}`
+        : dataTexto;
+    } else {
+      dataEl.textContent = item.dataKey || 'Data a definir';
+    }
+    header.appendChild(dataEl);
+
+    const autorEl = document.createElement('span');
+    autorEl.className = 'text-xs text-gray-500';
+    if (item.data.autorUid === currentUser?.uid) {
+      autorEl.textContent = 'Agendado por você';
+    } else if (item.data.autorNome) {
+      autorEl.textContent = `Agendado por ${item.data.autorNome}`;
+    } else {
+      autorEl.textContent = 'Agendado pela equipe';
+    }
+    header.appendChild(autorEl);
+
+    card.appendChild(header);
+
+    const participantesTexto = formatParticipantesReuniao(item.data);
+    if (participantesTexto) {
+      const participantesEl = document.createElement('p');
+      participantesEl.className = 'mt-2 text-xs text-gray-600';
+      const label = document.createElement('span');
+      label.className = 'font-medium text-gray-700';
+      label.textContent = 'Participantes: ';
+      participantesEl.appendChild(label);
+      participantesEl.appendChild(document.createTextNode(participantesTexto));
+      card.appendChild(participantesEl);
+    }
+
+    const registroEl = document.createElement('p');
+    registroEl.className = 'mt-2 text-[11px] text-gray-400';
+    const criado = formatDate(item.data.createdAt, true);
+    registroEl.textContent = criado ? `Agendado em ${criado}` : '';
+    if (registroEl.textContent) card.appendChild(registroEl);
+
+    fragment.appendChild(card);
+  });
+
+  listaReunioesEl.appendChild(fragment);
+}
+
+function carregarReunioes() {
+  if (!currentUser) return;
+  reunioesUnsub?.();
+  const reunioesRef = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', currentUser.uid),
+    orderBy('createdAt', 'desc'),
+  );
+  reunioesUnsub = onSnapshot(
+    reunioesRef,
+    (snap) => {
+      reunioesCache = [];
+      reunioesPorData.clear();
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const infoData = obterDadosHoraReuniao(data);
+        if (infoData.dataKey) {
+          if (!reunioesPorData.has(infoData.dataKey)) {
+            reunioesPorData.set(infoData.dataKey, []);
+          }
+          reunioesPorData.get(infoData.dataKey).push({
+            id: docSnap.id,
+            data,
+          });
+        }
+        reunioesCache.push({ id: docSnap.id, data });
+      });
+      renderCalendarios();
+      renderReunioesLista();
+    },
+    (err) => {
+      console.error('Erro ao carregar reuniões agendadas:', err);
+      reunioesVazioEl?.classList.remove('hidden');
+    },
+  );
+}
+
+async function agendarReuniao(event) {
+  event.preventDefault();
+  if (!currentUser) return;
+
+  const dataReuniao = dataSelecionadaParaReuniao;
+  if (!dataReuniao) {
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Selecione um dia no calendário para agendar a reunião.',
+      true,
+    );
+    return;
+  }
+
+  const horario = reuniaoHorarioInput?.value?.trim() || '';
+  if (!horario || !/^\d{2}:\d{2}$/.test(horario)) {
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Informe um horário válido (HH:MM) para a reunião.',
+      true,
+    );
+    reuniaoHorarioInput?.focus();
+    return;
+  }
+
+  const checkboxes = reuniaoParticipantesListaEl
+    ? Array.from(
+        reuniaoParticipantesListaEl.querySelectorAll(
+          'input[type="checkbox"][data-uid]',
+        ),
+      )
+    : [];
+  const selecionados = checkboxes
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.uid)
+    .filter((uid) => typeof uid === 'string' && uid);
+
+  const participantesSet = new Set(selecionados);
+  participantesSet.add(currentUser.uid);
+  if (participantesSet.size <= 1) {
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Selecione pelo menos um participante além de você.',
+      true,
+    );
+    return;
+  }
+
+  const dataBase = obterDataAPartirString(dataReuniao);
+  if (!dataBase) {
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Não foi possível identificar a data selecionada. Tente novamente.',
+      true,
+    );
+    return;
+  }
+
+  const [horaStr, minutoStr] = horario.split(':');
+  const hora = Number(horaStr);
+  const minuto = Number(minutoStr);
+  if (!Number.isFinite(hora) || !Number.isFinite(minuto)) {
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Horário informado é inválido. Utilize o formato HH:MM.',
+      true,
+    );
+    return;
+  }
+  dataBase.setHours(hora, minuto, 0, 0);
+
+  const participantesArray = Array.from(participantesSet);
+  const detalhesParticipantes = participantesArray.map((uid) => {
+    const info = participantesInfo.get(uid) || {};
+    if (uid === currentUser.uid) {
+      return {
+        uid,
+        nome: nomeResponsavel || 'Você',
+        email: currentUser.email || info.email || '',
+      };
+    }
+    return {
+      uid,
+      nome: info.nome || '',
+      email: info.email || '',
+    };
+  });
+
+  try {
+    await addDoc(collection(db, 'painelAtualizacoesGerais'), {
+      categoria: 'reuniao',
+      dataReuniao,
+      horario,
+      reuniaoTimestamp: Timestamp.fromDate(dataBase),
+      participantes: participantesArray,
+      participantesDetalhes: detalhesParticipantes,
+      autorUid: currentUser.uid,
+      autorNome: nomeResponsavel,
+      createdAt: serverTimestamp(),
+    });
+    fecharModalReuniao();
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Reunião agendada com sucesso.',
+      false,
+      6000,
+    );
+  } catch (err) {
+    console.error('Erro ao agendar reunião:', err);
+    showTemporaryStatus(
+      reuniaoStatusEl,
+      'Não foi possível salvar a reunião. Tente novamente.',
+      true,
+    );
+  }
 }
 
 function renderMensagem(docSnap) {
@@ -744,9 +1512,17 @@ async function registrarProduto(event) {
   }
 }
 
+renderCalendarios();
+
 formMensagem?.addEventListener('submit', enviarMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
+formReuniao?.addEventListener('submit', agendarReuniao);
+reuniaoModalCloseBtn?.addEventListener('click', fecharModalReuniao);
+reuniaoCancelarBtn?.addEventListener('click', fecharModalReuniao);
+modalReuniaoEl?.addEventListener('click', (event) => {
+  if (event.target === modalReuniaoEl) fecharModalReuniao();
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -763,6 +1539,9 @@ onAuthStateChanged(auth, async (user) => {
       : [user.uid];
     atualizarEscopoMensagem(participantesCompartilhamento);
     setStatus(painelStatusEl, '');
+
+    await carregarParticipantesInfo(participantesCompartilhamento);
+    carregarReunioes();
 
     try {
       const { isGestor, isResponsavelFinanceiro } =

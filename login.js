@@ -117,6 +117,7 @@ let expLabelNotifUnsub = null;
 let updNotifUnsub = null;
 let painelGeralNotifUnsub = null;
 let painelMentNotifUnsub = null;
+let painelReunioesNotifUnsub = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -588,12 +589,14 @@ function initNotificationListener(uid) {
   if (updNotifUnsub) updNotifUnsub();
   if (painelGeralNotifUnsub) painelGeralNotifUnsub();
   if (painelMentNotifUnsub) painelMentNotifUnsub();
+  if (painelReunioesNotifUnsub) painelReunioesNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
   let expLabelNotifs = [];
   let updNotifs = [];
   let painelGeralNotifs = [];
+  let painelReunioesNotifs = [];
   let painelMentNotifs = [];
 
   const storageKey = `notificationsRead:${uid}`;
@@ -673,6 +676,7 @@ function initNotificationListener(uid) {
       ...expLabelNotifs,
       ...updNotifs,
       ...painelGeralNotifs,
+      ...painelReunioesNotifs,
       ...painelMentNotifs,
     ].sort((a, b) => b.ts - a.ts);
 
@@ -850,6 +854,74 @@ function initNotificationListener(uid) {
     return `[${origem}] ${autor} compartilhou uma atualização.`;
   };
 
+  const painelReuniaoTexto = (data = {}) => {
+    const autor = data.autorNome || data.autorEmail || 'Equipe';
+
+    const dataObjeto = (() => {
+      if (typeof data.dataReuniao === 'string') {
+        const partes = data.dataReuniao.split('-');
+        if (partes.length === 3) {
+          const [anoStr, mesStr, diaStr] = partes;
+          const ano = Number(anoStr);
+          const mes = Number(mesStr) - 1;
+          const dia = Number(diaStr);
+          if (
+            Number.isFinite(ano) &&
+            Number.isFinite(mes) &&
+            Number.isFinite(dia)
+          ) {
+            const parsed = new Date(ano, mes, dia);
+            if (!Number.isNaN(parsed.valueOf())) return parsed;
+          }
+        }
+      }
+      if (data.reuniaoTimestamp?.toDate) {
+        try {
+          const parsed = data.reuniaoTimestamp.toDate();
+          if (!Number.isNaN(parsed.valueOf())) return parsed;
+        } catch (err) {
+          console.warn('Não foi possível converter reuniaoTimestamp:', err);
+        }
+      }
+      return null;
+    })();
+
+    const dataFormatada = dataObjeto
+      ? dataObjeto.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+
+    let horario = '';
+    if (typeof data.horario === 'string' && data.horario) {
+      horario = data.horario;
+    } else if (data.reuniaoTimestamp?.toDate) {
+      try {
+        const parsed = data.reuniaoTimestamp.toDate();
+        if (!Number.isNaN(parsed.valueOf())) {
+          const horas = String(parsed.getHours()).padStart(2, '0');
+          const minutos = String(parsed.getMinutes()).padStart(2, '0');
+          horario = `${horas}:${minutos}`;
+        }
+      } catch (err) {
+        console.warn('Não foi possível extrair horário da reunião:', err);
+      }
+    }
+
+    if (dataFormatada && horario) {
+      return `${autor} agendou reunião em ${dataFormatada} às ${horario}.`;
+    }
+    if (dataFormatada) {
+      return `${autor} agendou reunião em ${dataFormatada}.`;
+    }
+    if (horario) {
+      return `${autor} agendou reunião às ${horario}.`;
+    }
+    return `${autor} agendou uma nova reunião.`;
+  };
+
   const painelGeralQuery = query(
     collection(db, 'painelAtualizacoesGerais'),
     where('categoria', '==', 'mensagem'),
@@ -875,6 +947,34 @@ function initNotificationListener(uid) {
     },
     (err) => {
       console.error('Erro no listener de notificações do painel geral:', err);
+    },
+  );
+
+  const painelReunioesQuery = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', uid),
+    orderBy('createdAt', 'desc'),
+    limit(30),
+  );
+  painelReunioesNotifUnsub = onSnapshot(
+    painelReunioesQuery,
+    (snap) => {
+      painelReunioesNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        if (data.autorUid === uid) return;
+        painelReunioesNotifs.push({
+          id: `pr:${docSnap.id}`,
+          text: painelReuniaoTexto(data),
+          ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+          url: 'painel-atualizacoes-gerais.html',
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações de reuniões:', err);
     },
   );
 
@@ -1041,6 +1141,10 @@ function checkLogin() {
       if (painelMentNotifUnsub) {
         painelMentNotifUnsub();
         painelMentNotifUnsub = null;
+      }
+      if (painelReunioesNotifUnsub) {
+        painelReunioesNotifUnsub();
+        painelReunioesNotifUnsub = null;
       }
       if (!onLoginPage) window.location.href = 'login.html';
     }

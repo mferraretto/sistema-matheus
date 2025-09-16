@@ -64,6 +64,35 @@
       <section class="card p-5 space-y-5">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <h2 class="text-xl font-semibold flex items-center gap-2">
+            <span class="text-indigo-500"><i class="fa-solid fa-calendar-days"></i></span>
+            Calendário de reuniões
+          </h2>
+          <span id="reuniaoStatus" class="text-sm text-gray-500"></span>
+        </div>
+        <p class="text-sm text-gray-600">
+          Clique em uma data para agendar uma nova reunião com os integrantes conectados à sua equipe.
+        </p>
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div id="calendarioPrincipal" class="space-y-4"></div>
+          <div class="flex flex-col gap-4">
+            <div id="calendarioAnterior" class="space-y-2 text-sm"></div>
+            <div id="calendarioProximo" class="space-y-2 text-sm"></div>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Próximas reuniões
+          </h3>
+          <div id="listaReunioes" class="mt-3 space-y-3"></div>
+          <p id="reunioesVazio" class="text-sm text-gray-500 hidden">
+            Nenhuma reunião agendada por enquanto.
+          </p>
+        </div>
+      </section>
+
+      <section class="card p-5 space-y-5">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-xl font-semibold flex items-center gap-2">
             <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></span>
             Problemas por setor
           </h2>
@@ -175,6 +204,76 @@
         </div>
       </section>
     </main>
+
+    <div
+      id="modalAgendarReuniao"
+      class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-40 z-50 p-4"
+      aria-hidden="true"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-xl">
+        <div class="flex items-start justify-between border-b border-gray-200 px-5 py-4">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800">Agendar reunião</h3>
+            <p class="text-sm text-gray-500" id="modalReuniaoData"></p>
+          </div>
+          <button
+            id="reuniaoModalClose"
+            type="button"
+            class="text-gray-400 hover:text-gray-600"
+            aria-label="Fechar"
+          >
+            <i class="fa-solid fa-xmark text-xl"></i>
+          </button>
+        </div>
+        <form id="formReuniao" class="px-5 py-4 space-y-4">
+          <p class="text-sm text-gray-600">
+            Escolha os participantes conectados para esta reunião e defina o horário.
+          </p>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Participantes</label>
+            <div
+              id="reuniaoParticipantesLista"
+              class="max-h-56 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100 bg-gray-50"
+            ></div>
+            <p
+              id="reuniaoParticipantesVazio"
+              class="text-xs text-gray-500 hidden"
+            >
+              Nenhum outro usuário conectado foi encontrado.
+            </p>
+            <p class="text-xs text-gray-500">
+              Você será adicionado automaticamente à reunião.
+            </p>
+          </div>
+          <div class="space-y-2">
+            <label for="reuniaoHorario" class="text-sm font-medium text-gray-700"
+              >Horário da reunião</label
+            >
+            <input
+              id="reuniaoHorario"
+              type="time"
+              required
+              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              id="reuniaoCancelarBtn"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary text-sm px-5 py-2"
+            >
+              Salvar reunião
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <script>
       window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
