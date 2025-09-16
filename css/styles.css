@@ -976,28 +976,6 @@ body.dark-mode .data-table th {
   background: #334155;
 }
 
-.submenu .nav-item {
-  padding: 0.6rem 1.5rem;
-  font-size: 0.9rem;
-  background-color: transparent;
-}
-
-.submenu .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-left: 2px solid var(--primary);
-}
-
-.submenu-link {
-  color: var(--white);
-  text-decoration: none;
-  display: block;
-  transition: color 0.2s;
-}
-
-.submenu-link:hover {
-  color: var(--primary);
-}
-
 /* Utilitário para esconder o submenu */
 .hidden {
   display: none;
