@@ -1,8 +1,8 @@
-<nav id="sidebar" class="sidebar flex flex-col" aria-label="Menu lateral">
-  <div class="sidebar-logo p-4 flex items-center justify-center space-x-4">
+<nav id="sidebar" class="sidebar" aria-label="Menu lateral">
+  <div class="sidebar-logo">
     <a
       href="/configuracao-perfil.html"
-      class="bg-white w-12 h-12 rounded-lg flex items-center justify-center"
+      class="sidebar-logo-link sidebar-logo-link--profile"
       aria-label="Perfil"
     >
       <svg
@@ -11,7 +11,7 @@
         viewBox="0 0 24 24"
         stroke-width="1.5"
         stroke="currentColor"
-        class="w-7 h-7 text-black"
+        class="sidebar-logo-icon"
       >
         <path
           stroke-linecap="round"
@@ -22,7 +22,7 @@
     </a>
     <a
       href="/index.html"
-      class="flex items-center justify-center w-12 h-12"
+      class="sidebar-logo-link sidebar-logo-link--home"
       aria-label="Início"
     >
       <svg
@@ -31,7 +31,7 @@
         viewBox="0 0 24 24"
         stroke-width="1.5"
         stroke="currentColor"
-        class="w-8 h-8"
+        class="sidebar-logo-icon sidebar-logo-icon--large"
       >
         <path
           stroke-linecap="round"
@@ -41,11 +41,11 @@
       </svg>
     </a>
   </div>
-  <ul class="sidebar-menu py-4">
+  <ul class="sidebar-menu">
     <li>
       <a
         href="/gestor.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-gestao"
         data-perfil="gestor"
       >
@@ -55,7 +55,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -69,7 +69,7 @@
     <li>
       <a
         href="/financeiro.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-financeiro"
         data-perfil="gestor"
       >
@@ -79,7 +79,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -93,7 +93,7 @@
     <li>
       <a
         href="/atualizacoes.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-atualizacoes"
         data-perfil="gestor"
       >
@@ -103,7 +103,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -117,7 +117,7 @@
     <li>
       <a
         href="/painel-atualizacoes-gerais.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-painel-atualizacoes-gerais"
       >
         <svg
@@ -126,7 +126,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -140,7 +140,7 @@
     <li>
       <a
         href="/painel-atualizacoes-mentorados.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-painel-atualizacoes-mentorados"
         data-perfil="gestor"
       >
@@ -150,7 +150,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -164,7 +164,7 @@
     <li>
       <a
         href="/saques.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-saques"
         data-perfil="gestor"
       >
@@ -174,7 +174,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -188,7 +188,7 @@
     <li>
       <a
         href="/produtos-precos.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-produtos-precos"
         data-perfil="gestor,responsavel financeiro"
       >
@@ -198,7 +198,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -212,7 +212,7 @@
     <li>
       <a
         href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=acompanhamentoGestor"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-acompanhamento-gestor"
         data-perfil="gestor"
       >
@@ -222,7 +222,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -239,7 +239,7 @@
     <li>
       <a
         href="/mentoria.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-mentoria"
         data-perfil="gestor"
       >
@@ -249,7 +249,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -263,7 +263,7 @@
     <li>
       <a
         href="/perfil-mentorado.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-perfil-mentorado"
         data-perfil="gestor"
       >
@@ -273,7 +273,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -287,7 +287,7 @@
     <li>
       <a
         href="/equipes.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-equipes"
         data-perfil="gestor"
       >
@@ -297,7 +297,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -311,7 +311,7 @@
     <li>
       <a
         href="/gestao-produtos.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-produtos"
         data-perfil="gestor"
       >
@@ -321,7 +321,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -335,7 +335,7 @@
     <li>
       <a
         href="/sku-associado.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-sku-associado"
         data-perfil="gestor"
       >
@@ -345,7 +345,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -359,7 +359,7 @@
     <li>
       <a
         href="/desempenho.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-desempenho"
         data-perfil="gestor"
       >
@@ -369,7 +369,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -381,10 +381,10 @@
       </a>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-vendas"
           data-perfil="usuario,gestor"
         >
@@ -394,7 +394,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -405,7 +405,7 @@
           <span class="link-text">Vendas</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuVendas', this)"
         >
           <svg
@@ -414,7 +414,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -426,33 +426,33 @@
       </div>
       <ul
         id="menuVendas"
-        class="submenu space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=faturamento"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Registrar Faturamento</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=registroFaturamento"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Acompanhamento Faturamento</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=controleVendas"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Acompanhamento Vendas</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=acompanhamento"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Acompanhamento Mensal</a
           >
         </li>
@@ -461,7 +461,7 @@
     <li>
       <a
         href="/saques.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-saques"
         data-perfil="gestor"
       >
@@ -471,7 +471,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -483,10 +483,10 @@
       </a>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/etiquetas-ocr.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-etiquetas"
           data-perfil="usuario,gestor"
         >
@@ -496,7 +496,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -512,7 +512,7 @@
           <span class="link-text">Etiquetas</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuEtiquetas', this)"
         >
           <svg
@@ -521,7 +521,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -533,36 +533,36 @@
       </div>
       <ul
         id="menuEtiquetas"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/etiquetas-ocr.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Etiquetas PDF</a
           >
         </li>
         <li>
           <a
             href="/zpl-import.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Etiquetas ZPL</a
           >
         </li>
         <li>
           <a
             href="/zpl-import-ocr.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >ZPL Import ocr</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=precificacao"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-precificacao"
           data-perfil="usuario,gestor"
         >
@@ -572,7 +572,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -588,7 +588,7 @@
           <span class="link-text">Precificação</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuPrecificacao', this)"
         >
           <svg
@@ -597,7 +597,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -609,12 +609,12 @@
       </div>
       <ul
         id="menuPrecificacao"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=precificacao"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             data-perfil="usuario,cliente,adm"
             >Precificação</a
           >
@@ -622,7 +622,7 @@
         <li>
           <a
             href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=lista-precos"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             data-perfil="usuario,cliente,adm"
             >Lista Preços</a
           >
@@ -630,7 +630,7 @@
         <li>
           <a
             href="/SISTEMA%20DE%20CUSTEIO%20DE%20PRODU%C3%87%C3%83O%20E%20PRODUTOS.html#mdf"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             data-perfil="usuario,adm"
             >Custeio de Produção</a
           >
@@ -638,7 +638,7 @@
         <li>
           <a
             href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=historico"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             data-perfil="usuario,adm"
             >Histórico</a
           >
@@ -646,10 +646,10 @@
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/promocoes-shopee.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-marketing"
           data-perfil="usuario,gestor"
         >
@@ -659,7 +659,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -670,7 +670,7 @@
           <span class="link-text">Marketing</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuMarketing', this)"
         >
           <svg
@@ -679,7 +679,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -691,43 +691,43 @@
       </div>
       <ul
         id="menuMarketing"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/promocoes-shopee.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Promoções Shopee</a
           >
         </li>
         <li>
           <a
             href="/ads.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Shopee Ads</a
           >
         </li>
         <li>
           <a
             href="/ads-lista.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Anúncios Salvos</a
           >
         </li>
         <li>
           <a
             href="/acompanhamento-promocoes.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Acompanhamento Promoções</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/anuncios-tabs/cadastro.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-anuncios"
           data-perfil="usuario,gestor"
         >
@@ -737,7 +737,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -748,7 +748,7 @@
           <span class="link-text">Anúncios</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuAnuncios', this)"
         >
           <svg
@@ -757,7 +757,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -769,64 +769,64 @@
       </div>
       <ul
         id="menuAnuncios"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/anuncios-tabs/cadastro.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Cadastro / Atualização</a
           >
         </li>
         <li>
           <a
             href="/anuncios-tabs/anuncios.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Anúncios</a
           >
         </li>
         <li>
           <a
             href="/anuncios-tabs/analise.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Análise IA</a
           >
         </li>
         <li>
           <a
             href="/anuncios-tabs/evolucao.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Evolução</a
           >
         </li>
         <li>
           <a
             href="/anuncios-tabs/criar-ia.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Criar Anúncio com IA</a
           >
         </li>
         <li>
           <a
             href="/anuncios-tabs/planilha-shopee.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Planilha Shopee</a
           >
         </li>
         <li>
           <a
             href="/expedicao.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Expedição</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/expedicao.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-expedicao"
           data-perfil="usuario,gestor"
         >
@@ -836,7 +836,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -847,7 +847,7 @@
           <span class="link-text">Expedição</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuExpedicao', this)"
         >
           <svg
@@ -856,7 +856,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -868,57 +868,57 @@
       </div>
       <ul
         id="menuExpedicao"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/atualizacoes-dia.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Atualizações do Dia</a
           >
         </li>
         <li>
           <a
             href="/configuracao-expedicao.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Configuração Expedição</a
           >
         </li>
         <li>
           <a
             href="/relatorios.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Relatórios</a
           >
         </li>
         <li>
           <a
             href="/coletas.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Coletas</a
           >
         </li>
         <li>
           <a
             href="/expedicao-historico.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Histórico</a
           >
         </li>
         <li>
           <a
             href="/expedicao-pedidosreais.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Pedidos Reais</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/gestao-contas.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-gestao-contas"
           data-perfil="usuario,gestor"
         >
@@ -928,7 +928,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -939,7 +939,7 @@
           <span class="link-text">Gestão de Contas</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuGestaoContas', this)"
         >
           <svg
@@ -948,7 +948,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -960,29 +960,29 @@
       </div>
       <ul
         id="menuGestaoContas"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/pdf-x-excel.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >PDF X Excel</a
           >
         </li>
         <li>
           <a
             href="/gestao-contas.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Configurações</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/problemas.html"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-acompanhamento"
           data-perfil="usuario,gestor"
         >
@@ -992,7 +992,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -1003,7 +1003,7 @@
           <span class="link-text">Acompanhamento</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuAcompanhamento', this)"
         >
           <svg
@@ -1012,7 +1012,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -1024,50 +1024,50 @@
       </div>
       <ul
         id="menuAcompanhamento"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/problemas.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Problemas</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=previsao"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Previsão</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=importar"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Conferir Sobras</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=sobras"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Sobras</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=historico"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Histórico</a
           >
         </li>
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=produtos"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-outros"
           data-perfil="usuario,gestor"
         >
@@ -1077,7 +1077,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -1088,7 +1088,7 @@
           <span class="link-text">Outros</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuOutros', this)"
         >
           <svg
@@ -1097,7 +1097,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -1109,40 +1109,40 @@
       </div>
       <ul
         id="menuOutros"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=produtos"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Produtos</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=metas"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Cadastro de Sobra</a
           >
         </li>
         <li>
           <a
             href="/pedidos-bling.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Pedidos Bling</a
           >
         </li>
         <li>
           <a
             href="/pedidos-shopee.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Pedidos Shopee</a
           >
         </li>
         <li>
           <a
             href="https://matheus-35023.web.app"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             target="_blank"
             >Tiny</a
           >
@@ -1150,10 +1150,10 @@
       </ul>
     </li>
     <li>
-      <div class="sidebar-item flex items-center justify-between">
+      <div class="sidebar-item">
         <a
           href="/Sistema%20de%20Precifica%C3%A7%C3%A3o%20COM%20IMPORTA%C3%87%C3%83O%20DE%20PLANILHA%20DE%20PROMO%C3%87%C3%95ES%20SHOPEE.html?tab=dashboard"
-          class="sidebar-link flex items-center py-2 px-4 transition-colors"
+          class="sidebar-link"
           id="menu-configuracoes"
           data-perfil="usuario,gestor"
         >
@@ -1163,7 +1163,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5 mr-3"
+            class="sidebar-icon"
           >
             <path
               stroke-linecap="round"
@@ -1179,7 +1179,7 @@
           <span class="link-text">Configurações</span>
         </a>
         <button
-          class="submenu-toggle p-2"
+          class="submenu-toggle"
           onclick="toggleMenu('menuConfiguracoes', this)"
         >
           <svg
@@ -1188,7 +1188,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-5 h-5"
+            class="submenu-toggle-icon"
           >
             <path
               stroke-linecap="round"
@@ -1200,12 +1200,12 @@
       </div>
       <ul
         id="menuConfiguracoes"
-        class="submenu pl-8 space-y-1 overflow-hidden transition-all duration-300"
+        class="submenu"
       >
         <li>
           <a
             href="/painel-usuarios.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             data-perfil="adm"
             >Painel de Usuários</a
           >
@@ -1213,21 +1213,21 @@
         <li>
           <a
             href="/configuracao-perfil.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Configuração de Perfil</a
           >
         </li>
         <li>
           <a
             href="/CONTROLE%20DE%20SOBRAS%20SHOPEE.html?tab=historico"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Histórico</a
           >
         </li>
         <li>
           <a
             href="/email-expedicao.html"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >E-mail de Expedição</a
           >
         </li>
@@ -1235,7 +1235,7 @@
           <a
             href="/manual.html"
             target="_blank"
-            class="sidebar-link block py-2 px-4 transition-colors"
+            class="sidebar-link sidebar-sublink"
             >Manual</a
           >
         </li>
@@ -1244,7 +1244,7 @@
     <li>
       <a
         href="/comunicacao.html"
-        class="sidebar-link flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
         id="menu-comunicacao"
         data-perfil="cliente,usuario,gestor"
       >
@@ -1254,7 +1254,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -1268,7 +1268,7 @@
     <li>
       <button
         id="startSidebarTourBtn"
-        class="sidebar-link w-full text-left flex items-center py-2 px-4 transition-colors"
+        class="sidebar-link"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -1276,7 +1276,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -1288,23 +1288,18 @@
       </button>
     </li>
     <li>
-      <div class="flex items-center justify-between px-4 mt-6">
-        <span class="text-sm">Modo Escuro</span>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="darkModeToggle" class="sr-only peer" />
-          <div
-            class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-orange-500 transition"
-          ></div>
-          <div
-            class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition peer-checked:translate-x-full"
-          ></div>
+      <div class="sidebar-toggle-row">
+        <span class="sidebar-toggle-label">Modo Escuro</span>
+        <label class="sidebar-toggle-control">
+          <input type="checkbox" id="darkModeToggle" class="sidebar-toggle-input" />
+          <span class="sidebar-toggle-slider" aria-hidden="true"></span>
         </label>
       </div>
     </li>
     <li>
       <button
         id="logoutSidebarBtn"
-        class="sidebar-link w-full text-left flex items-center py-2 px-4 transition-colors hidden"
+        class="sidebar-link hidden"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -1312,7 +1307,7 @@
           viewBox="0 0 24 24"
           stroke-width="1.5"
           stroke="currentColor"
-          class="w-5 h-5 mr-3"
+          class="sidebar-icon"
         >
           <path
             stroke-linecap="round"
@@ -1324,7 +1319,7 @@
       </button>
     </li>
   </ul>
-  <div class="p-4 mt-auto text-center">
-    <span class="font-bold text-xl">VendedorPro</span>
+  <div class="sidebar-footer">
+    <span class="sidebar-footer-title">VendedorPro</span>
   </div>
 </nav>

@@ -663,23 +663,25 @@ document.addEventListener('sidebarLoaded', async () => {
       if (!a) return null;
 
       const div = document.createElement('div');
-      div.className = 'sidebar-item flex items-center justify-between';
+      div.className = 'sidebar-item';
       div.appendChild(a);
 
       const btn = document.createElement('button');
-      btn.className = 'submenu-toggle p-2';
+      btn.className = 'submenu-toggle';
       btn.innerHTML =
-        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>';
+        '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="submenu-toggle-icon"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>';
       btn.addEventListener('click', () => toggleMenu(submenuId, btn));
       div.appendChild(btn);
 
       const ul = document.createElement('ul');
       ul.id = submenuId;
-      ul.className =
-        'submenu space-y-1 overflow-hidden transition-all duration-300';
+      ul.className = 'submenu';
       ul.style.maxHeight = '0';
       items.forEach((item) => {
-        if (item) ul.appendChild(item);
+        if (!item) return;
+        const link = item.querySelector('.sidebar-link');
+        if (link) link.classList.add('sidebar-sublink');
+        ul.appendChild(item);
       });
 
       mainLi.innerHTML = '';
