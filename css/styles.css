@@ -1484,6 +1484,9 @@ input:checked + .toggle-slider:before {
   .navbar .menu-item {
     display: none;
   }
+  .navbar .menu-item.show-on-mobile {
+    display: inline-flex;
+  }
   .navbar .hamburger {
     display: block;
   }
