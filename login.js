@@ -117,6 +117,7 @@ let expLabelNotifUnsub = null;
 let updNotifUnsub = null;
 let painelGeralNotifUnsub = null;
 let painelMentNotifUnsub = null;
+let reuniaoNotifUnsub = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -588,6 +589,7 @@ function initNotificationListener(uid) {
   if (updNotifUnsub) updNotifUnsub();
   if (painelGeralNotifUnsub) painelGeralNotifUnsub();
   if (painelMentNotifUnsub) painelMentNotifUnsub();
+  if (reuniaoNotifUnsub) reuniaoNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
@@ -595,6 +597,7 @@ function initNotificationListener(uid) {
   let updNotifs = [];
   let painelGeralNotifs = [];
   let painelMentNotifs = [];
+  let reuniaoNotifs = [];
 
   const storageKey = `notificationsRead:${uid}`;
   const loadStoredRead = () => {
@@ -674,6 +677,7 @@ function initNotificationListener(uid) {
       ...updNotifs,
       ...painelGeralNotifs,
       ...painelMentNotifs,
+      ...reuniaoNotifs,
     ].sort((a, b) => b.ts - a.ts);
 
     if (!all.length) {
@@ -915,6 +919,72 @@ function initNotificationListener(uid) {
     },
   );
 
+  const reunioesQuery = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', uid),
+    orderBy('createdAt', 'desc'),
+    limit(20),
+  );
+  reuniaoNotifUnsub = onSnapshot(
+    reunioesQuery,
+    (snap) => {
+      reuniaoNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        if (data.autorUid === uid) return;
+        const autor = data.autorNome || data.autorEmail || 'Equipe';
+        let descricao = 'uma nova reunião';
+        const dataEvento = (() => {
+          if (typeof data.dataReuniao === 'string') return data.dataReuniao;
+          if (data.dataHora?.toDate) {
+            try {
+              return data.dataHora.toDate().toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              });
+            } catch (_) {
+              return '';
+            }
+          }
+          if (data.createdAt?.toDate) {
+            try {
+              return data.createdAt.toDate().toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              });
+            } catch (_) {
+              return '';
+            }
+          }
+          return '';
+        })();
+        const horaEvento = data.horaReuniao || data.horario || '';
+        if (dataEvento && horaEvento) {
+          descricao = `uma reunião em ${dataEvento} às ${horaEvento}`;
+        } else if (dataEvento) {
+          descricao = `uma reunião em ${dataEvento}`;
+        } else if (horaEvento) {
+          descricao = `uma reunião às ${horaEvento}`;
+        }
+        reuniaoNotifs.push({
+          id: `reuniao:${docSnap.id}`,
+          text: `${autor} agendou ${descricao}.`,
+          ts: data.createdAt?.toDate
+            ? data.createdAt.toDate().getTime()
+            : Date.now(),
+          url: 'painel-atualizacoes-gerais.html',
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error('Erro no listener de notificações de reuniões:', err);
+    },
+  );
+
   const qExp = query(
     collection(db, 'expedicaoMensagens'),
     where('destinatarios', 'array-contains', uid),
@@ -1041,6 +1111,10 @@ function checkLogin() {
       if (painelMentNotifUnsub) {
         painelMentNotifUnsub();
         painelMentNotifUnsub = null;
+      }
+      if (reuniaoNotifUnsub) {
+        reuniaoNotifUnsub();
+        reuniaoNotifUnsub = null;
       }
       if (!onLoginPage) window.location.href = 'login.html';
     }

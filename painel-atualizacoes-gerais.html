@@ -1,188 +1,404 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Atualizações Gerais</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=20240826" />
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="app-container">
-    <div id="sidebar-container"></div>
-    <div id="navbar-container"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Atualizações Gerais</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20240826" />
+  </head>
+  <body class="bg-gray-100 text-gray-800">
+    <div class="app-container">
+      <div id="sidebar-container"></div>
+      <div id="navbar-container"></div>
 
-    <main class="main-content p-4 space-y-6">
-      <header class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold">Painel de Atualizações Gerais</h1>
-          <p class="text-sm text-gray-600">
-            Centralize comunicados rápidos, reporte problemas dos setores e mantenha a equipe alinhada com as peças em linha.
+      <main class="main-content p-4 space-y-6">
+        <header
+          class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between"
+        >
+          <div>
+            <h1 class="text-2xl font-bold">Painel de Atualizações Gerais</h1>
+            <p class="text-sm text-gray-600">
+              Centralize comunicados rápidos, reporte problemas dos setores e
+              mantenha a equipe alinhada com as peças em linha.
+            </p>
+          </div>
+          <div id="painelStatus" class="text-sm text-gray-500"></div>
+        </header>
+
+        <section class="card p-5 space-y-5" id="cardCalendarioReunioes">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+              <span class="text-purple-500"
+                ><i class="fa-solid fa-calendar-check"></i
+              ></span>
+              Calendário de reuniões
+            </h2>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span id="reunioesStatus"></span>
+              <button
+                type="button"
+                id="reunioesHojeBtn"
+                class="btn btn-secondary px-3 py-1 text-xs"
+              >
+                Hoje
+              </button>
+            </div>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-3">
+            <div class="lg:col-span-2 space-y-4">
+              <div id="calendarioReunioes" class="space-y-3"></div>
+              <div>
+                <h3
+                  class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+                >
+                  Reuniões do dia selecionado
+                </h3>
+                <div id="listaReunioesDia" class="mt-2 space-y-2"></div>
+                <p id="reunioesDiaVazio" class="text-sm text-gray-500 hidden">
+                  Não há reuniões agendadas para esta data.
+                </p>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div id="miniCalendarios" class="space-y-4">
+                <div
+                  class="rounded-lg border border-purple-100 bg-white shadow-sm"
+                  id="calendarioMesAnterior"
+                ></div>
+                <div
+                  class="rounded-lg border border-purple-100 bg-white shadow-sm"
+                  id="calendarioProximoMes"
+                ></div>
+              </div>
+              <div
+                class="rounded-lg border border-purple-100 bg-white p-4 shadow-sm space-y-2 text-sm text-gray-600"
+              >
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-block h-2 w-2 rounded-full bg-purple-500"
+                  ></span>
+                  <span>Datas com reuniões agendadas</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-block h-2 w-2 rounded-full bg-blue-500"
+                  ></span>
+                  <span>Hoje</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-block h-2 w-2 rounded-full bg-brand"
+                  ></span>
+                  <span>Data selecionada</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card p-5 space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+              <span class="text-blue-600"
+                ><i class="fa-solid fa-comments"></i
+              ></span>
+              Atualizações rápidas
+            </h2>
+            <span id="mensagemStatus" class="text-sm text-gray-500"></span>
+          </div>
+          <form id="formMensagem" class="space-y-3">
+            <label
+              class="block text-sm font-medium text-gray-700"
+              for="mensagemTexto"
+            >
+              Compartilhe uma mensagem com a sua equipe
+            </label>
+            <textarea
+              id="mensagemTexto"
+              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="3"
+              placeholder="Ex: Ajustes de preços aplicados a partir de amanhã."
+              required
+            ></textarea>
+            <div
+              class="flex items-center justify-between text-xs text-gray-500"
+            >
+              <span id="mensagemEscopo" class="italic"></span>
+              <button type="submit" class="btn btn-primary text-sm px-4 py-2">
+                Enviar mensagem
+              </button>
+            </div>
+          </form>
+          <div>
+            <h3
+              class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Últimas mensagens
+            </h3>
+            <div id="listaMensagens" class="mt-3 space-y-3"></div>
+            <p id="mensagensVazio" class="text-sm text-gray-500 hidden">
+              Nenhuma mensagem registrada até o momento.
+            </p>
+          </div>
+        </section>
+
+        <section class="card p-5 space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+              <span class="text-amber-500"
+                ><i class="fa-solid fa-triangle-exclamation"></i
+              ></span>
+              Problemas por setor
+            </h2>
+            <span id="problemaStatus" class="text-sm text-gray-500"></span>
+          </div>
+          <form id="formProblema" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="space-y-2">
+              <label
+                for="problemaTitulo"
+                class="text-sm font-medium text-gray-700"
+                >Descrição do problema</label
+              >
+              <textarea
+                id="problemaTitulo"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                rows="3"
+                placeholder="Ex: Falta de matéria-prima no setor de corte"
+                required
+              ></textarea>
+            </div>
+            <div class="space-y-2">
+              <label
+                for="problemaSolucao"
+                class="text-sm font-medium text-gray-700"
+                >Solução (opcional)</label
+              >
+              <textarea
+                id="problemaSolucao"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                rows="3"
+                placeholder="Ex: Solicitar reposição urgente ao fornecedor"
+              ></textarea>
+            </div>
+            <div class="space-y-2">
+              <label
+                for="problemaSetor"
+                class="text-sm font-medium text-gray-700"
+                >Setor</label
+              >
+              <input
+                id="problemaSetor"
+                type="text"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="Ex: Corte"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label
+                for="problemaResponsavel"
+                class="text-sm font-medium text-gray-700"
+                >Responsável</label
+              >
+              <input
+                id="problemaResponsavel"
+                type="text"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="Quem está acompanhando a resolução?"
+                required
+              />
+            </div>
+            <div class="space-y-2">
+              <label
+                for="problemaData"
+                class="text-sm font-medium text-gray-700"
+                >Data do registro</label
+              >
+              <input
+                id="problemaData"
+                type="date"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                type="submit"
+                class="btn btn-primary text-sm px-4 py-2 w-full md:w-auto"
+              >
+                Registrar problema
+              </button>
+            </div>
+          </form>
+          <div>
+            <h3
+              class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Histórico de problemas
+            </h3>
+            <div id="listaProblemas" class="mt-3 space-y-3"></div>
+            <p id="problemasVazio" class="text-sm text-gray-500 hidden">
+              Nenhum problema registrado.
+            </p>
+          </div>
+        </section>
+
+        <section class="card p-5 space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="text-xl font-semibold flex items-center gap-2">
+              <span class="text-emerald-500"
+                ><i class="fa-solid fa-cubes"></i
+              ></span>
+              Peças em linha
+            </h2>
+            <span id="produtoStatus" class="text-sm text-gray-500"></span>
+          </div>
+          <p id="produtosAviso" class="text-sm text-gray-500 hidden">
+            Apenas gestores ou responsáveis financeiros podem cadastrar novos
+            produtos.
           </p>
-        </div>
-        <div id="painelStatus" class="text-sm text-gray-500"></div>
-      </header>
+          <form
+            id="formProduto"
+            class="grid grid-cols-1 gap-4 md:grid-cols-3 hidden"
+          >
+            <div class="md:col-span-1 space-y-2">
+              <label for="produtoNome" class="text-sm font-medium text-gray-700"
+                >Produto / Peça</label
+              >
+              <input
+                id="produtoNome"
+                type="text"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Ex: Kit móvel 4 portas"
+                required
+              />
+            </div>
+            <div class="md:col-span-2 space-y-2">
+              <label for="produtoObs" class="text-sm font-medium text-gray-700"
+                >Observações (opcional)</label
+              >
+              <textarea
+                id="produtoObs"
+                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                rows="2"
+                placeholder="Detalhes sobre estoque, priorização ou datas"
+              ></textarea>
+            </div>
+            <div class="md:col-span-3 flex justify-end">
+              <button type="submit" class="btn btn-primary text-sm px-4 py-2">
+                Adicionar produto
+              </button>
+            </div>
+          </form>
+          <div>
+            <h3
+              class="text-sm font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Produtos cadastrados
+            </h3>
+            <div id="listaProdutos" class="mt-3 space-y-3"></div>
+            <p id="produtosVazio" class="text-sm text-gray-500 hidden">
+              Nenhum produto em linha cadastrado até o momento.
+            </p>
+          </div>
+        </section>
+      </main>
 
-      <section class="card p-5 space-y-4">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="text-xl font-semibold flex items-center gap-2">
-            <span class="text-blue-600"><i class="fa-solid fa-comments"></i></span>
-            Atualizações rápidas
-          </h2>
-          <span id="mensagemStatus" class="text-sm text-gray-500"></span>
-        </div>
-        <form id="formMensagem" class="space-y-3">
-          <label class="block text-sm font-medium text-gray-700" for="mensagemTexto">
-            Compartilhe uma mensagem com a sua equipe
-          </label>
-          <textarea
-            id="mensagemTexto"
-            class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="3"
-            placeholder="Ex: Ajustes de preços aplicados a partir de amanhã."
-            required
-          ></textarea>
-          <div class="flex items-center justify-between text-xs text-gray-500">
-            <span id="mensagemEscopo" class="italic"></span>
+      <div
+        id="modalReuniao"
+        class="fixed inset-0 z-40 hidden items-center justify-center bg-black bg-opacity-40 p-4"
+        style="display: none"
+        aria-hidden="true"
+      >
+        <div
+          class="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl space-y-4"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-gray-800">
+                Agendar reunião
+              </h2>
+              <p id="modalReuniaoData" class="text-sm text-gray-500"></p>
+            </div>
             <button
-              type="submit"
-              class="btn btn-primary text-sm px-4 py-2"
-            >Enviar mensagem</button>
+              type="button"
+              class="text-gray-400 hover:text-gray-600"
+              aria-label="Fechar"
+              onclick="closeModal('modalReuniao')"
+            >
+              <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
           </div>
-        </form>
-        <div>
-          <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Últimas mensagens</h3>
-          <div id="listaMensagens" class="mt-3 space-y-3"></div>
-          <p id="mensagensVazio" class="text-sm text-gray-500 hidden">
-            Nenhuma mensagem registrada até o momento.
-          </p>
+          <div class="space-y-3">
+            <div>
+              <label
+                class="block text-sm font-medium text-gray-700"
+                for="reuniaoHorario"
+              >
+                Horário da reunião
+              </label>
+              <input
+                type="time"
+                id="reuniaoHorario"
+                class="mt-1 w-full rounded-lg border border-gray-300 p-2 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                required
+              />
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-700">
+                Selecione os participantes
+              </p>
+              <div
+                id="reuniaoParticipantesLista"
+                class="mt-2 max-h-48 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3"
+              ></div>
+              <p
+                id="reuniaoParticipantesVazio"
+                class="hidden text-xs text-gray-500"
+              >
+                Nenhum participante disponível para este agendamento.
+              </p>
+            </div>
+            <p id="reuniaoModalStatus" class="text-sm text-red-500"></p>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              class="btn btn-secondary px-4 py-2"
+              onclick="closeModal('modalReuniao')"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              id="reuniaoSalvarBtn"
+              class="btn btn-primary px-4 py-2"
+            >
+              Salvar reunião
+            </button>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section class="card p-5 space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="text-xl font-semibold flex items-center gap-2">
-            <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></span>
-            Problemas por setor
-          </h2>
-          <span id="problemaStatus" class="text-sm text-gray-500"></span>
-        </div>
-        <form id="formProblema" class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div class="space-y-2">
-            <label for="problemaTitulo" class="text-sm font-medium text-gray-700">Descrição do problema</label>
-            <textarea
-              id="problemaTitulo"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              rows="3"
-              placeholder="Ex: Falta de matéria-prima no setor de corte"
-              required
-            ></textarea>
-          </div>
-          <div class="space-y-2">
-            <label for="problemaSolucao" class="text-sm font-medium text-gray-700">Solução (opcional)</label>
-            <textarea
-              id="problemaSolucao"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              rows="3"
-              placeholder="Ex: Solicitar reposição urgente ao fornecedor"
-            ></textarea>
-          </div>
-          <div class="space-y-2">
-            <label for="problemaSetor" class="text-sm font-medium text-gray-700">Setor</label>
-            <input
-              id="problemaSetor"
-              type="text"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="Ex: Corte"
-              required
-            />
-          </div>
-          <div class="space-y-2">
-            <label for="problemaResponsavel" class="text-sm font-medium text-gray-700">Responsável</label>
-            <input
-              id="problemaResponsavel"
-              type="text"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="Quem está acompanhando a resolução?"
-              required
-            />
-          </div>
-          <div class="space-y-2">
-            <label for="problemaData" class="text-sm font-medium text-gray-700">Data do registro</label>
-            <input
-              id="problemaData"
-              type="date"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              required
-            />
-          </div>
-          <div class="flex items-end">
-            <button type="submit" class="btn btn-primary text-sm px-4 py-2 w-full md:w-auto">Registrar problema</button>
-          </div>
-        </form>
-        <div>
-          <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Histórico de problemas</h3>
-          <div id="listaProblemas" class="mt-3 space-y-3"></div>
-          <p id="problemasVazio" class="text-sm text-gray-500 hidden">
-            Nenhum problema registrado.
-          </p>
-        </div>
-      </section>
-
-      <section class="card p-5 space-y-5">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <h2 class="text-xl font-semibold flex items-center gap-2">
-            <span class="text-emerald-500"><i class="fa-solid fa-cubes"></i></span>
-            Peças em linha
-          </h2>
-          <span id="produtoStatus" class="text-sm text-gray-500"></span>
-        </div>
-        <p id="produtosAviso" class="text-sm text-gray-500 hidden">
-          Apenas gestores ou responsáveis financeiros podem cadastrar novos produtos.
-        </p>
-        <form id="formProduto" class="grid grid-cols-1 gap-4 md:grid-cols-3 hidden">
-          <div class="md:col-span-1 space-y-2">
-            <label for="produtoNome" class="text-sm font-medium text-gray-700">Produto / Peça</label>
-            <input
-              id="produtoNome"
-              type="text"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Ex: Kit móvel 4 portas"
-              required
-            />
-          </div>
-          <div class="md:col-span-2 space-y-2">
-            <label for="produtoObs" class="text-sm font-medium text-gray-700">Observações (opcional)</label>
-            <textarea
-              id="produtoObs"
-              class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              rows="2"
-              placeholder="Detalhes sobre estoque, priorização ou datas"
-            ></textarea>
-          </div>
-          <div class="md:col-span-3 flex justify-end">
-            <button type="submit" class="btn btn-primary text-sm px-4 py-2">Adicionar produto</button>
-          </div>
-        </form>
-        <div>
-          <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Produtos cadastrados</h3>
-          <div id="listaProdutos" class="mt-3 space-y-3"></div>
-          <p id="produtosVazio" class="text-sm text-gray-500 hidden">
-            Nenhum produto em linha cadastrado até o momento.
-          </p>
-        </div>
-      </section>
-    </main>
-
-    <script>
-      window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
-      window.CUSTOM_NAVBAR_PATH = '/partials/navbar.html';
-    </script>
-    <script src="shared.js"></script>
-    <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="painel-atualizacoes-gerais.js"></script>
-  </div>
-</body>
+      <script>
+        window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
+        window.CUSTOM_NAVBAR_PATH = '/partials/navbar.html';
+      </script>
+      <script src="shared.js"></script>
+      <script type="module" src="firebase-config.js"></script>
+      <script type="module" src="painel-atualizacoes-gerais.js"></script>
+    </div>
+  </body>
 </html>
