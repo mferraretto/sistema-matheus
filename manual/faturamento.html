@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual VendedorPro • Faturamento Diário</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="../css/styles.css?v=20240826" />
+</head>
+<body class="bg-slate-50 text-slate-700">
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div id="navbar-container"></div>
+    <div class="main-content">
+      <header class="border-b border-orange-200 bg-gradient-to-r from-orange-50 via-white to-orange-100">
+        <div class="max-w-5xl mx-auto px-6 py-12">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500">Manual do Sistema</p>
+              <h1 class="mt-3 text-3xl md:text-4xl font-bold text-slate-900">Faturamento Diário</h1>
+              <p class="mt-3 max-w-2xl text-sm md:text-base text-slate-600">
+                Veja como extrair a planilha oficial de pedidos na Shopee e importar no módulo de faturamento do VendedorPro.
+                Este guia responde diretamente às perguntas mais comuns sobre cálculo de faturamento bruto e líquido.
+              </p>
+            </div>
+            <div class="flex flex-col gap-3 text-sm">
+              <a href="./index.html" class="inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-white px-4 py-2 font-semibold text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50">
+                <i class="fa-solid fa-arrow-left"></i>
+                Voltar para a Central de Guias
+              </a>
+              <a href="../financeiro.html" class="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 font-semibold text-white shadow hover:bg-orange-600">
+                <i class="fa-solid fa-chart-line"></i>
+                Abrir módulo Financeiro
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-5xl mx-auto px-6 py-10 space-y-12">
+        <section class="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div class="rounded-2xl border border-orange-100 bg-white/80 p-6 shadow-sm">
+            <h2 class="text-xl font-semibold text-slate-900">Resumo rápido</h2>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">
+              O faturamento diário no VendedorPro é calculado a partir do arquivo exportado da Shopee contendo os pedidos do dia.
+              Sempre exporte <strong>apenas um único dia por arquivo</strong> para garantir conciliações corretas. Depois de subir a
+              planilha, o sistema pedirá a data e a loja correspondente para relacionar os dados com os dashboards e relatórios.
+            </p>
+          </div>
+          <aside class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="text-sm font-semibold uppercase tracking-wide text-orange-500">Perguntas respondidas aqui</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-600">
+              <li><i class="fa-solid fa-circle-check text-orange-400"></i> Como tiro o faturamento?</li>
+              <li><i class="fa-solid fa-circle-check text-orange-400"></i> Como calcular o faturamento?</li>
+              <li><i class="fa-solid fa-circle-check text-orange-400"></i> Como faço para descobrir meu faturamento?</li>
+              <li><i class="fa-solid fa-circle-check text-orange-400"></i> O que entra no cálculo do faturamento?</li>
+              <li><i class="fa-solid fa-circle-check text-orange-400"></i> Como calcular o faturamento líquido?</li>
+            </ul>
+          </aside>
+        </section>
+
+        <section aria-labelledby="passo-a-passo">
+          <div class="flex items-center gap-3 text-orange-500">
+            <i class="fa-solid fa-store text-xl"></i>
+            <h2 id="passo-a-passo" class="text-xl md:text-2xl font-semibold text-slate-900">1. Exportando pedidos na Shopee</h2>
+          </div>
+          <p class="mt-3 max-w-3xl text-sm md:text-base text-slate-600">
+            A exportação é feita dentro da sua conta Shopee. A sequência abaixo garante que você obtenha os pedidos do período correto
+            com todos os campos necessários para o cálculo de faturamento bruto e líquido.
+          </p>
+          <div class="mt-6 space-y-8">
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl space-y-3">
+                  <div class="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600">
+                    Passo 1
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-900">Acesse o menu <strong>Meus Pedidos</strong></h3>
+                  <p class="text-sm leading-relaxed text-slate-600">
+                    Dentro do painel da Shopee, clique em <strong>Meus Pedidos</strong>. É a base para listar todas as vendas aprovadas e
+                    também onde fica o botão de exportação.
+                  </p>
+                </div>
+              </div>
+              <figure class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <img src="../images/manual/faturamento-passo-1-meus-pedidos.png" alt="Tela da Shopee destacando o menu Meus Pedidos" class="w-full" />
+              </figure>
+            </article>
+
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl space-y-3">
+                  <div class="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600">
+                    Passo 2
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-900">Filtre pela aba <strong>Todos</strong></h3>
+                  <p class="text-sm leading-relaxed text-slate-600">
+                    Utilize a aba <strong>Todos</strong> para incluir pedidos em qualquer status (pagos, enviados, concluídos). Assim você evita
+                    lacunas no faturamento diário.
+                  </p>
+                </div>
+              </div>
+              <figure class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <img src="../images/manual/faturamento-passo-2-todos.png" alt="Aba Todos selecionada nos pedidos da Shopee" class="w-full" />
+              </figure>
+            </article>
+
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl space-y-3">
+                  <div class="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600">
+                    Passo 3
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-900">Clique em <strong>Exportar</strong></h3>
+                  <p class="text-sm leading-relaxed text-slate-600">
+                    O botão <strong>Exportar</strong> fica no canto superior direito da listagem. Ele abre uma janela para selecionar o período
+                    desejado.
+                  </p>
+                </div>
+              </div>
+              <figure class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <img src="../images/manual/faturamento-passo-3-exportar.png" alt="Botão Exportar destacado na lista de pedidos da Shopee" class="w-full" />
+              </figure>
+            </article>
+
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl space-y-3">
+                  <div class="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600">
+                    Passo 4
+                  </div>
+                  <h3 class="text-lg font-semibold text-slate-900">Selecione <strong>apenas um dia</strong> e confirme a exportação</h3>
+                  <p class="text-sm leading-relaxed text-slate-600">
+                    No calendário, marque somente um dia por vez. Essa regra é essencial para que o VendedorPro calcule corretamente o faturamento
+                    do período. Após confirmar, aguarde o download do arquivo Excel.
+                  </p>
+                </div>
+              </div>
+              <figure class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                <img src="../images/manual/faturamento-passo-4-calendario.png" alt="Calendário da Shopee com um único dia selecionado para exportação" class="w-full" />
+              </figure>
+            </article>
+          </div>
+
+          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-sm">
+            <h3 class="text-base font-semibold">Boas práticas antes de importar</h3>
+            <ul class="mt-3 space-y-2 text-sm">
+              <li class="flex items-start gap-2"><i class="fa-solid fa-circle-info mt-1"></i><span>Renomeie o arquivo seguindo o padrão <code class="rounded bg-white/80 px-2 py-0.5 text-xs text-amber-700">AAAA-MM-DD_loja.xlsx</code> para facilitar a identificação.</span></li>
+              <li class="flex items-start gap-2"><i class="fa-solid fa-circle-info mt-1"></i><span>Verifique se o arquivo contém todas as colunas padrão da Shopee (Número do pedido, Valor, Taxas e Status).</span></li>
+              <li class="flex items-start gap-2"><i class="fa-solid fa-circle-info mt-1"></i><span>Conferir se não há filtros ativos na planilha antes de salvar.</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <section aria-labelledby="importacao">
+          <div class="flex items-center gap-3 text-orange-500">
+            <i class="fa-solid fa-file-import text-xl"></i>
+            <h2 id="importacao" class="text-xl md:text-2xl font-semibold text-slate-900">2. Importando no VendedorPro</h2>
+          </div>
+          <p class="mt-3 max-w-3xl text-sm md:text-base text-slate-600">
+            Com o arquivo em mãos, acesse o módulo <strong>Financeiro &gt; Faturamento</strong> no VendedorPro. O botão
+            <em>Importar &amp; Processar</em> aceitará planilhas da Shopee nos formatos XLSX, XLS ou CSV.
+          </p>
+          <div class="mt-6 grid gap-6 md:grid-cols-2">
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900">Processo de importação</h3>
+              <ol class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+                <li><strong>Faça o upload do arquivo</strong> recebido da Shopee.</li>
+                <li>Ao clicar em <strong>Importar &amp; Processar</strong>, informe a <strong>data exata</strong> da planilha (o dia selecionado na exportação).</li>
+                <li>Informe também <strong>a loja</strong> correspondente, caso sua conta opere mais de uma unidade.</li>
+                <li>Confirme para que o sistema calcule automaticamente faturamento bruto, taxas e faturamento líquido.</li>
+              </ol>
+            </article>
+            <article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-800 shadow-sm">
+              <h3 class="text-lg font-semibold">Checklist rápido</h3>
+              <ul class="mt-3 space-y-2 text-sm">
+                <li class="flex items-start gap-2"><i class="fa-solid fa-check mt-1"></i><span>Arquivo refere-se a apenas um dia.</span></li>
+                <li class="flex items-start gap-2"><i class="fa-solid fa-check mt-1"></i><span>Data digitada igual à data escolhida na Shopee.</span></li>
+                <li class="flex items-start gap-2"><i class="fa-solid fa-check mt-1"></i><span>Loja selecionada corretamente.</span></li>
+                <li class="flex items-start gap-2"><i class="fa-solid fa-check mt-1"></i><span>Planilha sem linhas em branco no meio dos dados.</span></li>
+              </ul>
+            </article>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-slate-900">O que o sistema considera no cálculo</h3>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600">
+              O VendedorPro utiliza os valores do pedido para montar o faturamento bruto, deduz as taxas e comissões informadas pela Shopee
+              e apresenta o faturamento líquido para o dia selecionado. Caso existam múltiplas lojas, os valores são segmentados por loja
+              e consolidados no dashboard geral.
+            </p>
+          </div>
+        </section>
+
+        <section aria-labelledby="duvidas" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center gap-3 text-orange-500">
+            <i class="fa-solid fa-circle-question text-xl"></i>
+            <h2 id="duvidas" class="text-xl md:text-2xl font-semibold text-slate-900">Dúvidas frequentes</h2>
+          </div>
+          <div class="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+            <p><strong>Como tiro o faturamento?</strong> — Exportando o dia desejado na Shopee e importando o arquivo neste módulo, você gera o faturamento consolidado.</p>
+            <p><strong>Como calcular o faturamento líquido?</strong> — Após importar a planilha, o sistema subtrai automaticamente as taxas e mostra o valor líquido.</p>
+            <p><strong>O que entra no cálculo do faturamento?</strong> — Todos os pedidos do dia exportado, com seus valores e taxas correspondentes, conforme informado pela Shopee.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+        Mentoria Matheus Ferraretto &copy; 2025 - Manual do VendedorPro
+      </footer>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" crossorigin="anonymous" defer></script>
+  <script src="../shared.js"></script>
+</body>
+</html>
