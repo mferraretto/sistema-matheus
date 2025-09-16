@@ -593,6 +593,52 @@ function initNotificationListener(uid) {
   let painelGeralNotifs = [];
   let painelMentNotifs = [];
 
+  const storageKey = `notificationsRead:${uid}`;
+  const loadStoredRead = () => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed);
+      return new Set();
+    } catch (e) {
+      console.warn('Não foi possível carregar notificações lidas:', e);
+      return new Set();
+    }
+  };
+
+  let readNotifications = loadStoredRead();
+
+  const persistRead = () => {
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(Array.from(readNotifications)),
+      );
+    } catch (e) {
+      console.warn('Não foi possível salvar notificações lidas:', e);
+    }
+  };
+
+  const markNotificationAsRead = (id) => {
+    if (!id || readNotifications.has(id)) return false;
+    readNotifications.add(id);
+    persistRead();
+    return true;
+  };
+
+  const markAllNotificationsAsRead = (ids) => {
+    let updated = false;
+    ids.forEach((id) => {
+      if (!readNotifications.has(id)) {
+        readNotifications.add(id);
+        updated = true;
+      }
+    });
+    if (updated) persistRead();
+    return updated;
+  };
+
   const render = () => {
     list.innerHTML = '';
     const all = [
@@ -602,21 +648,107 @@ function initNotificationListener(uid) {
       ...painelGeralNotifs,
       ...painelMentNotifs,
     ].sort((a, b) => b.ts - a.ts);
-    let count = 0;
-    all.forEach((n) => {
-      const item = document.createElement('div');
-      item.className = 'px-4 py-2 hover:bg-gray-100';
-      item.textContent = n.text;
-      list.appendChild(item);
-      count++;
-    });
-    if (count > 0) {
-      badge.textContent = count;
+
+    if (!all.length) {
+      const empty = document.createElement('div');
+      empty.className = 'px-4 py-3 text-sm text-gray-500';
+      empty.textContent = 'Nenhuma notificação disponível.';
+      list.appendChild(empty);
+      badge.classList.add('hidden');
+      return;
+    }
+
+    const unread = all.filter((n) => !readNotifications.has(n.id));
+    const read = all.filter((n) => readNotifications.has(n.id));
+    const unreadCount = unread.length;
+
+    if (unreadCount > 0) {
+      badge.textContent = unreadCount;
       badge.classList.remove('hidden');
     } else {
       badge.classList.add('hidden');
     }
+
+    const createItem = (notif, isRead) => {
+      const wrapper = document.createElement('div');
+      wrapper.className =
+        'px-4 py-2 border-b last:border-none hover:bg-gray-100 transition-colors';
+      if (isRead) {
+        wrapper.classList.add('bg-gray-50', 'text-gray-500');
+      }
+
+      const mainBtn = document.createElement('button');
+      mainBtn.type = 'button';
+      mainBtn.className = `text-left w-full text-sm ${
+        isRead ? 'opacity-75 cursor-pointer' : 'font-medium text-gray-700'
+      }`;
+      mainBtn.textContent = notif.text;
+      mainBtn.addEventListener('click', () => {
+        const hasChanged = markNotificationAsRead(notif.id);
+        if (hasChanged) render();
+        list.classList.add('hidden');
+        if (notif.url) window.location.href = notif.url;
+      });
+      wrapper.appendChild(mainBtn);
+
+      if (!isRead) {
+        const actions = document.createElement('div');
+        actions.className = 'mt-1 flex justify-end';
+        const markBtn = document.createElement('button');
+        markBtn.type = 'button';
+        markBtn.className =
+          'text-xs text-brand hover:underline focus:outline-none focus:ring-0';
+        markBtn.textContent = 'Marcar como lida';
+        markBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const hasChanged = markNotificationAsRead(notif.id);
+          if (hasChanged) render();
+        });
+        actions.appendChild(markBtn);
+        wrapper.appendChild(actions);
+      }
+
+      return wrapper;
+    };
+
+    if (unread.length) {
+      const title = document.createElement('div');
+      title.className = 'px-4 pt-2 pb-1 text-xs font-semibold text-gray-500';
+      title.textContent = 'Novas notificações';
+      list.appendChild(title);
+      unread.forEach((notif) => {
+        list.appendChild(createItem(notif, false));
+      });
+
+      const markAll = document.createElement('button');
+      markAll.type = 'button';
+      markAll.className =
+        'w-full px-4 py-2 text-xs text-brand font-medium hover:bg-gray-100';
+      markAll.textContent = 'Marcar todas como lidas';
+      markAll.addEventListener('click', () => {
+        const changed = markAllNotificationsAsRead(unread.map((n) => n.id));
+        if (changed) render();
+      });
+      list.appendChild(markAll);
+    } else {
+      const emptyUnread = document.createElement('div');
+      emptyUnread.className = 'px-4 py-3 text-xs text-gray-500';
+      emptyUnread.textContent = 'Você não possui notificações novas.';
+      list.appendChild(emptyUnread);
+    }
+
+    if (read.length) {
+      const title = document.createElement('div');
+      title.className = 'px-4 pt-3 pb-1 text-xs font-semibold text-gray-400';
+      title.textContent = 'Notificações lidas';
+      list.appendChild(title);
+      read.forEach((notif) => {
+        list.appendChild(createItem(notif, true));
+      });
+    }
   };
+
+  render();
 
   const qFin = query(
     collection(db, 'financeiroAtualizacoes'),
@@ -637,8 +769,10 @@ function initNotificationListener(uid) {
           data.createdAt?.toDate?.().toLocaleDateString('pt-BR') ||
           '';
         finNotifs.push({
+          id: `fin:${docSnap.id}`,
           text: `${email} - ${dataFat}`,
           ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+          url: 'financeiro.html',
         });
       });
       render();
@@ -663,8 +797,10 @@ function initNotificationListener(uid) {
         if (d.autorUid === uid) return;
         const texto = `${d.autorNome || d.autorEmail || ''}: ${d.descricao || ''}`;
         updNotifs.push({
+          id: `upd:${docSnap.id}`,
           text: texto,
           ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0,
+          url: 'atualizacoes.html',
         });
       });
       render();
@@ -698,8 +834,10 @@ function initNotificationListener(uid) {
         const data = docSnap.data() || {};
         if (data.autorUid === uid) return;
         painelGeralNotifs.push({
+          id: `pg:${docSnap.id}`,
           text: painelTexto(data, 'Painel Geral'),
           ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+          url: 'painel-atualizacoes-gerais.html',
         });
       });
       render();
@@ -730,8 +868,10 @@ function initNotificationListener(uid) {
         if (!permitido) return;
         if (data.autorUid === uid) return;
         painelMentNotifs.push({
+          id: `pm:${docSnap.id}`,
           text: painelTexto(data, 'Painel Mentorados'),
           ts: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0,
+          url: 'painel-atualizacoes-mentorados.html',
         });
       });
       render();
@@ -757,8 +897,10 @@ function initNotificationListener(uid) {
         const d = docSnap.data();
         const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
         expNotifs.push({
+          id: `exp:${docSnap.id}`,
           text: texto,
           ts: d.createdAt?.toDate ? d.createdAt.toDate().getTime() : 0,
+          url: 'expedicao.html',
         });
       });
       render();
@@ -768,9 +910,12 @@ function initNotificationListener(uid) {
     },
   );
 
-  btn.addEventListener('click', () => {
-    list.classList.toggle('hidden');
-  });
+  if (!btn.dataset.notifInitialized) {
+    btn.addEventListener('click', () => {
+      list.classList.toggle('hidden');
+    });
+    btn.dataset.notifInitialized = 'true';
+  }
 }
 
 function checkLogin() {
