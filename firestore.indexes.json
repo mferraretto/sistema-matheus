@@ -33,6 +33,33 @@
         { "fieldPath": "timestamp", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "painelAtualizacoesMensagens",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantesEmails", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "painelAtualizacoesProblemas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantesEmails", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "painelAtualizacoesProdutos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participantesEmails", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
