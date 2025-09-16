@@ -597,6 +597,7 @@ document.addEventListener('sidebarLoaded', async () => {
         'menu-comunicacao',
         'menu-painel-atualizacoes-gerais',
         'menu-painel-atualizacoes-mentorados',
+        'menu-saques',
       ].includes(id),
   );
 
@@ -604,6 +605,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-painel-atualizacoes-gerais',
     'menu-painel-atualizacoes-mentorados',
     'menu-vendas',
+    'menu-saques',
     'menu-etiquetas',
     'menu-precificacao',
     'menu-expedicao',
