@@ -60,6 +60,23 @@ const participantesVazioEl = document.getElementById('participantesVazio');
 const limparParticipantesBtn = document.getElementById(
   'limparParticipantesBtn',
 );
+const destinatariosModalEl = document.getElementById('destinatariosModal');
+const destinatariosModalTituloEl = document.getElementById(
+  'destinatariosModalTitulo',
+);
+const destinatariosModalDescricaoEl = document.getElementById(
+  'destinatariosModalDescricao',
+);
+const confirmarDestinatariosBtn = document.getElementById(
+  'confirmarDestinatariosBtn',
+);
+const enviarParaTodosBtn = document.getElementById('enviarParaTodosBtn');
+const fecharDestinatariosBtn = document.getElementById(
+  'fecharDestinatariosBtn',
+);
+const abrirDestinatariosBtn = document.getElementById('abrirDestinatariosBtn');
+const subpageTabs = document.querySelectorAll('[data-subpage-target]');
+const subpages = document.querySelectorAll('[data-subpage]');
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -70,6 +87,9 @@ let nomeResponsavel = '';
 let participantesDetalhes = [];
 let participantesPorUid = new Map();
 let participantesSelecionados = new Set();
+let mensagemPendenteTexto = '';
+let contextoModalDestinatarios = 'configurar';
+let envioMensagemEmAndamento = false;
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -122,6 +142,18 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function obterIniciais(nome = '') {
+  const partes = String(nome || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!partes.length) return 'UP';
+  if (partes.length === 1) return partes[0].charAt(0).toUpperCase();
+  const primeira = partes[0].charAt(0);
+  const ultima = partes[partes.length - 1].charAt(0);
+  return `${primeira}${ultima}`.toUpperCase();
 }
 
 function montarDetalhesParticipante(uid, data = {}) {
@@ -352,6 +384,80 @@ function limparSelecaoDestinatarios() {
       input.checked = false;
     });
   atualizarResumoDestinatarios();
+}
+
+function atualizarModalDestinatariosContexto(contexto = 'configurar') {
+  contextoModalDestinatarios = contexto;
+  if (destinatariosModalTituloEl) {
+    destinatariosModalTituloEl.textContent =
+      contexto === 'mensagem'
+        ? 'Escolha os destinatários da mensagem'
+        : 'Gerenciar destinatários padrão';
+  }
+  if (destinatariosModalDescricaoEl) {
+    destinatariosModalDescricaoEl.textContent =
+      contexto === 'mensagem'
+        ? 'Selecione os e-mails relacionados ao usuário antes de concluir o envio.'
+        : 'Ajuste a lista de destinatários padrão para os próximos compartilhamentos.';
+  }
+  if (confirmarDestinatariosBtn) {
+    confirmarDestinatariosBtn.textContent =
+      contexto === 'mensagem' ? 'Enviar para selecionados' : 'Salvar seleção';
+  }
+  if (enviarParaTodosBtn) {
+    enviarParaTodosBtn.textContent =
+      contexto === 'mensagem'
+        ? 'Enviar para todos'
+        : 'Aplicar envio para todos';
+  }
+}
+
+function abrirDestinatariosModal(contexto = 'configurar') {
+  if (!destinatariosModalEl) return;
+  atualizarModalDestinatariosContexto(contexto);
+  destinatariosModalEl.dataset.contexto = contexto;
+  destinatariosModalEl.classList.remove('hidden');
+  destinatariosModalEl.classList.add('flex');
+  atualizarResumoDestinatarios();
+}
+
+function fecharDestinatariosModal() {
+  if (!destinatariosModalEl) return;
+  destinatariosModalEl.classList.add('hidden');
+  destinatariosModalEl.classList.remove('flex');
+  const contexto =
+    destinatariosModalEl.dataset.contexto || contextoModalDestinatarios;
+  delete destinatariosModalEl.dataset.contexto;
+  if (contexto === 'mensagem') {
+    mensagemPendenteTexto = '';
+    envioMensagemEmAndamento = false;
+    if (confirmarDestinatariosBtn) confirmarDestinatariosBtn.disabled = false;
+    if (enviarParaTodosBtn) enviarParaTodosBtn.disabled = false;
+  }
+}
+
+function ativarSubpagina(chave) {
+  if (!subpages?.length) return;
+  subpages.forEach((sec) => {
+    const ativo = sec.dataset.subpage === chave;
+    sec.classList.toggle('hidden', !ativo);
+    sec.setAttribute('aria-hidden', ativo ? 'false' : 'true');
+  });
+  subpageTabs.forEach((btn) => {
+    const ativo = btn.dataset.subpageTarget === chave;
+    btn.classList.toggle('bg-blue-600', ativo);
+    btn.classList.toggle('text-white', ativo);
+    btn.classList.toggle('shadow-lg', ativo);
+    btn.classList.toggle('text-gray-600', !ativo);
+    btn.classList.toggle('hover:bg-blue-50', !ativo);
+    btn.classList.toggle('hover:text-blue-600', !ativo);
+    btn.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+    if (ativo) {
+      btn.setAttribute('aria-current', 'page');
+    } else {
+      btn.removeAttribute('aria-current');
+    }
+  });
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -595,36 +701,67 @@ function atualizarEscopoMensagem() {
 
 function renderMensagem(docSnap) {
   const data = docSnap.data() || {};
-  const item = document.createElement('article');
-  item.className = 'bg-white border border-blue-100 rounded-lg p-3 shadow-sm';
-
-  const header = document.createElement('div');
-  header.className = 'flex items-center justify-between text-xs text-gray-500';
-
-  const dataEl = document.createElement('span');
-  dataEl.textContent = formatDate(data.createdAt, true) || '—';
-  const respEl = document.createElement('span');
-  respEl.className = 'font-medium text-gray-600';
-  respEl.textContent =
+  const nomeResponsavel =
     data.responsavelNome || data.autorNome || 'Responsável não informado';
 
+  const item = document.createElement('article');
+  item.className =
+    'relative overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-lg ring-1 ring-blue-100/60 transition-all hover:-translate-y-0.5 hover:shadow-xl';
+
+  const destaque = document.createElement('div');
+  destaque.className =
+    'pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500';
+  item.appendChild(destaque);
+
+  const content = document.createElement('div');
+  content.className = 'flex flex-col gap-4 p-5 sm:p-6';
+  item.appendChild(content);
+
+  const header = document.createElement('div');
+  header.className = 'flex flex-wrap items-center justify-between gap-3';
+  content.appendChild(header);
+
+  const authorGroup = document.createElement('div');
+  authorGroup.className = 'flex items-center gap-3';
+  header.appendChild(authorGroup);
+
+  const avatar = document.createElement('span');
+  avatar.className =
+    'flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-base font-semibold text-blue-600';
+  avatar.textContent = obterIniciais(nomeResponsavel);
+  authorGroup.appendChild(avatar);
+
+  const authorInfo = document.createElement('div');
+  authorInfo.className = 'flex flex-col leading-tight';
+  authorGroup.appendChild(authorInfo);
+
+  const authorName = document.createElement('span');
+  authorName.className = 'text-sm font-semibold text-gray-900';
+  authorName.textContent = nomeResponsavel;
+  authorInfo.appendChild(authorName);
+
+  const detalhe = document.createElement('span');
+  detalhe.className = 'text-xs text-gray-500';
+  detalhe.textContent = 'Atualização rápida';
+  authorInfo.appendChild(detalhe);
+
+  const dataEl = document.createElement('span');
+  dataEl.className = 'text-xs text-gray-400';
+  dataEl.textContent = formatDate(data.createdAt, true) || '—';
   header.appendChild(dataEl);
-  header.appendChild(respEl);
 
   const corpo = document.createElement('p');
-  corpo.className = 'mt-2 text-sm text-gray-700 whitespace-pre-line';
+  corpo.className = 'text-sm leading-relaxed text-gray-700 whitespace-pre-line';
   corpo.textContent = data.texto || '';
-
-  item.appendChild(header);
-  item.appendChild(corpo);
+  content.appendChild(corpo);
 
   if (currentUser?.uid && data.autorUid === currentUser.uid) {
     const actions = document.createElement('div');
-    actions.className = 'mt-3 flex justify-end';
+    actions.className = 'flex justify-end';
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className =
-      'text-xs text-red-600 hover:text-red-700 flex items-center gap-1 font-semibold';
+      'inline-flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400';
     deleteBtn.innerHTML =
       '<i class="fa-solid fa-trash-can"></i><span>Excluir mensagem</span>';
     deleteBtn.addEventListener('click', async () => {
@@ -641,8 +778,9 @@ function renderMensagem(docSnap) {
       }
     });
     actions.appendChild(deleteBtn);
-    item.appendChild(actions);
+    content.appendChild(actions);
   }
+
   return item;
 }
 
@@ -862,7 +1000,7 @@ function carregarProdutos() {
   );
 }
 
-async function enviarMensagem(event) {
+function prepararEnvioMensagem(event) {
   event.preventDefault();
   if (!currentUser) return;
   const texto = mensagemInput?.value.trim();
@@ -874,11 +1012,27 @@ async function enviarMensagem(event) {
     );
     return;
   }
+  mensagemPendenteTexto = texto;
+  showTemporaryStatus(
+    mensagemStatusEl,
+    'Selecione os destinatários para concluir o envio.',
+  );
+  abrirDestinatariosModal('mensagem');
+}
+
+async function enviarMensagemSelecionada() {
+  if (!currentUser || !mensagemPendenteTexto || envioMensagemEmAndamento) {
+    return;
+  }
+  envioMensagemEmAndamento = true;
+  if (confirmarDestinatariosBtn) confirmarDestinatariosBtn.disabled = true;
+  if (enviarParaTodosBtn) enviarParaTodosBtn.disabled = true;
+
   try {
     const participantesDestino = obterParticipantesParaEnvio();
     await addDoc(collection(db, 'painelAtualizacoesGerais'), {
       categoria: 'mensagem',
-      texto,
+      texto: mensagemPendenteTexto,
       autorUid: currentUser.uid,
       autorNome: nomeResponsavel,
       responsavelUid: currentUser.uid,
@@ -887,10 +1041,12 @@ async function enviarMensagem(event) {
       createdAt: serverTimestamp(),
     });
     mensagemInput.value = '';
+    mensagemPendenteTexto = '';
     showTemporaryStatus(
       mensagemStatusEl,
       'Mensagem compartilhada com a equipe.',
     );
+    fecharDestinatariosModal();
   } catch (err) {
     console.error('Erro ao enviar mensagem:', err);
     showTemporaryStatus(
@@ -898,6 +1054,10 @@ async function enviarMensagem(event) {
       'Não foi possível registrar a mensagem. Tente novamente.',
       true,
     );
+  } finally {
+    envioMensagemEmAndamento = false;
+    if (confirmarDestinatariosBtn) confirmarDestinatariosBtn.disabled = false;
+    if (enviarParaTodosBtn) enviarParaTodosBtn.disabled = false;
   }
 }
 
@@ -979,10 +1139,69 @@ async function registrarProduto(event) {
   }
 }
 
-formMensagem?.addEventListener('submit', enviarMensagem);
+formMensagem?.addEventListener('submit', prepararEnvioMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
 limparParticipantesBtn?.addEventListener('click', limparSelecaoDestinatarios);
+
+abrirDestinatariosBtn?.addEventListener('click', () =>
+  abrirDestinatariosModal('configurar'),
+);
+fecharDestinatariosBtn?.addEventListener('click', fecharDestinatariosModal);
+destinatariosModalEl?.addEventListener('click', (event) => {
+  if (event.target === destinatariosModalEl) {
+    fecharDestinatariosModal();
+  }
+});
+
+confirmarDestinatariosBtn?.addEventListener('click', async () => {
+  const contextoAtual =
+    destinatariosModalEl?.dataset.contexto || contextoModalDestinatarios;
+  if (contextoAtual === 'mensagem') {
+    await enviarMensagemSelecionada();
+  } else {
+    fecharDestinatariosModal();
+    showTemporaryStatus(
+      mensagemStatusEl,
+      'Destinatários atualizados para os próximos envios.',
+    );
+  }
+});
+
+enviarParaTodosBtn?.addEventListener('click', async () => {
+  limparSelecaoDestinatarios();
+  const contextoAtual =
+    destinatariosModalEl?.dataset.contexto || contextoModalDestinatarios;
+  if (contextoAtual === 'mensagem') {
+    await enviarMensagemSelecionada();
+  } else {
+    fecharDestinatariosModal();
+    showTemporaryStatus(
+      mensagemStatusEl,
+      'Os próximos envios serão direcionados para todos os participantes.',
+    );
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (
+    event.key === 'Escape' &&
+    destinatariosModalEl?.classList.contains('flex')
+  ) {
+    fecharDestinatariosModal();
+  }
+});
+
+subpageTabs.forEach((button) => {
+  button.addEventListener('click', () => {
+    const alvo = button.dataset.subpageTarget || 'mensagens';
+    ativarSubpagina(alvo);
+  });
+});
+
+if (subpageTabs.length) {
+  ativarSubpagina('mensagens');
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {

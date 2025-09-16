@@ -25,58 +25,122 @@
         <div id="painelStatus" class="text-sm text-gray-500"></div>
       </header>
 
-      <div class="grid gap-6 lg:grid-cols-4">
-        <div class="lg:col-span-3 space-y-6">
-          <section class="card p-5 space-y-4">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <h2 class="text-xl font-semibold flex items-center gap-2">
-                <span class="text-blue-600"><i class="fa-solid fa-comments"></i></span>
-                Atualizações rápidas
-              </h2>
-              <span id="mensagemStatus" class="text-sm text-gray-500"></span>
-            </div>
-            <form id="formMensagem" class="space-y-3">
-              <label class="block text-sm font-medium text-gray-700" for="mensagemTexto">
-                Compartilhe uma mensagem com a sua equipe
-              </label>
-              <textarea
-                id="mensagemTexto"
-                class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="3"
-                placeholder="Ex: Ajustes de preços aplicados a partir de amanhã."
-                required
-              ></textarea>
-              <div class="flex items-center justify-between text-xs text-gray-500">
-                <span id="mensagemEscopo" class="italic"></span>
-                <button
-                  type="submit"
-                  class="btn btn-primary text-sm px-4 py-2"
-                >Enviar mensagem</button>
+      <section class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <nav class="flex flex-wrap items-center gap-2 p-3" aria-label="Subseções do painel de atualizações">
+          <button
+            type="button"
+            data-subpage-target="mensagens"
+            class="subpage-tab inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            aria-pressed="true"
+          >
+            <span class="text-blue-600"><i class="fa-solid fa-comments"></i></span>
+            Central de mensagens
+          </button>
+          <button
+            type="button"
+            data-subpage-target="problemas"
+            class="subpage-tab inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            aria-pressed="false"
+          >
+            <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></span>
+            Problemas por setor
+          </button>
+          <button
+            type="button"
+            data-subpage-target="produtos"
+            class="subpage-tab inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+            aria-pressed="false"
+          >
+            <span class="text-emerald-500"><i class="fa-solid fa-cubes"></i></span>
+            Peças em linha
+          </button>
+        </nav>
+      </section>
+
+      <div class="space-y-6" id="subpageContainer">
+        <section data-subpage="mensagens" class="space-y-6" aria-labelledby="subpage-mensagens-titulo">
+          <div class="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-[1px] shadow-xl">
+            <div class="relative overflow-hidden rounded-[1.05rem] bg-white/95 p-6 sm:p-8">
+              <div class="absolute -top-12 -right-10 hidden h-32 w-32 rounded-full bg-blue-100/60 blur-3xl sm:block"></div>
+              <div class="absolute -bottom-16 -left-10 hidden h-36 w-36 rounded-full bg-purple-100/50 blur-3xl sm:block"></div>
+              <div class="relative space-y-5">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 id="subpage-mensagens-titulo" class="text-xl font-semibold text-gray-900">
+                      Compartilhe uma atualização rápida
+                    </h2>
+                    <p class="text-sm text-gray-600">
+                      Envie comunicados curtos para sua equipe e mantenha todos alinhados.
+                    </p>
+                  </div>
+                  <span id="mensagemStatus" class="text-sm text-gray-500"></span>
+                </div>
+                <form id="formMensagem" class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700" for="mensagemTexto">
+                      Mensagem
+                    </label>
+                    <textarea
+                      id="mensagemTexto"
+                      class="w-full rounded-xl border border-blue-100 bg-white/90 p-4 text-sm shadow-inner focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows="3"
+                      placeholder="Ex: Ajustes de preços aplicados a partir de amanhã."
+                      required
+                    ></textarea>
+                  </div>
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span id="mensagemEscopo" class="text-xs italic text-gray-500"></span>
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                      <button
+                        id="abrirDestinatariosBtn"
+                        type="button"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                      >
+                        <span class="text-blue-500"><i class="fa-solid fa-user-group"></i></span>
+                        Selecionar destinatários
+                      </button>
+                      <button
+                        type="submit"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                      >
+                        <span class="text-white"><i class="fa-solid fa-paper-plane"></i></span>
+                        Enviar mensagem
+                      </button>
+                    </div>
+                  </div>
+                </form>
               </div>
-            </form>
-            <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Últimas mensagens</h3>
-              <div id="listaMensagens" class="mt-3 space-y-3"></div>
-              <p id="mensagensVazio" class="text-sm text-gray-500 hidden">
+            </div>
+          </div>
+
+          <section class="rounded-2xl border border-blue-100 bg-white shadow-sm" aria-label="Mural de mensagens">
+            <div class="flex flex-col gap-2 border-b border-blue-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Mural de mensagens</h2>
+              <p class="text-sm text-gray-500">As atualizações mais recentes aparecem aqui em formato de mural.</p>
+            </div>
+            <div class="p-6">
+              <div id="listaMensagens" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+              <p id="mensagensVazio" class="mt-4 hidden text-sm text-gray-500 text-center">
                 Nenhuma mensagem registrada até o momento.
               </p>
             </div>
           </section>
+        </section>
 
-          <section class="card p-5 space-y-5">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <h2 class="text-xl font-semibold flex items-center gap-2">
-                <span class="text-amber-500"><i class="fa-solid fa-triangle-exclamation"></i></span>
-                Problemas por setor
+        <section data-subpage="problemas" class="hidden space-y-6" aria-labelledby="subpage-problemas-titulo">
+          <section class="rounded-2xl border border-amber-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-amber-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 id="subpage-problemas-titulo" class="text-lg font-semibold text-gray-900">
+                Registrar novo problema
               </h2>
               <span id="problemaStatus" class="text-sm text-gray-500"></span>
             </div>
-            <form id="formProblema" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <form id="formProblema" class="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
               <div class="space-y-2">
                 <label for="problemaTitulo" class="text-sm font-medium text-gray-700">Descrição do problema</label>
                 <textarea
                   id="problemaTitulo"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="w-full rounded-xl border border-amber-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500"
                   rows="3"
                   placeholder="Ex: Falta de matéria-prima no setor de corte"
                   required
@@ -86,7 +150,7 @@
                 <label for="problemaSolucao" class="text-sm font-medium text-gray-700">Solução (opcional)</label>
                 <textarea
                   id="problemaSolucao"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="w-full rounded-xl border border-amber-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500"
                   rows="3"
                   placeholder="Ex: Solicitar reposição urgente ao fornecedor"
                 ></textarea>
@@ -96,7 +160,7 @@
                 <input
                   id="problemaSetor"
                   type="text"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="w-full rounded-xl border border-amber-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="Ex: Corte"
                   required
                 />
@@ -106,7 +170,7 @@
                 <input
                   id="problemaResponsavel"
                   type="text"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="w-full rounded-xl border border-amber-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500"
                   placeholder="Quem está acompanhando a resolução?"
                   required
                 />
@@ -116,95 +180,147 @@
                 <input
                   id="problemaData"
                   type="date"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  class="w-full rounded-xl border border-amber-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500"
                   required
                 />
               </div>
               <div class="flex items-end">
-                <button type="submit" class="btn btn-primary text-sm px-4 py-2 w-full md:w-auto">Registrar problema</button>
+                <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 md:w-auto">
+                  <span class="text-white"><i class="fa-solid fa-check"></i></span>
+                  Registrar problema
+                </button>
               </div>
             </form>
-            <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Histórico de problemas</h3>
-              <div id="listaProblemas" class="mt-3 space-y-3"></div>
-              <p id="problemasVazio" class="text-sm text-gray-500 hidden">
+          </section>
+
+          <section class="rounded-2xl border border-amber-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-amber-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Histórico de problemas</h2>
+              <p class="text-sm text-gray-500">Acompanhe o que está sendo tratado em cada setor.</p>
+            </div>
+            <div class="p-6">
+              <div id="listaProblemas" class="space-y-3"></div>
+              <p id="problemasVazio" class="mt-4 hidden text-sm text-gray-500 text-center">
                 Nenhum problema registrado.
               </p>
             </div>
           </section>
+        </section>
 
-          <section class="card p-5 space-y-5">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <h2 class="text-xl font-semibold flex items-center gap-2">
-                <span class="text-emerald-500"><i class="fa-solid fa-cubes"></i></span>
-                Peças em linha
+        <section data-subpage="produtos" class="hidden space-y-6" aria-labelledby="subpage-produtos-titulo">
+          <section class="rounded-2xl border border-emerald-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-emerald-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 id="subpage-produtos-titulo" class="text-lg font-semibold text-gray-900">
+                Gerenciar peças em linha
               </h2>
               <span id="produtoStatus" class="text-sm text-gray-500"></span>
             </div>
-            <p id="produtosAviso" class="text-sm text-gray-500 hidden">
-              Apenas gestores ou responsáveis financeiros podem cadastrar novos produtos.
-            </p>
-            <form id="formProduto" class="grid grid-cols-1 gap-4 md:grid-cols-3 hidden">
-              <div class="md:col-span-1 space-y-2">
-                <label for="produtoNome" class="text-sm font-medium text-gray-700">Produto / Peça</label>
-                <input
-                  id="produtoNome"
-                  type="text"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="Ex: Kit móvel 4 portas"
-                  required
-                />
-              </div>
-              <div class="md:col-span-2 space-y-2">
-                <label for="produtoObs" class="text-sm font-medium text-gray-700">Observações (opcional)</label>
-                <textarea
-                  id="produtoObs"
-                  class="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  rows="2"
-                  placeholder="Detalhes sobre estoque, priorização ou datas"
-                ></textarea>
-              </div>
-              <div class="md:col-span-3 flex justify-end">
-                <button type="submit" class="btn btn-primary text-sm px-4 py-2">Adicionar produto</button>
-              </div>
-            </form>
-            <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Produtos cadastrados</h3>
-              <div id="listaProdutos" class="mt-3 space-y-3"></div>
-              <p id="produtosVazio" class="text-sm text-gray-500 hidden">
+            <div class="space-y-4 p-6">
+              <p id="produtosAviso" class="hidden text-sm text-gray-500">
+                Apenas gestores ou responsáveis financeiros podem cadastrar novos produtos.
+              </p>
+              <form id="formProduto" class="hidden grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div class="space-y-2">
+                  <label for="produtoNome" class="text-sm font-medium text-gray-700">Produto / Peça</label>
+                  <input
+                    id="produtoNome"
+                    type="text"
+                    class="w-full rounded-xl border border-emerald-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Ex: Kit móvel 4 portas"
+                    required
+                  />
+                </div>
+                <div class="md:col-span-2 space-y-2">
+                  <label for="produtoObs" class="text-sm font-medium text-gray-700">Observações (opcional)</label>
+                  <textarea
+                    id="produtoObs"
+                    class="w-full rounded-xl border border-emerald-100 p-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    rows="2"
+                    placeholder="Detalhes sobre estoque, priorização ou datas"
+                  ></textarea>
+                </div>
+                <div class="md:col-span-3 flex justify-end">
+                  <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1">
+                    <span class="text-white"><i class="fa-solid fa-plus"></i></span>
+                    Adicionar produto
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-emerald-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-2 border-b border-emerald-100 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <h2 class="text-lg font-semibold text-gray-900">Produtos cadastrados</h2>
+              <p class="text-sm text-gray-500">Visualize rapidamente as peças em linha e seus detalhes.</p>
+            </div>
+            <div class="p-6">
+              <div id="listaProdutos" class="space-y-3"></div>
+              <p id="produtosVazio" class="mt-4 hidden text-sm text-gray-500 text-center">
                 Nenhum produto em linha cadastrado até o momento.
               </p>
             </div>
           </section>
-        </div>
-
-        <aside class="lg:col-span-1 space-y-6">
-          <section class="card p-5 space-y-4" aria-labelledby="destinatariosTitulo">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <h2 id="destinatariosTitulo" class="text-lg font-semibold flex items-center gap-2">
-                <span class="text-blue-600"><i class="fa-solid fa-user-group"></i></span>
-                Destinatários conectados
-              </h2>
-              <button
-                id="limparParticipantesBtn"
-                type="button"
-                class="text-xs font-medium text-blue-600 hover:text-blue-700 focus:outline-none"
-              >
-                Limpar seleção
-              </button>
-            </div>
-            <p class="text-xs text-gray-500 leading-relaxed">
-              Selecione quem deve receber as próximas atualizações. Deixe todos desmarcados para alcançar toda a equipe conectada.
-            </p>
-            <div id="participantesResumo" class="text-xs font-medium text-gray-600"></div>
-            <div id="participantesLista" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
-            <p id="participantesVazio" class="text-xs text-gray-500 hidden">
-              Nenhum participante conectado foi encontrado.
-            </p>
-          </section>
-        </aside>
+        </section>
       </div>
     </main>
+
+    <div
+      id="destinatariosModal"
+      class="fixed inset-0 z-40 hidden items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="destinatariosModalTitulo"
+    >
+      <div class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50/60 px-6 py-4">
+          <h2 id="destinatariosModalTitulo" class="text-lg font-semibold text-gray-900">Selecionar destinatários</h2>
+          <button
+            id="fecharDestinatariosBtn"
+            type="button"
+            class="rounded-full p-2 text-gray-500 transition hover:bg-gray-200/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <span class="sr-only">Fechar modal</span>
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="space-y-4 px-6 py-5">
+          <p id="destinatariosModalDescricao" class="text-sm text-gray-600">
+            Escolha os e-mails relacionados ao usuário para finalizar o envio da mensagem.
+          </p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div id="participantesResumo" class="text-xs font-medium text-gray-600"></div>
+            <button
+              id="limparParticipantesBtn"
+              type="button"
+              class="text-xs font-semibold text-blue-600 transition hover:text-blue-700 focus:outline-none"
+            >
+              Limpar seleção atual
+            </button>
+          </div>
+          <div id="participantesLista" class="max-h-72 space-y-2 overflow-y-auto pr-1"></div>
+          <p id="participantesVazio" class="hidden text-xs text-gray-500">
+            Nenhum participante conectado foi encontrado.
+          </p>
+        </div>
+        <div class="flex flex-col gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4 sm:flex-row sm:justify-end">
+          <button
+            id="enviarParaTodosBtn"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          >
+            Enviar para todos
+          </button>
+          <button
+            id="confirmarDestinatariosBtn"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+          >
+            Enviar mensagem
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script>
       window.CUSTOM_SIDEBAR_PATH = '/partials/sidebar.html';
