@@ -21,14 +21,3 @@ query(
   limit(PAGE_SIZE)
 )
 ```
-
-## Painel de Atualizações Gerais
-
-Os novos quadros compartilham informações por equipe e filtram pelos participantes (e-mail) ordenando pela data de criação. Crie os índices abaixo em Firestore:
-
-- Coleção: `painelAtualizacoesMensagens`
-  - Campos: `participantesEmails` array-contains, `createdAt` descending, `__name__` ascending
-- Coleção: `painelAtualizacoesProblemas`
-  - Campos: `participantesEmails` array-contains, `createdAt` descending, `__name__` ascending
-- Coleção: `painelAtualizacoesProdutos`
-  - Campos: `participantesEmails` array-contains, `createdAt` descending, `__name__` ascending

@@ -374,7 +374,6 @@ function applyExpedicaoSidebar() {
     const allowedIds = [
       'menu-expedicao',
       'menu-configuracoes',
-      'menu-painel-geral',
       'menu-comunicacao',
     ];
     const allowedLis = allowedIds
@@ -449,7 +448,6 @@ function applyPerfilRestrictions(perfil) {
       'menu-acompanhamento',
       'menu-outros',
       'menu-configuracoes',
-      'menu-painel-geral',
       'menu-comunicacao',
     ],
     cliente: [
@@ -458,12 +456,10 @@ function applyPerfilRestrictions(perfil) {
       'menu-precificacao',
       'menu-expedicao',
       'menu-configuracoes',
-      'menu-painel-geral',
       'menu-comunicacao',
     ],
     gestor: [
       'menu-atualizacoes',
-      'menu-painel-geral',
       'menu-financeiro',
       'menu-saques',
       'menu-gestao',
@@ -480,7 +476,6 @@ function applyPerfilRestrictions(perfil) {
     'gestor expedicao': [
       'menu-expedicao',
       'menu-configuracoes',
-      'menu-painel-geral',
       'menu-comunicacao',
     ],
   };
