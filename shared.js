@@ -578,6 +578,7 @@ document.addEventListener('sidebarLoaded', async () => {
     'menu-gestao',
     'menu-financeiro',
     'menu-atualizacoes',
+    'menu-painel-atualizacoes-gerais',
     'menu-comunicacao',
     'menu-saques',
     'menu-acompanhamento-gestor',
@@ -590,7 +591,8 @@ document.addEventListener('sidebarLoaded', async () => {
   ];
 
   const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(
-    (id) => id !== 'menu-comunicacao',
+    (id) =>
+      !['menu-comunicacao', 'menu-painel-atualizacoes-gerais'].includes(id),
   );
 
   function showOnly(ids) {
@@ -634,6 +636,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const comunicacao = getLi('menu-comunicacao');
     const equipes = getLi('menu-equipes');
     const desempenho = getLi('menu-desempenho');
+    const painelAtualizacoes = getLi('menu-painel-atualizacoes-gerais');
 
     function createGroup(mainLi, submenuId, items) {
       if (!mainLi) return null;
@@ -681,6 +684,7 @@ document.addEventListener('sidebarLoaded', async () => {
     menu.innerHTML = '';
     [
       atualizacoes,
+      painelAtualizacoes,
       financeiroGroup,
       gestaoGroup,
       comunicacaoGroup,

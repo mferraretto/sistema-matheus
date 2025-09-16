@@ -449,6 +449,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-outros',
       'menu-configuracoes',
       'menu-comunicacao',
+      'menu-painel-atualizacoes-gerais',
     ],
     cliente: [
       'menu-vendas',
@@ -457,9 +458,11 @@ function applyPerfilRestrictions(perfil) {
       'menu-expedicao',
       'menu-configuracoes',
       'menu-comunicacao',
+      'menu-painel-atualizacoes-gerais',
     ],
     gestor: [
       'menu-atualizacoes',
+      'menu-painel-atualizacoes-gerais',
       'menu-financeiro',
       'menu-saques',
       'menu-gestao',
@@ -477,6 +480,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-expedicao',
       'menu-configuracoes',
       'menu-comunicacao',
+      'menu-painel-atualizacoes-gerais',
     ],
   };
 
