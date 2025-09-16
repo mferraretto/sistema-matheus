@@ -309,7 +309,7 @@ async function showUserArea(user) {
     applyPerfilRestrictions(perfil);
 
     // 2) verifica associação com expedição (gestor ou responsável)
-    if (perfil !== 'expedicao') {
+    if (perfil !== 'gestor expedicao') {
       await checkExpedicao(user);
     }
 
@@ -441,7 +441,7 @@ function normalizePerfil(perfil) {
 }
 function applyPerfilRestrictions(perfil) {
   const currentPerfil = normalizePerfil(perfil);
-  if (!currentPerfil) return;
+  if (!currentPerfil || currentPerfil === 'expedicao') return;
   const sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
 
@@ -492,7 +492,7 @@ function applyPerfilRestrictions(perfil) {
       'menu-sku-associado',
       'menu-desempenho',
     ],
-    expedicao: [
+    'gestor expedicao': [
       'menu-expedicao',
       'menu-configuracoes',
       'menu-comunicacao',
