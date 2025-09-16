@@ -334,32 +334,30 @@ async function loadPartial(selector, path) {
     el = document.createElement(selector.startsWith('#') ? 'div' : 'aside');
     el.id = id;
     if (id === 'sidebar-container') {
-      el.className =
-        'fixed inset-y-0 left-0 w-64 max-w-[80vw] overflow-auto z-40 transition-transform duration-200 ease-out shadow-lg';
       document.body.prepend(el);
-      // garante margem do conteúdo no desktop
-      document.querySelector('.main-content')?.classList.add('lg:ml-64');
     } else {
       // navbar acima do main
       document.body.insertBefore(el, document.querySelector('main') || null);
     }
-  } else {
-    if (id === 'sidebar-container') {
-      el.classList.add(
-        'fixed',
-        'inset-y-0',
-        'left-0',
-        'w-64',
-        'max-w-[80vw]',
-        'overflow-auto',
-        'z-40',
-        'transition-transform',
-        'duration-200',
-        'ease-out',
-        'shadow-lg',
-      );
-      document.querySelector('.main-content')?.classList.add('lg:ml-64');
-    }
+  } else if (id === 'sidebar-container') {
+    el.classList.remove(
+      'fixed',
+      'inset-y-0',
+      'left-0',
+      'w-64',
+      'max-w-[80vw]',
+      'overflow-auto',
+      'z-40',
+      'transition-transform',
+      'duration-200',
+      'ease-out',
+      'shadow-lg',
+      'lg:ml-64',
+    );
+  }
+
+  if (id === 'sidebar-container') {
+    document.querySelector('.main-content')?.classList.remove('lg:ml-64');
   }
 
   // sempre força rede p/ evitar cache velho do SW
