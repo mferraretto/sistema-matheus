@@ -475,7 +475,6 @@ function applyPerfilRestrictions(perfil) {
     ],
     cliente: [
       'menu-vendas',
-      'menu-saques',
       'menu-etiquetas',
       'menu-precificacao',
       'menu-expedicao',
