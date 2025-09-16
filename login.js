@@ -895,7 +895,37 @@ function initNotificationListener(uid) {
       expNotifs = [];
       snap.forEach((docSnap) => {
         const d = docSnap.data();
-        const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
+        let texto = '';
+        if (d.tipo === 'status_etiqueta') {
+          const autor = (d.gestorNome || d.gestorEmail || 'Expedição')
+            .toString()
+            .trim();
+          const arquivo = (d.arquivoNome || 'Etiqueta').toString().trim();
+          const statusRaw = (
+            d.statusLabel ||
+            d.status ||
+            'Atualizado'
+          ).toString();
+          const statusLower = statusRaw.toLowerCase();
+          const statusLabel =
+            statusLower === 'impresso'
+              ? 'Impresso'
+              : statusLower === 'concluido'
+                ? 'Concluído'
+                : statusRaw;
+          texto = `${autor} marcou "${arquivo}" como ${statusLabel}.`;
+        } else {
+          const quantidadeNum =
+            typeof d.quantidade === 'number'
+              ? d.quantidade
+              : Number(d.quantidade || 0);
+          const quantidade = Number.isFinite(quantidadeNum) ? quantidadeNum : 0;
+          const motivo = (d.motivo || '').toString().trim();
+          const autor = (d.gestorEmail || '').toString().trim();
+          texto = `${autor} - ${quantidade} etiqueta(s) não enviadas: ${motivo}`;
+        }
+        texto = texto.trim();
+        if (!texto) return;
         expNotifs.push({
           id: `exp:${docSnap.id}`,
           text: texto,
