@@ -40,12 +40,12 @@ body.has-sidebar .content-wrapper {
   margin-left: var(--sidebar-width);
 }
 
-.main-content {
+body.has-sidebar .main-content {
   margin-left: var(--sidebar-width);
 }
 
 @media (max-width: 1023px) {
-  .main-content {
+  body.has-sidebar .main-content {
     margin-left: 0;
   }
 }
