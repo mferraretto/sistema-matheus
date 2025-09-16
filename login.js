@@ -450,7 +450,6 @@ function applyPerfilRestrictions(perfil) {
       'menu-configuracoes',
       'menu-comunicacao',
       'menu-painel-atualizacoes-gerais',
-      'menu-painel-atualizacoes-mentorados',
     ],
     cliente: [
       'menu-vendas',
@@ -460,12 +459,10 @@ function applyPerfilRestrictions(perfil) {
       'menu-configuracoes',
       'menu-comunicacao',
       'menu-painel-atualizacoes-gerais',
-      'menu-painel-atualizacoes-mentorados',
     ],
     gestor: [
       'menu-atualizacoes',
       'menu-painel-atualizacoes-gerais',
-      'menu-painel-atualizacoes-mentorados',
       'menu-financeiro',
       'menu-saques',
       'menu-gestao',
