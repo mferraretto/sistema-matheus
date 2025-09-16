@@ -53,81 +53,14 @@ const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
 
+const VISIBILIDADE_GLOBAL_ID = '__todos_conectados__';
+
 let currentUser = null;
-let participantesCompartilhamento = [];
+let participantesCompartilhamento = [VISIBILIDADE_GLOBAL_ID];
 let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
 let nomeResponsavel = '';
-let acessoRestrito = false;
-
-function normalizarTexto(valor) {
-  return (valor || '')
-    .toString()
-    .normalize('NFD')
-    .replace(/[^\w\s@.-]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-function isPerfilExpedicao(perfil) {
-  const normalized = normalizarTexto(perfil);
-  if (!normalized) return false;
-  if (
-    normalized === 'gestor expedicao' ||
-    normalized === 'responsavel expedicao' ||
-    normalized === 'expedicao'
-  )
-    return true;
-  if (normalized.includes('expedicao') && normalized.includes('gestor'))
-    return true;
-  if (normalized.includes('expedicao') && normalized.includes('responsavel'))
-    return true;
-  return normalized.includes('expedicao');
-}
-
-function obterPerfilGlobal() {
-  if (typeof window === 'undefined') return '';
-  return (
-    window.userPerms?.perfil ||
-    window.userPerfil ||
-    window.userProfile?.perfil ||
-    ''
-  );
-}
-
-function bloquearAcessoExpedicao() {
-  acessoRestrito = true;
-  mensagensUnsub?.();
-  problemasUnsub?.();
-  produtosUnsub?.();
-  mensagensUnsub = null;
-  problemasUnsub = null;
-  produtosUnsub = null;
-
-  setStatus(
-    painelStatusEl,
-    'Painel disponível apenas para gestores e mentores. Caso necessite de acesso, contate o administrador.',
-    true,
-  );
-
-  [formMensagem, formProblema, formProduto].forEach((form) => {
-    if (form) form.classList.add('hidden');
-  });
-  if (produtosAvisoEl) produtosAvisoEl.classList.add('hidden');
-  if (mensagemEscopoEl) mensagemEscopoEl.textContent = '';
-  [listaMensagensEl, listaProblemasEl, listaProdutosEl].forEach((lista) => {
-    if (lista) lista.classList.add('hidden');
-  });
-  [mensagensVazioEl, problemasVazioEl, produtosVazioEl].forEach(
-    (emptyState) => {
-      if (emptyState) emptyState.classList.add('hidden');
-    },
-  );
-  document.querySelectorAll('main section.card').forEach((section) => {
-    section.classList.add('hidden');
-  });
-}
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -417,16 +350,10 @@ async function montarEscopoCompartilhamento(user) {
   return { participantes: Array.from(participantes), perfil };
 }
 
-function atualizarEscopoMensagem(participantes) {
+function atualizarEscopoMensagem() {
   if (!mensagemEscopoEl) return;
-  if (!participantes || participantes.length === 0) {
-    mensagemEscopoEl.textContent = '';
-    return;
-  }
-  const quantidade = participantes.length;
-  mensagemEscopoEl.textContent = `Compartilhado com ${quantidade} integrante${
-    quantidade > 1 ? 's' : ''
-  } da equipe.`;
+  mensagemEscopoEl.textContent =
+    'Informações visíveis para todos os perfis conectados.';
 }
 
 function renderMensagem(docSnap) {
@@ -551,12 +478,11 @@ function renderProduto(docSnap) {
 }
 
 function carregarMensagens() {
-  if (!currentUser || acessoRestrito) return;
+  if (!currentUser) return;
   mensagensUnsub?.();
   const mensagensRef = query(
     collection(db, 'painelAtualizacoesMentorados'),
     where('categoria', '==', 'mensagem'),
-    where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
     limit(10),
   );
@@ -583,12 +509,11 @@ function carregarMensagens() {
 }
 
 function carregarProblemas() {
-  if (!currentUser || acessoRestrito) return;
+  if (!currentUser) return;
   problemasUnsub?.();
   const problemasRef = query(
     collection(db, 'painelAtualizacoesMentorados'),
     where('categoria', '==', 'problema'),
-    where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
     limit(25),
   );
@@ -613,12 +538,11 @@ function carregarProblemas() {
 }
 
 function carregarProdutos() {
-  if (!currentUser || acessoRestrito) return;
+  if (!currentUser) return;
   produtosUnsub?.();
   const produtosRef = query(
     collection(db, 'painelAtualizacoesMentorados'),
     where('categoria', '==', 'produto'),
-    where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
   );
   produtosUnsub = onSnapshot(
@@ -654,14 +578,6 @@ function carregarProdutos() {
 async function enviarMensagem(event) {
   event.preventDefault();
   if (!currentUser) return;
-  if (acessoRestrito) {
-    showTemporaryStatus(
-      mensagemStatusEl,
-      'Seu perfil não tem permissão para publicar neste painel.',
-      true,
-    );
-    return;
-  }
   const texto = mensagemInput?.value.trim();
   if (!texto) {
     showTemporaryStatus(
@@ -700,14 +616,6 @@ async function enviarMensagem(event) {
 async function registrarProblema(event) {
   event.preventDefault();
   if (!currentUser) return;
-  if (acessoRestrito) {
-    showTemporaryStatus(
-      problemaStatusEl,
-      'Seu perfil não tem permissão para registrar problemas neste painel.',
-      true,
-    );
-    return;
-  }
   const problema = problemaTituloInput?.value.trim();
   const solucao = problemaSolucaoInput?.value.trim();
   const setor = problemaSetorInput?.value.trim();
@@ -749,14 +657,6 @@ async function registrarProblema(event) {
 async function registrarProduto(event) {
   event.preventDefault();
   if (!currentUser) return;
-  if (acessoRestrito) {
-    showTemporaryStatus(
-      produtoStatusEl,
-      'Seu perfil não tem permissão para cadastrar produtos neste painel.',
-      true,
-    );
-    return;
-  }
   const nome = produtoNomeInput?.value.trim();
   const observacoes = produtoObsInput?.value.trim();
   if (!nome) {
@@ -801,42 +701,9 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   nomeResponsavel = user.displayName || user.email || 'Usuário';
   setStatus(painelStatusEl, 'Carregando configurações da equipe...');
+  let participantes = [];
   try {
-    const { participantes, perfil } = await montarEscopoCompartilhamento(user);
-    const perfilGlobal = obterPerfilGlobal();
-
-    if (isPerfilExpedicao(perfil) || isPerfilExpedicao(perfilGlobal)) {
-      bloquearAcessoExpedicao();
-      return;
-    }
-
-    acessoRestrito = false;
-    participantesCompartilhamento = participantes.length
-      ? participantes
-      : [user.uid];
-    atualizarEscopoMensagem(participantesCompartilhamento);
-    setStatus(painelStatusEl, '');
-
-    try {
-      const { isGestor, isResponsavelFinanceiro } =
-        await carregarUsuariosFinanceiros(db, user);
-      const podeGerirProdutos = isGestor || isResponsavelFinanceiro;
-      if (podeGerirProdutos) {
-        formProduto?.classList.remove('hidden');
-        produtosAvisoEl?.classList.add('hidden');
-      } else {
-        formProduto?.classList.add('hidden');
-        produtosAvisoEl?.classList.remove('hidden');
-      }
-    } catch (err) {
-      console.error('Erro ao verificar permissões financeiras:', err);
-      formProduto?.classList.add('hidden');
-      produtosAvisoEl?.classList.remove('hidden');
-    }
-
-    carregarMensagens();
-    carregarProblemas();
-    carregarProdutos();
+    ({ participantes } = await montarEscopoCompartilhamento(user));
   } catch (err) {
     console.error(
       'Erro ao preparar painel de atualizações de vendedores/mentorados:',
@@ -844,8 +711,38 @@ onAuthStateChanged(auth, async (user) => {
     );
     setStatus(
       painelStatusEl,
-      'Não foi possível carregar o compartilhamento da equipe.',
+      'Não foi possível carregar a configuração da equipe. Exibindo dados compartilhados com todos os perfis.',
       true,
     );
   }
+
+  const participantesSet = new Set(participantes || []);
+  if (currentUser?.uid) participantesSet.add(currentUser.uid);
+  participantesSet.add(VISIBILIDADE_GLOBAL_ID);
+  participantesCompartilhamento = Array.from(participantesSet);
+  atualizarEscopoMensagem();
+  if (!painelStatusEl?.classList?.contains('text-red-600')) {
+    setStatus(painelStatusEl, '');
+  }
+
+  try {
+    const { isGestor, isResponsavelFinanceiro } =
+      await carregarUsuariosFinanceiros(db, user);
+    const podeGerirProdutos = isGestor || isResponsavelFinanceiro;
+    if (podeGerirProdutos) {
+      formProduto?.classList.remove('hidden');
+      produtosAvisoEl?.classList.add('hidden');
+    } else {
+      formProduto?.classList.add('hidden');
+      produtosAvisoEl?.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Erro ao verificar permissões financeiras:', err);
+    formProduto?.classList.add('hidden');
+    produtosAvisoEl?.classList.remove('hidden');
+  }
+
+  carregarMensagens();
+  carregarProblemas();
+  carregarProdutos();
 });

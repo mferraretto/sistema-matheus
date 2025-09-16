@@ -593,7 +593,11 @@ document.addEventListener('sidebarLoaded', async () => {
 
   const CLIENTE_HIDDEN_MENU_IDS = ADMIN_GESTOR_MENU_IDS.filter(
     (id) =>
-      !['menu-comunicacao', 'menu-painel-atualizacoes-gerais'].includes(id),
+      ![
+        'menu-comunicacao',
+        'menu-painel-atualizacoes-gerais',
+        'menu-painel-atualizacoes-mentorados',
+      ].includes(id),
   );
 
   function showOnly(ids) {
