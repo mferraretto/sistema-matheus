@@ -1280,6 +1280,10 @@
           <button class="expedicao-card-btn" onclick="visualizar('${url}')">Abrir</button>
           <button class="expedicao-card-btn expedicao-card-btn--danger" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))">Excluir</button>
         </div>`;
+      div.dataset.ownerUid = data.ownerUid || '';
+      div.dataset.ownerEmail = data.ownerEmail || '';
+      div.dataset.fileName = name;
+      div.dataset.status = statusKey;
       return div;
     }
 
@@ -1329,7 +1333,67 @@
             <button class="expedicao-card-btn expedicao-card-btn--success" onclick="marcarConcluido('${doc.id}', this.closest('.pdf-card'))">Concluir</button>
           </div>
         </div>`;
+      div.dataset.ownerUid = data.ownerUid || '';
+      div.dataset.ownerEmail = data.ownerEmail || '';
+      div.dataset.fileName = name;
+      div.dataset.status = statusKey;
       return div;
+    }
+
+    async function notifyEtiquetaStatusChange({ id, newStatus, card, docData }) {
+      try {
+        if (!currentUser) return;
+        const perfilAtual = (window.userPerfil || '').toLowerCase();
+        if (perfilAtual !== 'expedicao') return;
+        if (!['impresso', 'concluido'].includes(newStatus)) return;
+
+        let ownerUids = [];
+        const docOwner = docData?.ownerUid;
+        if (Array.isArray(docOwner)) {
+          ownerUids = docOwner.filter(Boolean);
+        } else if (docOwner) {
+          ownerUids = [docOwner];
+        }
+
+        if (!ownerUids.length && card?.dataset?.ownerUid) {
+          ownerUids = card.dataset.ownerUid
+            .split(',')
+            .map(uid => uid.trim())
+            .filter(Boolean);
+        }
+
+        ownerUids = Array.from(
+          new Set(ownerUids.filter(uid => uid && uid !== currentUser.uid))
+        );
+        if (!ownerUids.length) return;
+
+        const arquivoNome =
+          docData?.name ||
+          docData?.arquivoNome ||
+          (card?.dataset?.fileName || 'Etiqueta');
+        const statusLabel =
+          docData?.statusLabel ||
+          (newStatus === 'impresso'
+            ? 'Impresso'
+            : newStatus === 'concluido'
+            ? 'Concluído'
+            : newStatus);
+
+        await db.collection('expedicaoMensagens').add({
+          tipo: 'status_etiqueta',
+          arquivoId: id,
+          arquivoNome,
+          status: newStatus,
+          statusLabel,
+          gestorUid: currentUser.uid,
+          gestorEmail: currentUser.email || '',
+          gestorNome: currentUserName || currentUser.displayName || currentUser.email || '',
+          destinatarios: ownerUids,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        console.error('Erro ao notificar status da etiqueta:', e);
+      }
     }
 
     const pdfModal = document.getElementById('pdfModal');
@@ -1366,6 +1430,7 @@
 
     async function toggleImpresso(id, checkbox, card) {
       const checked = checkbox.checked;
+      const previousStatus = card?.dataset?.status || (checked ? 'nao_impresso' : 'impresso');
       const confirmMsg = `Deseja ${checked ? 'marcar como impresso' : 'marcar como não impresso'}?`;
       if (!confirm(confirmMsg)) {
         checkbox.checked = !checked;
@@ -1375,14 +1440,19 @@
       if (card) {
         card.classList.remove('expedicao-pdf-card--pending', 'expedicao-pdf-card--printed', 'expedicao-pdf-card--done');
         card.classList.add(checked ? 'expedicao-pdf-card--printed' : 'expedicao-pdf-card--pending');
+        card.dataset.status = checked ? 'impresso' : 'nao_impresso';
       }
       showToast('Status atualizado');
+      if (checked && previousStatus !== 'impresso') {
+        await notifyEtiquetaStatusChange({ id, newStatus: 'impresso', card });
+      }
     }
     window.toggleImpresso = toggleImpresso;
 
     async function toggleImpressoCard(id, button, card) {
       const current = button.dataset.status || 'nao_impresso';
       const newStatus = current === 'impresso' ? 'nao_impresso' : 'impresso';
+      const previousStatus = current;
       const confirmMsg = `Deseja marcar como ${newStatus === 'impresso' ? 'impresso' : 'não impresso'}?`;
       if (!confirm(confirmMsg)) return;
 
@@ -1435,11 +1505,16 @@
       }
 
       showToast('Status atualizado');
+      if (card) card.dataset.status = newStatus;
+      if (newStatus === 'impresso' && previousStatus !== 'impresso') {
+        await notifyEtiquetaStatusChange({ id, newStatus: 'impresso', card });
+      }
     }
     window.toggleImpressoCard = toggleImpressoCard;
 
     async function updateStatus(id, select, card) {
       const newStatus = select.value;
+      const previousStatus = card?.dataset?.status || '';
       await db.collection('pdfDocs').doc(id).update({ status: newStatus });
       const badge = card.querySelector('.status-badge');
       const statusInfo = {
@@ -1454,7 +1529,11 @@
       if (newStatus === 'concluido' && currentFilter === 'all') {
         card.remove();
       }
+      if (card) card.dataset.status = newStatus;
       showToast('Status atualizado');
+      if (['impresso', 'concluido'].includes(newStatus) && previousStatus !== newStatus) {
+        await notifyEtiquetaStatusChange({ id, newStatus, card });
+      }
       carregarEtiquetas();
     }
     window.updateStatus = updateStatus;
@@ -1464,6 +1543,7 @@
         const docRef = db.collection('pdfDocs').doc(id);
         const snap = await docRef.get();
         const data = snap.data() || {};
+        const previousStatus = data.status || 'nao_impresso';
 
         if (data.status !== 'impresso') {
           const items = (data.skus || data.skuList || []).map(s => ({ sku: s, quantidade: 1 }));
@@ -1500,7 +1580,13 @@
         }
 
         await docRef.update({ status: 'concluido' });
-        if (card) card.remove();
+        if (previousStatus !== 'concluido') {
+          await notifyEtiquetaStatusChange({ id, newStatus: 'concluido', card, docData: data });
+        }
+        if (card) {
+          card.dataset.status = 'concluido';
+          card.remove();
+        }
         showToast('Marcado como concluído');
       } catch (e) {
         console.error('Erro ao concluir etiqueta:', e);

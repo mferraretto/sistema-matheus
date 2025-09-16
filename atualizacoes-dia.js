@@ -39,6 +39,7 @@ onAuthStateChanged(auth, (user) => {
     }
     snap.forEach((doc) => {
       const dados = doc.data();
+      if (dados.tipo === 'status_etiqueta') return;
       const item = document.createElement('div');
       item.className = 'p-4 bg-white rounded shadow';
       const dataHora = dados.createdAt?.toDate

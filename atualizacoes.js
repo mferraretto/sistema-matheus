@@ -423,6 +423,7 @@ async function carregarExpedicao() {
     let count = 0;
     snap.forEach((docSnap) => {
       const dados = docSnap.data();
+      if (dados.tipo === 'status_etiqueta') return;
       const dests = dados.destinatarios || [];
       if (
         currentUser &&
