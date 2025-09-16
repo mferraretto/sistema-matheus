@@ -601,6 +601,17 @@ document.addEventListener('sidebarLoaded', async () => {
       ].includes(id),
   );
 
+  const CLIENTE_MENU_ORDER = [
+    'menu-painel-atualizacoes-gerais',
+    'menu-painel-atualizacoes-mentorados',
+    'menu-vendas',
+    'menu-etiquetas',
+    'menu-precificacao',
+    'menu-expedicao',
+    'menu-comunicacao',
+    'menu-configuracoes',
+  ];
+
   function showOnly(ids) {
     document.querySelectorAll('#sidebar .sidebar-link').forEach((a) => {
       const li = a.closest('li') || a.parentElement;
@@ -711,9 +722,38 @@ document.addEventListener('sidebarLoaded', async () => {
 
   function buildClienteSidebarLayout() {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-      sidebar.classList.add('client-layout');
-    }
+    if (!sidebar) return;
+
+    sidebar.classList.add('client-layout');
+
+    const menu = sidebar.querySelector('.sidebar-menu');
+    if (!menu) return;
+
+    const fragment = document.createDocumentFragment();
+    const appended = new Set();
+
+    CLIENTE_MENU_ORDER.forEach((id) => {
+      const link = document.getElementById(id);
+      const li = link && link.closest('li');
+      if (!li || appended.has(li)) return;
+      if (li.classList.contains('hidden')) return;
+
+      if (li.style.display === 'none') li.style.display = '';
+
+      fragment.appendChild(li);
+      appended.add(li);
+    });
+
+    Array.from(menu.children).forEach((li) => {
+      if (appended.has(li)) return;
+      if (li.classList.contains('hidden')) return;
+      if (li.style.display === 'none') return;
+
+      fragment.appendChild(li);
+    });
+
+    menu.innerHTML = '';
+    menu.appendChild(fragment);
   }
 
   function normalizePerfil(perfil) {
