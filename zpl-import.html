@@ -158,18 +158,68 @@
             });
         }
 
-        async function savePdf(blob, name) {
+        async function resolveExpedicaoDestinatarios(emails) {
+            const destinatarios = new Set();
+            if (responsavelExpedicaoUid) {
+                destinatarios.add(responsavelExpedicaoUid);
+            }
+            const lista = Array.isArray(emails) ? emails : [];
+            const buscas = lista
+                .map(email => (email || '').trim())
+                .filter(Boolean)
+                .map(async email => {
+                    try {
+                        const snap = await db.collection('uid').where('email', '==', email).limit(1).get();
+                        if (!snap.empty) {
+                            destinatarios.add(snap.docs[0].id);
+                        }
+                    } catch (err) {
+                        console.error('Erro ao buscar UID do gestor de expedição:', email, err);
+                    }
+                });
+            await Promise.all(buscas);
+            return Array.from(destinatarios);
+        }
+
+        async function notifyGestorNovaEtiqueta({ arquivoNome, totalEtiquetas, foraHorario, destinatariosEmails }) {
+            if (!currentUser) return;
+            try {
+                const destinatarios = await resolveExpedicaoDestinatarios(destinatariosEmails);
+                if (!destinatarios.length) return;
+                const payload = {
+                    tipo: 'nova-etiqueta',
+                    arquivoNome: arquivoNome || '',
+                    foraHorario: Boolean(foraHorario),
+                    autorUid: currentUser.uid,
+                    autorEmail: currentUser.email || '',
+                    autorNome: currentUser.displayName || '',
+                    gestorUid: currentUser.uid,
+                    gestorEmail: currentUser.email || '',
+                    destinatarios,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                if (Number.isFinite(totalEtiquetas)) {
+                    payload.totalEtiquetas = Number(totalEtiquetas);
+                }
+                await db.collection('expedicaoMensagens').add(payload);
+            } catch (err) {
+                console.error('Erro ao notificar gestor de expedição:', err);
+            }
+        }
+
+        async function savePdf(blob, name, meta = {}) {
             if (!currentUser) return;
             const gestoresRaw = document.getElementById('gestoresEmails').value || '';
             const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
             const selecionado = await escolherGestorEmail(gestoresEmails);
+            const foraHorarioAtual = foraDoHorario();
             const docRef = await db.collection('pdfDocs').add({
                 ownerUid: currentUser.uid,
                 ownerEmail: currentUser.email,
                 gestoresExpedicaoEmails: selecionado,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 name: name,
-                foraHorario: foraDoHorario()
+                foraHorario: foraHorarioAtual
             });
             const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
             await fileRef.put(blob);
@@ -190,6 +240,16 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+            }
+            try {
+                await notifyGestorNovaEtiqueta({
+                    arquivoNome: name,
+                    totalEtiquetas: meta.totalEtiquetas,
+                    foraHorario: foraHorarioAtual,
+                    destinatariosEmails: selecionado
+                });
+            } catch (err) {
+                console.error('Erro ao enviar notificação de nova etiqueta:', err);
             }
         }
 
@@ -402,7 +462,7 @@
 
                 const fileName = `etiquetas-combinadas-${Date.now()}.pdf`;
 
-                await savePdf(pdfBlob, fileName);
+                await savePdf(pdfBlob, fileName, { totalEtiquetas: totalLabels });
                 await savePrintedSkuQuantities(allExtractedItems);
 
                 successMessage.textContent = 'Processo concluído e salvo.';

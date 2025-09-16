@@ -433,6 +433,53 @@
     console.warn('[findUidByEmail] no UID for email', email);
     return null;
   }
+  async function resolveExpedicaoDestinatarios(emails, responsavelUid){
+    const destinatarios = new Set();
+    if(responsavelUid){
+      destinatarios.add(responsavelUid);
+    }
+    const lista = Array.isArray(emails) ? emails : [];
+    const buscas = lista
+      .map(email => (email || '').trim())
+      .filter(Boolean)
+      .map(async email => {
+        try{
+          const uid = await findUidByEmail(email);
+          if(uid){
+            destinatarios.add(uid);
+          }
+        }catch(err){
+          console.error('Erro ao buscar UID do gestor de expedição:', email, err);
+        }
+      });
+    await Promise.all(buscas);
+    return Array.from(destinatarios);
+  }
+  async function notifyGestorNovaEtiqueta({ nomeArquivo, totalEtiquetas, foraHorario, destinatariosEmails, responsavelUid }){
+    if(!currentUser) return;
+    try{
+      const destinatarios = await resolveExpedicaoDestinatarios(destinatariosEmails, responsavelUid);
+      if(!destinatarios.length) return;
+      const payload = {
+        tipo: 'nova-etiqueta',
+        arquivoNome: nomeArquivo || '',
+        foraHorario: Boolean(foraHorario),
+        autorUid: currentUser.uid,
+        autorEmail: currentUser.email || '',
+        autorNome: currentUser.displayName || '',
+        gestorUid: currentUser.uid,
+        gestorEmail: currentUser.email || '',
+        destinatarios,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if(Number.isFinite(totalEtiquetas)){
+        payload.totalEtiquetas = Number(totalEtiquetas);
+      }
+      await db.collection('expedicaoMensagens').add(payload);
+    }catch(err){
+      console.error('Erro ao notificar gestor de expedição:', err);
+    }
+  }
   async function savePrintedItems(items, meta){
     console.log('[savePrintedItems] items:', items, 'meta:', meta);
     const batch = db.batch();
@@ -454,7 +501,7 @@
     console.log('[savePrintedItems] saved for current user');
   }
 
-  async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario){
+  async function savePdfRecord(url, storagePath, name, responsavelUid, foraHorario, meta = {}){
     console.log('[savePdfRecord] saving record', {name, url, storagePath, responsavelUid, foraHorario});
     const record = {
       name,
@@ -468,6 +515,20 @@
       await db.collection('users').doc(responsavelUid).collection('etiquetaenvio').add(record);
     }
     console.log('[savePdfRecord] record saved');
+    try{
+      const destinatariosEmails = Array.isArray(meta.destinatariosEmails)
+        ? meta.destinatariosEmails
+        : (meta.gestorEmail ? [meta.gestorEmail] : []);
+      await notifyGestorNovaEtiqueta({
+        nomeArquivo: name,
+        totalEtiquetas: meta.totalEtiquetas,
+        foraHorario,
+        destinatariosEmails,
+        responsavelUid
+      });
+    }catch(err){
+      console.error('Erro ao enviar notificação de nova etiqueta:', err);
+    }
   }
 
   // ===== Handler principal =====
@@ -590,7 +651,10 @@
       const url = await ref.getDownloadURL();
       console.log('[btnProcessar] PDF uploaded', url);
       await metaRef.update({ url, storagePath: pdfPath, finishedAt: firebase.firestore.FieldValue.serverTimestamp() });
-      await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario);
+      await savePdfRecord(url, pdfPath, name, responsavelUid, foraHorario, {
+        totalEtiquetas: totalLabels,
+        destinatariosEmails: gestorEmail ? [gestorEmail] : []
+      });
 
       setProgress(100,'Concluído');
       showOk('PDF salvo com sucesso.');

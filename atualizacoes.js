@@ -436,10 +436,29 @@ async function carregarExpedicao() {
       if (!dataHora || dataHora < limiteData) return;
       const item = document.createElement('div');
       item.className = 'p-2 border rounded';
-      item.innerHTML =
-        `<div>Qtd não expedida: ${dados.quantidade}</div>` +
-        `${dados.motivo ? `<div>Motivo: ${dados.motivo}</div>` : ''}` +
-        `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
+      if (dados.tipo === 'nova-etiqueta') {
+        const autor =
+          dados.autorNome || dados.autorEmail || dados.gestorEmail || 'Usuário';
+        const quantidade = Number.isFinite(dados.totalEtiquetas)
+          ? `${Number(dados.totalEtiquetas)} etiqueta(s)`
+          : 'um novo arquivo de etiquetas';
+        const arquivoLinha = dados.arquivoNome
+          ? `<div>Arquivo: ${dados.arquivoNome}</div>`
+          : '';
+        const foraHorarioLinha = dados.foraHorario
+          ? '<div class="text-xs text-red-500 font-medium">Fora do horário previsto</div>'
+          : '';
+        item.innerHTML =
+          `<div>${autor} enviou ${quantidade}.</div>` +
+          arquivoLinha +
+          foraHorarioLinha +
+          `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
+      } else {
+        item.innerHTML =
+          `<div>Qtd não expedida: ${dados.quantidade}</div>` +
+          `${dados.motivo ? `<div>Motivo: ${dados.motivo}</div>` : ''}` +
+          `<div class="text-xs text-gray-500">${dataHora.toLocaleString('pt-BR')}</div>`;
+      }
       container.appendChild(item);
       count++;
     });

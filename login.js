@@ -895,7 +895,19 @@ function initNotificationListener(uid) {
       expNotifs = [];
       snap.forEach((docSnap) => {
         const d = docSnap.data();
-        const texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
+        let texto;
+        if (d.tipo === 'nova-etiqueta') {
+          const autor =
+            d.autorNome || d.autorEmail || d.gestorEmail || 'Usuário';
+          const quantidadeTexto = Number.isFinite(d.totalEtiquetas)
+            ? `${Number(d.totalEtiquetas)} etiqueta(s)`
+            : 'um novo arquivo de etiquetas';
+          const arquivoParte = d.arquivoNome ? ` (${d.arquivoNome})` : '';
+          const foraHorarioParte = d.foraHorario ? ' - fora do horário' : '';
+          texto = `${autor} enviou ${quantidadeTexto}${arquivoParte}${foraHorarioParte}`;
+        } else {
+          texto = `${d.gestorEmail || ''} - ${d.quantidade || 0} etiqueta(s) não enviadas: ${d.motivo || ''}`;
+        }
         expNotifs.push({
           id: `exp:${docSnap.id}`,
           text: texto,
