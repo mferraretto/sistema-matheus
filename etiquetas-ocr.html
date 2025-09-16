@@ -429,22 +429,95 @@ firebase.auth().onAuthStateChanged(async u => {
       return { sku, quantidade, loja };
     }
 
+    async function getNextOcrLabelNumber(total) {
+      if (!currentUser) return 1;
+      const value = Number(total);
+      if (!Number.isFinite(value) || value <= 0) return 1;
+      const totalSanitizado = Math.max(1, Math.floor(value));
+      const ref = db.collection('uid').doc(currentUser.uid).collection('config').doc('contadores');
+      try {
+        return await db.runTransaction(async tx => {
+          const snap = await tx.get(ref);
+          const atual = snap.exists ? (snap.data().ocrLastNumber || 0) : 0;
+          const inicio = atual + 1;
+          const proximo = atual + totalSanitizado;
+          tx.set(ref, { ocrLastNumber: proximo }, { merge: true });
+          return inicio;
+        });
+      } catch (err) {
+        console.error('Erro ao atualizar o contador de etiquetas OCR:', err);
+        return 1;
+      }
+    }
+
     async function savePrintedSkuQuantities(items) {
       if (!currentUser || !items || items.length === 0) return;
       const batch = db.batch();
       const userDoc = db.collection('uid').doc(currentUser.uid);
       const respDoc = responsavelExpedicaoUid ? db.collection('uid').doc(responsavelExpedicaoUid) : null;
       items.forEach(item => {
+        if (!item || !item.sku) return;
+        const quantidadeValida = Number.isFinite(item.quantidade) ? item.quantidade : 0;
         const data = {
           sku: item.sku,
-          quantidade: item.quantidade,
+          quantidade: quantidadeValida,
           loja: item.loja || '',
           data: firebase.firestore.FieldValue.serverTimestamp()
         };
+        const numeroEtiqueta = item.labelNumber ?? item.numeroEtiqueta;
+        if (Number.isFinite(numeroEtiqueta)) data.labelNumber = numeroEtiqueta;
         batch.set(userDoc.collection('etiquetasimpressas').doc(), data);
         if (respDoc) batch.set(respDoc.collection('etiquetasimpressas').doc(), data);
       });
       await batch.commit();
+    }
+
+    async function saveLabelSummary(summary) {
+      if (!currentUser) return;
+      try {
+        const totalPaginas = Math.max(0, Math.floor(Number(summary?.totalPaginas) || 0));
+        const paginasRaw = Array.isArray(summary?.paginasResumo) ? summary.paginasResumo : [];
+        const paginas = paginasRaw.map(p => {
+          const numero = Number.isFinite(p?.numero) ? Math.floor(p.numero) : null;
+          const sku = (p?.sku || '').toString().trim();
+          const quantidade = Number.isFinite(p?.quantidade) ? p.quantidade : null;
+          return { numero, sku, quantidade };
+        });
+        const totaisPorSkuMap = new Map();
+        paginas.forEach(p => {
+          if (!p.sku) return;
+          const quantidade = Number.isFinite(p.quantidade) ? p.quantidade : 0;
+          totaisPorSkuMap.set(p.sku, (totaisPorSkuMap.get(p.sku) || 0) + quantidade);
+        });
+        const totaisPorSku = Array.from(totaisPorSkuMap.entries()).map(([sku, quantidade]) => ({ sku, quantidade }));
+        const contadorInicial = Number.isFinite(summary?.contadorInicial) ? Math.floor(summary.contadorInicial) : null;
+        const contadorFinal = Number.isFinite(summary?.contadorFinal) ? Math.floor(summary.contadorFinal) : null;
+        const baseData = {
+          arquivo: summary?.fileName || '',
+          totalPaginas: totalPaginas || paginas.length,
+          paginas,
+          totaisPorSku,
+          paginasSemSku: paginas.filter(p => !p.sku).length,
+          contadorInicial,
+          contadorFinal,
+          pdfDocId: summary?.pdfDocId || null,
+          pdfUrl: summary?.pdfUrl || '',
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email || '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          foraHorario: Boolean(summary?.foraHorario)
+        };
+        const userCollection = db.collection('users').doc(currentUser.uid).collection('etiquetasResumo');
+        const docRef = userCollection.doc();
+        const writes = [docRef.set(baseData)];
+        if (responsavelExpedicaoUid) {
+          const managerDoc = db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetasResumo').doc(docRef.id);
+          writes.push(managerDoc.set(baseData));
+        }
+        await Promise.all(writes);
+      } catch (err) {
+        console.error('Erro ao salvar resumo de etiquetas:', err);
+      }
     }
 
     function formatTime(seconds) {
@@ -468,7 +541,7 @@ firebase.auth().onAuthStateChanged(async u => {
       }
     }
 
-    async function uploadPdfToFirebase(blob, fileName, items) {
+    async function uploadPdfToFirebase(blob, fileName, items, extraMeta = {}) {
       if (!currentUser) {
         await savePrintedSkuQuantities(items);
         return;
@@ -477,14 +550,22 @@ firebase.auth().onAuthStateChanged(async u => {
         const gestoresRaw = document.getElementById('gestoresEmails').value || '';
         const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
         const selecionado = await escolherGestorEmail(gestoresEmails);
-        const docRef = await db.collection('pdfDocs').add({
+        const totalPaginas = Math.max(0, Math.floor(Number(extraMeta.totalPaginas) || 0));
+        const contadorInicial = Number.isFinite(extraMeta.contadorInicial) ? Math.floor(extraMeta.contadorInicial) : null;
+        const contadorFinal = Number.isFinite(extraMeta.contadorFinal) ? Math.floor(extraMeta.contadorFinal) : null;
+        const foraHorarioAtual = foraDoHorario();
+        const docPayload = {
           ownerUid: currentUser.uid,
           ownerEmail: currentUser.email,
           gestoresExpedicaoEmails: selecionado,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           name: fileName,
-          foraHorario: foraDoHorario()
-        });
+          foraHorario: foraHorarioAtual,
+          totalPaginas
+        };
+        if (contadorInicial !== null) docPayload.contadorInicial = contadorInicial;
+        if (contadorFinal !== null) docPayload.contadorFinal = contadorFinal;
+        const docRef = await db.collection('pdfDocs').add(docPayload);
         const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
         await fileRef.put(blob);
         const url = await fileRef.getDownloadURL();
@@ -493,10 +574,25 @@ firebase.auth().onAuthStateChanged(async u => {
           name: fileName,
           url: url,
           path: fileRef.fullPath,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          totalPaginas,
+          contadorInicial,
+          contadorFinal
         };
         await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
         await savePrintedSkuQuantities(items);
+        if (Array.isArray(extraMeta.paginasResumo)) {
+          await saveLabelSummary({
+            totalPaginas,
+            paginasResumo: extraMeta.paginasResumo,
+            contadorInicial,
+            contadorFinal,
+            fileName,
+            pdfDocId: docRef.id,
+            pdfUrl: url,
+            foraHorario: foraHorarioAtual
+          });
+        }
       } catch (err) {
         console.error('Erro ao enviar PDF para Firebase:', err);
         showMessage('Erro ao enviar PDF. Tente novamente mais tarde.');
@@ -505,257 +601,298 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function processar() {
-  const progressBar = document.getElementById("progressBar");
-  const progressFill = document.getElementById("progressFill");
-  const progressText = document.getElementById("progressText");
-  const timerText = document.getElementById("timerText");
-  progressBar.style.display = "block";
-  progressFill.style.width = "0%";
-  progressText.textContent = "";
-  timerText.textContent = "";
-  const startTime = Date.now();
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      const timerText = document.getElementById("timerText");
+      progressBar.style.display = "block";
+      progressFill.style.width = "0%";
+      progressText.textContent = "";
+      timerText.textContent = "";
+      const startTime = Date.now();
 
-  const status = document.getElementById("status");
-  const pdfFile = document.getElementById("pdfInput").files[0];
-  const allExtractedItems = [];
-  if (!pdfFile) {
-    progressBar.style.display = "none";
-    return showMessage("Envie o arquivo PDF.");
-  }
+      const status = document.getElementById("status");
+      const pdfFile = document.getElementById("pdfInput").files[0];
+      const allExtractedItems = [];
+      const paginasResumo = [];
+      let contadorInicial = null;
+      let proximoNumeroEtiqueta = 1;
+      let contadorInicializado = false;
+      let totalPrevisto = 0;
 
-  status.textContent = "📸 Lendo PDF...";
-    const arrayBuffer = await pdfFile.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const novoPdf = await PDFLib.PDFDocument.create();
-    // Fonte para escrever o rodapé textual (SKU + Quantidade) no PDF
-    const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
-    const canvas = document.getElementById("pdfCanvas");
-    const ctx = canvas.getContext("2d");
-    canvas.style.display = "block";
-    updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
-
-    for (let i = 0; i < pdf.numPages; i++) {
-      const page = await pdf.getPage(i + 1);
-      const scale = 7;
-      const viewport = page.getViewport({ scale });
-
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
-
-    const largura = canvas.width;
-    const altura = canvas.height;
-
-    const colWidth = largura / 2;
-    const rowHeight = altura / 1.75;
-
-    const pares = [
-      { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
-      { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
-    ];
-
-    for (const par of pares) {
-      // Ajuste das proporções para garantir que a parte do checklist seja totalmente capturada.
-      // Desta vez, vamos dar mais espaço para o checklist para garantir que nada seja cortado.
-      const proporcaoEtiqueta = 0.88; 
-      const proporcaoChecklist = 0.12; 
-
-      const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
-      const alturaChecklist = rowHeight * proporcaoChecklist;
-      
-      const deslocamentoEtiquetaY = 6;
-      
-      // CORTA A ETIQUETA PRINCIPAL
-      const etCanvas = document.createElement("canvas");
-      etCanvas.width = colWidth;
-      etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
-      const etCtx = etCanvas.getContext("2d");
-      etCtx.drawImage(canvas, par.etiqueta.x, par.etiqueta.y + deslocamentoEtiquetaY, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY, 0, 0, colWidth, alturaEtiquetaPrincipal - deslocamentoEtiquetaY);
-      
-      // CORTA A PARTE DO CHECKLIST
-      const chkCanvas = document.createElement("canvas");
-      
-      // Definimos um deslocamento mínimo para evitar a linha de separação, mas não cortar o texto.
-      const deslocamentoY = 60; 
-const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100); // evita 5/negativo
-      
-     const scaleChecklist = 7; // resolução extra
-chkCanvas.width  = Math.floor(colWidth * scaleChecklist);
-chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
-const chkCtx = chkCanvas.getContext("2d");
-chkCtx.imageSmoothingEnabled = true;
-chkCtx.imageSmoothingQuality = 'high';
-
-// captura em alta resolução
-chkCtx.drawImage(
-  canvas,
-  par.checklist.x, par.checklist.y + deslocamentoY,     // origem (na página)
-  colWidth, novaAlturaChecklist,                        // tamanho a capturar
-  0, 0,                                                 // destino no chkCanvas
-  chkCanvas.width, chkCanvas.height                     // destino (maior)
-);
-
-      console.groupCollapsed('[Crop] Parâmetros de corte');
-      console.log({
-        pagina: i + 1,
-        par,
-        colWidth,
-        rowHeight,
-        proporcaoEtiqueta,
-        proporcaoChecklist,
-        alturaEtiquetaPrincipal,
-        alturaChecklist,
-        deslocamentoEtiquetaY,
-        deslocamentoY,
-        novaAlturaChecklist,
-        scaleChecklist
-      });
-      console.groupEnd();
-
-      const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
-
-
-      
-            
-     // COMBINAÇÃO FINAL: somente a etiqueta principal (sem checklist no PNG final)
-const etiquetaCompletaCanvas = document.createElement("canvas");
-const paddingX = 0; // margem lateral extra (se quiser)
-etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
-
-const ajusteVerticalChecklist = 12; // pequeno espaçamento interno
-etiquetaCompletaCanvas.height =
-  (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
-  ajusteVerticalChecklist;
-
-const completoCtx = etiquetaCompletaCanvas.getContext("2d");
-completoCtx.imageSmoothingEnabled = true;
-completoCtx.imageSmoothingQuality = 'high';
-
-// Desenha somente a etiqueta principal
-completoCtx.drawImage(etCanvas, paddingX, 0);
-
-
-      // Inserção no novo PDF
-      const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-      const imgEmbed = await novoPdf.embedPng(imgBytes);
-
-      // Usando dimensões de página padrão para uma etiqueta
-      const larguraPagina = 293.46;
-      const alturaPagina = 475.2;
-      
-      // Adicionamos um fator de escala para diminuir a etiqueta de forma proporcional.
-      const scaleFactor = 0.90;
-      const larguraEtiquetaFinal = 277 * scaleFactor; 
-      const alturaEtiquetaFinal = 449 * scaleFactor;
-      
-      const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
-      const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
-
-      // Ajustado a posição vertical para subir a etiqueta e dar espaço para o checklist.
-      const ajusteVertical = 20; 
-      const yPos = margemY + ajusteVertical;
-
-      // Adiciona uma página para cada etiqueta
-      const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-
-      // Desenha a imagem da etiqueta
-      pag.drawImage(imgEmbed, {
-        x: margemX,
-        y: yPos,
-        width: larguraEtiquetaFinal,
-        height: alturaEtiquetaFinal,
-      });
-
-      // Rodapé textual: agora exibimos SKU e Quantidade em 2 linhas
-      const oneLine = (extracted && extracted.footerOneLine)
-        ? extracted.footerOneLine
-        : (extracted && extracted.items && extracted.items[0]
-            ? `SKU: ${extracted.items[0].sku} | Quantidade: ${extracted.items[0].quantidade}`
-            : (extracted && extracted.footerLines ? extracted.footerLines[0] : ''));
-
-      // Garante que os dados salvos correspondam ao rodapé final
-      let saveSku = '';
-      let saveQtd = 0;
-      if (oneLine) {
-        const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
-        const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
-        saveSku = mSku ? mSku[1].trim() : (extracted.items && extracted.items[0] ? extracted.items[0].sku : '');
-        saveQtd = mQtd ? parseInt(mQtd[1], 10) || 0 : (extracted.items && extracted.items[0] ? extracted.items[0].quantidade : 0);
-      } else if (extracted.items && extracted.items[0]) {
-        saveSku = extracted.items[0].sku;
-        saveQtd = extracted.items[0].quantidade;
-      }
-      if (saveSku) {
-        allExtractedItems.push({ sku: saveSku, quantidade: saveQtd });
+      if (!pdfFile) {
+        progressBar.style.display = "none";
+        return showMessage("Envie o arquivo PDF.");
       }
 
-      if (oneLine) {
-        const fontSize = 9.5;
-        const lineGap = 2;
-        const padding = 4;
-        // Deriva as duas linhas (SKU e Quantidade) a partir do texto consolidado
-        let skuTxt = '';
-        let qtdTxt = '';
-        const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
-        const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
-        skuTxt = mSku ? `SKU: ${mSku[1].trim()}` : oneLine;
-        qtdTxt = mQtd ? `Quantidade: ${mQtd[1].trim()}` : '';
-        const linhasRodape = [skuTxt, qtdTxt].filter(Boolean);
-        const blocoAltura = (fontSize + lineGap) * linhasRodape.length + padding * 2;
+      status.textContent = "📸 Lendo PDF...";
+      const arrayBuffer = await pdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const novoPdf = await PDFLib.PDFDocument.create();
+      const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.style.display = "block";
+      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-        // Preferência: desenhar logo abaixo da etiqueta; se não couber, sobrepor a base da etiqueta
-        let footerY = yPos - blocoAltura - 2;
-        if (footerY < 2) footerY = yPos; // sem espaço: sobrepõe base da etiqueta
+      for (let i = 0; i < pdf.numPages; i++) {
+        const page = await pdf.getPage(i + 1);
+        const scale = 7;
+        const viewport = page.getViewport({ scale });
 
-        // Fundo branco para garantir legibilidade
-        pag.drawRectangle({
-          x: margemX,
-          y: footerY,
-          width: larguraEtiquetaFinal,
-          height: blocoAltura,
-          color: PDFLib.rgb(1, 1, 1)
-        });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-        // Texto em preto (duas linhas: SKU e Quantidade)
-        for (let li = 0; li < linhasRodape.length; li++) {
-          pag.drawText(linhasRodape[li], {
-            x: margemX + 6,
-            y: footerY + padding + li * (fontSize + lineGap),
-            size: fontSize,
-            font: rodapeFont,
-            color: PDFLib.rgb(0, 0, 0)
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
+
+        const largura = canvas.width;
+        const altura = canvas.height;
+        const colWidth = largura / 2;
+        const rowHeight = altura / 1.75;
+
+        const pares = [
+          { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
+          { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
+        ];
+
+        if (!contadorInicializado) {
+          totalPrevisto = pdf.numPages * pares.length;
+          if (currentUser) {
+            contadorInicial = await getNextOcrLabelNumber(totalPrevisto);
+            proximoNumeroEtiqueta = contadorInicial;
+          } else {
+            contadorInicial = 1;
+            proximoNumeroEtiqueta = 1;
+          }
+          contadorInicializado = true;
+        }
+
+        for (const par of pares) {
+          const proporcaoEtiqueta = 0.88;
+          const proporcaoChecklist = 0.12;
+
+          const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
+          const alturaChecklist = rowHeight * proporcaoChecklist;
+          const deslocamentoEtiquetaY = 6;
+
+          const etCanvas = document.createElement("canvas");
+          etCanvas.width = colWidth;
+          etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
+          const etCtx = etCanvas.getContext("2d");
+          etCtx.drawImage(
+            canvas,
+            par.etiqueta.x,
+            par.etiqueta.y + deslocamentoEtiquetaY,
+            colWidth,
+            alturaEtiquetaPrincipal - deslocamentoEtiquetaY,
+            0,
+            0,
+            colWidth,
+            alturaEtiquetaPrincipal - deslocamentoEtiquetaY
+          );
+
+          const chkCanvas = document.createElement("canvas");
+          const deslocamentoY = 60;
+          const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100);
+          const scaleChecklist = 7;
+          chkCanvas.width = Math.floor(colWidth * scaleChecklist);
+          chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
+          const chkCtx = chkCanvas.getContext("2d");
+          chkCtx.imageSmoothingEnabled = true;
+          chkCtx.imageSmoothingQuality = 'high';
+          chkCtx.drawImage(
+            canvas,
+            par.checklist.x,
+            par.checklist.y + deslocamentoY,
+            colWidth,
+            novaAlturaChecklist,
+            0,
+            0,
+            chkCanvas.width,
+            chkCanvas.height
+          );
+
+          console.groupCollapsed('[Crop] Parâmetros de corte');
+          console.log({
+            pagina: i + 1,
+            par,
+            colWidth,
+            rowHeight,
+            proporcaoEtiqueta,
+            proporcaoChecklist,
+            alturaEtiquetaPrincipal,
+            alturaChecklist,
+            deslocamentoEtiquetaY,
+            deslocamentoY,
+            novaAlturaChecklist,
+            scaleChecklist
           });
+          console.groupEnd();
+
+          const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
+          const numeroEtiquetaAtual = proximoNumeroEtiqueta;
+          proximoNumeroEtiqueta++;
+
+          const etiquetaCompletaCanvas = document.createElement("canvas");
+          const paddingX = 0;
+          etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
+          const ajusteVerticalChecklist = 12;
+          etiquetaCompletaCanvas.height =
+            (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
+            ajusteVerticalChecklist;
+
+          const completoCtx = etiquetaCompletaCanvas.getContext("2d");
+          completoCtx.imageSmoothingEnabled = true;
+          completoCtx.imageSmoothingQuality = 'high';
+          completoCtx.drawImage(etCanvas, paddingX, 0);
+
+          const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+          const imgEmbed = await novoPdf.embedPng(imgBytes);
+
+          const larguraPagina = 293.46;
+          const alturaPagina = 475.2;
+          const scaleFactor = 0.90;
+          const larguraEtiquetaFinal = 277 * scaleFactor;
+          const alturaEtiquetaFinal = 449 * scaleFactor;
+          const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
+          const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
+          const ajusteVertical = 20;
+          const yPos = margemY + ajusteVertical;
+
+          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+          pag.drawImage(imgEmbed, {
+            x: margemX,
+            y: yPos,
+            width: larguraEtiquetaFinal,
+            height: alturaEtiquetaFinal,
+          });
+
+          const fallbackItem = extracted?.items && extracted.items[0] ? extracted.items[0] : null;
+          const oneLine = extracted?.footerOneLine
+            ? extracted.footerOneLine
+            : (fallbackItem
+                ? `SKU: ${fallbackItem.sku} | Quantidade: ${fallbackItem.quantidade}`
+                : (extracted?.footerLines ? extracted.footerLines[0] : ''));
+
+          let saveSku = '';
+          let saveQtd = null;
+          let possuiQtd = false;
+          let skuTxt = '';
+          let qtdTxt = '';
+
+          if (oneLine) {
+            const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
+            if (mSku && mSku[1]) {
+              saveSku = mSku[1].trim();
+              if (saveSku) skuTxt = `SKU: ${saveSku}`;
+            }
+            const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
+            if (mQtd && mQtd[1]) {
+              const qtdParse = parseInt(mQtd[1], 10);
+              if (!Number.isNaN(qtdParse)) {
+                saveQtd = qtdParse;
+                possuiQtd = true;
+                qtdTxt = `Quantidade: ${qtdParse}`;
+              }
+            }
+          }
+
+          if (!saveSku && fallbackItem?.sku != null) {
+            const fallbackSku = String(fallbackItem.sku).trim();
+            if (fallbackSku) {
+              saveSku = fallbackSku;
+              skuTxt = `SKU: ${saveSku}`;
+            }
+          }
+          if (!possuiQtd && fallbackItem && fallbackItem.quantidade != null) {
+            const qtdFallback = Number(fallbackItem.quantidade);
+            if (Number.isFinite(qtdFallback)) {
+              saveQtd = qtdFallback;
+              possuiQtd = true;
+              qtdTxt = `Quantidade: ${qtdFallback}`;
+            }
+          }
+
+          if (saveSku) {
+            allExtractedItems.push({
+              sku: saveSku,
+              quantidade: possuiQtd ? saveQtd : 0,
+              labelNumber: numeroEtiquetaAtual
+            });
+          }
+
+          paginasResumo.push({
+            numero: numeroEtiquetaAtual,
+            sku: saveSku || '',
+            quantidade: possuiQtd ? saveQtd : null
+          });
+
+          const numeroTxt = `Etiqueta Nº: ${numeroEtiquetaAtual}`;
+          const linhasRodape = [];
+          if (skuTxt) linhasRodape.push(skuTxt);
+          if (possuiQtd && qtdTxt) linhasRodape.push(qtdTxt);
+          linhasRodape.push(numeroTxt);
+
+          const fontSize = 9.5;
+          const lineGap = 2;
+          const padding = 4;
+          const blocoAltura = (fontSize + lineGap) * linhasRodape.length + padding * 2;
+          let footerY = yPos - blocoAltura - 2;
+          if (footerY < 2) footerY = yPos;
+
+          pag.drawRectangle({
+            x: margemX,
+            y: footerY,
+            width: larguraEtiquetaFinal,
+            height: blocoAltura,
+            color: PDFLib.rgb(1, 1, 1)
+          });
+
+          for (let li = 0; li < linhasRodape.length; li++) {
+            pag.drawText(linhasRodape[li], {
+              x: margemX + 6,
+              y: footerY + padding + li * (fontSize + lineGap),
+              size: fontSize,
+              font: rodapeFont,
+              color: PDFLib.rgb(0, 0, 0)
+            });
+          }
         }
       }
-    }
-  }
 
-    progressFill.style.width = "100%";
-    progressText.textContent = "✅ Concluído!";
-    const totalTime = Math.round((Date.now() - startTime) / 1000);
-    timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
-    setTimeout(() => {
-      progressBar.style.display = "none";
-    }, 2000);
-  const pdfFinal = await novoPdf.save();
-  const blob = new Blob([pdfFinal], { type: "application/pdf" });
-  const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
-  const localUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = localUrl;
-  a.download = fileName;
-  a.click();
+      progressFill.style.width = "100%";
+      progressText.textContent = "✅ Concluído!";
+      const totalTime = Math.round((Date.now() - startTime) / 1000);
+      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
+      setTimeout(() => {
+        progressBar.style.display = "none";
+      }, 2000);
 
-  status.textContent = "📤 Enviando ao servidor...";
-  uploadPdfToFirebase(blob, fileName, allExtractedItems)
-    .then(() => {
-      status.textContent = "✅ PDF gerado com sucesso! Concluído.";
-    })
-    .catch(() => {
-      status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
-    });
+      const pdfFinal = await novoPdf.save();
+      const blob = new Blob([pdfFinal], { type: "application/pdf" });
+      const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+      const localUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = localUrl;
+      a.download = fileName;
+      a.click();
+
+      const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
+      const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
+      status.textContent = "📤 Enviando ao servidor...";
+      uploadPdfToFirebase(blob, fileName, allExtractedItems, {
+        totalPaginas: totalPaginasGeradas,
+        paginasResumo,
+        contadorInicial: contadorInicializado ? contadorInicial : null,
+        contadorFinal
+      })
+        .then(() => {
+          status.textContent = "✅ PDF gerado com sucesso! Concluído.";
+        })
+        .catch(() => {
+          status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
+        });
     }
 
     window.processar = processar;
