@@ -241,6 +241,24 @@
   gap: 0.75rem;
 }
 
+#labelsList.grid {
+  align-items: flex-start;
+  align-items: start;
+  justify-items: center;
+}
+
+#labelsList.grid .expedicao-pdf-card {
+  width: 100%;
+  max-width: 320px;
+  align-self: flex-start;
+  align-self: start;
+}
+
+#labelsList.grid .ticket-card {
+  align-self: flex-start;
+  align-self: start;
+}
+
 .expedicao-pdf-header {
   display: flex;
   justify-content: space-between;
@@ -462,6 +480,7 @@
 .expedicao-pdf-card--list {
   gap: 1.5rem;
   width: 100%;
+  max-width: none;
 }
 
 .expedicao-pdf-list-content {
