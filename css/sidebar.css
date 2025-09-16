@@ -1,27 +1,9 @@
-/* Sidebar design tokens */
-:root {
-  --sidebar-width: 18rem;
-  --sidebar-bg: var(--primary);
-  --sidebar-text: #ffffff;
-  --sidebar-border: #000000;
-  --sidebar-hover-bg: rgba(255, 255, 255, 0.1);
-  --sidebar-active-bg: rgba(255, 255, 255, 0.2);
-  --sidebar-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  --sidebar-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-
-body.dark-mode {
-  --sidebar-bg: #1f2937;
-  --sidebar-text: #f9fafb;
-  --sidebar-border: #f9fafb;
-}
-
 /* Sidebar container & overlay */
 #sidebar-container {
   position: fixed;
   top: 0;
   left: 0;
-  width: var(--sidebar-width);
+  width: var(--sidebar-width, 18rem);
   height: 100%;
   transform: translateX(-100%);
   transition: transform 0.3s ease;
@@ -51,16 +33,18 @@ body.dark-mode {
 
 /* Layout adjustments when sidebar is present */
 body.has-sidebar .navbar {
-  left: var(--sidebar-width);
+  left: var(--sidebar-width, 18rem);
 }
 
-body.has-sidebar .content-wrapper,
+body.has-sidebar .content-wrapper {
+  margin-left: var(--sidebar-width, 18rem);
+}
+
 .main-content {
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-width, 18rem);
 }
 
 @media (max-width: 1023px) {
-  body.has-sidebar .content-wrapper,
   .main-content {
     margin-left: 0;
   }
@@ -97,17 +81,18 @@ body.has-sidebar .content-wrapper,
   overflow-x: hidden;
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text) !important;
-  text-shadow: var(--sidebar-text-shadow);
-  width: var(--sidebar-width);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  width: var(--sidebar-width, 18rem);
   min-height: 100vh;
   padding-top: 1rem;
   border-right: 1px solid var(--sidebar-border);
-  box-shadow: var(--sidebar-shadow);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   font-family: 'Poppins', 'Inter', sans-serif;
 }
 
+/* Subtle text and icon shadow for better contrast */
 .sidebar-link {
-  text-shadow: var(--sidebar-text-shadow);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   font-weight: 500;
 }
 
@@ -115,8 +100,6 @@ body.has-sidebar .content-wrapper,
   color: var(--sidebar-text) !important;
   stroke: var(--sidebar-text) !important;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
-  flex-shrink: 0;
-  display: block;
 }
 
 .sidebar input,
@@ -138,9 +121,6 @@ body.has-sidebar .content-wrapper,
 }
 
 .submenu-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   background: none;
   border: none;
   color: var(--sidebar-text) !important;
@@ -159,18 +139,16 @@ body.has-sidebar .content-wrapper,
   text-decoration: none;
   font-size: 0.95rem;
   border-radius: 0.375rem;
+  transition: background-color 0.2s;
   border-left: 4px solid var(--sidebar-border);
-  transition:
-    background-color 0.2s,
-    border-left-color 0.2s;
 }
 
 .sidebar-link:hover {
-  background-color: var(--sidebar-hover-bg);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-link.active {
-  background-color: var(--sidebar-active-bg);
+  background-color: rgba(255, 255, 255, 0.2);
   color: var(--sidebar-text) !important;
   border-left-color: var(--sidebar-border);
 }
@@ -184,11 +162,11 @@ body.has-sidebar .content-wrapper,
 }
 
 .submenu-link {
-  color: var(--sidebar-text) !important;
+  color: inherit;
   text-decoration: none;
   display: block;
   transition: color 0.2s;
-  text-shadow: var(--sidebar-text-shadow);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .submenu-link:hover {
@@ -203,17 +181,52 @@ body.has-sidebar .content-wrapper,
   transform: rotate(180deg);
 }
 
+/* Client sidebar layout */
+.sidebar.client-layout {
+  background: var(--sidebar-bg);
+}
+.sidebar.client-layout .sidebar-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  background: transparent;
+  color: var(--sidebar-text) !important;
+  border-radius: 0.375rem;
+  border-left: 4px solid var(--sidebar-border);
+}
+.sidebar.client-layout .sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.sidebar.client-layout .sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-left-color: var(--sidebar-border);
+}
+.sidebar.client-layout .sidebar-link svg {
+  display: block;
+}
+.sidebar.client-layout .submenu-toggle {
+  display: block;
+}
+
 /* Mobile-specific sidebar rules */
 @media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-width, 18rem);
+  }
   .sidebar .link-text {
     display: inline;
   }
-
   .sidebar-link {
     justify-content: flex-start;
   }
-
   .sidebar-link .mr-3 {
     margin-right: 0.75rem;
+  }
+  .content-wrapper,
+  body.has-sidebar .content-wrapper {
+    margin-left: 0;
   }
 }
