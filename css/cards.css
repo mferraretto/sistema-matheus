@@ -147,10 +147,6 @@
 /* Card estilo ticket usado na aba Expedição */
 .ticket-card {
   position: relative;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   align-self: flex-start;
 }
 
@@ -162,7 +158,7 @@
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  background: #f3f4f6;
+  background: inherit;
   border: inherit;
   border-radius: 50%;
 }
@@ -173,6 +169,436 @@
 
 .ticket-card::after {
   right: -10px;
+}
+
+/* Cards específicos da aba Expedição */
+.expedicao-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.expedicao-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+}
+
+.expedicao-card--attention {
+  border-color: #ef4444;
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.25);
+}
+
+.expedicao-summary-card {
+  padding: 1rem;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.expedicao-summary-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.expedicao-summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.expedicao-team-card {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  border-color: transparent;
+  color: var(--white);
+  text-align: center;
+  box-shadow: 0 16px 32px rgba(139, 92, 246, 0.35);
+}
+
+.expedicao-team-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.expedicao-team-count {
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+.expedicao-pdf-card {
+  min-width: 240px;
+  gap: 0.75rem;
+}
+
+.expedicao-pdf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.expedicao-pdf-date {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.expedicao-pdf-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.expedicao-pdf-icon {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  background: rgba(79, 70, 229, 0.08);
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expedicao-pdf-icon i {
+  font-size: 2rem;
+}
+
+.expedicao-status-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.expedicao-status-badge i {
+  line-height: 1;
+}
+
+.expedicao-status-badge--nao-impresso {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.expedicao-status-badge--impresso {
+  border-color: #f59e0b;
+  color: #b45309;
+}
+
+.expedicao-status-badge--concluido {
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.expedicao-status-button {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.expedicao-status-button:hover {
+  transform: translateY(-1px);
+}
+
+.expedicao-status-button--nao-impresso {
+  background: #ef4444;
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.25);
+}
+
+.expedicao-status-button--impresso {
+  background: #f59e0b;
+  box-shadow: 0 10px 20px rgba(245, 158, 11, 0.25);
+}
+
+.expedicao-status-button--concluido {
+  background: #16a34a;
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.25);
+}
+
+.expedicao-alert-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white);
+  background: #ef4444;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.expedicao-pdf-body {
+  text-align: center;
+  gap: 0.35rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.expedicao-pdf-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.expedicao-pdf-quantity {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+.expedicao-pdf-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.expedicao-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.expedicao-card-btn:hover {
+  background: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.expedicao-card-btn--danger {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.expedicao-card-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.expedicao-card-btn--success {
+  border-color: #16a34a;
+  background: #16a34a;
+  color: var(--white);
+}
+
+.expedicao-card-btn--success:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.expedicao-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  background: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.expedicao-icon-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(79, 70, 229, 0.15);
+}
+
+.expedicao-icon-btn--danger {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.expedicao-icon-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.expedicao-pdf-card--list {
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.expedicao-pdf-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.expedicao-pdf-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.expedicao-pdf-meta {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.expedicao-alert-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.expedicao-pdf-list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.expedicao-pdf-list-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.expedicao-control-textarea {
+  width: 100%;
+  min-height: 70px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  resize: vertical;
+  background: var(--background);
+  color: var(--text);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.expedicao-control-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.expedicao-toggle {
+  position: relative;
+  display: inline-flex;
+}
+
+.expedicao-toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.expedicao-toggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-light);
+  background: rgba(148, 163, 184, 0.12);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.expedicao-toggle span i {
+  font-size: 0.8rem;
+}
+
+.expedicao-toggle--success input:checked + span {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: var(--white);
+}
+
+.expedicao-toggle--danger input:checked + span {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: var(--white);
+}
+
+.expedicao-toggle input:checked + span i {
+  color: inherit;
+}
+
+.expedicao-toggle input:checked + span {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.expedicao-pdf-card--pending {
+  background: #fefce8;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.expedicao-pdf-card--printed {
+  background: #dcfce7;
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.expedicao-pdf-card--done {
+  background: var(--white);
+}
+
+@media (min-width: 768px) {
+  .expedicao-pdf-card--list {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .expedicao-pdf-list-controls {
+    max-width: 260px;
+  }
 }
 
 /* Task card styles for dashboard */
