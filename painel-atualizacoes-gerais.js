@@ -28,6 +28,49 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+function normalizePerfil(valor) {
+  if (!valor) return '';
+  return String(valor)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+const defaultConfig = {
+  collectionName: 'painelAtualizacoesGerais',
+  blockedPerfis: [],
+  noAccessMessage: 'Você não tem permissão para acessar este painel.',
+};
+
+const rawConfig = window.PAINEL_ATUALIZACOES_CONFIG || {};
+const config = {
+  ...defaultConfig,
+  ...rawConfig,
+};
+
+config.collectionName =
+  typeof config.collectionName === 'string' && config.collectionName.trim()
+    ? config.collectionName.trim()
+    : defaultConfig.collectionName;
+
+config.noAccessMessage =
+  typeof config.noAccessMessage === 'string' && config.noAccessMessage.trim()
+    ? config.noAccessMessage
+    : defaultConfig.noAccessMessage;
+
+const blockedPerfisSet = new Set(
+  (config.blockedPerfis || [])
+    .map((perfil) => normalizePerfil(perfil))
+    .filter((perfil) => perfil),
+);
+
+try {
+  delete window.PAINEL_ATUALIZACOES_CONFIG;
+} catch (err) {
+  window.PAINEL_ATUALIZACOES_CONFIG = undefined;
+}
+
 const formMensagem = document.getElementById('formMensagem');
 const formProblema = document.getElementById('formProblema');
 const formProduto = document.getElementById('formProduto');
@@ -52,6 +95,7 @@ const produtoStatusEl = document.getElementById('produtoStatus');
 const painelStatusEl = document.getElementById('painelStatus');
 const produtosAvisoEl = document.getElementById('produtosAviso');
 const mensagemEscopoEl = document.getElementById('mensagemEscopo');
+const painelSections = Array.from(document.querySelectorAll('main .card'));
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -59,6 +103,38 @@ let mensagensUnsub = null;
 let problemasUnsub = null;
 let produtosUnsub = null;
 let nomeResponsavel = '';
+
+function isPerfilBloqueado(perfil) {
+  if (!blockedPerfisSet.size) return false;
+  const normalizado = normalizePerfil(perfil);
+  return Boolean(normalizado) && blockedPerfisSet.has(normalizado);
+}
+
+function aplicarRestricaoAcesso(mensagem) {
+  painelSections.forEach((section) => section.classList.add('hidden'));
+  setStatus(painelStatusEl, '');
+  [mensagemStatusEl, problemaStatusEl, produtoStatusEl].forEach((el) => {
+    setStatus(el, '');
+  });
+  const avisoExistente = document.getElementById('painelRestricaoAviso');
+  if (avisoExistente?.parentElement) {
+    avisoExistente.parentElement.removeChild(avisoExistente);
+  }
+  const aviso = document.createElement('div');
+  aviso.id = 'painelRestricaoAviso';
+  aviso.className =
+    'mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700';
+  aviso.textContent = mensagem || config.noAccessMessage;
+  const main = document.querySelector('main');
+  if (main) {
+    const header = main.querySelector('header');
+    if (header) {
+      header.insertAdjacentElement('afterend', aviso);
+    } else {
+      main.prepend(aviso);
+    }
+  }
+}
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -485,7 +561,7 @@ function carregarMensagens() {
   if (!currentUser) return;
   mensagensUnsub?.();
   const mensagensRef = query(
-    collection(db, 'painelAtualizacoesGerais'),
+    collection(db, config.collectionName),
     where('categoria', '==', 'mensagem'),
     where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
@@ -517,7 +593,7 @@ function carregarProblemas() {
   if (!currentUser) return;
   problemasUnsub?.();
   const problemasRef = query(
-    collection(db, 'painelAtualizacoesGerais'),
+    collection(db, config.collectionName),
     where('categoria', '==', 'problema'),
     where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
@@ -547,7 +623,7 @@ function carregarProdutos() {
   if (!currentUser) return;
   produtosUnsub?.();
   const produtosRef = query(
-    collection(db, 'painelAtualizacoesGerais'),
+    collection(db, config.collectionName),
     where('categoria', '==', 'produto'),
     where('participantes', 'array-contains', currentUser.uid),
     orderBy('createdAt', 'desc'),
@@ -595,7 +671,7 @@ async function enviarMensagem(event) {
     return;
   }
   try {
-    await addDoc(collection(db, 'painelAtualizacoesGerais'), {
+    await addDoc(collection(db, config.collectionName), {
       categoria: 'mensagem',
       texto,
       autorUid: currentUser.uid,
@@ -637,7 +713,7 @@ async function registrarProblema(event) {
     return;
   }
   try {
-    await addDoc(collection(db, 'painelAtualizacoesGerais'), {
+    await addDoc(collection(db, config.collectionName), {
       categoria: 'problema',
       problema,
       solucao: solucao || '',
@@ -675,7 +751,7 @@ async function registrarProduto(event) {
     return;
   }
   try {
-    await addDoc(collection(db, 'painelAtualizacoesGerais'), {
+    await addDoc(collection(db, config.collectionName), {
       categoria: 'produto',
       nome,
       observacoes: observacoes || '',
@@ -709,7 +785,16 @@ onAuthStateChanged(auth, async (user) => {
   nomeResponsavel = user.displayName || user.email || 'Usuário';
   setStatus(painelStatusEl, 'Carregando configurações da equipe...');
   try {
-    const { participantes } = await montarEscopoCompartilhamento(user);
+    const { participantes, perfil } = await montarEscopoCompartilhamento(user);
+    const perfilNormalizado = normalizePerfil(perfil);
+    const perfilGlobal = normalizePerfil(window.userPerfil);
+    if (
+      isPerfilBloqueado(perfilNormalizado) ||
+      isPerfilBloqueado(perfilGlobal)
+    ) {
+      aplicarRestricaoAcesso(config.noAccessMessage);
+      return;
+    }
     participantesCompartilhamento = participantes.length
       ? participantes
       : [user.uid];
