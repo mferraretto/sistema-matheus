@@ -60,6 +60,42 @@ const participantesVazioEl = document.getElementById('participantesVazio');
 const limparParticipantesBtn = document.getElementById(
   'limparParticipantesBtn',
 );
+const calendarioReunioesAtualEl = document.getElementById(
+  'calendarioReunioesAtual',
+);
+const calendarioReunioesAnteriorEl = document.getElementById(
+  'calendarioReunioesAnterior',
+);
+const calendarioReunioesProximoEl = document.getElementById(
+  'calendarioReunioesProximo',
+);
+const calendarioReunioesAtualTituloEl = document.getElementById(
+  'calendarioReunioesAtualTitulo',
+);
+const calendarioReunioesAnteriorTituloEl = document.getElementById(
+  'calendarioReunioesAnteriorTitulo',
+);
+const calendarioReunioesProximoTituloEl = document.getElementById(
+  'calendarioReunioesProximoTitulo',
+);
+const listaReunioesEl = document.getElementById('listaReunioes');
+const reunioesVazioEl = document.getElementById('reunioesVazio');
+const reunioesStatusEl = document.getElementById('reunioesStatus');
+const modalReuniaoEl = document.getElementById('modalReuniao');
+const modalReuniaoDataEl = document.getElementById('modalReuniaoData');
+const modalReuniaoFecharBtn = document.getElementById('modalReuniaoFechar');
+const reuniaoCancelarBtn = document.getElementById('reuniaoCancelar');
+const reuniaoSalvarBtn = document.getElementById('reuniaoSalvar');
+const reuniaoHorarioInput = document.getElementById('reuniaoHorario');
+const reuniaoDescricaoInput = document.getElementById('reuniaoDescricao');
+const reuniaoParticipantesListaEl = document.getElementById(
+  'reuniaoParticipantesLista',
+);
+const reuniaoParticipantesVazioEl = document.getElementById(
+  'reuniaoParticipantesVazio',
+);
+const reuniaoModalStatusEl = document.getElementById('reuniaoModalStatus');
+const formReuniao = document.getElementById('formReuniao');
 
 let currentUser = null;
 let participantesCompartilhamento = [];
@@ -70,6 +106,11 @@ let nomeResponsavel = '';
 let participantesDetalhes = [];
 let participantesPorUid = new Map();
 let participantesSelecionados = new Set();
+let reunioesUnsub = null;
+let reunioesDados = [];
+let reunioesPorDia = new Map();
+let dataReuniaoSelecionada = '';
+let reuniaoParticipantesSelecionados = new Set();
 
 function setStatus(element, message = '', isError = false) {
   if (!element) return;
@@ -122,6 +163,105 @@ function formatDate(value, includeTime = true) {
         minute: '2-digit',
       })
     : date.toLocaleDateString('pt-BR');
+}
+
+function capitalizeFirstLetter(text) {
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function toDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseISODate(value) {
+  if (!value) return null;
+  const [yearStr, monthStr, dayStr] = String(value).split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.valueOf()) ? null : date;
+}
+
+function formatMonthTitle(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  const texto = date.toLocaleDateString('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+  return capitalizeFirstLetter(texto);
+}
+
+function formatLongDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  const texto = date.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+  return capitalizeFirstLetter(texto);
+}
+
+function formatShortDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function resumirNomesParticipantes(nomes) {
+  if (!Array.isArray(nomes) || !nomes.length) return '';
+  const filtrados = nomes.filter(
+    (nome) => typeof nome === 'string' && nome.trim(),
+  );
+  if (!filtrados.length) return '';
+  if (filtrados.length === 1) return filtrados[0];
+  if (filtrados.length === 2) return `${filtrados[0]} e ${filtrados[1]}`;
+  if (filtrados.length === 3) {
+    return `${filtrados[0]}, ${filtrados[1]} e ${filtrados[2]}`;
+  }
+  return `${filtrados[0]}, ${filtrados[1]} e mais ${filtrados.length - 2}`;
+}
+
+function normalizeTimeValue(value) {
+  if (!value) return '';
+  const [hoursStr, minutesStr] = String(value).split(':');
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (
+    !Number.isInteger(hours) ||
+    hours < 0 ||
+    hours > 23 ||
+    !Number.isInteger(minutes) ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return '';
+  }
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function formatHourFromDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.valueOf())) return '';
+  return date.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function montarDetalhesParticipante(uid, data = {}) {
@@ -224,6 +364,9 @@ async function carregarDetalhesParticipantes(uids = []) {
   );
 
   renderizarParticipantesDisponiveis();
+  renderizarParticipantesModalReuniao();
+  atualizarCalendarioReunioes();
+  renderizarListaReunioes();
 }
 
 function renderizarParticipantesDisponiveis() {
@@ -352,6 +495,547 @@ function limparSelecaoDestinatarios() {
       input.checked = false;
     });
   atualizarResumoDestinatarios();
+}
+
+function obterDataHoraReuniao(reuniao) {
+  if (!reuniao) return null;
+  const candidato = reuniao.inicio;
+  if (candidato instanceof Date && !Number.isNaN(candidato.valueOf())) {
+    return candidato;
+  }
+  if (candidato && typeof candidato.toDate === 'function') {
+    try {
+      const convertido = candidato.toDate();
+      if (!Number.isNaN(convertido.valueOf())) return convertido;
+    } catch (_) {}
+  }
+  const dataBase = parseISODate(reuniao.dataIso || reuniao.data);
+  if (!dataBase) return null;
+  const horaNormalizada = normalizeTimeValue(reuniao.hora);
+  if (horaNormalizada) {
+    const [hora, minuto] = horaNormalizada.split(':').map(Number);
+    dataBase.setHours(hora, minuto, 0, 0);
+  }
+  return dataBase;
+}
+
+function obterNomesParticipantesReuniao(reuniao) {
+  if (!reuniao) return [];
+  const nomes = new Set();
+  if (Array.isArray(reuniao.participantesNomes)) {
+    reuniao.participantesNomes.forEach((nome) => {
+      if (typeof nome === 'string' && nome.trim()) {
+        nomes.add(nome.trim());
+      }
+    });
+  }
+  if (Array.isArray(reuniao.participantes)) {
+    reuniao.participantes.forEach((uid) => {
+      const info = participantesPorUid.get(uid);
+      const nome = info?.nome;
+      if (nome) {
+        nomes.add(nome);
+      }
+    });
+  }
+  return Array.from(nomes);
+}
+
+function atualizarMapaReunioes() {
+  const mapa = new Map();
+  reunioesDados.forEach((reuniao) => {
+    const iso = reuniao.dataIso || reuniao.data;
+    if (!iso) return;
+    if (!mapa.has(iso)) {
+      mapa.set(iso, []);
+    }
+    mapa.get(iso).push(reuniao);
+  });
+  reunioesPorDia = mapa;
+}
+
+function renderizarListaReunioes() {
+  if (!listaReunioesEl) return;
+  listaReunioesEl.innerHTML = '';
+
+  const inicioHoje = new Date();
+  inicioHoje.setHours(0, 0, 0, 0);
+
+  const itensOrdenados = reunioesDados
+    .map((reuniao) => {
+      const inicio = obterDataHoraReuniao(reuniao);
+      return { ...reuniao, inicio };
+    })
+    .filter(
+      (reuniao) =>
+        reuniao.inicio instanceof Date && !Number.isNaN(reuniao.inicio),
+    )
+    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+
+  const proximas = itensOrdenados.filter(
+    (reuniao) => reuniao.inicio.getTime() >= inicioHoje.getTime(),
+  );
+  let exibir = proximas.slice(0, 5);
+  if (!exibir.length) {
+    exibir = itensOrdenados.slice(-5).reverse();
+  }
+
+  if (!exibir.length) {
+    reunioesVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  reunioesVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+
+  exibir.forEach((reuniao) => {
+    const card = document.createElement('article');
+    card.className =
+      'rounded-lg border border-indigo-100 bg-indigo-50 p-3 shadow-sm transition hover:border-indigo-200';
+
+    const cabecalho = document.createElement('div');
+    cabecalho.className =
+      'flex items-center justify-between text-xs font-semibold text-indigo-700';
+    cabecalho.innerHTML = `
+      <span>${formatShortDate(reuniao.inicio)}</span>
+      <span>${
+        normalizeTimeValue(reuniao.hora) ||
+        formatHourFromDate(reuniao.inicio) ||
+        ''
+      }</span>
+    `;
+    card.appendChild(cabecalho);
+
+    const nomes = obterNomesParticipantesReuniao(reuniao);
+    const participantesResumo = resumirNomesParticipantes(nomes);
+    const participantes = document.createElement('p');
+    participantes.className = 'mt-2 text-sm text-gray-700';
+    participantes.textContent = participantesResumo
+      ? `Participantes: ${participantesResumo}`
+      : 'Participantes a definir.';
+    card.appendChild(participantes);
+
+    const descricao = (reuniao.descricao || '').toString().trim();
+    if (descricao) {
+      const descricaoEl = document.createElement('p');
+      descricaoEl.className = 'mt-2 text-sm text-gray-600';
+      descricaoEl.textContent = descricao;
+      card.appendChild(descricaoEl);
+    }
+
+    const autorNome = reuniao.autorNome || reuniao.responsavelNome || '';
+    if (autorNome) {
+      const autorEl = document.createElement('p');
+      autorEl.className = 'mt-2 text-xs text-gray-500';
+      autorEl.textContent = `Agendado por ${autorNome}`;
+      card.appendChild(autorEl);
+    }
+
+    frag.appendChild(card);
+  });
+
+  listaReunioesEl.appendChild(frag);
+}
+
+function obterDiasCalendario(baseDate) {
+  const base = baseDate instanceof Date ? new Date(baseDate) : new Date();
+  base.setDate(1);
+  const ano = base.getFullYear();
+  const mes = base.getMonth();
+  const primeiroDiaSemana = base.getDay();
+  const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
+  const totalDiasMesAnterior = new Date(ano, mes, 0).getDate();
+
+  const dias = [];
+  for (let indice = 0; indice < 42; indice += 1) {
+    const deslocamento = indice - primeiroDiaSemana + 1;
+    let dia = deslocamento;
+    let mesAtual = mes;
+    let anoAtual = ano;
+    let pertenceAoMes = true;
+
+    if (deslocamento <= 0) {
+      mesAtual -= 1;
+      if (mesAtual < 0) {
+        mesAtual = 11;
+        anoAtual -= 1;
+      }
+      dia = totalDiasMesAnterior + deslocamento;
+      pertenceAoMes = false;
+    } else if (deslocamento > totalDiasMes) {
+      mesAtual += 1;
+      if (mesAtual > 11) {
+        mesAtual = 0;
+        anoAtual += 1;
+      }
+      dia = deslocamento - totalDiasMes;
+      pertenceAoMes = false;
+    }
+
+    const dataDia = new Date(anoAtual, mesAtual, dia);
+    dias.push({
+      date: dataDia,
+      iso: toDateKey(dataDia),
+      inMonth: pertenceAoMes,
+    });
+  }
+  return dias;
+}
+
+function renderizarCalendarioMes(container, tituloEl, baseDate, { mini } = {}) {
+  if (!container) return;
+
+  container.innerHTML = '';
+  if (tituloEl) {
+    tituloEl.textContent = formatMonthTitle(baseDate);
+  }
+
+  const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  const cabecalho = document.createElement('div');
+  cabecalho.className = mini
+    ? 'mb-1 grid grid-cols-7 text-center text-[10px] font-semibold uppercase tracking-wide text-gray-400'
+    : 'mb-2 grid grid-cols-7 text-center text-xs font-semibold uppercase tracking-wide text-gray-400';
+  diasSemana.forEach((dia) => {
+    const span = document.createElement('span');
+    span.textContent = dia;
+    cabecalho.appendChild(span);
+  });
+  container.appendChild(cabecalho);
+
+  const grade = document.createElement('div');
+  grade.className = mini ? 'grid grid-cols-7 gap-1' : 'grid grid-cols-7 gap-2';
+  container.appendChild(grade);
+
+  const hojeKey = toDateKey(new Date());
+  const dias = obterDiasCalendario(baseDate);
+
+  dias.forEach((dia) => {
+    const reunioesDoDia = reunioesPorDia.get(dia.iso) || [];
+    const temReunioes = reunioesDoDia.length > 0;
+    const ehHoje = dia.iso === hojeKey;
+
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.dataset.date = dia.iso;
+    botao.className = mini
+      ? 'relative flex h-9 items-center justify-center rounded-md border text-[11px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-300'
+      : 'relative flex h-16 flex-col items-center justify-center rounded-lg border text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-300';
+
+    let classes =
+      'border-gray-200 bg-white text-gray-600 hover:border-indigo-400 hover:text-indigo-600';
+    if (!dia.inMonth) {
+      classes += ' bg-gray-50 text-gray-400';
+    }
+    if (temReunioes) {
+      classes += ' border-indigo-300 bg-indigo-50 text-indigo-700';
+    }
+    if (ehHoje) {
+      classes += ' ring-2 ring-indigo-400';
+    }
+    botao.className += ` ${classes}`;
+
+    const numero = document.createElement('span');
+    numero.textContent = String(dia.date.getDate());
+    if (!mini) {
+      numero.className = 'text-base font-semibold';
+    }
+    botao.appendChild(numero);
+
+    if (temReunioes) {
+      if (mini) {
+        const indicador = document.createElement('span');
+        indicador.className =
+          'absolute bottom-1 h-1.5 w-1.5 rounded-full bg-indigo-500';
+        botao.appendChild(indicador);
+      } else {
+        const badge = document.createElement('span');
+        badge.className =
+          'absolute bottom-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-[11px] font-semibold text-white';
+        badge.textContent = String(reunioesDoDia.length);
+        botao.appendChild(badge);
+      }
+    }
+
+    if (temReunioes) {
+      const resumoTitulo = reunioesDoDia
+        .map((reuniao) => {
+          const inicio = obterDataHoraReuniao(reuniao);
+          const hora =
+            normalizeTimeValue(reuniao.hora) || formatHourFromDate(inicio);
+          const nomes = resumirNomesParticipantes(
+            obterNomesParticipantesReuniao(reuniao),
+          );
+          const horaTexto = hora ? ` às ${hora}` : '';
+          return `${formatLongDate(inicio || dia.date)}${horaTexto}${
+            nomes ? ` - ${nomes}` : ''
+          }`;
+        })
+        .join('\n');
+      botao.title = resumoTitulo;
+    } else {
+      botao.title = `Agendar reunião em ${formatLongDate(dia.date)}`;
+    }
+
+    botao.addEventListener('click', () => abrirModalReuniao(dia.iso));
+    grade.appendChild(botao);
+  });
+}
+
+function atualizarCalendarioReunioes() {
+  if (!calendarioReunioesAtualEl) return;
+  const hoje = new Date();
+  const mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const mesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+  const mesProximo = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+
+  renderizarCalendarioMes(
+    calendarioReunioesAtualEl,
+    calendarioReunioesAtualTituloEl,
+    mesAtual,
+    {
+      mini: false,
+    },
+  );
+  renderizarCalendarioMes(
+    calendarioReunioesAnteriorEl,
+    calendarioReunioesAnteriorTituloEl,
+    mesAnterior,
+    { mini: true },
+  );
+  renderizarCalendarioMes(
+    calendarioReunioesProximoEl,
+    calendarioReunioesProximoTituloEl,
+    mesProximo,
+    { mini: true },
+  );
+}
+
+function renderizarParticipantesModalReuniao() {
+  if (!reuniaoParticipantesListaEl) return;
+  reuniaoParticipantesListaEl.innerHTML = '';
+
+  if (!participantesDetalhes.length) {
+    reuniaoParticipantesVazioEl?.classList.remove('hidden');
+    return;
+  }
+
+  reuniaoParticipantesVazioEl?.classList.add('hidden');
+  const frag = document.createDocumentFragment();
+
+  participantesDetalhes.forEach((info) => {
+    const wrapper = document.createElement('label');
+    wrapper.className =
+      'flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm';
+    wrapper.dataset.uid = info.uid;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className =
+      'mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500';
+
+    const isAtual = currentUser?.uid === info.uid;
+    if (isAtual) {
+      checkbox.checked = true;
+      checkbox.disabled = true;
+      reuniaoParticipantesSelecionados.add(info.uid);
+    } else {
+      checkbox.checked = reuniaoParticipantesSelecionados.has(info.uid);
+      checkbox.addEventListener('change', (event) => {
+        if (event.target.checked) {
+          reuniaoParticipantesSelecionados.add(info.uid);
+        } else {
+          reuniaoParticipantesSelecionados.delete(info.uid);
+        }
+      });
+    }
+
+    const conteudo = document.createElement('div');
+    conteudo.className = 'flex-1 min-w-0';
+
+    const nomeEl = document.createElement('p');
+    nomeEl.className = 'text-sm font-medium text-gray-800';
+    if (isAtual) {
+      nomeEl.textContent = `${info.nome || 'Você'} (você)`;
+    } else {
+      nomeEl.textContent = info.nome || 'Usuário';
+    }
+
+    const detalheEl = document.createElement('p');
+    detalheEl.className = 'text-xs text-gray-500';
+    if (info.papel && info.email) {
+      detalheEl.textContent = `${info.papel} • ${info.email}`;
+    } else if (info.papel) {
+      detalheEl.textContent = info.papel;
+    } else if (info.email) {
+      detalheEl.textContent = info.email;
+    } else {
+      detalheEl.textContent = 'Sem detalhes adicionais';
+    }
+
+    conteudo.appendChild(nomeEl);
+    conteudo.appendChild(detalheEl);
+
+    wrapper.appendChild(checkbox);
+    wrapper.appendChild(conteudo);
+    frag.appendChild(wrapper);
+  });
+
+  reuniaoParticipantesListaEl.appendChild(frag);
+}
+
+function abrirModalReuniao(dateIso) {
+  if (!modalReuniaoEl || !currentUser) return;
+  const dataSelecionada = parseISODate(dateIso);
+  if (!dataSelecionada) {
+    showTemporaryStatus(
+      reunioesStatusEl,
+      'Não foi possível identificar a data selecionada.',
+      true,
+    );
+    return;
+  }
+
+  dataReuniaoSelecionada = dateIso;
+  if (modalReuniaoDataEl) {
+    modalReuniaoDataEl.textContent = formatLongDate(dataSelecionada);
+  }
+  if (reuniaoHorarioInput) {
+    reuniaoHorarioInput.value = '09:00';
+  }
+  if (reuniaoDescricaoInput) {
+    reuniaoDescricaoInput.value = '';
+  }
+
+  const baseSelecao = participantesSelecionados.size
+    ? Array.from(participantesSelecionados)
+    : participantesCompartilhamento;
+  reuniaoParticipantesSelecionados = new Set(
+    (baseSelecao || []).filter((uid) => typeof uid === 'string' && uid),
+  );
+  if (currentUser?.uid) {
+    reuniaoParticipantesSelecionados.add(currentUser.uid);
+  }
+  renderizarParticipantesModalReuniao();
+
+  setStatus(reuniaoModalStatusEl, '');
+  modalReuniaoEl.classList.remove('hidden');
+  modalReuniaoEl.classList.add('flex');
+  modalReuniaoEl.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('overflow-hidden');
+  setTimeout(() => reuniaoHorarioInput?.focus(), 100);
+}
+
+function fecharModalReuniao() {
+  if (!modalReuniaoEl) return;
+  modalReuniaoEl.classList.add('hidden');
+  modalReuniaoEl.classList.remove('flex');
+  modalReuniaoEl.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('overflow-hidden');
+  dataReuniaoSelecionada = '';
+  reuniaoParticipantesSelecionados.clear();
+  setStatus(reuniaoModalStatusEl, '');
+}
+
+async function salvarReuniao(event) {
+  event.preventDefault();
+  if (!currentUser) return;
+
+  const dataIso = dataReuniaoSelecionada;
+  const dataSelecionada = parseISODate(dataIso);
+  if (!dataSelecionada) {
+    setStatus(
+      reuniaoModalStatusEl,
+      'Selecione uma data válida para a reunião.',
+      true,
+    );
+    return;
+  }
+
+  const horario = normalizeTimeValue(reuniaoHorarioInput?.value);
+  if (!horario) {
+    setStatus(
+      reuniaoModalStatusEl,
+      'Informe um horário válido para a reunião.',
+      true,
+    );
+    return;
+  }
+
+  const participantesDestino = new Set(
+    Array.from(reuniaoParticipantesSelecionados).filter(
+      (uid) => typeof uid === 'string' && uid,
+    ),
+  );
+  if (currentUser?.uid) {
+    participantesDestino.add(currentUser.uid);
+  }
+
+  if (participantesDestino.size <= 1 && participantesDetalhes.length > 1) {
+    setStatus(
+      reuniaoModalStatusEl,
+      'Selecione ao menos um participante além de você.',
+      true,
+    );
+    return;
+  }
+
+  const [hora, minuto] = horario.split(':').map(Number);
+  dataSelecionada.setHours(hora, minuto, 0, 0);
+  if (Number.isNaN(dataSelecionada.valueOf())) {
+    setStatus(
+      reuniaoModalStatusEl,
+      'Não foi possível interpretar a data informada.',
+      true,
+    );
+    return;
+  }
+
+  const descricao = reuniaoDescricaoInput?.value.trim() || '';
+  const participantesArray = Array.from(participantesDestino);
+  const nomesParticipantes = participantesArray
+    .map((uid) => participantesPorUid.get(uid)?.nome)
+    .filter((nome) => typeof nome === 'string' && nome.trim());
+  const nomesOrdenados = nomesParticipantes
+    .map((nome) => nome.trim())
+    .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+  const participantesResumo = resumirNomesParticipantes(nomesOrdenados);
+
+  try {
+    if (reuniaoSalvarBtn) {
+      reuniaoSalvarBtn.disabled = true;
+      reuniaoSalvarBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    await addDoc(collection(db, 'painelAtualizacoesGerais'), {
+      categoria: 'reuniao',
+      data: dataIso,
+      hora: horario,
+      inicio: dataSelecionada,
+      descricao,
+      participantes: participantesArray,
+      participantesNomes: nomesOrdenados,
+      participantesResumo,
+      autorUid: currentUser.uid,
+      autorNome: nomeResponsavel,
+      createdAt: serverTimestamp(),
+    });
+    fecharModalReuniao();
+    showTemporaryStatus(
+      reunioesStatusEl,
+      'Reunião agendada e participantes notificados.',
+    );
+  } catch (err) {
+    console.error('Erro ao agendar reunião:', err);
+    setStatus(
+      reuniaoModalStatusEl,
+      'Não foi possível agendar a reunião. Tente novamente.',
+      true,
+    );
+  } finally {
+    if (reuniaoSalvarBtn) {
+      reuniaoSalvarBtn.disabled = false;
+      reuniaoSalvarBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  }
 }
 
 async function montarEscopoCompartilhamento(user) {
@@ -862,6 +1546,77 @@ function carregarProdutos() {
   );
 }
 
+function carregarReunioes() {
+  if (!currentUser) return;
+  reunioesUnsub?.();
+  const reunioesRef = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', currentUser.uid),
+    orderBy('createdAt', 'desc'),
+    limit(120),
+  );
+  reunioesUnsub = onSnapshot(
+    reunioesRef,
+    (snap) => {
+      const dados = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const inicio =
+          data.inicio instanceof Date
+            ? data.inicio
+            : typeof data.inicio?.toDate === 'function'
+              ? data.inicio.toDate()
+              : null;
+        const dataIso = data.data || (inicio ? toDateKey(inicio) : '');
+        const hora =
+          normalizeTimeValue(data.hora) ||
+          (inicio ? formatHourFromDate(inicio) : '');
+        const participantes = Array.isArray(data.participantes)
+          ? data.participantes.filter((uid) => typeof uid === 'string' && uid)
+          : [];
+        const nomes = Array.isArray(data.participantesNomes)
+          ? data.participantesNomes.filter(
+              (nome) => typeof nome === 'string' && nome.trim(),
+            )
+          : [];
+        dados.push({
+          id: docSnap.id,
+          dataIso,
+          hora,
+          inicio:
+            inicio instanceof Date && !Number.isNaN(inicio.valueOf())
+              ? inicio
+              : null,
+          descricao: (data.descricao || '').toString(),
+          participantes,
+          participantesNomes: nomes,
+          participantesResumo: data.participantesResumo || '',
+          autorNome: data.autorNome || data.responsavelNome || '',
+          autorUid: data.autorUid || '',
+          createdAt: data.createdAt?.toDate?.() || null,
+        });
+      });
+      reunioesDados = dados;
+      atualizarMapaReunioes();
+      atualizarCalendarioReunioes();
+      renderizarListaReunioes();
+    },
+    (err) => {
+      console.error('Erro ao carregar reuniões:', err);
+      reunioesDados = [];
+      atualizarMapaReunioes();
+      atualizarCalendarioReunioes();
+      renderizarListaReunioes();
+      showTemporaryStatus(
+        reunioesStatusEl,
+        'Não foi possível carregar o calendário de reuniões.',
+        true,
+      );
+    },
+  );
+}
+
 async function enviarMensagem(event) {
   event.preventDefault();
   if (!currentUser) return;
@@ -983,6 +1738,23 @@ formMensagem?.addEventListener('submit', enviarMensagem);
 formProblema?.addEventListener('submit', registrarProblema);
 formProduto?.addEventListener('submit', registrarProduto);
 limparParticipantesBtn?.addEventListener('click', limparSelecaoDestinatarios);
+formReuniao?.addEventListener('submit', salvarReuniao);
+modalReuniaoFecharBtn?.addEventListener('click', fecharModalReuniao);
+reuniaoCancelarBtn?.addEventListener('click', fecharModalReuniao);
+modalReuniaoEl?.addEventListener('click', (event) => {
+  if (event.target === modalReuniaoEl) {
+    fecharModalReuniao();
+  }
+});
+document.addEventListener('keydown', (event) => {
+  if (
+    event.key === 'Escape' &&
+    modalReuniaoEl &&
+    !modalReuniaoEl.classList.contains('hidden')
+  ) {
+    fecharModalReuniao();
+  }
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -1019,6 +1791,7 @@ onAuthStateChanged(auth, async (user) => {
 
     carregarMensagens();
     carregarProblemas();
+    carregarReunioes();
     carregarProdutos();
   } catch (err) {
     console.error('Erro ao preparar painel de atualizações gerais:', err);
@@ -1030,5 +1803,6 @@ onAuthStateChanged(auth, async (user) => {
     participantesCompartilhamento = currentUser?.uid ? [currentUser.uid] : [];
     await carregarDetalhesParticipantes(participantesCompartilhamento);
     atualizarEscopoMensagem();
+    carregarReunioes();
   }
 });

@@ -117,6 +117,7 @@ let expLabelNotifUnsub = null;
 let updNotifUnsub = null;
 let painelGeralNotifUnsub = null;
 let painelMentNotifUnsub = null;
+let painelGeralReuniaoNotifUnsub = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -588,12 +589,14 @@ function initNotificationListener(uid) {
   if (updNotifUnsub) updNotifUnsub();
   if (painelGeralNotifUnsub) painelGeralNotifUnsub();
   if (painelMentNotifUnsub) painelMentNotifUnsub();
+  if (painelGeralReuniaoNotifUnsub) painelGeralReuniaoNotifUnsub();
 
   let finNotifs = [];
   let expNotifs = [];
   let expLabelNotifs = [];
   let updNotifs = [];
   let painelGeralNotifs = [];
+  let painelGeralReunioesNotifs = [];
   let painelMentNotifs = [];
 
   const storageKey = `notificationsRead:${uid}`;
@@ -673,6 +676,7 @@ function initNotificationListener(uid) {
       ...expLabelNotifs,
       ...updNotifs,
       ...painelGeralNotifs,
+      ...painelGeralReunioesNotifs,
       ...painelMentNotifs,
     ].sort((a, b) => b.ts - a.ts);
 
@@ -850,6 +854,95 @@ function initNotificationListener(uid) {
     return `[${origem}] ${autor} compartilhou uma atualização.`;
   };
 
+  const normalizarHora = (valor) => {
+    if (!valor) return '';
+    const partes = String(valor).split(':');
+    if (partes.length < 2) return '';
+    const horas = Number(partes[0]);
+    const minutos = Number(partes[1]);
+    if (
+      !Number.isFinite(horas) ||
+      horas < 0 ||
+      horas > 23 ||
+      !Number.isFinite(minutos) ||
+      minutos < 0 ||
+      minutos > 59
+    ) {
+      return '';
+    }
+    return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
+  };
+
+  const resumirNomes = (nomes) => {
+    if (!Array.isArray(nomes) || !nomes.length) return '';
+    const filtrados = nomes.filter(
+      (nome) => typeof nome === 'string' && nome.trim(),
+    );
+    if (!filtrados.length) return '';
+    if (filtrados.length === 1) return filtrados[0];
+    if (filtrados.length === 2) return `${filtrados[0]} e ${filtrados[1]}`;
+    if (filtrados.length === 3) {
+      return `${filtrados[0]}, ${filtrados[1]} e ${filtrados[2]}`;
+    }
+    return `${filtrados[0]}, ${filtrados[1]} e mais ${filtrados.length - 2}`;
+  };
+
+  const formatMeetingNotification = (data) => {
+    if (!data) return '';
+    const autor = data.autorNome || data.autorEmail || 'Equipe';
+    let inicioData = null;
+    if (data.inicio && typeof data.inicio.toDate === 'function') {
+      try {
+        inicioData = data.inicio.toDate();
+      } catch (e) {
+        inicioData = null;
+      }
+    }
+    if (!inicioData && data.data) {
+      const parsed = new Date(data.data);
+      if (!Number.isNaN(parsed.valueOf())) {
+        inicioData = parsed;
+      }
+    }
+    const dataTexto = inicioData
+      ? inicioData.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : '';
+    const horaTexto = normalizarHora(data.hora);
+    const horaFallback =
+      !horaTexto && inicioData
+        ? inicioData.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '';
+    const participantesResumo =
+      data.participantesResumo || resumirNomes(data.participantesNomes);
+    const descricao = (data.descricao || '').toString().trim();
+
+    let mensagem = `[Painel Geral] ${autor} agendou reunião`;
+    if (dataTexto) {
+      mensagem += ` para ${dataTexto}`;
+    } else {
+      mensagem += ' sem data definida';
+    }
+    const horaFinal = horaTexto || horaFallback;
+    if (horaFinal) {
+      mensagem += ` às ${horaFinal}`;
+    }
+    if (participantesResumo) {
+      mensagem += ` com ${participantesResumo}`;
+    }
+    mensagem += '.';
+    if (descricao) {
+      mensagem += ` Assunto: ${descricao}.`;
+    }
+    return mensagem;
+  };
+
   const painelGeralQuery = query(
     collection(db, 'painelAtualizacoesGerais'),
     where('categoria', '==', 'mensagem'),
@@ -875,6 +968,43 @@ function initNotificationListener(uid) {
     },
     (err) => {
       console.error('Erro no listener de notificações do painel geral:', err);
+    },
+  );
+
+  const painelGeralReuniaoQuery = query(
+    collection(db, 'painelAtualizacoesGerais'),
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', uid),
+    orderBy('createdAt', 'desc'),
+    limit(20),
+  );
+  painelGeralReuniaoNotifUnsub = onSnapshot(
+    painelGeralReuniaoQuery,
+    (snap) => {
+      painelGeralReunioesNotifs = [];
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const texto = formatMeetingNotification(data);
+        if (!texto) return;
+        const ts = data.createdAt?.toDate
+          ? data.createdAt.toDate().getTime()
+          : data.inicio?.toDate
+            ? data.inicio.toDate().getTime()
+            : Date.now();
+        painelGeralReunioesNotifs.push({
+          id: `pgm:${docSnap.id}`,
+          text: texto,
+          ts,
+          url: 'painel-atualizacoes-gerais.html',
+        });
+      });
+      render();
+    },
+    (err) => {
+      console.error(
+        'Erro no listener de notificações de reuniões do painel geral:',
+        err,
+      );
     },
   );
 
@@ -1037,6 +1167,10 @@ function checkLogin() {
       if (painelGeralNotifUnsub) {
         painelGeralNotifUnsub();
         painelGeralNotifUnsub = null;
+      }
+      if (painelGeralReuniaoNotifUnsub) {
+        painelGeralReuniaoNotifUnsub();
+        painelGeralReuniaoNotifUnsub = null;
       }
       if (painelMentNotifUnsub) {
         painelMentNotifUnsub();
