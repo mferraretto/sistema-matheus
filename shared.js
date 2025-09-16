@@ -335,31 +335,30 @@ async function loadPartial(selector, path) {
     el.id = id;
     if (id === 'sidebar-container') {
       el.className =
-        'fixed inset-y-0 left-0 w-64 max-w-[80vw] overflow-auto z-40 transition-transform duration-200 ease-out shadow-lg';
+        'fixed inset-y-0 left-0 overflow-auto z-40 transition-transform duration-200 ease-out shadow-lg';
       document.body.prepend(el);
-      // garante margem do conteúdo no desktop
-      document.querySelector('.main-content')?.classList.add('lg:ml-64');
     } else {
       // navbar acima do main
       document.body.insertBefore(el, document.querySelector('main') || null);
     }
-  } else {
-    if (id === 'sidebar-container') {
-      el.classList.add(
-        'fixed',
-        'inset-y-0',
-        'left-0',
-        'w-64',
-        'max-w-[80vw]',
-        'overflow-auto',
-        'z-40',
-        'transition-transform',
-        'duration-200',
-        'ease-out',
-        'shadow-lg',
-      );
-      document.querySelector('.main-content')?.classList.add('lg:ml-64');
-    }
+  } else if (id === 'sidebar-container') {
+    el.classList.add(
+      'fixed',
+      'inset-y-0',
+      'left-0',
+      'overflow-auto',
+      'z-40',
+      'transition-transform',
+      'duration-200',
+      'ease-out',
+      'shadow-lg',
+    );
+    el.classList.remove('w-64', 'max-w-[80vw]');
+  }
+
+  if (id === 'sidebar-container') {
+    const main = document.querySelector('.main-content');
+    main?.classList.remove('lg:ml-64');
   }
 
   // sempre força rede p/ evitar cache velho do SW
@@ -724,7 +723,7 @@ document.addEventListener('sidebarLoaded', async () => {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
-    sidebar.classList.add('client-layout');
+    sidebar.classList.remove('client-layout');
 
     const menu = sidebar.querySelector('.sidebar-menu');
     if (!menu) return;
