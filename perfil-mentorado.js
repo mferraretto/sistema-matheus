@@ -35,6 +35,48 @@ const singleUid = urlParams.get('uid');
 let usuarioAtual = null;
 let carregandoLista = false;
 
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+});
+
+function hasValue(value) {
+  return !(value === undefined || value === null || value === '');
+}
+
+function formatCurrencyValue(value) {
+  if (!hasValue(value)) return '';
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return currencyFormatter.format(value);
+  }
+  const stringValue = String(value).trim();
+  if (!stringValue) return '';
+  const sanitized = stringValue
+    .replace(/[R$\s]/g, '')
+    .replace(/\.(?=.*[.,])/g, '')
+    .replace(',', '.');
+  const parsed = Number(sanitized);
+  if (!Number.isNaN(parsed)) return currencyFormatter.format(parsed);
+  return stringValue;
+}
+
+function normalizeMetaInput(value) {
+  const trimmed = (value || '').trim();
+  if (!trimmed) {
+    return { shouldDelete: true, value: null };
+  }
+  const sanitized = trimmed
+    .replace(/[R$\s]/g, '')
+    .replace(/\.(?=.*[.,])/g, '')
+    .replace(',', '.');
+  const parsed = Number(sanitized);
+  if (Number.isNaN(parsed)) {
+    return { shouldDelete: false, value: trimmed };
+  }
+  return { shouldDelete: false, value: Number(parsed.toFixed(2)) };
+}
+
 function formatDate(value) {
   if (!value) return '';
   if (typeof value === 'string') {
@@ -74,6 +116,12 @@ function normalizeEntry(id, data = {}) {
     loja: data.loja || '',
     segmento: data.segmento || '',
     tempoOperacao: data.tempoOperacao || '',
+    cargo: data.cargo || '',
+    metaFaturamentoLiquido:
+      data.metaFaturamentoLiquido !== undefined &&
+      data.metaFaturamentoLiquido !== null
+        ? data.metaFaturamentoLiquido
+        : '',
     links: {
       shopee: data.links?.shopee || '',
       mercadoLivre: data.links?.mercadoLivre || '',
@@ -132,11 +180,14 @@ async function salvarPerfil(entry, card, button) {
   const loja = getInputValue(card, 'loja');
   const segmento = getInputValue(card, 'segmento');
   const tempoOperacao = getInputValue(card, 'tempoOperacao');
+  const cargo = getInputValue(card, 'cargo');
+  const metaInput = getInputValue(card, 'metaFaturamentoLiquido');
   const linkShopee = getInputValue(card, 'linkShopee');
   const linkMercadoLivre = getInputValue(card, 'linkMercadoLivre');
   const linkSite = getInputValue(card, 'linkSite');
   const linkInstagram = getInputValue(card, 'linkInstagram');
   const objetivos = getInputValue(card, 'objetivos');
+  const metaNormalizada = normalizeMetaInput(metaInput);
 
   const payload = {
     gestorUid: usuarioAtual.uid,
@@ -161,10 +212,17 @@ async function salvarPerfil(entry, card, button) {
   applyField('loja', loja);
   applyField('segmento', segmento);
   applyField('tempoOperacao', tempoOperacao);
+  applyField('cargo', cargo);
   applyField('objetivos', objetivos);
 
   if (dataInicio) payload.dataInicio = dataInicio;
   else payload.dataInicio = deleteField();
+
+  if (metaNormalizada.shouldDelete) {
+    payload.metaFaturamentoLiquido = deleteField();
+  } else {
+    payload.metaFaturamentoLiquido = metaNormalizada.value;
+  }
 
   const links = {
     shopee: linkShopee,
@@ -188,6 +246,11 @@ async function salvarPerfil(entry, card, button) {
       else usuarioUpdates.dataInicio = deleteField();
       if (contato) usuarioUpdates.contato = contato;
       else usuarioUpdates.contato = deleteField();
+      if (cargo) usuarioUpdates.cargo = cargo;
+      else usuarioUpdates.cargo = deleteField();
+      if (metaNormalizada.shouldDelete)
+        usuarioUpdates.metaFaturamentoLiquido = deleteField();
+      else usuarioUpdates.metaFaturamentoLiquido = metaNormalizada.value;
       if (entry.origens instanceof Set && entry.origens.has('financeiro')) {
         usuarioUpdates.responsavelFinanceiroEmail = usuarioAtual.email;
       }
@@ -283,21 +346,39 @@ function createPerfilCard(entry) {
   const card = document.createElement('div');
   card.className =
     'bg-white border border-gray-200 rounded-lg p-4 shadow-sm space-y-4';
+  card.dataset.editing = 'false';
 
   const header = document.createElement('div');
-  header.className =
-    'flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between';
+  header.className = 'space-y-3';
+
+  const topRow = document.createElement('div');
+  topRow.className =
+    'flex flex-col gap-2 md:flex-row md:items-start md:justify-between';
 
   const tituloWrapper = document.createElement('div');
+  tituloWrapper.className = 'space-y-1';
   const titulo = document.createElement('h3');
   titulo.className = 'text-lg font-semibold';
   titulo.textContent = entry.nome || entry.email || 'Mentorado sem nome';
-  const subtitulo = document.createElement('p');
-  subtitulo.className = 'text-sm text-gray-500 break-words';
-  subtitulo.textContent = entry.email || 'E-mail não informado';
   tituloWrapper.appendChild(titulo);
-  tituloWrapper.appendChild(subtitulo);
-  header.appendChild(tituloWrapper);
+  topRow.appendChild(tituloWrapper);
+
+  const headerActions = document.createElement('div');
+  headerActions.className = 'flex items-center gap-2';
+  const verMaisBtn = document.createElement('button');
+  verMaisBtn.type = 'button';
+  verMaisBtn.className = 'btn btn-secondary px-3 py-2 text-sm ver-mais';
+  verMaisBtn.textContent = 'Ver mais';
+  verMaisBtn.setAttribute('aria-expanded', 'false');
+  const editarBtn = document.createElement('button');
+  editarBtn.type = 'button';
+  editarBtn.className = 'btn btn-primary px-3 py-2 text-sm editar';
+  editarBtn.textContent = 'Editar';
+  headerActions.appendChild(verMaisBtn);
+  headerActions.appendChild(editarBtn);
+  topRow.appendChild(headerActions);
+
+  header.appendChild(topRow);
 
   const badges = document.createElement('div');
   badges.className = 'flex flex-wrap gap-2';
@@ -315,8 +396,21 @@ function createPerfilCard(entry) {
     badge.textContent = 'Responsável financeiro';
     badges.appendChild(badge);
   }
-  header.appendChild(badges);
+  if (badges.children.length) header.appendChild(badges);
+
+  const resumo = document.createElement('div');
+  resumo.className =
+    'flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4 text-sm text-gray-600';
+  const cargoResumo = document.createElement('span');
+  const metaResumo = document.createElement('span');
+  resumo.appendChild(cargoResumo);
+  resumo.appendChild(metaResumo);
+  header.appendChild(resumo);
+
   card.appendChild(header);
+
+  const details = document.createElement('div');
+  details.className = 'space-y-4 hidden';
 
   const grid = document.createElement('div');
   grid.className = 'grid grid-cols-1 gap-4 md:grid-cols-2';
@@ -328,6 +422,26 @@ function createPerfilCard(entry) {
       field: 'email',
       type: 'email',
       value: entry.email || '',
+    },
+    {
+      label: 'Cargo',
+      field: 'cargo',
+      type: 'text',
+      value: entry.cargo || '',
+    },
+    {
+      label: 'Meta de faturamento líquido',
+      field: 'metaFaturamentoLiquido',
+      type: 'text',
+      value:
+        entry.metaFaturamentoLiquido !== undefined &&
+        entry.metaFaturamentoLiquido !== null
+          ? entry.metaFaturamentoLiquido
+          : '',
+      attributes: {
+        inputmode: 'decimal',
+        placeholder: 'Ex: 15000 ou 15.000,00',
+      },
     },
     {
       label: 'Data de início',
@@ -380,6 +494,8 @@ function createPerfilCard(entry) {
     },
   ];
 
+  const inputsMap = {};
+
   campos.forEach((c) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'space-y-1';
@@ -389,14 +505,24 @@ function createPerfilCard(entry) {
     const input = document.createElement('input');
     input.className = 'form-control';
     input.type = c.type;
-    input.value = c.value || '';
+    const value = c.value === undefined || c.value === null ? '' : c.value;
+    input.value = value;
     input.dataset.field = c.field;
+    if (c.attributes) {
+      Object.entries(c.attributes).forEach(([attr, attrValue]) => {
+        if (attrValue !== undefined && attrValue !== null) {
+          input.setAttribute(attr, attrValue);
+        }
+      });
+    }
+    input.disabled = true;
+    inputsMap[c.field] = input;
     wrapper.appendChild(label);
     wrapper.appendChild(input);
     grid.appendChild(wrapper);
   });
 
-  card.appendChild(grid);
+  details.appendChild(grid);
 
   const objetivosWrapper = document.createElement('div');
   objetivosWrapper.className = 'space-y-1';
@@ -408,9 +534,10 @@ function createPerfilCard(entry) {
   objetivosTextarea.style.minHeight = '96px';
   objetivosTextarea.dataset.field = 'objetivos';
   objetivosTextarea.value = entry.objetivos || '';
+  objetivosTextarea.disabled = true;
   objetivosWrapper.appendChild(objetivosLabel);
   objetivosWrapper.appendChild(objetivosTextarea);
-  card.appendChild(objetivosWrapper);
+  details.appendChild(objetivosWrapper);
 
   const actions = document.createElement('div');
   actions.className = 'flex flex-col gap-2 sm:flex-row sm:justify-end';
@@ -423,9 +550,105 @@ function createPerfilCard(entry) {
   saveBtn.className = 'btn btn-primary px-4 py-2 salvar';
   saveBtn.type = 'button';
   saveBtn.textContent = 'Salvar alterações';
+  saveBtn.disabled = true;
+  saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
   actions.appendChild(deleteBtn);
   actions.appendChild(saveBtn);
-  card.appendChild(actions);
+  details.appendChild(actions);
+
+  card.appendChild(details);
+
+  const editableFields = [
+    ...Object.values(inputsMap),
+    objetivosTextarea,
+  ].filter(Boolean);
+
+  const updateTitulo = () => {
+    const nomeValor = inputsMap.nome ? inputsMap.nome.value.trim() : '';
+    const emailValor = inputsMap.email ? inputsMap.email.value.trim() : '';
+    titulo.textContent = nomeValor || emailValor || 'Mentorado sem nome';
+  };
+
+  const updateResumo = () => {
+    const cargoValor = inputsMap.cargo ? inputsMap.cargo.value.trim() : '';
+    cargoResumo.textContent = cargoValor
+      ? `Cargo: ${cargoValor}`
+      : 'Cargo: não informado';
+    const metaValor = inputsMap.metaFaturamentoLiquido
+      ? inputsMap.metaFaturamentoLiquido.value.trim()
+      : '';
+    metaResumo.textContent = metaValor
+      ? `Meta de faturamento líquido: ${formatCurrencyValue(metaValor)}`
+      : 'Meta de faturamento líquido: não informada';
+  };
+
+  updateTitulo();
+  updateResumo();
+
+  if (inputsMap.nome) inputsMap.nome.addEventListener('input', updateTitulo);
+  if (inputsMap.email) inputsMap.email.addEventListener('input', updateTitulo);
+  if (inputsMap.cargo) inputsMap.cargo.addEventListener('input', updateResumo);
+  if (inputsMap.metaFaturamentoLiquido)
+    inputsMap.metaFaturamentoLiquido.addEventListener('input', updateResumo);
+
+  const toggleDetails = (forceValue) => {
+    const shouldShow =
+      typeof forceValue === 'boolean'
+        ? forceValue
+        : details.classList.contains('hidden');
+    details.classList.toggle('hidden', !shouldShow);
+    verMaisBtn.textContent = shouldShow ? 'Ver menos' : 'Ver mais';
+    verMaisBtn.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+  };
+
+  verMaisBtn.addEventListener('click', () => {
+    if (card.dataset.editing === 'true') return;
+    toggleDetails();
+  });
+
+  const toggleEditMode = (enable) => {
+    const shouldEnable =
+      typeof enable === 'boolean' ? enable : card.dataset.editing !== 'true';
+    if (shouldEnable) {
+      editableFields.forEach((field) => {
+        field.dataset.originalValue = field.value;
+        field.disabled = false;
+      });
+      saveBtn.disabled = false;
+      saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      editarBtn.textContent = 'Cancelar edição';
+      verMaisBtn.disabled = true;
+      verMaisBtn.classList.add('opacity-70', 'cursor-not-allowed');
+      card.dataset.editing = 'true';
+      toggleDetails(true);
+      const firstEditable = editableFields.find(
+        (field) =>
+          !field.readOnly &&
+          (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA'),
+      );
+      if (firstEditable) firstEditable.focus();
+    } else {
+      editableFields.forEach((field) => {
+        if (field.dataset.originalValue !== undefined) {
+          field.value = field.dataset.originalValue;
+        }
+        field.disabled = true;
+      });
+      saveBtn.disabled = true;
+      saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+      editarBtn.textContent = 'Editar';
+      verMaisBtn.disabled = false;
+      verMaisBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      card.dataset.editing = 'false';
+      updateTitulo();
+      updateResumo();
+    }
+  };
+
+  editarBtn.addEventListener('click', () => {
+    const isEditing = card.dataset.editing === 'true';
+    toggleEditMode(!isEditing);
+  });
 
   saveBtn.addEventListener('click', (event) => {
     event.preventDefault();
@@ -435,6 +658,8 @@ function createPerfilCard(entry) {
     event.preventDefault();
     excluirPerfil(entry, deleteBtn);
   });
+
+  if (singleUid) toggleDetails(true);
 
   return card;
 }
@@ -460,6 +685,13 @@ async function carregarMentoradoUnico(uid) {
         entry.contato = dadosUsuario.telefone;
       if (!entry.dataInicio && dadosUsuario.dataInicio)
         entry.dataInicio = dadosUsuario.dataInicio;
+      if (!hasValue(entry.cargo) && hasValue(dadosUsuario.cargo))
+        entry.cargo = dadosUsuario.cargo;
+      if (
+        !hasValue(entry.metaFaturamentoLiquido) &&
+        hasValue(dadosUsuario.metaFaturamentoLiquido)
+      )
+        entry.metaFaturamentoLiquido = dadosUsuario.metaFaturamentoLiquido;
       if (
         usuarioAtual &&
         dadosUsuario.responsavelFinanceiroEmail &&
@@ -482,6 +714,13 @@ async function carregarMentoradoUnico(uid) {
         entry.links.site = entry.links.site || linksPerfil.site || '';
         entry.links.instagram =
           entry.links.instagram || linksPerfil.instagram || '';
+        if (!hasValue(entry.cargo) && hasValue(perfilMentorado.cargo))
+          entry.cargo = perfilMentorado.cargo;
+        if (
+          !hasValue(entry.metaFaturamentoLiquido) &&
+          hasValue(perfilMentorado.metaFaturamentoLiquido)
+        )
+          entry.metaFaturamentoLiquido = perfilMentorado.metaFaturamentoLiquido;
       }
     }
 
@@ -573,6 +812,13 @@ async function coletarMentorados(usuario) {
         entry.tempoOperacao = perfilData.tempoOperacao;
       if (!entry.objetivos && perfilData.objetivos)
         entry.objetivos = perfilData.objetivos;
+      if (!hasValue(entry.cargo) && hasValue(perfilData.cargo))
+        entry.cargo = perfilData.cargo;
+      if (
+        !hasValue(entry.metaFaturamentoLiquido) &&
+        hasValue(perfilData.metaFaturamentoLiquido)
+      )
+        entry.metaFaturamentoLiquido = perfilData.metaFaturamentoLiquido;
 
       if (perfilData.links) {
         entry.links.shopee =
@@ -595,6 +841,13 @@ async function coletarMentorados(usuario) {
           entry.contato = dadosUsuario.telefone;
         if (!entry.dataInicio && dadosUsuario.dataInicio)
           entry.dataInicio = dadosUsuario.dataInicio;
+        if (!hasValue(entry.cargo) && hasValue(dadosUsuario.cargo))
+          entry.cargo = dadosUsuario.cargo;
+        if (
+          !hasValue(entry.metaFaturamentoLiquido) &&
+          hasValue(dadosUsuario.metaFaturamentoLiquido)
+        )
+          entry.metaFaturamentoLiquido = dadosUsuario.metaFaturamentoLiquido;
         if (dadosUsuario.responsavelFinanceiroEmail === usuario.email) {
           entry.responsavelFinanceiroEmail = usuario.email;
         }
@@ -691,6 +944,9 @@ function registrarFormNovoMentorado() {
     const email = (formData.get('novoEmail') || '').trim();
     const dataInicio = (formData.get('novoDataInicio') || '').trim();
     const contato = (formData.get('novoContato') || '').trim();
+    const cargo = (formData.get('novoCargo') || '').trim();
+    const metaInput = (formData.get('novoMeta') || '').trim();
+    const metaNormalizada = normalizeMetaInput(metaInput);
 
     if (!nome || !email) {
       alert('Informe pelo menos o nome e o e-mail do mentorado.');
@@ -711,6 +967,9 @@ function registrarFormNovoMentorado() {
     };
     if (dataInicio) payload.dataInicio = dataInicio;
     if (contato) payload.contato = contato;
+    if (cargo) payload.cargo = cargo;
+    if (!metaNormalizada.shouldDelete)
+      payload.metaFaturamentoLiquido = metaNormalizada.value;
 
     try {
       await addDoc(collection(db, 'perfilMentorado'), payload);
