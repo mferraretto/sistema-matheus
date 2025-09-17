@@ -147,7 +147,9 @@
 /* Card estilo ticket usado na aba Expedição */
 .ticket-card {
   position: relative;
-  align-self: flex-start;
+  align-self: stretch;
+  padding-left: calc(1rem + 0.75rem);
+  padding-right: calc(1rem + 0.75rem);
 }
 
 .ticket-card::before,
@@ -155,20 +157,22 @@
   content: '';
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
   background: inherit;
   border: inherit;
   border-radius: 50%;
+  pointer-events: none;
 }
 
 .ticket-card::before {
-  left: -10px;
+  left: 0.75rem;
+  transform: translate(-50%, -50%);
 }
 
 .ticket-card::after {
-  right: -10px;
+  right: 0.75rem;
+  transform: translate(50%, -50%);
 }
 
 /* Cards específicos da aba Expedição */
@@ -181,6 +185,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+  height: 100%;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -241,24 +247,42 @@
 .expedicao-pdf-card {
   min-width: 210px;
   gap: 0.65rem;
+  min-height: 100%;
 }
 
 #labelsList.grid {
-  align-items: flex-start;
-  align-items: start;
-  justify-items: center;
+  align-items: stretch;
+  justify-items: stretch;
+  grid-auto-rows: 1fr;
+  padding: 0.75rem 0.75rem;
+}
+
+#labelsList.flex {
+  padding: 0;
 }
 
 #labelsList.grid .expedicao-pdf-card {
   width: 100%;
-  max-width: 320px;
-  align-self: flex-start;
-  align-self: start;
+  max-width: none;
+  align-self: stretch;
 }
 
 #labelsList.grid .ticket-card {
-  align-self: flex-start;
-  align-self: start;
+  align-self: stretch;
+}
+
+#labelsList.grid > * {
+  min-width: 0;
+}
+
+#totalsContainer.grid,
+#userCards.grid {
+  align-items: stretch;
+}
+
+#totalsContainer.grid .expedicao-card,
+#userCards.grid .expedicao-card {
+  height: 100%;
 }
 
 .expedicao-pdf-header {
