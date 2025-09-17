@@ -173,6 +173,7 @@
     let attentionOnly = false;
     const equipeUsuarios = new Map();
     let checklistRows = [];
+    const sliderResizeHandlers = [];
 
     function getResumoTimeWindow() {
       const now = new Date();
@@ -820,6 +821,8 @@
     async function carregarEtiquetas() {
       const list = document.getElementById('labelsList');
       list.innerHTML = '';
+      sliderResizeHandlers.forEach(handler => window.removeEventListener('resize', handler));
+      sliderResizeHandlers.length = 0;
       const filter = currentFilter;
       const snap = await db
         .collection('pdfDocs')
@@ -888,14 +891,69 @@
           const title = document.createElement('h2');
           title.className = 'font-semibold text-gray-700';
           title.textContent = owner;
-          const row = document.createElement('div');
-          row.className = 'flex flex-row flex-nowrap gap-4 overflow-x-auto';
+          const slider = document.createElement('div');
+          slider.className = 'expedicao-slider';
+
+          const prevBtn = document.createElement('button');
+          prevBtn.type = 'button';
+          prevBtn.className = 'expedicao-slider-btn';
+          prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+          prevBtn.setAttribute('aria-label', 'Ver etiquetas anteriores');
+          prevBtn.style.display = 'none';
+
+          const track = document.createElement('div');
+          track.className = 'expedicao-slider-track';
+
           grouped[owner].forEach(r => {
-            row.appendChild(createPdfCard(r.doc, r.ownerName));
+            track.appendChild(createPdfCard(r.doc, r.ownerName));
           });
+
+          const nextBtn = document.createElement('button');
+          nextBtn.type = 'button';
+          nextBtn.className = 'expedicao-slider-btn';
+          nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+          nextBtn.setAttribute('aria-label', 'Ver próximas etiquetas');
+          nextBtn.style.display = 'none';
+
+          slider.appendChild(prevBtn);
+          slider.appendChild(track);
+          slider.appendChild(nextBtn);
           wrapper.appendChild(title);
-          wrapper.appendChild(row);
+          wrapper.appendChild(slider);
           list.appendChild(wrapper);
+
+          const updateButtons = () => {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            const hasOverflow = maxScroll > 4;
+            prevBtn.style.display = hasOverflow ? 'inline-flex' : 'none';
+            nextBtn.style.display = hasOverflow ? 'inline-flex' : 'none';
+            if (!hasOverflow) return;
+            prevBtn.disabled = track.scrollLeft <= 0;
+            nextBtn.disabled = track.scrollLeft >= maxScroll - 1;
+          };
+
+          const getScrollAmount = () => {
+            const card = track.querySelector('.expedicao-card');
+            if (!card) return track.clientWidth;
+            const style = window.getComputedStyle(track);
+            const gap = parseFloat(style.columnGap || style.gap || '0');
+            return card.getBoundingClientRect().width + gap;
+          };
+
+          const scrollByAmount = direction => {
+            const amount = getScrollAmount();
+            track.scrollBy({ left: direction * amount, behavior: 'smooth' });
+          };
+
+          prevBtn.addEventListener('click', () => scrollByAmount(-1));
+          nextBtn.addEventListener('click', () => scrollByAmount(1));
+          track.addEventListener('scroll', () => window.requestAnimationFrame(updateButtons));
+
+          const resizeHandler = () => updateButtons();
+          sliderResizeHandlers.push(resizeHandler);
+          window.addEventListener('resize', resizeHandler);
+
+          window.requestAnimationFrame(updateButtons);
         });
       } else {
         list.className = viewMode === 'cards'

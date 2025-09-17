@@ -285,6 +285,67 @@
   height: 100%;
 }
 
+.expedicao-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.expedicao-slider-track {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 0.5rem 0;
+}
+
+.expedicao-slider-track::-webkit-scrollbar {
+  display: none;
+}
+
+.expedicao-slider-track {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.expedicao-slider-track .expedicao-card {
+  flex: 0 0 auto;
+}
+
+.expedicao-slider-btn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  background: var(--white);
+  color: #4f46e5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.15);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.expedicao-slider-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.expedicao-slider-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
 .expedicao-pdf-header {
   display: flex;
   justify-content: space-between;
