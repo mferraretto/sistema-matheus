@@ -34,6 +34,7 @@
         <label for="manualPdfInput" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 cursor-pointer"><i class="fas fa-file-upload"></i><span>Escolher Arquivo</span></label>
         <input type="file" id="manualPdfInput" accept="application/pdf" class="hidden" />
         <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
+        <button id="deleteSelectedBtn" disabled class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 bg-white text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"><i class="fas fa-trash"></i><span>Excluir Selecionados</span></button>
         <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-users"></i><span>Equipe</span></button>
         <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-box-open"></i><span>Sobras</span></button>
         <button id="checklistBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-clipboard-list"></i><span>Checklist</span></button>
@@ -173,6 +174,7 @@
     let attentionOnly = false;
     const equipeUsuarios = new Map();
     let checklistRows = [];
+    const selectedEtiquetas = new Set();
 
     function getResumoTimeWindow() {
       const now = new Date();
@@ -330,6 +332,7 @@
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const checklistBtn = document.getElementById('checklistBtn');
     const checklistModal = document.getElementById('checklistModal');
     const closeChecklistModal = document.getElementById('closeChecklistModal');
@@ -346,6 +349,17 @@
           manualPdfInput.click();
         }
       });
+    }
+    function updateSelectionUI() {
+      if (!deleteSelectedBtn) return;
+      const count = selectedEtiquetas.size;
+      const label = deleteSelectedBtn.querySelector('span');
+      if (label) label.textContent = count > 0 ? `Excluir Selecionados (${count})` : 'Excluir Selecionados';
+      deleteSelectedBtn.disabled = count === 0;
+    }
+    if (deleteSelectedBtn) {
+      updateSelectionUI();
+      deleteSelectedBtn.addEventListener('click', excluirSelecionados);
     }
     if (manualPdfInput) {
       manualPdfInput.addEventListener('change', () => {
@@ -873,6 +887,16 @@
         return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
       });
 
+      const availableIds = new Set(results.map(r => String(r.doc.id)));
+      const toRemove = [];
+      selectedEtiquetas.forEach(id => {
+        if (!availableIds.has(String(id))) toRemove.push(id);
+      });
+      if (toRemove.length) {
+        toRemove.forEach(id => selectedEtiquetas.delete(id));
+      }
+      updateSelectionUI();
+
       if (isResponsavel && viewMode === 'cards') {
         const grouped = {};
         for (const r of results) {
@@ -1234,6 +1258,93 @@
       XLSX.writeFile(wb, `relatorio_sku_usuarios_${diaStr}.xlsx`);
     }
 
+    function toggleSelecionarEtiqueta(id, checkbox, card) {
+      const key = String(id);
+      if (checkbox.checked) {
+        selectedEtiquetas.add(key);
+        if (card) card.classList.add('expedicao-card--selected');
+      } else {
+        selectedEtiquetas.delete(key);
+        if (card) card.classList.remove('expedicao-card--selected');
+      }
+      updateSelectionUI();
+    }
+
+    function attachSelectionControl(cardElement, docId) {
+      if (!cardElement) return;
+      const key = String(docId);
+      cardElement.dataset.docId = key;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'expedicao-select-checkbox';
+      wrapper.title = 'Selecionar etiqueta';
+      const label = document.createElement('label');
+      label.className = 'expedicao-select-checkbox-label';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = selectedEtiquetas.has(key);
+      checkbox.addEventListener('change', () => toggleSelecionarEtiqueta(key, checkbox, cardElement));
+      label.appendChild(checkbox);
+      wrapper.appendChild(label);
+      cardElement.prepend(wrapper);
+      if (checkbox.checked) {
+        cardElement.classList.add('expedicao-card--selected');
+      }
+    }
+
+    async function excluirEtiquetaPorId(id) {
+      const key = String(id);
+      const docRef = db.collection('pdfDocs').doc(key);
+      const snap = await docRef.get();
+      if (!snap.exists) return;
+      const data = snap.data() || {};
+      if (data.storagePath) {
+        try {
+          await storage.ref(data.storagePath).delete();
+        } catch (e) {
+          console.error('Erro ao excluir do Storage:', e);
+        }
+      }
+      await docRef.delete();
+    }
+
+    async function excluirSelecionados() {
+      if (!selectedEtiquetas.size) return;
+      const ids = Array.from(selectedEtiquetas);
+      const confirmMsg = ids.length === 1
+        ? 'Deseja excluir a etiqueta selecionada?'
+        : `Deseja excluir ${ids.length} etiquetas selecionadas?`;
+      if (!confirm(confirmMsg)) return;
+
+      if (deleteSelectedBtn) deleteSelectedBtn.disabled = true;
+      const erros = [];
+
+      for (const id of ids) {
+        try {
+          await excluirEtiquetaPorId(id);
+          selectedEtiquetas.delete(id);
+          document.querySelectorAll('.pdf-card').forEach(card => {
+            if (card.dataset.docId === String(id)) card.remove();
+          });
+        } catch (error) {
+          console.error(`Erro ao excluir etiqueta ${id}:`, error);
+          erros.push(id);
+        }
+      }
+
+      const sucesso = ids.length - erros.length;
+      if (sucesso > 0) {
+        showToast(sucesso > 1 ? 'Etiquetas excluídas' : 'Etiqueta excluída');
+      }
+      if (erros.length === ids.length) {
+        alert('Não foi possível excluir as etiquetas selecionadas.');
+      } else if (erros.length > 0) {
+        alert('Algumas etiquetas não puderam ser excluídas. Tente novamente.');
+      }
+
+      updateSelectionUI();
+      await carregarEtiquetas();
+    }
+
     function createPdfCard(doc, ownerName) {
       const data = doc.data();
       const rawStatus = data.status || 'nao_impresso';
@@ -1304,6 +1415,7 @@
       div.dataset.ownerEmail = data.ownerEmail || '';
       div.dataset.fileName = name;
       div.dataset.status = statusKey;
+      attachSelectionControl(div, doc.id);
       return div;
     }
 
@@ -1357,6 +1469,7 @@
       div.dataset.ownerEmail = data.ownerEmail || '';
       div.dataset.fileName = name;
       div.dataset.status = statusKey;
+      attachSelectionControl(div, doc.id);
       return div;
     }
 
@@ -1548,6 +1661,8 @@
       }
       if (newStatus === 'concluido' && currentFilter === 'all') {
         card.remove();
+        selectedEtiquetas.delete(String(id));
+        updateSelectionUI();
       }
       if (card) card.dataset.status = newStatus;
       showToast('Status atualizado');
@@ -1606,6 +1721,8 @@
         if (card) {
           card.dataset.status = 'concluido';
           card.remove();
+          selectedEtiquetas.delete(String(id));
+          updateSelectionUI();
         }
         showToast('Marcado como concluído');
       } catch (e) {
@@ -1618,19 +1735,12 @@
     async function excluirEtiqueta(id, card) {
       if (!confirm('Deseja excluir esta etiqueta?')) return;
       try {
-        const docRef = db.collection('pdfDocs').doc(id);
-        const snap = await docRef.get();
-        const data = snap.data() || {};
-        if (data.storagePath) {
-          try {
-            await storage.ref(data.storagePath).delete();
-          } catch (e) {
-            console.error('Erro ao excluir do Storage:', e);
-          }
-        }
-        await docRef.delete();
+        await excluirEtiquetaPorId(id);
         if (card) card.remove();
+        selectedEtiquetas.delete(String(id));
+        updateSelectionUI();
         showToast('Etiqueta excluída');
+        await carregarEtiquetas();
       } catch (e) {
         console.error('Erro ao excluir etiqueta:', e);
         alert('Erro ao excluir etiqueta');
