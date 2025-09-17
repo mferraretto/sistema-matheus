@@ -37,6 +37,24 @@ exporte <strong>um único dia</strong> por vez. Ao importar o arquivo,
     </div>
 
     <div class="card">
+      <div class="card-header mb-4">
+        <h3 class="text-lg font-semibold">Importar Faturamento em Massa</h3>
+      </div>
+      <label for="inputFaturamentoMassa"
+        class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+        <i class="fas fa-file-upload text-3xl text-gray-400 mb-2"></i>
+        <p class="text-sm text-gray-500 text-center px-4">Importe uma planilha com vários dias para calcular o faturamento automaticamente.</p>
+        <input id="inputFaturamentoMassa" type="file" accept=".xlsx, .xls, .csv" class="hidden" />
+      </label>
+      <div class="flex flex-col gap-2 mt-4 sm:flex-row sm:items-center sm:justify-between">
+        <button onclick="importarFaturamentoMassa()" class="btn-secondary flex items-center gap-2 justify-center">
+          <i class="fas fa-layer-group"></i> Processar em Massa
+        </button>
+        <span class="text-xs text-gray-500 sm:text-right">O agrupamento por dia usa o campo "Hora do pagamento do pedido".</span>
+      </div>
+    </div>
+
+    <div class="card">
       <h3 class="text-lg font-semibold mb-4">Pré-visualização da Tabela</h3>
       <div id="resultadoFaturamento"></div>
     </div>
