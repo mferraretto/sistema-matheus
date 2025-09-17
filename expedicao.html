@@ -34,8 +34,6 @@
         <label for="manualPdfInput" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 cursor-pointer"><i class="fas fa-file-upload"></i><span>Escolher Arquivo</span></label>
         <input type="file" id="manualPdfInput" accept="application/pdf" class="hidden" />
         <button id="uploadManualBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-plus"></i><span>Adicionar Etiqueta</span></button>
-        <button id="toggleSelectionBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-check-square"></i><span>Selecionar Etiquetas</span></button>
-        <button id="deleteSelectedBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 bg-red-500 text-white opacity-50 cursor-not-allowed" disabled><i class="fas fa-trash"></i><span>Excluir Selecionadas</span></button>
         <button id="gestorUsersBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-users"></i><span>Equipe</span></button>
         <button id="sobrasBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-box-open"></i><span>Sobras</span></button>
         <button id="checklistBtn" class="btn flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700"><i class="fas fa-clipboard-list"></i><span>Checklist</span></button>
@@ -175,8 +173,6 @@
     let attentionOnly = false;
     const equipeUsuarios = new Map();
     let checklistRows = [];
-    let selectionMode = false;
-    const selectedEtiquetas = new Set();
 
     function getResumoTimeWindow() {
       const now = new Date();
@@ -334,8 +330,6 @@
     const sobrasResponsavelSelect = document.getElementById('sobrasResponsavel');
     const manualPdfInput = document.getElementById('manualPdfInput');
     const uploadManualBtn = document.getElementById('uploadManualBtn');
-    const toggleSelectionBtn = document.getElementById('toggleSelectionBtn');
-    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
     const checklistBtn = document.getElementById('checklistBtn');
     const checklistModal = document.getElementById('checklistModal');
     const closeChecklistModal = document.getElementById('closeChecklistModal');
@@ -360,19 +354,6 @@
         }
       });
     }
-    if (toggleSelectionBtn) {
-      toggleSelectionBtn.addEventListener('click', () => {
-        selectionMode = !selectionMode;
-        if (!selectionMode) selectedEtiquetas.clear();
-        updateSelectionButtons();
-        updateSelectionCheckboxVisibility();
-      });
-    }
-    if (deleteSelectedBtn) {
-      deleteSelectedBtn.addEventListener('click', excluirEtiquetasSelecionadas);
-    }
-    updateSelectionButtons();
-    updateSelectionCheckboxVisibility();
     const gestorUsersBtn = document.getElementById('gestorUsersBtn');
     if (gestorUsersBtn) {
       gestorUsersBtn.addEventListener('click', () => {
@@ -640,52 +621,6 @@
         container.appendChild(card);
       }
     }
-
-    function updateSelectionButtons() {
-      if (toggleSelectionBtn) {
-        if (selectionMode) {
-          toggleSelectionBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
-          toggleSelectionBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
-        } else {
-          toggleSelectionBtn.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
-          toggleSelectionBtn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
-        }
-        const icon = toggleSelectionBtn.querySelector('i');
-        const label = toggleSelectionBtn.querySelector('span');
-        if (icon) {
-          icon.classList.remove('fa-times', 'fa-check-square');
-          icon.classList.add(selectionMode ? 'fa-times' : 'fa-check-square');
-        }
-        if (label) {
-          label.textContent = selectionMode ? 'Cancelar Seleção' : 'Selecionar Etiquetas';
-        }
-      }
-      if (deleteSelectedBtn) {
-        const disabled = !selectedEtiquetas.size;
-        deleteSelectedBtn.disabled = disabled;
-        deleteSelectedBtn.classList.toggle('opacity-50', disabled);
-        deleteSelectedBtn.classList.toggle('cursor-not-allowed', disabled);
-      }
-    }
-
-    function updateSelectionCheckboxVisibility() {
-      document.querySelectorAll('.etiqueta-selection').forEach(el => {
-        if (selectionMode) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-      });
-      document.querySelectorAll('.etiqueta-select-checkbox').forEach(cb => {
-        const id = cb.dataset.docId;
-        cb.checked = !!(id && selectedEtiquetas.has(id));
-      });
-    }
-
-    function toggleSelectEtiqueta(id, checked) {
-      if (!selectionMode) return;
-      if (checked) selectedEtiquetas.add(id);
-      else selectedEtiquetas.delete(id);
-      updateSelectionButtons();
-    }
-    window.toggleSelectEtiqueta = toggleSelectEtiqueta;
 
     async function calcularTotalPedidosDia(preloadedDocs = null) {
       if (!currentUser) return;
@@ -975,8 +910,6 @@
         list.innerHTML = '<p class="text-gray-500">Nenhuma etiqueta encontrada.</p>';
       }
       await calcularTotalPedidosDia();
-      updateSelectionCheckboxVisibility();
-      updateSelectionButtons();
     }
 
     async function verificarDia() {
@@ -1339,17 +1272,10 @@
         : 'Data desconhecida';
       const div = document.createElement('div');
       div.className = `pdf-card expedicao-card expedicao-pdf-card ticket-card${attention ? ' expedicao-card--attention' : ''}`;
-      const isSelected = selectedEtiquetas.has(doc.id);
-      const selectionClass = selectionMode ? '' : 'hidden';
       div.innerHTML = `
-        <div class="flex items-start justify-between gap-2">
-          <div class="expedicao-pdf-header">
-            <span class="expedicao-pdf-owner">${owner}</span>
-            <span class="expedicao-pdf-date">${createdDateStr}</span>
-          </div>
-          <label class="etiqueta-selection ${selectionClass} flex items-center">
-            <input type="checkbox" class="etiqueta-select-checkbox form-checkbox h-4 w-4" data-doc-id="${doc.id}" ${isSelected ? 'checked' : ''} onchange="toggleSelectEtiqueta('${doc.id}', this.checked)">
-          </label>
+        <div class="expedicao-pdf-header">
+          <span class="expedicao-pdf-owner">${owner}</span>
+          <span class="expedicao-pdf-date">${createdDateStr}</span>
         </div>
         <div class="expedicao-pdf-status">
           <div class="expedicao-pdf-icon">
@@ -1378,7 +1304,6 @@
       div.dataset.ownerEmail = data.ownerEmail || '';
       div.dataset.fileName = name;
       div.dataset.status = statusKey;
-      div.dataset.docId = doc.id;
       return div;
     }
 
@@ -1402,25 +1327,18 @@
         : 'Data desconhecida';
       const div = document.createElement('div');
       div.className = `pdf-card expedicao-card expedicao-pdf-card expedicao-pdf-card--list ${statusStyles[statusKey].cardClass}${attention ? ' expedicao-card--attention' : ''}`;
-      const isSelected = selectedEtiquetas.has(doc.id);
-      const selectionClass = selectionMode ? '' : 'hidden';
       div.innerHTML = `
         <div class="expedicao-pdf-list-content">
-          <div class="flex items-start justify-between gap-2">
-            <div class="expedicao-pdf-list-info">
-              <p class="expedicao-pdf-name">${name}</p>
-              <p class="expedicao-pdf-meta">Criado por: ${owner} em ${createdAt}</p>
-              ${foraHorario ? '<p class="expedicao-alert-text">Fora do horário</p>' : ''}
-              <div class="expedicao-pdf-list-toolbar">
-                <button class="expedicao-icon-btn" onclick="visualizar('${url}')" title="Visualizar"><i class="fas fa-eye"></i></button>
-                <button class="expedicao-icon-btn" onclick="imprimir('${url}')" title="Imprimir"><i class="fas fa-print"></i></button>
-                <a class="expedicao-icon-btn" href="${url}" download="${name}" title="Baixar"><i class="fas fa-download"></i></a>
-                <button class="expedicao-icon-btn expedicao-icon-btn--danger" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))" title="Excluir"><i class="fas fa-trash"></i></button>
-              </div>
+          <div class="expedicao-pdf-list-info">
+            <p class="expedicao-pdf-name">${name}</p>
+            <p class="expedicao-pdf-meta">Criado por: ${owner} em ${createdAt}</p>
+            ${foraHorario ? '<p class="expedicao-alert-text">Fora do horário</p>' : ''}
+            <div class="expedicao-pdf-list-toolbar">
+              <button class="expedicao-icon-btn" onclick="visualizar('${url}')" title="Visualizar"><i class="fas fa-eye"></i></button>
+              <button class="expedicao-icon-btn" onclick="imprimir('${url}')" title="Imprimir"><i class="fas fa-print"></i></button>
+              <a class="expedicao-icon-btn" href="${url}" download="${name}" title="Baixar"><i class="fas fa-download"></i></a>
+              <button class="expedicao-icon-btn expedicao-icon-btn--danger" onclick="excluirEtiqueta('${doc.id}', this.closest('.pdf-card'))" title="Excluir"><i class="fas fa-trash"></i></button>
             </div>
-            <label class="etiqueta-selection ${selectionClass} flex items-center">
-              <input type="checkbox" class="etiqueta-select-checkbox form-checkbox h-4 w-4" data-doc-id="${doc.id}" ${isSelected ? 'checked' : ''} onchange="toggleSelectEtiqueta('${doc.id}', this.checked)">
-            </label>
           </div>
           <div class="expedicao-pdf-list-controls">
             <label class="expedicao-toggle expedicao-toggle--success">
@@ -1439,7 +1357,6 @@
       div.dataset.ownerEmail = data.ownerEmail || '';
       div.dataset.fileName = name;
       div.dataset.status = statusKey;
-      div.dataset.docId = doc.id;
       return div;
     }
 
@@ -1690,8 +1607,6 @@
           card.dataset.status = 'concluido';
           card.remove();
         }
-        selectedEtiquetas.delete(id);
-        updateSelectionButtons();
         showToast('Marcado como concluído');
       } catch (e) {
         console.error('Erro ao concluir etiqueta:', e);
@@ -1700,59 +1615,28 @@
     }
     window.marcarConcluido = marcarConcluido;
 
-    async function excluirEtiquetaPorId(id) {
-      const docRef = db.collection('pdfDocs').doc(id);
-      const snap = await docRef.get();
-      const data = snap.exists ? snap.data() || {} : {};
-      if (data.storagePath) {
-        try {
-          await storage.ref(data.storagePath).delete();
-        } catch (e) {
-          console.error('Erro ao excluir do Storage:', e);
-        }
-      }
-      await docRef.delete();
-    }
-
     async function excluirEtiqueta(id, card) {
       if (!confirm('Deseja excluir esta etiqueta?')) return;
       try {
-        await excluirEtiquetaPorId(id);
-        selectedEtiquetas.delete(id);
+        const docRef = db.collection('pdfDocs').doc(id);
+        const snap = await docRef.get();
+        const data = snap.data() || {};
+        if (data.storagePath) {
+          try {
+            await storage.ref(data.storagePath).delete();
+          } catch (e) {
+            console.error('Erro ao excluir do Storage:', e);
+          }
+        }
+        await docRef.delete();
         if (card) card.remove();
         showToast('Etiqueta excluída');
-        updateSelectionButtons();
       } catch (e) {
         console.error('Erro ao excluir etiqueta:', e);
         alert('Erro ao excluir etiqueta');
       }
     }
     window.excluirEtiqueta = excluirEtiqueta;
-
-    async function excluirEtiquetasSelecionadas() {
-      if (!selectedEtiquetas.size) return;
-      if (!confirm('Deseja excluir as etiquetas selecionadas?')) return;
-      const ids = Array.from(selectedEtiquetas);
-      let errors = 0;
-      for (const id of ids) {
-        try {
-          await excluirEtiquetaPorId(id);
-        } catch (e) {
-          console.error('Erro ao excluir etiqueta selecionada:', e);
-          errors++;
-        }
-      }
-      if (errors === 0) {
-        showToast('Etiquetas excluídas');
-      } else if (errors === ids.length) {
-        alert('Erro ao excluir as etiquetas selecionadas');
-      } else {
-        alert('Algumas etiquetas não puderam ser excluídas');
-      }
-      selectedEtiquetas.clear();
-      updateSelectionButtons();
-      carregarEtiquetas();
-    }
 
     async function toggleAtencao(id, checkbox, card) {
       const checked = checkbox.checked;
