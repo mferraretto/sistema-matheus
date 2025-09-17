@@ -125,9 +125,6 @@
   // =============================================
     // CONFIGURAÇÃO INICIAL E VARIÁVEIS GLOBAIS
     // =============================================
-    
-   
-    
     // Variáveis globais
     let db;
     let metas = {};
@@ -1845,6 +1842,521 @@ await db
 
         } catch (err) {
           mostrarErro("Erro ao importar: " + err.message);
+          console.error(err);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    };
+
+    window.importarFaturamentoMassa = async function () {
+      const input = document.getElementById("inputFaturamentoMassa");
+      const file = input?.files?.[0];
+      if (!file) return mostrarErro("Selecione um arquivo para importar.");
+
+      const { value: form, isConfirmed } = await Swal.fire({
+        title: 'Importação em Massa',
+        html: `<input type="text" id="swal-loja-massa" class="swal2-input" placeholder="Nome da Loja" />`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Continuar',
+        preConfirm: () => {
+          const lojaNome = document.getElementById('swal-loja-massa').value.trim();
+          if (lojaNome.length < 2) {
+            Swal.showValidationMessage('Informe uma loja válida.');
+          }
+          return { loja: lojaNome };
+        }
+      });
+      if (!isConfirmed || !form) return;
+      const loja = form.loja;
+
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet);
+          if (!rows.length) {
+            mostrarErro("A planilha está vazia.");
+            return;
+          }
+
+          const usuarioDoc = await db.collection('usuarios').doc(usuarioLogado.uid).get();
+          const dadosUsuario = usuarioDoc.data() || {};
+          const respEmail = dadosUsuario.responsavelFinanceiroEmail || null;
+          let baseResp = null;
+          if (respEmail) {
+            const respSnap = await db.collection('usuarios').where('email', '==', respEmail).limit(1).get();
+            if (!respSnap.empty) {
+              const respDoc = respSnap.docs[0];
+              const respData = respDoc.data() || {};
+              const responsavelUid = respData.uid || respDoc.id;
+              baseResp = db.collection('uid').doc(responsavelUid).collection('uid').doc(usuarioLogado.uid);
+            }
+          }
+
+          const gestorEmail = Array.isArray(dadosUsuario.gestoresExpedicaoEmails)
+            ? dadosUsuario.gestoresExpedicaoEmails[0]
+            : dadosUsuario.responsavelExpedicaoEmail || null;
+          let baseExp = null;
+          if (gestorEmail) {
+            const expSnap = await db.collection('usuarios').where('email', '==', gestorEmail).limit(1).get();
+            if (!expSnap.empty) {
+              const expDoc = expSnap.docs[0];
+              const expData = expDoc.data() || {};
+              const gestorUid = expData.uid || expDoc.id;
+              baseExp = db.collection('uid').doc(gestorUid).collection('uid').doc(usuarioLogado.uid);
+            }
+          }
+
+          const progressContainer = document.getElementById('progressContainer');
+          const progressBar = document.getElementById('faturamentoProgressBar');
+          const progressText = document.getElementById('faturamentoProgressText');
+          if (progressContainer && progressBar && progressText) {
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+          }
+
+          const totalRows = rows.length;
+          let processedRows = 0;
+          const updateProgress = async () => {
+            if (progressBar && progressText) {
+              const pct = Math.round((processedRows / totalRows) * 100);
+              progressBar.style.width = pct + '%';
+              progressText.textContent = pct + '%';
+              if (processedRows % 50 === 0) await new Promise(r => setTimeout(r, 0));
+            }
+          };
+
+          const grupos = {};
+          const rowsSemData = [];
+          const extrairDataPagamento = (valor) => {
+            if (valor === undefined || valor === null) return null;
+            const texto = String(valor).trim();
+            if (!texto) return null;
+            const match = texto.match(/(\d{4}-\d{2}-\d{2})/);
+            return match ? match[1] : null;
+          };
+
+          for (const row of rows) {
+            const headers = Object.keys(row);
+            const dataPagamento = extrairDataPagamento(
+              headers
+                .filter(h => h.toLowerCase().includes('hora do pagamento'))
+                .map(h => row[h])[0]
+            ) || extrairDataPagamento(
+              headers
+                .filter(h => h.toLowerCase().includes('data do pedido'))
+                .map(h => row[h])[0]
+            ) || extrairDataPagamento(
+              headers
+                .filter(h => h.toLowerCase().includes('data de criação'))
+                .map(h => row[h])[0]
+            );
+
+            if (!dataPagamento) {
+              rowsSemData.push(row);
+              processedRows++;
+              await updateProgress();
+              continue;
+            }
+
+            if (!grupos[dataPagamento]) {
+              grupos[dataPagamento] = {
+                rows: [],
+                bruto: 0,
+                taxas: 0,
+                qtdVendas: 0,
+                skusVendidos: {},
+                pedidosErrados: []
+              };
+            }
+
+            const grupo = grupos[dataPagamento];
+            grupo.rows.push({ row, headers });
+
+            const status = (row['Status do pedido'] || '').toLowerCase();
+            const ativo = !(status.includes('cancelado') || status.includes('não pago'));
+            if (ativo) {
+              const subtotal = parseFloat(row['Subtotal do produto']) || 0;
+              const reembolso = parseFloat(row['Reembolso Shopee']) || 0;
+              const cupom = parseFloat(row['Cupom do vendedor']) || 0;
+              const comissao = parseFloat(row['Taxa de comissão']) || 0;
+              const servico = parseFloat(row['Taxa de serviço']) || 0;
+              const liquidoLinha = subtotal + reembolso - cupom - comissao - servico;
+
+              grupo.bruto += subtotal + reembolso;
+              grupo.taxas += cupom + comissao + servico;
+              grupo.qtdVendas++;
+
+              const headerSku = headers.find(h => h.trim() === 'Número de referência SKU')
+                || headers.find(h => h.trim() === 'Nº de referência do SKU principal');
+              const sku = headerSku ? row[headerSku] : null;
+
+              if (sku) {
+                if (!grupo.skusVendidos[sku]) grupo.skusVendidos[sku] = { total: 0, valorLiquido: 0 };
+                grupo.skusVendidos[sku].total++;
+                grupo.skusVendidos[sku].valorLiquido += liquidoLinha;
+
+                const headerPedido = headers.find(h => h.toLowerCase().includes('pedido') && h.toLowerCase().includes('id'));
+                const pedidoId = headerPedido ? row[headerPedido] : null;
+                const headerQtd = headers.find(h => h.toLowerCase().includes('quantidade'));
+                const quantidade = headerQtd ? parseInt(row[headerQtd]) || 0 : 0;
+                const metaUnit = metas[sku]?.valor || 0;
+                const metaEsperada = metaUnit * (quantidade || 1);
+                const sobraReal = liquidoLinha;
+
+                if (metaEsperada && sobraReal < metaEsperada * 0.9) {
+                  grupo.pedidosErrados.push({
+                    dia: dataPagamento,
+                    loja: loja,
+                    pedido: pedidoId,
+                    sku: sku,
+                    quantidade: quantidade,
+                    subtotal: subtotal,
+                    sobraReal: sobraReal,
+                    totalLiquido: sobraReal,
+                    sobraEsperada: metaEsperada,
+                    uid: usuarioLogado.uid,
+                    critico: true
+                  });
+                }
+              }
+            }
+
+            processedRows++;
+            await updateProgress();
+          }
+
+          if (!Object.keys(grupos).length) {
+            mostrarErro('Nenhum registro com data de pagamento foi encontrado.');
+            return;
+          }
+
+          const { encryptString, decryptString } = await import('./crypto.js');
+          const pass = getPassphrase() || usuarioLogado.uid;
+          const pedidosRef = db.collection('uid').doc(usuarioLogado.uid).collection('pedidosreais');
+          const resultados = [];
+
+          for (const [dataReferencia, grupo] of Object.entries(grupos)) {
+            const ref = db
+              .collection('uid')
+              .doc(usuarioLogado.uid)
+              .collection('faturamento')
+              .doc(dataReferencia)
+              .collection('lojas')
+              .doc(loja);
+            const doc = await ref.get();
+            let operacao = 'salvar';
+            let dadosAnteriores = null;
+
+            if (doc.exists) {
+              const { isConfirmed: substituir, isDenied: somar } = await Swal.fire({
+                title: 'Registro existente',
+                text: `Já existe um registro para ${loja} em ${dataReferencia}. O que deseja fazer?`,
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'Substituir',
+                denyButtonText: 'Somar',
+                cancelButtonText: 'Pular'
+              });
+              if (!substituir && !somar) {
+                resultados.push({ data: dataReferencia, loja, status: 'ignorado' });
+                continue;
+              }
+              operacao = somar ? 'somar' : 'substituir';
+              const docData = doc.data();
+              if (docData?.encrypted) {
+                try {
+                  dadosAnteriores = JSON.parse(await decryptString(docData.encrypted, pass));
+                } catch (e) {
+                  console.error('Erro ao descriptografar faturamento existente', e);
+                }
+              } else {
+                dadosAnteriores = docData;
+              }
+            }
+
+            if (operacao === 'somar' && dadosAnteriores) {
+              grupo.bruto += dadosAnteriores.valorBruto || 0;
+              grupo.taxas += dadosAnteriores.taxasPlataforma || 0;
+              grupo.qtdVendas += dadosAnteriores.qtdVendas || 0;
+            }
+
+            if (grupo.pedidosErrados.length) {
+              const errRef = db
+                .collection('uid')
+                .doc(usuarioLogado.uid)
+                .collection('pedidosErrados');
+              await Promise.all(grupo.pedidosErrados.map(p => errRef.add(p)));
+            }
+
+            const liquido = grupo.bruto - grupo.taxas;
+
+            const refSku = db
+              .collection('uid')
+              .doc(usuarioLogado.uid)
+              .collection('skusVendidos')
+              .doc(dataReferencia);
+            await refSku.set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+            if (baseResp) {
+              await baseResp
+                .collection('skusVendidos')
+                .doc(dataReferencia)
+                .set({ data: dataReferencia, uid: usuarioLogado.uid }, { merge: true });
+            }
+
+            for (const [sku, dadosSku] of Object.entries(grupo.skusVendidos)) {
+              const skuId = String(sku).replace(/[.#$\\/\\[\\]]/g, '_');
+              const docRef = db
+                .collection('uid')
+                .doc(usuarioLogado.uid)
+                .collection('skusVendidos')
+                .doc(dataReferencia)
+                .collection('lista')
+                .doc(skuId);
+              const docSnap = await docRef.get();
+
+              let totalFinal = dadosSku.total;
+              let valorLiquidoFinal = dadosSku.valorLiquido;
+              if (docSnap.exists) {
+                const dadosAnterioresSku = docSnap.data();
+                totalFinal += dadosAnterioresSku.total || 0;
+                valorLiquidoFinal += dadosAnterioresSku.valorLiquido || 0;
+              }
+
+              await docRef.set({
+                sku: sku,
+                total: totalFinal,
+                valorLiquido: valorLiquidoFinal,
+                data: dataReferencia,
+                loja: loja,
+                uid: usuarioLogado.uid
+              });
+              if (baseResp && respEmail) {
+                const skuPayload = {
+                  sku: sku,
+                  total: totalFinal,
+                  valorLiquido: valorLiquidoFinal,
+                  data: dataReferencia,
+                  loja: loja,
+                  uid: usuarioLogado.uid
+                };
+                const encSku = await encryptString(JSON.stringify(skuPayload), respEmail);
+                await baseResp
+                  .collection('skusVendidos')
+                  .doc(dataReferencia)
+                  .collection('lista')
+                  .doc(skuId)
+                  .set({ encrypted: encSku, uid: usuarioLogado.uid });
+              }
+            }
+
+            for (const { row, headers } of grupo.rows) {
+              const headersLower = headers.map(h => h.toLowerCase());
+              const headerPedidoId = headersLower.find((h) => h.includes('pedido') && h.includes('id'));
+              const pedidoHeaderOriginal = headerPedidoId ? headers[headersLower.indexOf(headerPedidoId)] : null;
+              const pedidoId = pedidoHeaderOriginal ? row[pedidoHeaderOriginal] : null;
+              if (!pedidoId) continue;
+
+              const headerPagamento = headersLower.find(h => h.includes('hora do pagamento'));
+              const pagamentoOriginal = headerPagamento ? headers[headersLower.indexOf(headerPagamento)] : null;
+              const horaPagamento = pagamentoOriginal ? row[pagamentoOriginal] : null;
+
+              const headerCancelar = headersLower.find(h => h.includes('cancelar motivo'));
+              const cancelarOriginal = headerCancelar ? headers[headersLower.indexOf(headerCancelar)] : null;
+              const cancelarMotivo = cancelarOriginal ? row[cancelarOriginal] : null;
+
+              const headerSkuPrimario = headers.find(h => h.trim() === 'Número de referência SKU');
+              const headerSkuFallback = headers.find(h => h.trim() === 'Nº de referência do SKU principal');
+              const skuPedido = headerSkuPrimario && row[headerSkuPrimario]
+                ? row[headerSkuPrimario]
+                : headerSkuFallback
+                  ? row[headerSkuFallback]
+                  : null;
+
+              const headerQtd = headersLower.find(h => h.includes('quantidade'));
+              const qtdOriginal = headerQtd ? headers[headersLower.indexOf(headerQtd)] : null;
+              const quantidade = qtdOriginal ? parseFloat(row[qtdOriginal]) || 0 : 0;
+
+              const subtotalPedido = parseFloat(row['Subtotal do produto']) || 0;
+              const reembolsoPedido = parseFloat(row['Reembolso Shopee']) || 0;
+              const cupomPedido = parseFloat(row['Cupom do vendedor']) || 0;
+              const comissaoPedido = parseFloat(row['Taxa de comissão']) || 0;
+              const servicoPedido = parseFloat(row['Taxa de serviço']) || 0;
+              const taxasPedido = cupomPedido + comissaoPedido + servicoPedido;
+              const liquidoPedido = subtotalPedido + reembolsoPedido - taxasPedido;
+
+              const headerPrevEnvio = headersLower.find(h => h.includes('data prevista') && h.includes('envio'));
+              const prevEnvioOriginal = headerPrevEnvio ? headers[headersLower.indexOf(headerPrevEnvio)] : null;
+              let dataPrevistaEnvio = prevEnvioOriginal ? row[prevEnvioOriginal] : null;
+              dataPrevistaEnvio = normalizeDate(dataPrevistaEnvio);
+
+              const headerRastreamento = headersLower.find(h => h.includes('rastreamento'));
+              const rastreamentoOriginal = headerRastreamento ? headers[headersLower.indexOf(headerRastreamento)] : null;
+              const numeroRastreamento = rastreamentoOriginal ? String(row[rastreamentoOriginal]).trim() : '';
+
+              const statusPedido = row['Status do pedido'] || '';
+
+              const pedidoPayload = {
+                pedidoId,
+                status: statusPedido,
+                loja,
+                data: dataReferencia,
+                horaPagamento,
+                quantidade,
+                subtotal: subtotalPedido,
+                cupom: cupomPedido,
+                reembolso: reembolsoPedido,
+                comissao: comissaoPedido,
+                servico: servicoPedido,
+                taxas: taxasPedido,
+                liquido: liquidoPedido
+              };
+              if (skuPedido) pedidoPayload.sku = skuPedido;
+              if (cancelarMotivo) pedidoPayload.cancelarMotivo = cancelarMotivo;
+              if (dataPrevistaEnvio) pedidoPayload.dataPrevistaEnvio = dataPrevistaEnvio;
+              if (numeroRastreamento) {
+                pedidoPayload.numeroRastreamento = numeroRastreamento;
+                pedidoPayload.etiquetaImpressa = true;
+              }
+
+              const pedidoDocRef = pedidosRef
+                .doc(dataReferencia)
+                .collection('lista')
+                .doc(pedidoId);
+              const pedidoDoc = await pedidoDocRef.get();
+              let needsUpdate = true;
+              if (pedidoDoc.exists) {
+                try {
+                  const atual = JSON.parse(
+                    await decryptString(pedidoDoc.data().encrypted, pass)
+                  );
+                  if (JSON.stringify(atual) === JSON.stringify(pedidoPayload)) {
+                    needsUpdate = false;
+                  }
+                } catch (e) {
+                  console.error('Erro ao comparar pedido existente', e);
+                }
+              }
+
+              if (needsUpdate) {
+                const encPedido = await encryptString(JSON.stringify(pedidoPayload), pass);
+                await pedidoDocRef.set({ encrypted: encPedido, uid: usuarioLogado.uid });
+                if (baseResp && respEmail) {
+                  const encPedidoResp = await encryptString(JSON.stringify(pedidoPayload), respEmail);
+                  await baseResp
+                    .collection('pedidosreais')
+                    .doc(dataReferencia)
+                    .collection('lista')
+                    .doc(pedidoId)
+                    .set({ encrypted: encPedidoResp, uid: usuarioLogado.uid });
+                }
+                if (baseExp && gestorEmail) {
+                  const encPedidoExp = await encryptString(JSON.stringify(pedidoPayload), gestorEmail);
+                  await baseExp
+                    .collection('pedidosreais')
+                    .doc(dataReferencia)
+                    .collection('lista')
+                    .doc(pedidoId)
+                    .set({ encrypted: encPedidoExp, uid: usuarioLogado.uid });
+                }
+              }
+            }
+
+            const lojaPayload = {
+              valorBruto: grupo.bruto,
+              taxasPlataforma: grupo.taxas,
+              valorLiquido: liquido,
+              qtdVendas: grupo.qtdVendas,
+              loja: loja,
+              atualizadoEm: new Date(),
+              uid: usuarioLogado.uid
+            };
+            const encLoja = await encryptString(JSON.stringify(lojaPayload), pass);
+            await ref.set({ encrypted: encLoja, uid: usuarioLogado.uid });
+            if (baseResp && respEmail) {
+              const encLojaResp = await encryptString(JSON.stringify(lojaPayload), respEmail);
+              await baseResp
+                .collection('faturamento')
+                .doc(dataReferencia)
+                .collection('lojas')
+                .doc(loja)
+                .set({ encrypted: encLojaResp, uid: usuarioLogado.uid });
+            }
+
+            const resumoPayload = {
+              valorBruto: grupo.bruto,
+              valorLiquido: liquido,
+              taxasPlataforma: grupo.taxas,
+              vendas: grupo.qtdVendas,
+              atualizadoEm: new Date(),
+              uid: usuarioLogado.uid
+            };
+            const encResumo = await encryptString(JSON.stringify(resumoPayload), pass);
+            await db
+              .collection('uid')
+              .doc(usuarioLogado.uid)
+              .collection('faturamento')
+              .doc(dataReferencia)
+              .set({ encrypted: encResumo, uid: usuarioLogado.uid }, { merge: true });
+            if (baseResp && respEmail) {
+              const encResumoResp = await encryptString(JSON.stringify(resumoPayload), respEmail);
+              await baseResp
+                .collection('faturamento')
+                .doc(dataReferencia)
+                .set({ encrypted: encResumoResp, uid: usuarioLogado.uid }, { merge: true });
+            }
+
+            resultados.push({
+              data: dataReferencia,
+              loja,
+              status: 'ok',
+              bruto: grupo.bruto,
+              taxas: grupo.taxas,
+              liquido,
+              qtd: grupo.qtdVendas
+            });
+            await notificarResponsavelFinanceiro(dataReferencia, loja, grupo.bruto, liquido, grupo.qtdVendas);
+          }
+
+          if (progressBar && progressText) {
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+          }
+
+          const sucesso = resultados.filter(r => r.status === 'ok');
+          const ignorados = resultados.filter(r => r.status === 'ignorado');
+
+          let html = '';
+          if (sucesso.length) {
+            html += '<div class="alert alert-success">';
+            html += '<i class="fas fa-check-circle"></i> Faturamentos processados:';
+            html += '<ul class="mt-2 space-y-1">';
+            html += sucesso
+              .map(r => `<li><strong>${r.data}</strong> - ${r.loja}: Bruto R$ ${r.bruto.toFixed(2)}, Taxas R$ ${r.taxas.toFixed(2)}, Líquido R$ ${r.liquido.toFixed(2)}, Vendas ${r.qtd}</li>`)
+              .join('');
+            html += '</ul></div>';
+          }
+          if (ignorados.length || rowsSemData.length) {
+            html += '<div class="alert alert-warning mt-4">';
+            html += '<i class="fas fa-exclamation-triangle"></i> Atenção:';
+            if (ignorados.length) {
+              html += `<br>${ignorados.length} dia(s) foram ignorados por opção do usuário.`;
+            }
+            if (rowsSemData.length) {
+              html += `<br>${rowsSemData.length} registro(s) sem data de pagamento foram desconsiderados.`;
+            }
+            html += '</div>';
+          }
+
+          document.getElementById('resultadoFaturamento').innerHTML = html || '<div class="alert alert-info"><i class="fas fa-info-circle"></i> Nenhum faturamento foi processado.</div>';
+          input.value = '';
+        } catch (err) {
+          mostrarErro('Erro ao importar: ' + err.message);
           console.error(err);
         }
       };
