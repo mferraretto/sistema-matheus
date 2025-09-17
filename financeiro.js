@@ -7,6 +7,7 @@ import {
   collection,
   doc,
   getDoc,
+  setDoc,
   query,
   where,
   onSnapshot,
@@ -22,7 +23,6 @@ import {
 } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { firebaseConfig, getPassphrase } from './firebase-config.js';
 import { decryptString } from './crypto.js';
-import { loadSecureDoc, setDocWithCopy } from './secure-firestore.js';
 import {
   atualizarSaque as atualizarSaqueSvc,
   watchResumoMes as watchResumoMesSvc,
@@ -42,6 +42,58 @@ let vendasChart;
 let resumoUnsub = null;
 let currentUser = null;
 
+const metaPerfilCache = new Map();
+
+function parseMetaValor(meta) {
+  if (typeof meta === 'number' && Number.isFinite(meta)) {
+    return meta;
+  }
+  if (typeof meta === 'string') {
+    const trimmed = meta.trim();
+    if (!trimmed) return 0;
+    const sanitized = trimmed.replace(/[R$\s]/g, '');
+    let normalized;
+    if (sanitized.includes(',')) {
+      normalized = sanitized.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = sanitized.replace(/\./g, '');
+    }
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function atualizarMetaCache(uid, valor, possuiMeta) {
+  const numero = Number.isFinite(valor) ? valor : 0;
+  const resultado = {
+    valor: numero,
+    possuiMeta: !!possuiMeta && Number.isFinite(valor),
+  };
+  metaPerfilCache.set(uid, resultado);
+  return resultado;
+}
+
+async function obterMetaPerfil(uid, { force = false } = {}) {
+  if (!uid) return { valor: 0, possuiMeta: false };
+  if (!force && metaPerfilCache.has(uid)) {
+    return metaPerfilCache.get(uid);
+  }
+  try {
+    const snap = await getDoc(doc(db, 'perfilMentorado', uid));
+    if (snap.exists()) {
+      const bruto = snap.data()?.metaFaturamentoLiquido;
+      if (bruto !== undefined && bruto !== null && bruto !== '') {
+        const valor = parseMetaValor(bruto);
+        return atualizarMetaCache(uid, valor, true);
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao carregar meta de faturamento do perfil:', err);
+  }
+  return atualizarMetaCache(uid, 0, false);
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = 'index.html?login=1';
@@ -55,6 +107,7 @@ onAuthStateChanged(auth, async (user) => {
     console.error('Erro ao verificar acesso financeiro:', err);
     usuariosCache = [{ uid: user.uid, nome: user.displayName || user.email }];
   }
+  metaPerfilCache.clear();
   setupFiltros(usuariosCache);
   await carregar();
   initKpiRealtime();
@@ -111,14 +164,8 @@ function setupFiltros(usuarios) {
     }
     metaSection.classList.remove('hidden');
     if (!metaInput) return;
-    try {
-      const metaDoc = await getDoc(
-        doc(db, `uid/${userSel.value}/metasFaturamento`, mesSel.value),
-      );
-      metaInput.value = metaDoc.exists() ? metaDoc.data().valor || '' : '';
-    } catch (_) {
-      metaInput.value = '';
-    }
+    const metaInfo = await obterMetaPerfil(userSel.value);
+    metaInput.value = metaInfo.possuiMeta ? metaInfo.valor : '';
   }
 
   userSel.addEventListener('change', () => {
@@ -138,22 +185,19 @@ function setupFiltros(usuarios) {
 
 async function salvarMeta() {
   const uid = document.getElementById('usuarioFiltro')?.value;
-  const mes = document.getElementById('mesFiltro')?.value;
   const input = document.getElementById('metaValor');
   const valor = Number(input?.value || 0);
   if (!uid || uid === 'todos') {
     alert('Selecione um usuário');
     return;
   }
-  if (!mes) {
-    alert('Selecione um mês');
-    return;
-  }
   try {
-    const ref = doc(db, `uid/${uid}/metasFaturamento`, mes);
-    await setDocWithCopy(ref, { valor }, uid);
+    const ref = doc(db, 'perfilMentorado', uid);
+    await setDoc(ref, { metaFaturamentoLiquido: valor }, { merge: true });
+    atualizarMetaCache(uid, valor, true);
     alert('Meta salva com sucesso!');
     await carregar();
+    await subscribeKPIs();
   } catch (err) {
     console.error('Erro ao salvar meta:', err);
     alert('Erro ao salvar meta');
@@ -413,14 +457,8 @@ async function carregarFaturamentoMeta(usuarios, mes) {
     let esperado = 0;
     let diferenca = 0;
     let metaDiaria = 0;
-    try {
-      const metaDoc = await getDoc(
-        doc(db, `uid/${usuario.uid}/metasFaturamento`, mes),
-      );
-      if (metaDoc.exists()) meta = Number(metaDoc.data().valor) || 0;
-    } catch (err) {
-      console.error('Erro ao buscar meta de faturamento:', err);
-    }
+    const { valor: metaPerfil } = await obterMetaPerfil(usuario.uid);
+    meta = metaPerfil;
     if (meta && mes) {
       const [ano, mesNum] = mes.split('-').map(Number);
       const totalDias = new Date(ano, mesNum, 0).getDate();
@@ -594,13 +632,7 @@ async function subscribeKPIs() {
       metaMulti.classList.remove('hidden');
       metaMulti.innerHTML = '';
       for (const u of usuariosCache) {
-        let metaValor = 0;
-        try {
-          const metaDoc = await getDoc(
-            doc(db, `uid/${u.uid}/metasFaturamento`, mes),
-          );
-          if (metaDoc.exists()) metaValor = Number(metaDoc.data().valor) || 0;
-        } catch (_) {}
+        const { valor: metaValor } = await obterMetaPerfil(u.uid);
         const fatSnap = await getDocs(
           collection(db, `uid/${u.uid}/faturamento`),
         );
@@ -648,9 +680,20 @@ async function subscribeKPIs() {
   ontem.setDate(ontem.getDate() - 1);
   const diaAnterior = ontem.toISOString().slice(0, 10);
   let metaValor = 0;
-  const metaRef = doc(db, `uid/${uid}/metasFaturamento`, mes);
+  const metaRef = doc(db, 'perfilMentorado', uid);
   const unsubMeta = onSnapshot(metaRef, (snap) => {
-    metaValor = snap.exists() ? Number(snap.data().valor) || 0 : 0;
+    if (snap.exists()) {
+      const bruto = snap.data()?.metaFaturamentoLiquido;
+      if (bruto !== undefined && bruto !== null && bruto !== '') {
+        const valor = parseMetaValor(bruto);
+        const possuiMeta = Number.isFinite(valor);
+        metaValor = possuiMeta ? valor : 0;
+        atualizarMetaCache(uid, valor, possuiMeta);
+        return;
+      }
+    }
+    metaValor = 0;
+    atualizarMetaCache(uid, 0, false);
   });
   kpiUnsubs.push(unsubMeta);
 

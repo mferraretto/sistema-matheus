@@ -42,6 +42,48 @@ let currentUser = null;
 let initialLoad = true;
 let usuariosResponsaveis = [];
 
+const metaMentoradoCache = new Map();
+
+function parseMetaValor(meta) {
+  if (typeof meta === 'number' && Number.isFinite(meta)) {
+    return meta;
+  }
+  if (typeof meta === 'string') {
+    const trimmed = meta.trim();
+    if (!trimmed) return 0;
+    const sanitized = trimmed.replace(/[R$\s]/g, '');
+    let normalized;
+    if (sanitized.includes(',')) {
+      normalized = sanitized.replace(/\./g, '').replace(',', '.');
+    } else {
+      normalized = sanitized.replace(/\./g, '');
+    }
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+async function buscarMetaMentorado(uid) {
+  if (!uid) return 0;
+  if (metaMentoradoCache.has(uid)) {
+    return metaMentoradoCache.get(uid);
+  }
+  try {
+    const snap = await getDoc(doc(db, 'perfilMentorado', uid));
+    let valor = 0;
+    if (snap.exists()) {
+      valor = parseMetaValor(snap.data()?.metaFaturamentoLiquido);
+    }
+    metaMentoradoCache.set(uid, valor);
+    return valor;
+  } catch (err) {
+    console.error('Erro ao carregar meta de faturamento do perfil:', err);
+    metaMentoradoCache.set(uid, 0);
+    return 0;
+  }
+}
+
 function showNotification(message, type = 'info') {
   const notification = document.createElement('div');
   notification.className = `fixed bottom-4 right-4 px-4 py-4 rounded-lg shadow-lg text-white ${
@@ -81,6 +123,7 @@ async function carregarUsuarios() {
   if (select) select.innerHTML = '';
   if (lista) lista.innerHTML = '';
   usuariosResponsaveis = [];
+  metaMentoradoCache.clear();
   try {
     const listaUsuarios = await fetchResponsavelFinanceiroUsuarios(
       db,
@@ -232,21 +275,7 @@ async function carregarHistoricoFaturamento() {
   const totalDiasMes = new Date(ano, mesNum, 0).getDate();
   let possuiHistorico = false;
   for (const u of usuariosResponsaveis) {
-    let metaMensal = 0;
-    try {
-      const metaDoc = await getDoc(
-        doc(
-          db,
-          'uid',
-          currentUser.uid,
-          'uid',
-          u.uid,
-          'metasFaturamento',
-          mesAtual,
-        ),
-      );
-      if (metaDoc.exists()) metaMensal = Number(metaDoc.data().valor) || 0;
-    } catch (_) {}
+    const metaMensal = await buscarMetaMentorado(u.uid);
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
 
     const fatSnap = await getDocs(
@@ -376,23 +405,8 @@ async function carregarTotais() {
     totalBruto += bruto;
     totalLiquido += liquido;
     totalPedidos += pedidos;
-    try {
-      const metaDoc = await getDoc(
-        doc(
-          db,
-          'uid',
-          currentUser.uid,
-          'uid',
-          u.uid,
-          'metasFaturamento',
-          mesAtual,
-        ),
-      );
-      if (metaDoc.exists()) {
-        const metaMensal = Number(metaDoc.data().valor) || 0;
-        totalMeta += totalDiasMes ? metaMensal / totalDiasMes : 0;
-      }
-    } catch (_) {}
+    const metaMensal = await buscarMetaMentorado(u.uid);
+    totalMeta += totalDiasMes ? metaMensal / totalDiasMes : 0;
   }
   const cards = [
     {
