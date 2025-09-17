@@ -111,6 +111,7 @@ const EXPEDICAO_ALLOWED_MENU_IDS = [
   'menu-configuracoes',
   'menu-painel-atualizacoes-gerais',
 ];
+const DEFAULT_MEETING_NAVBAR_TITLE = 'Reuniões agendadas';
 let notifUnsub = null;
 let expNotifUnsub = null;
 let expLabelNotifUnsub = null;
@@ -118,6 +119,11 @@ let updNotifUnsub = null;
 let painelGeralNotifUnsub = null;
 let painelMentNotifUnsub = null;
 let painelGeralReuniaoNotifUnsub = null;
+let navbarMeetingsUnsubs = [];
+let navbarMeetingsPersonalDocs = new Map();
+let navbarMeetingsGlobalDocs = new Map();
+let navbarMeetingsCombinedDocs = [];
+let navbarMeetingsTimer = null;
 window.isFinanceiroResponsavel = false;
 window.responsavelFinanceiro = null;
 
@@ -578,11 +584,300 @@ window.requireLogin = (event) => {
   return true;
 };
 
+function normalizeMeetingTime(value) {
+  if (!value) return '';
+  const [hoursStr, minutesStr] = String(value).split(':');
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (
+    !Number.isInteger(hours) ||
+    hours < 0 ||
+    hours > 23 ||
+    !Number.isInteger(minutes) ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return '';
+  }
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function parseISODate(value) {
+  if (!value) return null;
+  const [yearStr, monthStr, dayStr] = String(value).split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return null;
+  }
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.valueOf()) ? null : date;
+}
+
+function computeNavbarMeetingStart(meeting) {
+  if (!meeting) return null;
+  let inicio = meeting.inicio;
+  if (inicio && typeof inicio.toDate === 'function') {
+    try {
+      inicio = inicio.toDate();
+    } catch (e) {
+      inicio = null;
+    }
+  }
+  if (inicio instanceof Date && !Number.isNaN(inicio.valueOf())) {
+    return inicio;
+  }
+  const baseDate = parseISODate(meeting.dataIso || meeting.data);
+  if (!baseDate) return null;
+  const normalized = normalizeMeetingTime(meeting.hora);
+  if (normalized) {
+    const [hour, minute] = normalized.split(':').map(Number);
+    baseDate.setHours(hour, minute, 0, 0);
+  }
+  return baseDate;
+}
+
+function summarizeNavbarMeetingParticipants(meeting) {
+  if (!meeting) return '';
+  const resumo = (meeting.participantesResumo || '').toString().trim();
+  if (resumo) return resumo;
+  if (!Array.isArray(meeting.participantesNomes)) return '';
+  const nomes = meeting.participantesNomes
+    .map((nome) => (typeof nome === 'string' ? nome.trim() : ''))
+    .filter(Boolean);
+  if (!nomes.length) return '';
+  if (nomes.length === 1) return nomes[0];
+  if (nomes.length === 2) return `${nomes[0]} e ${nomes[1]}`;
+  if (nomes.length === 3) return `${nomes[0]}, ${nomes[1]} e ${nomes[2]}`;
+  return `${nomes[0]}, ${nomes[1]} e mais ${nomes.length - 2}`;
+}
+
+function hideNavbarMeetingsIndicator() {
+  const wrapper = document.getElementById('navbarMeetingsWrapper');
+  const badge = document.getElementById('navbarMeetingsBadge');
+  const btn = document.getElementById('navbarMeetingsBtn');
+  if (wrapper) wrapper.classList.add('hidden');
+  if (badge) {
+    badge.classList.add('hidden');
+    badge.textContent = '';
+  }
+  if (btn) {
+    btn.classList.remove('active');
+    btn.title = DEFAULT_MEETING_NAVBAR_TITLE;
+    btn.setAttribute('aria-label', DEFAULT_MEETING_NAVBAR_TITLE);
+  }
+}
+
+function clearNavbarMeetingsTimer() {
+  if (navbarMeetingsTimer) {
+    clearTimeout(navbarMeetingsTimer);
+    navbarMeetingsTimer = null;
+  }
+}
+
+function scheduleNavbarMeetingsUpdate(nextStart) {
+  clearNavbarMeetingsTimer();
+  if (!(nextStart instanceof Date) || Number.isNaN(nextStart.valueOf())) return;
+  const diff = nextStart.getTime() - Date.now();
+  const safeDelay = Math.min(Math.max(diff, 0) + 1000, 2147483000);
+  navbarMeetingsTimer = window.setTimeout(() => {
+    updateNavbarMeetingsIndicator();
+  }, safeDelay);
+}
+
+function rebuildNavbarMeetingsState() {
+  const merged = new Map();
+  navbarMeetingsPersonalDocs.forEach((value, key) => merged.set(key, value));
+  navbarMeetingsGlobalDocs.forEach((value, key) => merged.set(key, value));
+  navbarMeetingsCombinedDocs = Array.from(merged.values());
+  updateNavbarMeetingsIndicator();
+}
+
+function updateNavbarMeetingsIndicator() {
+  const wrapper = document.getElementById('navbarMeetingsWrapper');
+  const badge = document.getElementById('navbarMeetingsBadge');
+  const btn = document.getElementById('navbarMeetingsBtn');
+  if (!wrapper || !badge || !btn) {
+    clearNavbarMeetingsTimer();
+    return;
+  }
+  const now = Date.now();
+  const upcoming = navbarMeetingsCombinedDocs
+    .map((meeting) => ({
+      meeting,
+      start: computeNavbarMeetingStart(meeting),
+    }))
+    .filter(
+      (item) =>
+        item.start instanceof Date &&
+        !Number.isNaN(item.start.valueOf()) &&
+        item.start.getTime() >= now,
+    )
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  if (!upcoming.length) {
+    hideNavbarMeetingsIndicator();
+    clearNavbarMeetingsTimer();
+    return;
+  }
+
+  wrapper.classList.remove('hidden');
+  btn.classList.add('active');
+
+  const count = upcoming.length;
+  if (count > 1) {
+    badge.textContent = String(count);
+    badge.classList.remove('hidden');
+  } else {
+    badge.textContent = '';
+    badge.classList.add('hidden');
+  }
+
+  const next = upcoming[0];
+  const dateText = next.start.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const normalizedTime = normalizeMeetingTime(next.meeting.hora);
+  const hasExplicitTime =
+    normalizedTime ||
+    next.start.getHours() !== 0 ||
+    next.start.getMinutes() !== 0;
+  const timeText = normalizedTime
+    ? normalizedTime
+    : hasExplicitTime
+      ? next.start.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
+  const participantesResumo = summarizeNavbarMeetingParticipants(next.meeting);
+  const descricao = (next.meeting.descricao || '').toString().trim();
+  let tooltip = `Próxima reunião: ${dateText}`;
+  if (timeText) {
+    tooltip += ` às ${timeText}`;
+  }
+  if (participantesResumo) {
+    tooltip += ` com ${participantesResumo}`;
+  }
+  if (descricao) {
+    tooltip += ` — ${descricao}`;
+  }
+
+  btn.title = tooltip;
+  btn.setAttribute('aria-label', tooltip);
+  scheduleNavbarMeetingsUpdate(next.start);
+}
+
+function cleanupNavbarMeetings() {
+  navbarMeetingsUnsubs.forEach((unsub) => {
+    try {
+      if (typeof unsub === 'function') unsub();
+    } catch (err) {
+      console.error('Erro ao encerrar listener de reuniões do navbar:', err);
+    }
+  });
+  navbarMeetingsUnsubs = [];
+  navbarMeetingsPersonalDocs = new Map();
+  navbarMeetingsGlobalDocs = new Map();
+  navbarMeetingsCombinedDocs = [];
+  clearNavbarMeetingsTimer();
+  hideNavbarMeetingsIndicator();
+}
+
+function initNavbarMeetingsListener(uid) {
+  if (!uid) {
+    cleanupNavbarMeetings();
+    return;
+  }
+
+  const wrapper = document.getElementById('navbarMeetingsWrapper');
+  const btn = document.getElementById('navbarMeetingsBtn');
+  const badge = document.getElementById('navbarMeetingsBadge');
+  if (!wrapper || !btn || !badge) {
+    document.addEventListener(
+      'navbarLoaded',
+      function retryInit() {
+        document.removeEventListener('navbarLoaded', retryInit);
+        initNavbarMeetingsListener(uid);
+      },
+      { once: true },
+    );
+    return;
+  }
+
+  cleanupNavbarMeetings();
+
+  if (!btn.dataset.meetingsInitialized) {
+    btn.addEventListener('click', () => {
+      window.location.href = 'painel-atualizacoes-gerais.html';
+    });
+    btn.dataset.meetingsInitialized = 'true';
+  }
+
+  const baseCollection = collection(db, 'painelAtualizacoesGerais');
+
+  const personalQuery = query(
+    baseCollection,
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', uid),
+    orderBy('createdAt', 'desc'),
+    limit(120),
+  );
+
+  const globalQuery = query(
+    baseCollection,
+    where('categoria', '==', 'reuniao'),
+    where('participantes', 'array-contains', VISIBILIDADE_GLOBAL_ID),
+    orderBy('createdAt', 'desc'),
+    limit(120),
+  );
+
+  const handleSnapshot = (source) => (snap) => {
+    const map =
+      source === 'global'
+        ? navbarMeetingsGlobalDocs
+        : navbarMeetingsPersonalDocs;
+    map.clear();
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() || {};
+      map.set(docSnap.id, { id: docSnap.id, ...data });
+    });
+    rebuildNavbarMeetingsState();
+  };
+
+  const handleError = (err) => {
+    console.error('Erro ao carregar reuniões do navbar:', err);
+  };
+
+  navbarMeetingsUnsubs = [
+    onSnapshot(personalQuery, handleSnapshot('personal'), handleError),
+    onSnapshot(globalQuery, handleSnapshot('global'), handleError),
+  ];
+}
+
 function initNotificationListener(uid) {
   const btn = document.getElementById('notificationBtn');
   const badge = document.getElementById('notificationBadge');
   const list = document.getElementById('notificationList');
-  if (!btn || !badge || !list) return;
+  if (!btn || !badge || !list) {
+    document.addEventListener(
+      'navbarLoaded',
+      function retryNotif() {
+        document.removeEventListener('navbarLoaded', retryNotif);
+        initNotificationListener(uid);
+      },
+      { once: true },
+    );
+    return;
+  }
+  initNavbarMeetingsListener(uid);
   if (notifUnsub) notifUnsub();
   if (expNotifUnsub) expNotifUnsub();
   if (expLabelNotifUnsub) expLabelNotifUnsub();
@@ -1176,6 +1471,7 @@ function checkLogin() {
         painelMentNotifUnsub();
         painelMentNotifUnsub = null;
       }
+      cleanupNavbarMeetings();
       if (!onLoginPage) window.location.href = 'login.html';
     }
   });

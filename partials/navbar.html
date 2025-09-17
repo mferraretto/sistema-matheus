@@ -25,6 +25,39 @@
     <div id="navbarSearchResults" class="navbar-search-results hidden"></div>
   </div>
   <div class="navbar-right">
+    <div id="navbarMeetingsWrapper" class="relative hidden">
+      <button
+        id="navbarMeetingsBtn"
+        class="menu-item relative show-on-mobile"
+        type="button"
+        title="Reuniões agendadas"
+        aria-label="Reuniões agendadas"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="w-5 h-5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M6.75 3v1.5m10.5-1.5V4.5M4.5 7.5h15M5.25 21h13.5a1.5 1.5 0 001.5-1.5V8.25a1.5 1.5 0 00-1.5-1.5h-13.5a1.5 1.5 0 00-1.5 1.5V19.5A1.5 1.5 0 005.25 21z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M16.5 12h.008v.008H16.5V12zm0 3h.008v.008H16.5V15zm-3-3h.008v.008H13.5V12zm0 3h.008v.008H13.5V15zm-3-3h.008v.008H10.5V12zm0 3h.008v.008H10.5V15z"
+          />
+        </svg>
+        <span
+          id="navbarMeetingsBadge"
+          class="hidden absolute -top-1 -right-1 bg-brand text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+        ></span>
+      </button>
+    </div>
     <div id="notificationWrapper" class="relative">
       <button
         id="notificationBtn"
