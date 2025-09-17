@@ -43,6 +43,53 @@ let initialLoad = true;
 let usuariosResponsaveis = [];
 
 const metaMentoradoCache = new Map();
+let xlsxLoaderPromise = null;
+
+function atualizarEstadoBotaoExportacao(ativo) {
+  const botao = document.getElementById('exportarHistoricoBtn');
+  if (!botao) return;
+  botao.dataset.hasHistorico = ativo ? 'true' : 'false';
+  botao.disabled = !ativo;
+}
+
+function setExportButtonLoading(loading) {
+  const botao = document.getElementById('exportarHistoricoBtn');
+  if (!botao) return;
+  if (loading) {
+    botao.dataset.originalText = botao.textContent || '';
+    botao.textContent = 'Exportando...';
+    botao.disabled = true;
+  } else {
+    const original = botao.dataset.originalText;
+    if (original) {
+      botao.textContent = original;
+    }
+    botao.disabled = botao.dataset.hasHistorico !== 'true';
+  }
+}
+
+async function ensureXlsxLoaded() {
+  if (window.XLSX) return window.XLSX;
+  if (!xlsxLoaderPromise) {
+    xlsxLoaderPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => resolve(window.XLSX);
+      script.onerror = () =>
+        reject(new Error('Falha ao carregar biblioteca XLSX.'));
+      document.head.appendChild(script);
+    });
+  }
+  try {
+    return await xlsxLoaderPromise;
+  } catch (err) {
+    xlsxLoaderPromise = null;
+    throw err;
+  }
+}
+
+atualizarEstadoBotaoExportacao(false);
 
 function parseMetaValor(meta) {
   if (typeof meta === 'number' && Number.isFinite(meta)) {
@@ -265,6 +312,7 @@ async function carregarHistoricoFaturamento() {
   const container = document.getElementById('historicoFaturamento');
   if (!card || !container) return;
   container.innerHTML = '';
+  atualizarEstadoBotaoExportacao(false);
   if (!usuariosResponsaveis.length) {
     card.classList.add('hidden');
     return;
@@ -335,6 +383,7 @@ async function carregarHistoricoFaturamento() {
   } else {
     card.classList.add('hidden');
   }
+  atualizarEstadoBotaoExportacao(possuiHistorico);
 }
 
 async function toggleFaturamentoMensal(container, responsavelUid, uid) {
@@ -509,6 +558,148 @@ async function carregarTotais() {
   });
 }
 
+function gerarNomeAbaPlanilha(nome, indice) {
+  const base = (nome || '').trim() || `Usuario ${indice + 1}`;
+  const sanitized = base
+    .replace(/[\\\/*?:\[\]]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!sanitized) return `Usuario ${indice + 1}`;
+  return sanitized.slice(0, 31);
+}
+
+function arredondarNumero(valor, casas = 2) {
+  const numero = typeof valor === 'number' ? valor : Number(valor);
+  if (!Number.isFinite(numero)) return 0;
+  const fator = 10 ** casas;
+  return Math.round(numero * fator) / fator;
+}
+
+function calcularMetaDiariaPorMes(metaMensal, anoMes) {
+  const numeroMeta =
+    typeof metaMensal === 'number' ? metaMensal : Number(metaMensal);
+  if (!Number.isFinite(numeroMeta) || numeroMeta <= 0) return 0;
+  const [anoStr, mesStr] = (anoMes || '').split('-');
+  const ano = Number(anoStr);
+  const mes = Number(mesStr);
+  if (!Number.isFinite(ano) || !Number.isFinite(mes)) return 0;
+  const diasMes = new Date(ano, mes, 0).getDate();
+  if (!Number.isFinite(diasMes) || diasMes <= 0) return 0;
+  return numeroMeta / diasMes;
+}
+
+async function montarHistoricoCompletoUsuario(responsavelUid, usuario) {
+  const linhas = [];
+  if (!responsavelUid || !usuario?.uid) return linhas;
+  const col = collection(
+    db,
+    'uid',
+    responsavelUid,
+    'uid',
+    usuario.uid,
+    'faturamento',
+  );
+  const snap = await getDocs(col);
+  if (snap.empty) return linhas;
+  const dias = snap.docs.map((d) => d.id).sort();
+  const metaMensal = await buscarMetaMentorado(usuario.uid);
+  const cacheMeta = new Map();
+  for (const dia of dias) {
+    const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(
+      responsavelUid,
+      usuario.uid,
+      dia,
+    );
+    const vendas = await calcularVendasDia(responsavelUid, usuario.uid, dia);
+    const liquidoNum = Number.isFinite(liquido)
+      ? liquido
+      : Number(liquido) || 0;
+    const brutoNum = Number.isFinite(bruto) ? bruto : Number(bruto) || 0;
+    let vendasNum = Number.isFinite(vendas) ? vendas : Number(vendas);
+    if (!Number.isFinite(vendasNum)) vendasNum = 0;
+    const chaveMes = dia.slice(0, 7);
+    let metaDiaria = cacheMeta.get(chaveMes);
+    if (metaDiaria === undefined) {
+      metaDiaria = calcularMetaDiariaPorMes(metaMensal, chaveMes);
+      cacheMeta.set(chaveMes, metaDiaria);
+    }
+    if (!Number.isFinite(metaDiaria)) metaDiaria = 0;
+    const diferenca = liquidoNum - metaDiaria;
+    let resultado = 'Na meta';
+    if (diferenca > 0.005) resultado = 'Acima';
+    else if (diferenca < -0.005) resultado = 'Abaixo';
+    linhas.push({
+      Data: dia,
+      'Valor Bruto (R$)': arredondarNumero(brutoNum),
+      'Valor Líquido (R$)': arredondarNumero(liquidoNum),
+      Pedidos: Math.round(vendasNum),
+      'Meta diária (R$)': arredondarNumero(metaDiaria),
+      'Diferença x Meta (R$)': arredondarNumero(diferenca),
+      Resultado: resultado,
+    });
+  }
+  return linhas;
+}
+
+async function exportarHistoricoFaturamentoCompleto() {
+  const botao = document.getElementById('exportarHistoricoBtn');
+  if (!botao) return;
+  if (botao.dataset.hasHistorico !== 'true') {
+    showNotification(
+      'Não há dados de faturamento disponíveis para exportação no momento.',
+      'warning',
+    );
+    return;
+  }
+  setExportButtonLoading(true);
+  try {
+    const XLSX = await ensureXlsxLoaded();
+    if (!XLSX) throw new Error('Biblioteca XLSX indisponível.');
+    const workbook = XLSX.utils.book_new();
+    let adicionouAba = false;
+    for (let i = 0; i < usuariosResponsaveis.length; i++) {
+      const usuario = usuariosResponsaveis[i];
+      const linhas = await montarHistoricoCompletoUsuario(
+        currentUser?.uid,
+        usuario,
+      );
+      if (!linhas.length) continue;
+      const ws = XLSX.utils.json_to_sheet(linhas, {
+        header: [
+          'Data',
+          'Valor Bruto (R$)',
+          'Valor Líquido (R$)',
+          'Pedidos',
+          'Meta diária (R$)',
+          'Diferença x Meta (R$)',
+          'Resultado',
+        ],
+      });
+      const nomeAba = gerarNomeAbaPlanilha(usuario?.nome, i);
+      XLSX.utils.book_append_sheet(workbook, ws, nomeAba);
+      adicionouAba = true;
+    }
+    if (!adicionouAba) {
+      showNotification(
+        'Não há dados de faturamento disponíveis para exportação no momento.',
+        'warning',
+      );
+      return;
+    }
+    const hoje = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `historico_faturamento_${hoje}.xlsx`);
+    showNotification('Planilha exportada com sucesso!', 'success');
+  } catch (err) {
+    console.error('Erro ao exportar histórico de faturamento:', err);
+    showNotification(
+      'Não foi possível exportar o histórico de faturamento.',
+      'error',
+    );
+  } finally {
+    setExportButtonLoading(false);
+  }
+}
+
 async function carregarExpedicao() {
   const card = document.getElementById('expedicaoCard');
   const container = document.getElementById('expedicaoAtualizacoes');
@@ -553,6 +744,10 @@ async function carregarExpedicao() {
     console.error('Erro ao carregar expedição:', e);
   }
 }
+
+document
+  .getElementById('exportarHistoricoBtn')
+  ?.addEventListener('click', exportarHistoricoFaturamentoCompleto);
 
 document
   .getElementById('formAtualizacao')
