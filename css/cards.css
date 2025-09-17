@@ -185,12 +185,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  min-width: 0;
-  height: 100%;
+height: 100%;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
+
 
 .expedicao-card:hover {
   transform: translateY(-2px);
@@ -251,19 +251,13 @@
 }
 
 #labelsList.grid {
-  align-items: stretch;
+align-items: stretch;
   justify-items: stretch;
-  grid-auto-rows: 1fr;
-  padding: 0.75rem 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
-
-#labelsList.flex {
-  padding: 0;
-}
-
 #labelsList.grid .expedicao-pdf-card {
   width: 100%;
-  max-width: none;
+  max-width: 100%;
   align-self: stretch;
 }
 
@@ -271,19 +265,16 @@
   align-self: stretch;
 }
 
-#labelsList.grid > * {
-  min-width: 0;
-}
-
-#totalsContainer.grid,
-#userCards.grid {
+.expedicao-owner-row {
+  flex-wrap: wrap;
   align-items: stretch;
 }
 
-#totalsContainer.grid .expedicao-card,
-#userCards.grid .expedicao-card {
-  height: 100%;
+.expedicao-owner-row .expedicao-card {
+  flex: 1 1 240px;
+  max-width: 320px;
 }
+
 
 .expedicao-pdf-header {
   display: flex;
