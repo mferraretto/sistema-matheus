@@ -207,6 +207,7 @@ let produtosLinhaUsuariosMap = new Map();
 let produtosLinhaConfigDados = null;
 let produtosLinhaPronto = false;
 let produtosLinhaItensImportacaoPath = null;
+let expedicaoDiretoresLista = [];
 let participantesDetalhes = [];
 let participantesPorUid = new Map();
 let participantesSelecionados = new Set();
@@ -3010,6 +3011,147 @@ async function buscarDetalhesUsuariosBasico(uids = []) {
   });
 }
 
+function normalizarTextoBasico(valor) {
+  return String(valor || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+async function buscarUsuarioPorEmailBasico(email) {
+  const candidatos = Array.from(
+    new Set(
+      [
+        typeof email === 'string' ? email.trim() : '',
+        typeof email === 'string' ? email.trim().toLowerCase() : '',
+      ].filter((item) => item),
+    ),
+  );
+  if (!candidatos.length) return null;
+
+  for (const candidato of candidatos) {
+    try {
+      const snapUsuarios = await getDocs(
+        query(collection(db, 'usuarios'), where('email', '==', candidato)),
+      );
+      if (!snapUsuarios.empty) {
+        const docSnap = snapUsuarios.docs[0];
+        const data = docSnap.data() || {};
+        return {
+          uid: docSnap.id,
+          nome: data.nome || data.name || data.email || docSnap.id,
+          email: data.email || candidato,
+        };
+      }
+    } catch (err) {
+      console.error('Erro ao buscar usuário por e-mail (usuarios):', err);
+    }
+
+    try {
+      const snapUid = await getDocs(
+        query(collection(db, 'uid'), where('email', '==', candidato)),
+      );
+      if (!snapUid.empty) {
+        const docSnap = snapUid.docs[0];
+        const data = docSnap.data() || {};
+        return {
+          uid: docSnap.id,
+          nome: data.nome || data.name || data.email || docSnap.id,
+          email: data.email || candidato,
+        };
+      }
+    } catch (err) {
+      console.error('Erro ao buscar usuário por e-mail (uid):', err);
+    }
+  }
+
+  return null;
+}
+
+async function carregarDiretoresExpedicao(user) {
+  if (!user?.uid) return [];
+  try {
+    const snap = await getDocs(
+      collection(db, 'uid', user.uid, 'expedicaoTeam'),
+    );
+    const candidatos = [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data() || {};
+      const cargo = normalizarTextoBasico(data.cargo || data.role || '');
+      if (!cargo || !cargo.includes('diretor')) return;
+      const emailBruto =
+        typeof data.email === 'string' ? data.email.trim() : '';
+      const emailLower = emailBruto.toLowerCase();
+      const uid = typeof data.uid === 'string' ? data.uid.trim() : '';
+      candidatos.push({
+        uid,
+        email: emailBruto,
+        emailLower,
+        nome: data.name || data.nome || '',
+      });
+    });
+
+    if (!candidatos.length) return [];
+
+    const resultado = [];
+    const vistosUid = new Set();
+    const vistosEmail = new Set();
+
+    const uidsValidos = Array.from(
+      new Set(candidatos.map((cand) => cand.uid).filter((uid) => uid)),
+    );
+    let detalhesPorUid = new Map();
+    if (uidsValidos.length) {
+      try {
+        const detalhes = await buscarDetalhesUsuariosBasico(uidsValidos);
+        detalhesPorUid = new Map(detalhes.map((info) => [info.uid, info]));
+      } catch (err) {
+        console.error('Erro ao buscar detalhes de diretores por UID:', err);
+      }
+    }
+
+    for (const cand of candidatos) {
+      if (cand.uid) {
+        if (vistosUid.has(cand.uid)) continue;
+        vistosUid.add(cand.uid);
+        const detalhes = detalhesPorUid.get(cand.uid);
+        const nome =
+          detalhes?.nome || cand.nome || detalhes?.email || cand.email;
+        const emailFinal = detalhes?.email || cand.email || '';
+        resultado.push({
+          uid: cand.uid,
+          nome: nome || `Diretor ${cand.uid.slice(0, 6)}`,
+          email: emailFinal,
+        });
+        continue;
+      }
+
+      const emailKey = cand.emailLower;
+      if (!emailKey || vistosEmail.has(emailKey)) continue;
+      vistosEmail.add(emailKey);
+      const info = await buscarUsuarioPorEmailBasico(cand.email);
+      if (info?.uid) {
+        if (vistosUid.has(info.uid)) continue;
+        vistosUid.add(info.uid);
+        resultado.push({
+          uid: info.uid,
+          nome:
+            info.nome ||
+            cand.nome ||
+            info.email ||
+            `Diretor ${info.uid.slice(0, 6)}`,
+          email: info.email || cand.email || '',
+        });
+      }
+    }
+
+    return resultado;
+  } catch (err) {
+    console.error('Erro ao carregar diretores da equipe de expedição:', err);
+    return [];
+  }
+}
+
 async function inicializarProdutosLinha(usuarios = []) {
   produtosLinhaUsuariosMap = new Map();
   usuariosFinanceirosLista = Array.isArray(usuarios) ? usuarios : [];
@@ -3029,6 +3171,24 @@ async function inicializarProdutosLinha(usuarios = []) {
       nome: currentUser.displayName || currentUser.email || 'Você',
       email: currentUser.email || '',
     });
+  }
+
+  const diretoresValidos = Array.isArray(expedicaoDiretoresLista)
+    ? expedicaoDiretoresLista.filter((info) => info?.uid)
+    : [];
+  diretoresValidos.forEach((info) => {
+    if (produtosLinhaUsuariosMap.has(info.uid)) return;
+    const nome = info.nome || info.email || `Diretor ${info.uid.slice(0, 6)}`;
+    produtosLinhaUsuariosMap.set(info.uid, {
+      uid: info.uid,
+      nome,
+      email: info.email || '',
+    });
+  });
+  if (diretoresValidos.length) {
+    await garantirUsuariosProdutosLinha(
+      diretoresValidos.map((info) => info.uid),
+    );
   }
 
   renderProdutosLinhaConfig();
@@ -3157,6 +3317,9 @@ function monitorarProdutosLinhaUsuario() {
 
   const unsubscribers = [];
   const fontesEstado = new Map();
+  const diretoresValidos = Array.isArray(expedicaoDiretoresLista)
+    ? expedicaoDiretoresLista.filter((info) => info?.uid)
+    : [];
 
   const prepararFonte = (chave) => {
     if (!fontesEstado.has(chave)) {
@@ -3318,6 +3481,44 @@ function monitorarProdutosLinhaUsuario() {
       );
     },
   );
+
+  diretoresValidos.forEach((diretor) => {
+    const chaveAutor = `diretor:autor:${diretor.uid}`;
+    criarMonitor(
+      chaveAutor,
+      query(
+        collection(db, 'produtosPrecos'),
+        where('autorUid', '==', diretor.uid),
+        limit(20),
+      ),
+      (snap) => selecionarDocMaisRecente(snap.docs),
+      async (err) => {
+        registrarErroFonte(
+          chaveAutor,
+          'Erro ao monitorar importações do diretor (autorUid):',
+          err,
+        );
+      },
+    );
+
+    const chaveResponsavel = `diretor:responsavel:${diretor.uid}`;
+    criarMonitor(
+      chaveResponsavel,
+      query(
+        collection(db, 'produtosPrecos'),
+        where('responsavelUid', '==', diretor.uid),
+        limit(20),
+      ),
+      (snap) => selecionarDocMaisRecente(snap.docs),
+      async (err) => {
+        registrarErroFonte(
+          chaveResponsavel,
+          'Erro ao monitorar importações do diretor (responsavelUid):',
+          err,
+        );
+      },
+    );
+  });
 
   produtosLinhaImportacoesUnsub = () => {
     unsubscribers.forEach((fn) => {
@@ -3758,15 +3959,24 @@ onAuthStateChanged(auth, async (user) => {
     setStatus(painelStatusEl, '');
 
     let usuariosFinanceiros = [];
+    expedicaoDiretoresLista = [];
     try {
       const {
         usuarios = [],
         isGestor,
         isResponsavelFinanceiro,
+        perfil,
       } = await carregarUsuariosFinanceiros(db, user);
       usuariosFinanceiros = Array.isArray(usuarios) ? usuarios : [];
       isGestorAtual = Boolean(isGestor);
       isResponsavelFinanceiroAtual = Boolean(isResponsavelFinanceiro);
+
+      const perfilNormalizado =
+        typeof perfil === 'string' ? perfil.trim().toLowerCase() : '';
+      if (perfilNormalizado === 'expedicao') {
+        expedicaoDiretoresLista = await carregarDiretoresExpedicao(user);
+      }
+
       produtosLinhaPodeGerir = isGestorAtual || isResponsavelFinanceiroAtual;
       if (produtosLinhaPodeGerir) {
         formProduto?.classList.remove('hidden');
@@ -3783,6 +3993,7 @@ onAuthStateChanged(auth, async (user) => {
       isResponsavelFinanceiroAtual = false;
       produtosLinhaPodeGerir = false;
       usuariosFinanceiros = [];
+      expedicaoDiretoresLista = [];
     }
 
     await inicializarProdutosLinha(usuariosFinanceiros);
