@@ -2168,15 +2168,31 @@ await db
 
               const headerCancelar = headersLower.find(h => h.includes('cancelar motivo'));
               const cancelarOriginal = headerCancelar ? headers[headersLower.indexOf(headerCancelar)] : null;
-              const cancelarMotivo = cancelarOriginal ? row[cancelarOriginal] : null;
+              const cancelarMotivoBruto = cancelarOriginal ? row[cancelarOriginal] : null;
+              const cancelarMotivo = cancelarMotivoBruto ? String(cancelarMotivoBruto).trim() : '';
 
-              const headerSkuPrimario = headers.find(h => h.trim() === 'Número de referência SKU');
-              const headerSkuFallback = headers.find(h => h.trim() === 'Nº de referência do SKU principal');
-              const skuPedido = headerSkuPrimario && row[headerSkuPrimario]
-                ? row[headerSkuPrimario]
-                : headerSkuFallback
-                  ? row[headerSkuFallback]
-                  : null;
+              const headerSkuPrimarioIdx = headersLower.findIndex(h =>
+                h.includes('número de referência sku') || h.includes('numero de referencia sku')
+              );
+              const headerSkuPrincipalIdx = headersLower.findIndex(h =>
+                h.includes('nº de referência do sku principal') ||
+                h.includes('n° de referência do sku principal') ||
+                h.includes('no de referência do sku principal') ||
+                h.includes('n o de referência do sku principal')
+              );
+              const headerSkuPrimario = headerSkuPrimarioIdx >= 0 ? headers[headerSkuPrimarioIdx] : null;
+              const headerSkuPrincipal = headerSkuPrincipalIdx >= 0 ? headers[headerSkuPrincipalIdx] : null;
+              let numeroReferenciaSku = headerSkuPrimario ? row[headerSkuPrimario] : null;
+              numeroReferenciaSku = numeroReferenciaSku !== null && numeroReferenciaSku !== undefined
+                ? String(numeroReferenciaSku).trim()
+                : '';
+              const skuPrincipalValorBruto = headerSkuPrincipal ? row[headerSkuPrincipal] : null;
+              const skuPrincipalValor = skuPrincipalValorBruto !== null && skuPrincipalValorBruto !== undefined
+                ? String(skuPrincipalValorBruto).trim()
+                : '';
+              if (!numeroReferenciaSku && skuPrincipalValor) {
+                numeroReferenciaSku = skuPrincipalValor;
+              }
 
               const headerQtd = headersLower.find(h => h.includes('quantidade'));
               const qtdOriginal = headerQtd ? headers[headersLower.indexOf(headerQtd)] : null;
@@ -2216,8 +2232,24 @@ await db
                 taxas: taxasPedido,
                 liquido: liquidoPedido
               };
-              if (skuPedido) pedidoPayload.sku = skuPedido;
+              if (numeroReferenciaSku) pedidoPayload.sku = numeroReferenciaSku;
               if (cancelarMotivo) pedidoPayload.cancelarMotivo = cancelarMotivo;
+
+              const dadosPlanilhaPedido = {
+                'Status do pedido': statusPedido,
+                'Cancelar Motivo': cancelarMotivo || null,
+                'Número de referência SKU': numeroReferenciaSku || null,
+                Quantidade: quantidade,
+                'Subtotal do produto': subtotalPedido,
+                'Cupom do vendedor': cupomPedido,
+                'Reembolso Shopee': reembolsoPedido,
+                'Taxa de comissão': comissaoPedido,
+                'Taxa de serviço': servicoPedido
+              };
+              if (headerSkuPrincipal) {
+                dadosPlanilhaPedido['Nº de referência do SKU principal'] = skuPrincipalValor || null;
+              }
+              pedidoPayload.dadosPlanilha = dadosPlanilhaPedido;
               if (dataPrevistaEnvio) pedidoPayload.dataPrevistaEnvio = dataPrevistaEnvio;
               if (numeroRastreamento) {
                 pedidoPayload.numeroRastreamento = numeroRastreamento;
