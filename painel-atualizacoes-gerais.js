@@ -206,6 +206,7 @@ let produtosLinhaItens = [];
 let produtosLinhaUsuariosMap = new Map();
 let produtosLinhaConfigDados = null;
 let produtosLinhaPronto = false;
+let produtosLinhaItensImportacaoPath = null;
 let participantesDetalhes = [];
 let participantesPorUid = new Map();
 let participantesSelecionados = new Set();
@@ -2312,6 +2313,7 @@ function limparMonitoramentoProdutosLinhaImportacoes() {
 function limparMonitoramentoProdutosLinhaItens() {
   produtosLinhaItensUnsub?.();
   produtosLinhaItensUnsub = null;
+  produtosLinhaItensImportacaoPath = null;
 }
 
 function limparMonitoramentoProdutosLinhaConfig() {
@@ -2325,6 +2327,7 @@ function limparProdutosLinhaDados() {
   produtosLinhaImportacaoMeta = null;
   produtosLinhaItens = [];
   produtosLinhaPronto = false;
+  produtosLinhaItensImportacaoPath = null;
   atualizarProdutosLinhaMeta();
   renderProdutosLinhaTabela();
 }
@@ -2374,6 +2377,51 @@ function atualizarProdutosLinhaMeta() {
     partes.push(meta.arquivoNome);
   }
   produtosLinhaMetaEl.textContent = partes.join(' • ');
+}
+
+function obterTimestampCriadoEm(docSnap) {
+  if (!docSnap) return 0;
+  try {
+    const data = docSnap.data ? docSnap.data() || {} : {};
+    const criadoEm =
+      data.criadoEm?.toDate?.() ||
+      (data.criadoEm instanceof Date ? data.criadoEm : null);
+    if (criadoEm instanceof Date) {
+      return criadoEm.getTime();
+    }
+    if (typeof data.criadoEm === 'number') {
+      return data.criadoEm;
+    }
+    if (
+      data.criadoEm &&
+      typeof data.criadoEm.seconds === 'number' &&
+      typeof data.criadoEm.nanoseconds === 'number'
+    ) {
+      return data.criadoEm.seconds * 1000 + data.criadoEm.nanoseconds / 1e6;
+    }
+  } catch (err) {
+    console.error(
+      'Não foi possível determinar a data de criação do produto:',
+      err,
+    );
+  }
+  return 0;
+}
+
+function selecionarDocMaisRecente(docs = []) {
+  return (docs || []).reduce((melhor, atual) => {
+    if (!atual) return melhor;
+    if (!melhor) return atual;
+    const tempoAtual = obterTimestampCriadoEm(atual);
+    const tempoMelhor = obterTimestampCriadoEm(melhor);
+    if (tempoAtual > tempoMelhor) {
+      return atual;
+    }
+    if (tempoAtual === tempoMelhor) {
+      return atual.ref.path < melhor.ref.path ? atual : melhor;
+    }
+    return melhor;
+  }, null);
 }
 
 function extrairCamposAtivos(fields) {
@@ -3107,62 +3155,182 @@ function monitorarProdutosLinhaUsuario() {
   atualizarProdutosLinhaStatus('Carregando produtos importados...');
   produtosLinhaPronto = false;
 
-  const importacoesRef = query(
-    collection(db, 'uid', currentUser.uid, 'produtosPrecos'),
-    orderBy('criadoEm', 'desc'),
-    limit(1),
-  );
+  const unsubscribers = [];
+  const fontesEstado = new Map();
 
-  produtosLinhaImportacoesUnsub = onSnapshot(
-    importacoesRef,
-    (snap) => {
-      if (snap.empty) {
+  const prepararFonte = (chave) => {
+    if (!fontesEstado.has(chave)) {
+      fontesEstado.set(chave, { pronto: false, doc: null, erro: false });
+    }
+  };
+
+  const atualizarFonte = (chave, docSnap, erro = false) => {
+    prepararFonte(chave);
+    fontesEstado.set(chave, {
+      pronto: true,
+      doc: docSnap || null,
+      erro: Boolean(erro),
+    });
+    atualizarSelecao();
+  };
+
+  const atualizarSelecao = () => {
+    const estados = Array.from(fontesEstado.values());
+    const todasFontesProcessadas =
+      estados.length > 0 && estados.every((info) => info.pronto);
+    const existeErro = estados.some((info) => info.erro);
+    const docsDisponiveis = estados
+      .map((info) => info.doc)
+      .filter((doc) => doc);
+
+    if (!docsDisponiveis.length) {
+      if (todasFontesProcessadas) {
         produtosLinhaPronto = true;
-        produtosLinhaImportacaoMeta = null;
-        produtosLinhaItens = [];
-        atualizarProdutosLinhaStatus(
-          'Nenhum produto importado foi encontrado.',
-        );
-        atualizarProdutosLinhaMeta();
-        renderProdutosLinhaTabela();
-        limparMonitoramentoProdutosLinhaItens();
+        if (!existeErro) {
+          atualizarProdutosLinhaStatus(
+            'Nenhum produto importado foi encontrado.',
+          );
+        }
         monitorarConfigProdutosLinha(null);
-        return;
+        limparProdutosLinhaDados();
+        limparMonitoramentoProdutosLinhaItens();
+      } else {
+        atualizarProdutosLinhaStatus('Carregando produtos importados...');
       }
+      return;
+    }
 
-      produtosLinhaPronto = true;
-      atualizarProdutosLinhaStatus('', false);
-      const docSnap = snap.docs[0];
-      const data = docSnap.data() || {};
-      produtosLinhaResponsavelUid =
-        data.autorUid || data.responsavelUid || produtosLinhaResponsavelUid;
-      if (produtosLinhaResponsavelUid) {
-        monitorarConfigProdutosLinha(produtosLinhaResponsavelUid);
-      }
-      const destinatarios = Array.isArray(data.destinatarios)
-        ? data.destinatarios
-        : [];
-      garantirUsuariosProdutosLinha([
-        currentUser.uid,
-        produtosLinhaResponsavelUid,
-        ...destinatarios,
-      ]);
-      processarImportacaoProdutosLinha(docSnap);
-    },
-    async (err) => {
+    const docSelecionado = selecionarDocMaisRecente(docsDisponiveis);
+    if (!docSelecionado) return;
+
+    produtosLinhaPronto = true;
+    atualizarProdutosLinhaStatus('', false);
+    processarImportacaoProdutosLinha(docSelecionado);
+  };
+
+  const registrarErroFonte = (chave, mensagem, err) => {
+    if (err) {
+      console.error(mensagem, err);
+    }
+    atualizarFonte(chave, null, true);
+  };
+
+  const criarMonitor = (chave, ref, selecionarDocFn, aoErro) => {
+    prepararFonte(chave);
+    try {
+      const unsub = onSnapshot(
+        ref,
+        (snap) => {
+          if (snap.empty) {
+            atualizarFonte(chave, null);
+            return;
+          }
+          const docSelecionado = selecionarDocFn
+            ? selecionarDocFn(snap)
+            : snap.docs[0];
+          atualizarFonte(chave, docSelecionado || null);
+        },
+        async (err) => {
+          if (aoErro) {
+            await aoErro(err, (docSnap, erro) =>
+              atualizarFonte(chave, docSnap, erro),
+            );
+          } else {
+            registrarErroFonte(
+              chave,
+              'Erro ao monitorar importações de produtos em linha:',
+              err,
+            );
+          }
+        },
+      );
+      unsubscribers.push(unsub);
+    } catch (err) {
+      registrarErroFonte(
+        chave,
+        'Erro ao iniciar monitoramento de produtos em linha:',
+        err,
+      );
+    }
+  };
+
+  criarMonitor(
+    'usuario',
+    query(
+      collection(db, 'uid', currentUser.uid, 'produtosPrecos'),
+      orderBy('criadoEm', 'desc'),
+      limit(1),
+    ),
+    (snap) => snap.docs[0],
+    async (err, atualizarFonteInterna) => {
       console.error('Erro ao monitorar importações do usuário:', err);
       if (err.code === 'failed-precondition') {
-        await carregarImportacaoUsuarioFallback(currentUser.uid);
-      } else {
-        atualizarProdutosLinhaStatus(
-          'Não foi possível carregar os produtos importados.',
-          true,
+        const docSnap = await carregarImportacaoUsuarioFallback(
+          currentUser.uid,
         );
-        limparProdutosLinhaDados();
-        monitorarConfigProdutosLinha(null);
+        if (docSnap) {
+          atualizarFonteInterna(docSnap);
+          return;
+        }
+        atualizarFonteInterna(null);
+        return;
       }
+      atualizarProdutosLinhaStatus(
+        'Não foi possível carregar os produtos importados.',
+        true,
+      );
+      limparProdutosLinhaDados();
+      monitorarConfigProdutosLinha(null);
+      atualizarFonteInterna(null, true);
     },
   );
+
+  criarMonitor(
+    'destinatarios',
+    query(
+      collection(db, 'produtosPrecos'),
+      where('destinatarios', 'array-contains', currentUser.uid),
+      limit(20),
+    ),
+    (snap) => selecionarDocMaisRecente(snap.docs),
+    async (err) => {
+      registrarErroFonte(
+        'destinatarios',
+        'Erro ao monitorar importações compartilhadas por destinatários:',
+        err,
+      );
+    },
+  );
+
+  criarMonitor(
+    'visivel',
+    query(
+      collection(db, 'produtosPrecos'),
+      where('visivelParaUid', '==', currentUser.uid),
+      limit(20),
+    ),
+    (snap) => selecionarDocMaisRecente(snap.docs),
+    async (err) => {
+      registrarErroFonte(
+        'visivel',
+        'Erro ao monitorar importações compartilhadas diretamente:',
+        err,
+      );
+    },
+  );
+
+  produtosLinhaImportacoesUnsub = () => {
+    unsubscribers.forEach((fn) => {
+      try {
+        fn();
+      } catch (err) {
+        console.error(
+          'Erro ao encerrar monitoramento de importações de produtos:',
+          err,
+        );
+      }
+    });
+  };
 }
 
 async function carregarImportacaoResponsavelFallback(uid) {
@@ -3210,7 +3378,7 @@ async function carregarImportacaoResponsavelFallback(uid) {
 }
 
 async function carregarImportacaoUsuarioFallback(uid) {
-  if (!uid) return;
+  if (!uid) return null;
   try {
     const snap = await getDocs(
       query(
@@ -3220,43 +3388,12 @@ async function carregarImportacaoUsuarioFallback(uid) {
       ),
     );
     if (snap.empty) {
-      produtosLinhaPronto = true;
-      produtosLinhaImportacaoMeta = null;
-      produtosLinhaItens = [];
-      atualizarProdutosLinhaStatus('Nenhum produto importado foi encontrado.');
-      atualizarProdutosLinhaMeta();
-      renderProdutosLinhaTabela();
-      limparMonitoramentoProdutosLinhaItens();
-      monitorarConfigProdutosLinha(null);
-      return;
+      return null;
     }
-
-    produtosLinhaPronto = true;
-    atualizarProdutosLinhaStatus('', false);
-    const docSnap = snap.docs[0];
-    const data = docSnap.data() || {};
-    produtosLinhaResponsavelUid =
-      data.autorUid || data.responsavelUid || produtosLinhaResponsavelUid;
-    if (produtosLinhaResponsavelUid) {
-      monitorarConfigProdutosLinha(produtosLinhaResponsavelUid);
-    }
-    const destinatarios = Array.isArray(data.destinatarios)
-      ? data.destinatarios
-      : [];
-    garantirUsuariosProdutosLinha([
-      uid,
-      produtosLinhaResponsavelUid,
-      ...destinatarios,
-    ]);
-    processarImportacaoProdutosLinha(docSnap);
+    return snap.docs[0];
   } catch (err) {
     console.error('Erro ao carregar importações do usuário (fallback):', err);
-    atualizarProdutosLinhaStatus(
-      'Não foi possível carregar os produtos importados.',
-      true,
-    );
-    limparProdutosLinhaDados();
-    monitorarConfigProdutosLinha(null);
+    return null;
   }
 }
 
@@ -3285,6 +3422,15 @@ function processarImportacaoProdutosLinha(docSnap) {
 }
 
 function monitorarProdutosLinhaItens(importacaoRef) {
+  const novoPath = importacaoRef?.path || null;
+  if (
+    produtosLinhaItensImportacaoPath &&
+    produtosLinhaItensImportacaoPath === novoPath &&
+    produtosLinhaItensUnsub
+  ) {
+    return;
+  }
+
   limparMonitoramentoProdutosLinhaItens();
   if (!importacaoRef) {
     produtosLinhaItens = [];
@@ -3292,6 +3438,7 @@ function monitorarProdutosLinhaItens(importacaoRef) {
     return;
   }
 
+  produtosLinhaItensImportacaoPath = novoPath;
   const itensRef = query(
     collection(importacaoRef, 'itens'),
     orderBy('ordem', 'asc'),
