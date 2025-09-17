@@ -226,11 +226,11 @@ async function carregarHistoricoFaturamento() {
     card.classList.add('hidden');
     return;
   }
-  card.classList.remove('hidden');
   const mesAtual = new Date().toISOString().slice(0, 7);
   const ano = new Date().getFullYear();
   const mesNum = new Date().getMonth() + 1;
   const totalDiasMes = new Date(ano, mesNum, 0).getDate();
+  let possuiHistorico = false;
   for (const u of usuariosResponsaveis) {
     let metaMensal = 0;
     try {
@@ -254,8 +254,13 @@ async function carregarHistoricoFaturamento() {
     );
     const dias = fatSnap.docs
       .map((d) => d.id)
+      .filter((id) => id.startsWith(mesAtual))
       .sort()
       .slice(-1);
+
+    if (!dias.length) {
+      continue;
+    }
 
     const col = document.createElement('div');
     col.className = 'faturamento-col';
@@ -290,6 +295,13 @@ async function carregarHistoricoFaturamento() {
     }
 
     container.appendChild(col);
+    possuiHistorico = true;
+  }
+
+  if (possuiHistorico) {
+    card.classList.remove('hidden');
+  } else {
+    card.classList.add('hidden');
   }
 }
 
