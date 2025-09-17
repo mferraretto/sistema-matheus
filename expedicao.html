@@ -889,7 +889,7 @@
           title.className = 'font-semibold text-gray-700';
           title.textContent = owner;
           const row = document.createElement('div');
-          row.className = 'flex flex-row flex-nowrap gap-4 overflow-x-auto';
+          row.className = 'expedicao-owner-row flex flex-row gap-4';
           grouped[owner].forEach(r => {
             row.appendChild(createPdfCard(r.doc, r.ownerName));
           });
