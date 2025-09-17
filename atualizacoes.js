@@ -277,6 +277,9 @@ async function carregarHistoricoFaturamento() {
   for (const u of usuariosResponsaveis) {
     const metaMensal = await buscarMetaMentorado(u.uid);
     const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
+    const metaDiariaFormatada = metaDiaria.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+    });
 
     const fatSnap = await getDocs(
       collection(db, 'uid', currentUser.uid, 'uid', u.uid, 'faturamento'),
@@ -296,7 +299,7 @@ async function carregarHistoricoFaturamento() {
 
     const header = document.createElement('div');
     header.className = 'faturamento-header cursor-pointer';
-    header.innerHTML = `<div>${u.nome}</div><div>META R$ ${metaMensal.toLocaleString('pt-BR')}</div>`;
+    header.innerHTML = `<div>${u.nome}</div><div>META diária R$ ${metaDiariaFormatada}</div>`;
     header.addEventListener('click', () =>
       toggleFaturamentoMensal(col, currentUser.uid, u.uid),
     );
@@ -341,6 +344,12 @@ async function toggleFaturamentoMensal(container, responsavelUid, uid) {
     return;
   }
   const mesAtual = new Date().toISOString().slice(0, 7);
+  const [anoAtual, mesAtualNumero] = mesAtual.split('-');
+  const totalDiasMes = mesAtualNumero
+    ? new Date(Number(anoAtual), Number(mesAtualNumero), 0).getDate()
+    : 0;
+  const metaMensal = await buscarMetaMentorado(uid);
+  const metaDiaria = totalDiasMes ? metaMensal / totalDiasMes : 0;
   const fatSnap = await getDocs(
     collection(db, 'uid', responsavelUid, 'uid', uid, 'faturamento'),
   );
@@ -352,9 +361,13 @@ async function toggleFaturamentoMensal(container, responsavelUid, uid) {
   tabela.className = 'mt-2 w-full text-sm border-collapse';
   const thead = document.createElement('thead');
   thead.innerHTML =
-    '<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th></tr>';
+    '<tr><th class="border px-2 py-1">Data</th><th class="border px-2 py-1">Bruto</th><th class="border px-2 py-1">Líquido</th><th class="border px-2 py-1">Vendas</th><th class="border px-2 py-1">Resultado meta</th></tr>';
   tabela.appendChild(thead);
   const tbody = document.createElement('tbody');
+  let totalBruto = 0;
+  let totalLiquido = 0;
+  let totalVendas = 0;
+  let totalDiferenca = 0;
   for (const dia of dias) {
     const { bruto, liquido } = await calcularFaturamentoDiaDetalhado(
       responsavelUid,
@@ -362,11 +375,73 @@ async function toggleFaturamentoMensal(container, responsavelUid, uid) {
       dia,
     );
     const vendas = await calcularVendasDia(responsavelUid, uid, dia);
+    totalBruto += bruto;
+    totalLiquido += liquido;
+    totalVendas += vendas;
+    const diferenca = liquido - metaDiaria;
+    totalDiferenca += diferenca;
+    const diferencaEhZero = Math.abs(diferenca) < 0.005;
+    let diferencaClass = 'border px-2 py-1';
+    let diferencaTexto = 'Na meta';
+    if (!diferencaEhZero) {
+      diferencaClass +=
+        diferenca >= 0
+          ? ' text-green-600 font-semibold'
+          : ' text-red-600 font-semibold';
+      diferencaTexto = `${diferenca >= 0 ? 'Acima' : 'Abaixo'} R$ ${Math.abs(
+        diferenca,
+      ).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+      })}`;
+    }
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="border px-2 py-1">${dia}</td><td class="border px-2 py-1">R$ ${bruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">R$ ${liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td><td class="border px-2 py-1">${vendas}</td>`;
+    tr.innerHTML = `
+      <td class="border px-2 py-1">${dia}</td>
+      <td class="border px-2 py-1">R$ ${bruto.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+      })}</td>
+      <td class="border px-2 py-1">R$ ${liquido.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+      })}</td>
+      <td class="border px-2 py-1">${vendas.toLocaleString('pt-BR')}</td>
+      <td class="${diferencaClass}">${diferencaTexto}</td>
+    `;
     tbody.appendChild(tr);
   }
   tabela.appendChild(tbody);
+  const tfoot = document.createElement('tfoot');
+  const diferencaTotalEhZero = Math.abs(totalDiferenca) < 0.005;
+  let diferencaTotalClass = 'border px-2 py-1 font-semibold';
+  let diferencaTotalTexto = 'Na meta';
+  if (!diferencaTotalEhZero) {
+    diferencaTotalClass +=
+      totalDiferenca >= 0 ? ' text-green-600' : ' text-red-600';
+    diferencaTotalTexto = `${
+      totalDiferenca >= 0 ? 'Acima' : 'Abaixo'
+    } R$ ${Math.abs(totalDiferenca).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+    })}`;
+  }
+  tfoot.innerHTML = `
+    <tr>
+      <td class="border px-2 py-1 font-semibold">Totais</td>
+      <td class="border px-2 py-1 font-semibold">R$ ${totalBruto.toLocaleString(
+        'pt-BR',
+        {
+          minimumFractionDigits: 2,
+        },
+      )}</td>
+      <td class="border px-2 py-1 font-semibold">R$ ${totalLiquido.toLocaleString(
+        'pt-BR',
+        {
+          minimumFractionDigits: 2,
+        },
+      )}</td>
+      <td class="border px-2 py-1 font-semibold">${totalVendas.toLocaleString('pt-BR')}</td>
+      <td class="${diferencaTotalClass}">${diferencaTotalTexto}</td>
+    </tr>
+  `;
+  tabela.appendChild(tfoot);
   container.appendChild(tabela);
 }
 
