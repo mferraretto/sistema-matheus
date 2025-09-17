@@ -147,7 +147,7 @@
 /* Card estilo ticket usado na aba Expedição */
 .ticket-card {
   position: relative;
-  align-self: flex-start;
+  align-self: stretch;
 }
 
 .ticket-card::before,
@@ -238,27 +238,30 @@
   text-transform: uppercase;
 }
 
-.expedicao-pdf-card {
-  min-width: 210px;
-  gap: 0.65rem;
+#labelsList.grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: stretch;
+  justify-items: stretch;
 }
 
-#labelsList.grid {
-  align-items: flex-start;
-  align-items: start;
-  justify-items: center;
+.expedicao-pdf-card {
+  min-width: 0;
+  gap: 0.65rem;
 }
 
 #labelsList.grid .expedicao-pdf-card {
   width: 100%;
-  max-width: 320px;
-  align-self: flex-start;
-  align-self: start;
+  height: 100%;
+  max-width: none;
+  align-self: stretch;
 }
 
 #labelsList.grid .ticket-card {
-  align-self: flex-start;
-  align-self: start;
+  align-self: stretch;
+}
+
+#labelsList .flex-row > .expedicao-pdf-card {
+  flex: 0 0 clamp(240px, 28vw, 320px);
 }
 
 .expedicao-pdf-header {
@@ -382,6 +385,7 @@
   gap: 0.35rem;
   display: flex;
   flex-direction: column;
+  flex-grow: 1;
 }
 
 .expedicao-pdf-name {
