@@ -92,6 +92,17 @@
               >
                 Planejamento
               </button>
+              <button
+                id="tab-btn-produtos-linha"
+                type="button"
+                class="tab-button rounded-xl border border-transparent bg-white px-4 py-2 text-sm font-semibold text-gray-500 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50"
+                data-tab-target="produtos-linha"
+                aria-controls="tab-produtos-linha"
+                aria-selected="false"
+                role="tab"
+              >
+                Produtos em linha
+              </button>
             </nav>
             <p class="text-sm text-gray-500">
               Escolha uma das seções para visualizar ou atualizar as informações
@@ -621,6 +632,128 @@
                     Nenhum produto em linha cadastrado até o momento.
                   </p>
                 </div>
+              </section>
+            </div>
+
+            <div
+              id="tab-produtos-linha"
+              class="hidden space-y-6"
+              data-tab-panel="produtos-linha"
+              role="tabpanel"
+              aria-labelledby="tab-btn-produtos-linha"
+            >
+              <section
+                class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-6"
+              >
+                <div
+                  class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div class="space-y-1">
+                    <h2
+                      class="flex items-center gap-2 text-xl font-semibold text-gray-800"
+                    >
+                      <span class="text-emerald-500"
+                        ><i class="fa-solid fa-clipboard-list"></i
+                      ></span>
+                      Produtos em linha importados
+                    </h2>
+                    <p class="text-sm text-gray-500">
+                      Visualize os itens enviados via aba Produtos e Preços e
+                      acompanhe as últimas atualizações compartilhadas pelo
+                      responsável financeiro.
+                    </p>
+                  </div>
+                  <span
+                    id="produtosLinhaStatus"
+                    class="text-sm text-gray-500"
+                  ></span>
+                </div>
+                <p
+                  id="produtosLinhaMeta"
+                  class="mt-3 text-xs text-gray-500"
+                ></p>
+                <div
+                  id="produtosLinhaTabelaContainer"
+                  class="mt-4 overflow-x-auto rounded-2xl border border-emerald-100 bg-white"
+                >
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead id="produtosLinhaTabelaCabecalho"></thead>
+                    <tbody
+                      id="produtosLinhaTabelaCorpo"
+                      class="divide-y divide-gray-100"
+                    ></tbody>
+                  </table>
+                </div>
+                <p
+                  id="produtosLinhaAcessoNegado"
+                  class="mt-4 hidden rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-600"
+                >
+                  O responsável financeiro ainda não liberou o acesso a essa
+                  lista para o seu usuário.
+                </p>
+                <p
+                  id="produtosLinhaSemInformacao"
+                  class="mt-4 hidden rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm text-amber-700"
+                >
+                  Nenhuma informação foi compartilhada para este usuário.
+                </p>
+                <p
+                  id="produtosLinhaVazio"
+                  class="mt-4 hidden text-sm text-gray-500"
+                >
+                  Nenhum produto importado foi encontrado para exibir.
+                </p>
+              </section>
+
+              <section
+                id="produtosLinhaConfigSecao"
+                class="hidden rounded-2xl border border-blue-100 bg-blue-50/40 p-5 shadow-inner sm:p-6"
+              >
+                <div
+                  class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                >
+                  <div class="space-y-1">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                      Controle de acesso à lista
+                    </h3>
+                    <p class="text-sm text-gray-600">
+                      Escolha quem poderá visualizar a lista de produtos em
+                      linha e quais colunas ficarão disponíveis para cada
+                      usuário.
+                    </p>
+                  </div>
+                  <span
+                    id="produtosLinhaConfigStatus"
+                    class="text-sm text-gray-500"
+                  ></span>
+                </div>
+                <form id="formProdutosLinhaConfig" class="mt-4 space-y-5">
+                  <div
+                    id="produtosLinhaUsuariosLista"
+                    class="space-y-3"
+                  ></div>
+                  <p
+                    id="produtosLinhaConfigVazio"
+                    class="text-sm text-gray-500 hidden"
+                  >
+                    Nenhum usuário relacionado foi encontrado.
+                  </p>
+                  <div class="flex flex-col gap-3 text-xs text-gray-500">
+                    <p>
+                      Colunas disponíveis: SKU, Produto, Preço, Prazo e Última
+                      atualização. As alterações são aplicadas imediatamente
+                      após salvar.
+                    </p>
+                  </div>
+                  <div class="flex justify-end">
+                    <button
+                      type="submit"
+                      class="btn btn-primary rounded-xl px-4 py-2 text-sm"
+                    >
+                      Salvar configurações
+                    </button>
+                  </div>
+                </form>
               </section>
             </div>
           </div>
