@@ -22,7 +22,16 @@
     </div>
     <div id="resumoTotais" class="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4"></div>
     <div id="historicoFaturamentoCard" class="card p-4 hidden">
-      <h2 class="font-medium mb-2">Histórico de Faturamento (Último dia)</h2>
+      <div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 class="font-medium">Histórico de Faturamento (Último dia)</h2>
+        <button
+          id="exportarHistoricoBtn"
+          type="button"
+          class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Exportar histórico
+        </button>
+      </div>
       <div id="historicoFaturamento" class="flex flex-nowrap gap-4 overflow-x-auto"></div>
     </div>
     <div id="usuariosResponsaveisCard" class="card p-4 hidden">
