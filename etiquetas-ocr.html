@@ -51,6 +51,84 @@
     #status {
       min-height: 2rem;
     }
+    #processingModal { z-index: 1000; }
+    .processing-modal-content {
+      border: 1px solid transparent;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+    .processing-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .processing-close-btn {
+      background: #1d4ed8;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .processing-close-btn:hover {
+      background: #1e40af;
+    }
+    .processing-success {
+      background: #ecfdf5 !important;
+      border-color: #34d399 !important;
+    }
+    .processing-success #processingTitle {
+      color: #047857;
+    }
+    .processing-success #processingSubtitle,
+    .processing-success #processingMessage {
+      color: #047857;
+    }
+    .processing-success .processing-icon {
+      background: #bbf7d0;
+      color: #047857;
+    }
+    .processing-success .processing-close-btn {
+      background: #059669;
+    }
+    .processing-success .processing-close-btn:hover {
+      background: #047857;
+    }
+    .processing-success .progress-bar-bg {
+      background: linear-gradient(90deg, #d1fae5 0%, #bbf7d0 100%);
+    }
+    .processing-success .progress-bar-fill {
+      background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%) !important;
+    }
+    .processing-error {
+      background: #fef2f2 !important;
+      border-color: #f87171 !important;
+    }
+    .processing-error #processingTitle {
+      color: #b91c1c;
+    }
+    .processing-error #processingSubtitle,
+    .processing-error #processingMessage {
+      color: #b91c1c;
+    }
+    .processing-error .processing-icon {
+      background: #fecaca;
+      color: #b91c1c;
+    }
+    .processing-error .processing-close-btn {
+      background: #dc2626;
+    }
+    .processing-error .processing-close-btn:hover {
+      background: #b91c1c;
+    }
+    .processing-error .progress-bar-bg {
+      background: linear-gradient(90deg, #fee2e2 0%, #fecaca 100%);
+    }
+    .processing-error .progress-bar-fill {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%) !important;
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
@@ -85,15 +163,6 @@
       Etiquetas Mercado Livre
     </button>
 
-    <div class="mt-6">
-      <div class="progress-bar-bg" id="progressBar" style="display:none;">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%;">
-          <span id="progressText" class="w-full text-center"></span>
-        </div>
-      </div>
-      <div id="timerText" class="text-center text-sm text-gray-700 mt-2"></div>
-    </div>
-
     <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
     <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
     <div class="flex justify-center mt-8">
@@ -112,6 +181,28 @@
     </div>
   </div>
 
+  <div id="processingModal" class="processing-modal-overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden">
+    <div id="processingModalContent" class="processing-modal-content bg-white w-full max-w-md p-6 rounded-xl shadow-2xl">
+      <div class="flex flex-col items-center text-center gap-3">
+        <div id="processingIcon" class="processing-icon">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+        </div>
+        <h2 id="processingTitle" class="text-xl font-semibold text-gray-800">Processando etiquetas...</h2>
+        <p id="processingSubtitle" class="text-sm text-gray-600">Não feche esta página até a conclusão do processo.</p>
+        <p id="processingMessage" class="text-sm text-gray-500 mt-1">Preparando processamento...</p>
+        <div class="w-full mt-4">
+          <div class="progress-bar-bg" id="progressBar" style="display:none;">
+            <div class="progress-bar-fill" id="progressFill" style="width:0%;">
+              <span id="progressText" class="w-full text-center"></span>
+            </div>
+          </div>
+          <div id="timerText" class="text-center text-sm text-gray-700 mt-2"></div>
+        </div>
+        <button id="processingCloseBtn" class="processing-close-btn hidden mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium text-white transition">Fechar</button>
+      </div>
+    </div>
+  </div>
+
       <script type="module">
     import { firebaseConfig } from './firebase-config.js';
 
@@ -125,6 +216,85 @@
     let currentUser = null;
     let responsavelExpedicaoUid = null;
     let horariosEtiquetas = [];
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const timerText = document.getElementById('timerText');
+    const processingModal = document.getElementById('processingModal');
+    const processingModalContent = document.getElementById('processingModalContent');
+    const processingIcon = document.getElementById('processingIcon');
+    const processingTitle = document.getElementById('processingTitle');
+    const processingSubtitle = document.getElementById('processingSubtitle');
+    const processingMessage = document.getElementById('processingMessage');
+    const processingCloseBtn = document.getElementById('processingCloseBtn');
+    const statusBox = document.getElementById('status');
+
+    function openProcessingModal({ title, message } = {}) {
+      processingModal.classList.remove('hidden');
+      processingModalContent.classList.remove('processing-success', 'processing-error');
+      processingTitle.textContent = title || 'Processando...';
+      processingSubtitle.textContent = 'Não feche esta página até a conclusão do processo.';
+      processingMessage.textContent = message || 'Preparando processamento...';
+      processingIcon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      progressBar.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressText.textContent = '';
+      timerText.textContent = '';
+      processingCloseBtn.classList.add('hidden');
+    }
+
+    function setProcessingMessage(text) {
+      processingMessage.textContent = text || '';
+    }
+
+    function markProcessingSuccess(message, totalSeconds) {
+      processingModalContent.classList.remove('processing-error');
+      processingModalContent.classList.add('processing-success');
+      processingIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      processingTitle.textContent = 'Processamento concluído!';
+      processingSubtitle.textContent = 'Arquivos gerados e salvos com sucesso.';
+      if (message) processingMessage.textContent = message;
+      progressBar.style.display = 'block';
+      progressFill.style.width = '100%';
+      progressText.textContent = 'Arquivo final salvo com sucesso.';
+      if (typeof totalSeconds === 'number') {
+        timerText.textContent = `Tempo total: ${formatTime(totalSeconds)}`;
+      }
+      processingCloseBtn.classList.remove('hidden');
+    }
+
+    function markProcessingError(message) {
+      processingModalContent.classList.remove('processing-success');
+      processingModalContent.classList.add('processing-error');
+      processingIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      processingTitle.textContent = 'Erro no processamento';
+      processingSubtitle.textContent = 'Você pode fechar esta janela e tentar novamente.';
+      processingMessage.textContent = message || 'Não foi possível concluir o processamento.';
+      progressBar.style.display = 'block';
+      progressText.textContent = 'Processamento interrompido.';
+      timerText.textContent = '';
+      processingCloseBtn.classList.remove('hidden');
+    }
+
+    function closeProcessingModal() {
+      processingModal.classList.add('hidden');
+    }
+
+    processingCloseBtn.addEventListener('click', closeProcessingModal);
+    processingModal.addEventListener('click', event => {
+      if (event.target === processingModal && !processingCloseBtn.classList.contains('hidden')) {
+        closeProcessingModal();
+      }
+    });
+    document.addEventListener('keydown', event => {
+      if (
+        event.key === 'Escape' &&
+        !processingModal.classList.contains('hidden') &&
+        !processingCloseBtn.classList.contains('hidden')
+      ) {
+        closeProcessingModal();
+      }
+    });
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -528,6 +698,9 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     function updateProgress(current, total, startTime, progressFill, progressText, timerText) {
+      if (progressBar.style.display === 'none') {
+        progressBar.style.display = 'block';
+      }
       const progress = Math.round((current / total) * 100);
       progressFill.style.width = progress + "%";
       if (current > 0) {
@@ -625,18 +798,19 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function processar() {
-      const progressBar = document.getElementById("progressBar");
-      const progressFill = document.getElementById("progressFill");
-      const progressText = document.getElementById("progressText");
-      const timerText = document.getElementById("timerText");
-      progressBar.style.display = "block";
-      progressFill.style.width = "0%";
-      progressText.textContent = "";
-      timerText.textContent = "";
-      const startTime = Date.now();
-
-      const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
+      if (!pdfFile) {
+        return showMessage("Envie o arquivo PDF.");
+      }
+
+      const startTime = Date.now();
+      openProcessingModal({
+        title: 'Processando etiquetas Shopee...',
+        message: 'Iniciando leitura do arquivo PDF...'
+      });
+      setProcessingMessage('Preparando leitura do PDF...');
+      statusBox.textContent = "📸 Lendo PDF...";
+
       const allExtractedItems = [];
       const paginasResumo = [];
       let contadorInicial = null;
@@ -644,20 +818,16 @@ firebase.auth().onAuthStateChanged(async u => {
       let contadorInicializado = false;
       let totalPrevisto = 0;
 
-      if (!pdfFile) {
-        progressBar.style.display = "none";
-        return showMessage("Envie o arquivo PDF.");
-      }
-
-      status.textContent = "📸 Lendo PDF...";
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const novoPdf = await PDFLib.PDFDocument.create();
-      const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.style.display = "block";
-      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
+      try {
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const novoPdf = await PDFLib.PDFDocument.create();
+        const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+        const canvas = document.getElementById("pdfCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.style.display = "block";
+        setProcessingMessage('Processando páginas do PDF...');
+        updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
       for (let i = 0; i < pdf.numPages; i++) {
         const page = await pdf.getPage(i + 1);
@@ -885,142 +1055,152 @@ firebase.auth().onAuthStateChanged(async u => {
         }
       }
 
-      progressFill.style.width = "100%";
-      progressText.textContent = "✅ Concluído!";
-      const totalTime = Math.round((Date.now() - startTime) / 1000);
-      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
-      setTimeout(() => {
-        progressBar.style.display = "none";
-      }, 2000);
+        progressFill.style.width = "100%";
+        progressText.textContent = "Páginas processadas. Gerando arquivo final...";
+        timerText.textContent = `Tempo restante: ${formatTime(0)}`;
+        setProcessingMessage('Gerando arquivo final das etiquetas...');
 
-      const pdfFinal = await novoPdf.save();
-      const blob = new Blob([pdfFinal], { type: "application/pdf" });
-      const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
-      const localUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = localUrl;
-      a.download = fileName;
-      a.click();
+        const pdfFinal = await novoPdf.save();
+        const blob = new Blob([pdfFinal], { type: "application/pdf" });
+        const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+        const localUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = localUrl;
+        a.download = fileName;
+        a.click();
 
-      const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
-      const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
-      status.textContent = "📤 Enviando ao servidor...";
-      uploadPdfToFirebase(blob, fileName, allExtractedItems, {
-        totalPaginas: totalPaginasGeradas,
-        paginasResumo,
-        contadorInicial: contadorInicializado ? contadorInicial : null,
-        contadorFinal
-      })
-        .then(() => {
-          status.textContent = "✅ PDF gerado com sucesso! Concluído.";
-        })
-        .catch(() => {
-          status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
+        const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
+        const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
+        if (currentUser) {
+          statusBox.textContent = "📤 Enviando ao servidor...";
+          setProcessingMessage('Enviando arquivo final ao servidor...');
+        } else {
+          statusBox.textContent = "📦 Finalizando processamento...";
+          setProcessingMessage('Finalizando processamento local...');
+        }
+
+        await uploadPdfToFirebase(blob, fileName, allExtractedItems, {
+          totalPaginas: totalPaginasGeradas,
+          paginasResumo,
+          contadorInicial: contadorInicializado ? contadorInicial : null,
+          contadorFinal
         });
+
+        statusBox.textContent = "✅ PDF gerado com sucesso! Concluído.";
+        const totalTime = Math.round((Date.now() - startTime) / 1000);
+        markProcessingSuccess('PDF final salvo com sucesso!', totalTime);
+      } catch (error) {
+        console.error('Erro ao processar etiquetas:', error);
+        statusBox.textContent = "❌ Ocorreu um erro ao processar o PDF.";
+        markProcessingError('Não foi possível concluir o processamento. Tente novamente.');
+      }
     }
 
     window.processar = processar;
     async function processarMercadoLivre() {
-      const progressBar = document.getElementById("progressBar");
-      const progressFill = document.getElementById("progressFill");
-      const progressText = document.getElementById("progressText");
-      const timerText = document.getElementById("timerText");
-      progressBar.style.display = "block";
-      progressFill.style.width = "0%";
-      progressText.textContent = "";
-      timerText.textContent = "";
-      const startTime = Date.now();
-
-      const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
       if (!pdfFile) {
-        progressBar.style.display = "none";
         return showMessage("Envie o arquivo PDF.");
       }
 
-      status.textContent = "📸 Lendo PDF Mercado Livre...";
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.style.display = "block";
-      const allItems = [];
-      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
+      const startTime = Date.now();
+      openProcessingModal({
+        title: 'Processando etiquetas Mercado Livre...',
+        message: 'Iniciando leitura do arquivo PDF...'
+      });
+      statusBox.textContent = "📸 Lendo PDF Mercado Livre...";
+      setProcessingMessage('Processando páginas do PDF...');
 
-      for (let i = 0; i < pdf.numPages; i++) {
-        const page = await pdf.getPage(i + 1);
-        const scale = 3;
-        const viewport = page.getViewport({ scale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
-        const data = await extractMercadoLivreData(canvas);
-        if (data.sku) allItems.push(data);
-      }
+      try {
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const canvas = document.getElementById("pdfCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.style.display = "block";
+        const allItems = [];
+        updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-      progressFill.style.width = "100%";
-      progressText.textContent = "✅ Concluído!";
-      const totalTime = Math.round((Date.now() - startTime) / 1000);
-      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
-      setTimeout(() => { progressBar.style.display = "none"; }, 2000);
+        for (let i = 0; i < pdf.numPages; i++) {
+          const page = await pdf.getPage(i + 1);
+          const scale = 3;
+          const viewport = page.getViewport({ scale });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
+          const data = await extractMercadoLivreData(canvas);
+          if (data.sku) allItems.push(data);
+        }
 
-      if (currentUser) {
-        const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-        const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-        const fileName = `mercado_livre_${Date.now()}.pdf`;
-        const selecionado = await escolherGestorEmail(gestoresEmails);
-        const docRef = await db.collection('pdfDocs').add({
-          ownerUid: currentUser.uid,
-          ownerEmail: currentUser.email,
-          gestoresExpedicaoEmails: selecionado,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          name: fileName,
-          foraHorario: foraDoHorario()
-        });
-        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-        await fileRef.put(pdfFile);
-        const url = await fileRef.getDownloadURL();
-        await docRef.update({ url: url, storagePath: fileRef.fullPath });
-        const record = {
-          name: fileName,
-          url: url,
-          path: fileRef.fullPath,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-        if (responsavelExpedicaoUid) {
-          const respRecord = {
+        progressFill.style.width = "100%";
+        progressText.textContent = "Páginas processadas. Finalizando...";
+        timerText.textContent = `Tempo restante: ${formatTime(0)}`;
+        setProcessingMessage('Finalizando processamento e salvando dados...');
+
+        if (currentUser) {
+          const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+          const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+          const fileName = `mercado_livre_${Date.now()}.pdf`;
+          const selecionado = await escolherGestorEmail(gestoresEmails);
+          const docRef = await db.collection('pdfDocs').add({
+            ownerUid: currentUser.uid,
+            ownerEmail: currentUser.email,
+            gestoresExpedicaoEmails: selecionado,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            name: fileName,
+            foraHorario: foraDoHorario()
+          });
+          const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+          setProcessingMessage('Enviando arquivo ao servidor...');
+          await fileRef.put(pdfFile);
+          const url = await fileRef.getDownloadURL();
+          await docRef.update({ url: url, storagePath: fileRef.fullPath });
+          const record = {
             name: fileName,
             url: url,
             path: fileRef.fullPath,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
-          await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+          await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+          if (responsavelExpedicaoUid) {
+            const respRecord = {
+              name: fileName,
+              url: url,
+              path: fileRef.fullPath,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+          }
+          if (
+            window.ExpedicaoNotifier &&
+            typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+          ) {
+            await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+              db,
+              firebase,
+              currentUser,
+              destinatarioEmails: selecionado,
+              destinatarioUids: responsavelExpedicaoUid
+                ? [responsavelExpedicaoUid]
+                : [],
+              arquivoNome: fileName,
+              totalEtiquetas: allItems.length,
+              foraHorario: foraDoHorario(),
+              origem: 'Etiquetas Mercado Livre',
+              pdfDocId: docRef.id,
+            });
+          }
         }
-        if (
-          window.ExpedicaoNotifier &&
-          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
-        ) {
-          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
-            db,
-            firebase,
-            currentUser,
-            destinatarioEmails: selecionado,
-            destinatarioUids: responsavelExpedicaoUid
-              ? [responsavelExpedicaoUid]
-              : [],
-            arquivoNome: fileName,
-            totalEtiquetas: allItems.length,
-            foraHorario: foraDoHorario(),
-            origem: 'Etiquetas Mercado Livre',
-            pdfDocId: docRef.id,
-          });
-        }
-      }
 
-      await savePrintedSkuQuantities(allItems);
-      status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
+        await savePrintedSkuQuantities(allItems);
+        statusBox.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
+        const totalTime = Math.round((Date.now() - startTime) / 1000);
+        markProcessingSuccess('Processamento concluído com sucesso!', totalTime);
+      } catch (error) {
+        console.error('Erro ao processar etiquetas Mercado Livre:', error);
+        statusBox.textContent = "❌ Ocorreu um erro ao processar as etiquetas do Mercado Livre.";
+        markProcessingError('Não foi possível concluir o processamento. Tente novamente.');
+      }
     }
 
     window.processarMercadoLivre = processarMercadoLivre;
