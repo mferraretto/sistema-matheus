@@ -39,6 +39,14 @@
       background-size: 200% 100%;
       animation: progress-animation 2s linear infinite;
     }
+    .progress-bar-fill.completed {
+      background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
+      animation: none;
+    }
+    .progress-bar-fill.failed {
+      background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%);
+      animation: none;
+    }
     @keyframes progress-animation {
       0% { background-position: 0% 0; }
       100% { background-position: -200% 0; }
@@ -85,15 +93,6 @@
       Etiquetas Mercado Livre
     </button>
 
-    <div class="mt-6">
-      <div class="progress-bar-bg" id="progressBar" style="display:none;">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%;">
-          <span id="progressText" class="w-full text-center"></span>
-        </div>
-      </div>
-      <div id="timerText" class="text-center text-sm text-gray-700 mt-2"></div>
-    </div>
-
     <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
     <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
     <div class="flex justify-center mt-8">
@@ -101,7 +100,32 @@
     </div>
   </div>
 
-  <div id="gestorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+  <div id="processingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-40 px-4">
+    <div id="processingModalCard" class="w-full max-w-lg rounded-xl shadow-xl p-6 bg-white border-t-4 border-blue-500 space-y-5 transition-colors duration-300">
+      <div class="flex items-start gap-3">
+        <i id="processingIcon" class="fa-solid fa-gear fa-spin text-blue-500 text-2xl mt-1"></i>
+        <div>
+          <h2 id="processingTitle" class="text-xl font-semibold text-gray-800">Processando etiquetas...</h2>
+          <p id="processingSubtitle" class="text-sm text-gray-600">Por favor, não feche a página até concluirmos o processamento.</p>
+        </div>
+      </div>
+      <div>
+        <div class="progress-bar-bg" id="progressBar" style="display:none;">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%;">
+            <span id="progressText" class="w-full text-center"></span>
+          </div>
+        </div>
+        <div id="timerText" class="text-center text-sm text-gray-700 mt-3"></div>
+      </div>
+      <div class="text-xs text-yellow-700 bg-yellow-100 border border-yellow-200 rounded-md px-3 py-2 flex items-start gap-2">
+        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+        <span>Não feche a página enquanto as etiquetas são processadas e enviadas.</span>
+      </div>
+      <button id="processingClose" type="button" class="w-full hidden py-2.5 rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 transition" aria-hidden="true">Fechar</button>
+    </div>
+  </div>
+
+  <div id="gestorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
     <div class="bg-white w-full max-w-md p-4 rounded shadow-lg">
       <h2 class="text-lg font-semibold mb-2">Enviar arquivo para qual gestor?</h2>
       <select id="gestorSelect" class="form-control mb-4"></select>
@@ -125,6 +149,108 @@
     let currentUser = null;
     let responsavelExpedicaoUid = null;
     let horariosEtiquetas = [];
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const timerText = document.getElementById('timerText');
+    const processingModal = document.getElementById('processingModal');
+    const processingModalCard = document.getElementById('processingModalCard');
+    const processingTitle = document.getElementById('processingTitle');
+    const processingSubtitle = document.getElementById('processingSubtitle');
+    const processingIcon = document.getElementById('processingIcon');
+    const processingClose = document.getElementById('processingClose');
+
+    processingModalCard.dataset.status = 'idle';
+
+    function setProcessingModalTheme(state) {
+      processingModalCard.classList.remove('bg-white', 'border-blue-500', 'bg-green-50', 'border-green-500', 'bg-red-50', 'border-red-500');
+      processingTitle.classList.remove('text-gray-800', 'text-green-700', 'text-red-700');
+      processingSubtitle.classList.remove('text-gray-600', 'text-green-700', 'text-red-700');
+      timerText.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
+
+      if (state === 'success') {
+        processingModalCard.classList.add('bg-green-50', 'border-green-500');
+        processingTitle.classList.add('text-green-700');
+        processingSubtitle.classList.add('text-green-700');
+        timerText.classList.add('text-green-700');
+      } else if (state === 'error') {
+        processingModalCard.classList.add('bg-red-50', 'border-red-500');
+        processingTitle.classList.add('text-red-700');
+        processingSubtitle.classList.add('text-red-700');
+        timerText.classList.add('text-red-700');
+      } else {
+        processingModalCard.classList.add('bg-white', 'border-blue-500');
+        processingTitle.classList.add('text-gray-800');
+        processingSubtitle.classList.add('text-gray-600');
+        timerText.classList.add('text-gray-700');
+      }
+    }
+
+    function openProcessingModal() {
+      setProcessingModalTheme('processing');
+      processingModal.classList.remove('hidden');
+      processingModal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+      processingModalCard.dataset.status = 'processing';
+      processingIcon.className = 'fa-solid fa-gear fa-spin text-blue-500 text-2xl mt-1';
+      processingTitle.textContent = 'Processando etiquetas...';
+      processingSubtitle.textContent = 'Por favor, não feche a página até concluirmos o processamento.';
+      progressBar.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressFill.classList.remove('completed', 'failed');
+      progressText.textContent = '';
+      timerText.textContent = '';
+      processingClose.classList.add('hidden');
+      processingClose.setAttribute('aria-hidden', 'true');
+      processingClose.disabled = true;
+    }
+
+    function completeProcessingModal(totalSeconds) {
+      setProcessingModalTheme('success');
+      processingModalCard.dataset.status = 'completed';
+      processingIcon.className = 'fa-solid fa-circle-check text-green-500 text-2xl mt-1';
+      processingTitle.textContent = 'Tudo pronto!';
+      processingSubtitle.textContent = 'Arquivo final salvo com sucesso. Agora você já pode fechar esta janela.';
+      progressFill.classList.add('completed');
+      progressFill.classList.remove('failed');
+      progressFill.style.width = '100%';
+      progressText.textContent = 'Processamento finalizado (100%)';
+      if (Number.isFinite(totalSeconds)) {
+        timerText.textContent = `Tempo total: ${formatTime(Math.max(0, Math.floor(totalSeconds)))}`;
+      }
+      processingClose.classList.remove('hidden');
+      processingClose.removeAttribute('aria-hidden');
+      processingClose.disabled = false;
+    }
+
+    function failProcessingModal(message) {
+      setProcessingModalTheme('error');
+      processingModalCard.dataset.status = 'failed';
+      processingIcon.className = 'fa-solid fa-circle-exclamation text-red-500 text-2xl mt-1';
+      processingTitle.textContent = 'Algo deu errado';
+      processingSubtitle.textContent = message || 'Não foi possível concluir o processamento. Tente novamente.';
+      progressFill.classList.add('failed');
+      progressFill.classList.remove('completed');
+      processingClose.classList.remove('hidden');
+      processingClose.removeAttribute('aria-hidden');
+      processingClose.disabled = false;
+    }
+
+    function hideProcessingModal() {
+      processingModal.classList.add('hidden');
+      processingModal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+      progressBar.style.display = 'none';
+      processingModalCard.dataset.status = 'idle';
+    }
+
+    if (processingClose) {
+      processingClose.addEventListener('click', () => {
+        if (processingModalCard.dataset.status !== 'processing') {
+          hideProcessingModal();
+        }
+      });
+    }
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -625,18 +751,17 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function processar() {
-      const progressBar = document.getElementById("progressBar");
-      const progressFill = document.getElementById("progressFill");
-      const progressText = document.getElementById("progressText");
-      const timerText = document.getElementById("timerText");
-      progressBar.style.display = "block";
-      progressFill.style.width = "0%";
-      progressText.textContent = "";
-      timerText.textContent = "";
-      const startTime = Date.now();
-
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
+
+      if (!pdfFile) {
+        hideProcessingModal();
+        return showMessage("Envie o arquivo PDF.");
+      }
+
+      openProcessingModal();
+
+      const startTime = Date.now();
       const allExtractedItems = [];
       const paginasResumo = [];
       let contadorInicial = null;
@@ -644,383 +769,386 @@ firebase.auth().onAuthStateChanged(async u => {
       let contadorInicializado = false;
       let totalPrevisto = 0;
 
-      if (!pdfFile) {
-        progressBar.style.display = "none";
-        return showMessage("Envie o arquivo PDF.");
-      }
+      try {
+        status.textContent = "📸 Lendo PDF...";
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const novoPdf = await PDFLib.PDFDocument.create();
+        const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
+        const canvas = document.getElementById("pdfCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.style.display = "block";
+        updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-      status.textContent = "📸 Lendo PDF...";
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const novoPdf = await PDFLib.PDFDocument.create();
-      const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.style.display = "block";
-      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
+        for (let i = 0; i < pdf.numPages; i++) {
+          const page = await pdf.getPage(i + 1);
+          const scale = 7;
+          const viewport = page.getViewport({ scale });
 
-      for (let i = 0; i < pdf.numPages; i++) {
-        const page = await pdf.getPage(i + 1);
-        const scale = 7;
-        const viewport = page.getViewport({ scale });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
+          const largura = canvas.width;
+          const altura = canvas.height;
+          const colWidth = largura / 2;
+          const rowHeight = altura / 1.75;
 
-        const largura = canvas.width;
-        const altura = canvas.height;
-        const colWidth = largura / 2;
-        const rowHeight = altura / 1.75;
+          const pares = [
+            { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
+            { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
+          ];
 
-        const pares = [
-          { etiqueta: { x: 0, y: 0 }, checklist: { x: 0, y: rowHeight } },
-          { etiqueta: { x: colWidth, y: 0 }, checklist: { x: colWidth, y: rowHeight } }
-        ];
-
-        if (!contadorInicializado) {
-          totalPrevisto = pdf.numPages * pares.length;
-          if (currentUser) {
-            contadorInicial = await getNextOcrLabelNumber(totalPrevisto);
-            proximoNumeroEtiqueta = contadorInicial;
-          } else {
-            contadorInicial = 1;
-            proximoNumeroEtiqueta = 1;
-          }
-          contadorInicializado = true;
-        }
-
-        for (const par of pares) {
-          const proporcaoEtiqueta = 0.88;
-          const proporcaoChecklist = 0.12;
-
-          const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
-          const alturaChecklist = rowHeight * proporcaoChecklist;
-          const deslocamentoEtiquetaY = 6;
-
-          const etCanvas = document.createElement("canvas");
-          etCanvas.width = colWidth;
-          etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
-          const etCtx = etCanvas.getContext("2d");
-          etCtx.drawImage(
-            canvas,
-            par.etiqueta.x,
-            par.etiqueta.y + deslocamentoEtiquetaY,
-            colWidth,
-            alturaEtiquetaPrincipal - deslocamentoEtiquetaY,
-            0,
-            0,
-            colWidth,
-            alturaEtiquetaPrincipal - deslocamentoEtiquetaY
-          );
-
-          const chkCanvas = document.createElement("canvas");
-          const deslocamentoY = 60;
-          const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100);
-          const scaleChecklist = 7;
-          chkCanvas.width = Math.floor(colWidth * scaleChecklist);
-          chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
-          const chkCtx = chkCanvas.getContext("2d");
-          chkCtx.imageSmoothingEnabled = true;
-          chkCtx.imageSmoothingQuality = 'high';
-          chkCtx.drawImage(
-            canvas,
-            par.checklist.x,
-            par.checklist.y + deslocamentoY,
-            colWidth,
-            novaAlturaChecklist,
-            0,
-            0,
-            chkCanvas.width,
-            chkCanvas.height
-          );
-
-          console.groupCollapsed('[Crop] Parâmetros de corte');
-          console.log({
-            pagina: i + 1,
-            par,
-            colWidth,
-            rowHeight,
-            proporcaoEtiqueta,
-            proporcaoChecklist,
-            alturaEtiquetaPrincipal,
-            alturaChecklist,
-            deslocamentoEtiquetaY,
-            deslocamentoY,
-            novaAlturaChecklist,
-            scaleChecklist
-          });
-          console.groupEnd();
-
-          const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
-          const numeroEtiquetaAtual = proximoNumeroEtiqueta;
-          proximoNumeroEtiqueta++;
-
-          const etiquetaCompletaCanvas = document.createElement("canvas");
-          const paddingX = 0;
-          etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
-          const ajusteVerticalChecklist = 12;
-          etiquetaCompletaCanvas.height =
-            (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
-            ajusteVerticalChecklist;
-
-          const completoCtx = etiquetaCompletaCanvas.getContext("2d");
-          completoCtx.imageSmoothingEnabled = true;
-          completoCtx.imageSmoothingQuality = 'high';
-          completoCtx.drawImage(etCanvas, paddingX, 0);
-
-          const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
-          const imgEmbed = await novoPdf.embedPng(imgBytes);
-
-          const larguraPagina = 293.46;
-          const alturaPagina = 475.2;
-          const scaleFactor = 0.90;
-          const larguraEtiquetaFinal = 277 * scaleFactor;
-          const alturaEtiquetaFinal = 449 * scaleFactor;
-          const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
-          const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
-          const ajusteVertical = 20;
-          const yPos = margemY + ajusteVertical;
-
-          const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
-          pag.drawImage(imgEmbed, {
-            x: margemX,
-            y: yPos,
-            width: larguraEtiquetaFinal,
-            height: alturaEtiquetaFinal,
-          });
-
-          const fallbackItem = extracted?.items && extracted.items[0] ? extracted.items[0] : null;
-          const oneLine = extracted?.footerOneLine
-            ? extracted.footerOneLine
-            : (fallbackItem
-                ? `SKU: ${fallbackItem.sku} | Quantidade: ${fallbackItem.quantidade}`
-                : (extracted?.footerLines ? extracted.footerLines[0] : ''));
-
-          let saveSku = '';
-          let saveQtd = null;
-          let possuiQtd = false;
-          let skuTxt = '';
-          let qtdTxt = '';
-
-          if (oneLine) {
-            const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
-            if (mSku && mSku[1]) {
-              saveSku = mSku[1].trim();
-              if (saveSku) skuTxt = `SKU: ${saveSku}`;
+          if (!contadorInicializado) {
+            totalPrevisto = pdf.numPages * pares.length;
+            if (currentUser) {
+              contadorInicial = await getNextOcrLabelNumber(totalPrevisto);
+              proximoNumeroEtiqueta = contadorInicial;
+            } else {
+              contadorInicial = 1;
+              proximoNumeroEtiqueta = 1;
             }
-            const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
-            if (mQtd && mQtd[1]) {
-              const qtdParse = parseInt(mQtd[1], 10);
-              if (!Number.isNaN(qtdParse)) {
-                saveQtd = qtdParse;
-                possuiQtd = true;
-                qtdTxt = `Quantidade: ${qtdParse}`;
+            contadorInicializado = true;
+          }
+
+          for (const par of pares) {
+            const proporcaoEtiqueta = 0.88;
+            const proporcaoChecklist = 0.12;
+
+            const alturaEtiquetaPrincipal = rowHeight * proporcaoEtiqueta;
+            const alturaChecklist = rowHeight * proporcaoChecklist;
+            const deslocamentoEtiquetaY = 6;
+
+            const etCanvas = document.createElement("canvas");
+            etCanvas.width = colWidth;
+            etCanvas.height = alturaEtiquetaPrincipal - deslocamentoEtiquetaY;
+            const etCtx = etCanvas.getContext("2d");
+            etCtx.drawImage(
+              canvas,
+              par.etiqueta.x,
+              par.etiqueta.y + deslocamentoEtiquetaY,
+              colWidth,
+              alturaEtiquetaPrincipal - deslocamentoEtiquetaY,
+              0,
+              0,
+              colWidth,
+              alturaEtiquetaPrincipal - deslocamentoEtiquetaY
+            );
+
+            const chkCanvas = document.createElement("canvas");
+            const deslocamentoY = 60;
+            const novaAlturaChecklist = Math.max(alturaChecklist - deslocamentoY, 100);
+            const scaleChecklist = 7;
+            chkCanvas.width = Math.floor(colWidth * scaleChecklist);
+            chkCanvas.height = Math.floor(novaAlturaChecklist * scaleChecklist);
+            const chkCtx = chkCanvas.getContext("2d");
+            chkCtx.imageSmoothingEnabled = true;
+            chkCtx.imageSmoothingQuality = 'high';
+            chkCtx.drawImage(
+              canvas,
+              par.checklist.x,
+              par.checklist.y + deslocamentoY,
+              colWidth,
+              novaAlturaChecklist,
+              0,
+              0,
+              chkCanvas.width,
+              chkCanvas.height
+            );
+
+            console.groupCollapsed('[Crop] Parâmetros de corte');
+            console.log({
+              pagina: i + 1,
+              par,
+              colWidth,
+              rowHeight,
+              proporcaoEtiqueta,
+              proporcaoChecklist,
+              alturaEtiquetaPrincipal,
+              alturaChecklist,
+              deslocamentoEtiquetaY,
+              deslocamentoY,
+              novaAlturaChecklist,
+              scaleChecklist
+            });
+            console.groupEnd();
+
+            const extracted = await extractSkuQuantitiesFromCanvas(chkCanvas, { pagina: i + 1, par });
+            const numeroEtiquetaAtual = proximoNumeroEtiqueta;
+            proximoNumeroEtiqueta++;
+
+            const etiquetaCompletaCanvas = document.createElement("canvas");
+            const paddingX = 0;
+            etiquetaCompletaCanvas.width = colWidth + paddingX * 2;
+            const ajusteVerticalChecklist = 12;
+            etiquetaCompletaCanvas.height =
+              (alturaEtiquetaPrincipal - deslocamentoEtiquetaY) +
+              ajusteVerticalChecklist;
+
+            const completoCtx = etiquetaCompletaCanvas.getContext("2d");
+            completoCtx.imageSmoothingEnabled = true;
+            completoCtx.imageSmoothingQuality = 'high';
+            completoCtx.drawImage(etCanvas, paddingX, 0);
+
+            const imgBytes = await fetch(etiquetaCompletaCanvas.toDataURL("image/png")).then(res => res.arrayBuffer());
+            const imgEmbed = await novoPdf.embedPng(imgBytes);
+
+            const larguraPagina = 293.46;
+            const alturaPagina = 475.2;
+            const scaleFactor = 0.90;
+            const larguraEtiquetaFinal = 277 * scaleFactor;
+            const alturaEtiquetaFinal = 449 * scaleFactor;
+            const margemX = (larguraPagina - larguraEtiquetaFinal) / 2;
+            const margemY = (alturaPagina - alturaEtiquetaFinal) / 2;
+            const ajusteVertical = 20;
+            const yPos = margemY + ajusteVertical;
+
+            const pag = novoPdf.addPage([larguraPagina, alturaPagina]);
+            pag.drawImage(imgEmbed, {
+              x: margemX,
+              y: yPos,
+              width: larguraEtiquetaFinal,
+              height: alturaEtiquetaFinal,
+            });
+
+            const fallbackItem = extracted?.items && extracted.items[0] ? extracted.items[0] : null;
+            const oneLine = extracted?.footerOneLine
+              ? extracted.footerOneLine
+              : (fallbackItem
+                  ? `SKU: ${fallbackItem.sku} | Quantidade: ${fallbackItem.quantidade}`
+                  : (extracted?.footerLines ? extracted.footerLines[0] : ''));
+
+            let saveSku = '';
+            let saveQtd = null;
+            let possuiQtd = false;
+            let skuTxt = '';
+            let qtdTxt = '';
+
+            if (oneLine) {
+              const mSku = oneLine.match(/SKU\s*:\s*([^|]+?)(?:\s*\||$)/i);
+              if (mSku && mSku[1]) {
+                saveSku = mSku[1].trim();
+                if (saveSku) skuTxt = `SKU: ${saveSku}`;
+              }
+              const mQtd = oneLine.match(/Quantidade\s*:\s*(\d+)/i);
+              if (mQtd && mQtd[1]) {
+                const qtdParse = parseInt(mQtd[1], 10);
+                if (!Number.isNaN(qtdParse)) {
+                  saveQtd = qtdParse;
+                  possuiQtd = true;
+                  qtdTxt = `Quantidade: ${qtdParse}`;
+                }
               }
             }
-          }
 
-          if (!saveSku && fallbackItem?.sku != null) {
-            const fallbackSku = String(fallbackItem.sku).trim();
-            if (fallbackSku) {
-              saveSku = fallbackSku;
-              skuTxt = `SKU: ${saveSku}`;
+            if (!saveSku && fallbackItem?.sku != null) {
+              const fallbackSku = String(fallbackItem.sku).trim();
+              if (fallbackSku) {
+                saveSku = fallbackSku;
+                skuTxt = `SKU: ${saveSku}`;
+              }
             }
-          }
-          if (!possuiQtd && fallbackItem && fallbackItem.quantidade != null) {
-            const qtdFallback = Number(fallbackItem.quantidade);
-            if (Number.isFinite(qtdFallback)) {
-              saveQtd = qtdFallback;
-              possuiQtd = true;
-              qtdTxt = `Quantidade: ${qtdFallback}`;
+            if (!possuiQtd && fallbackItem && fallbackItem.quantidade != null) {
+              const qtdFallback = Number(fallbackItem.quantidade);
+              if (Number.isFinite(qtdFallback)) {
+                saveQtd = qtdFallback;
+                possuiQtd = true;
+                qtdTxt = `Quantidade: ${qtdFallback}`;
+              }
             }
-          }
 
-          if (saveSku) {
-            allExtractedItems.push({
-              sku: saveSku,
-              quantidade: possuiQtd ? saveQtd : 0,
-              labelNumber: numeroEtiquetaAtual
+            if (saveSku) {
+              allExtractedItems.push({
+                sku: saveSku,
+                quantidade: possuiQtd ? saveQtd : 0,
+                labelNumber: numeroEtiquetaAtual
+              });
+            }
+
+            paginasResumo.push({
+              numero: numeroEtiquetaAtual,
+              sku: saveSku || '',
+              quantidade: possuiQtd ? saveQtd : null
             });
-          }
 
-          paginasResumo.push({
-            numero: numeroEtiquetaAtual,
-            sku: saveSku || '',
-            quantidade: possuiQtd ? saveQtd : null
-          });
+            const numeroTxt = `Etiqueta Nº: ${numeroEtiquetaAtual}`;
+            const linhasRodape = [];
+            if (skuTxt) linhasRodape.push(skuTxt);
+            if (possuiQtd && qtdTxt) linhasRodape.push(qtdTxt);
+            linhasRodape.push(numeroTxt);
 
-          const numeroTxt = `Etiqueta Nº: ${numeroEtiquetaAtual}`;
-          const linhasRodape = [];
-          if (skuTxt) linhasRodape.push(skuTxt);
-          if (possuiQtd && qtdTxt) linhasRodape.push(qtdTxt);
-          linhasRodape.push(numeroTxt);
+            const fontSize = 9.5;
+            const lineGap = 2;
+            const padding = 4;
+            const blocoAltura = (fontSize + lineGap) * linhasRodape.length + padding * 2;
+            let footerY = yPos - blocoAltura - 2;
+            if (footerY < 2) footerY = yPos;
 
-          const fontSize = 9.5;
-          const lineGap = 2;
-          const padding = 4;
-          const blocoAltura = (fontSize + lineGap) * linhasRodape.length + padding * 2;
-          let footerY = yPos - blocoAltura - 2;
-          if (footerY < 2) footerY = yPos;
-
-          pag.drawRectangle({
-            x: margemX,
-            y: footerY,
-            width: larguraEtiquetaFinal,
-            height: blocoAltura,
-            color: PDFLib.rgb(1, 1, 1)
-          });
-
-          for (let li = 0; li < linhasRodape.length; li++) {
-            pag.drawText(linhasRodape[li], {
-              x: margemX + 6,
-              y: footerY + padding + li * (fontSize + lineGap),
-              size: fontSize,
-              font: rodapeFont,
-              color: PDFLib.rgb(0, 0, 0)
+            pag.drawRectangle({
+              x: margemX,
+              y: footerY,
+              width: larguraEtiquetaFinal,
+              height: blocoAltura,
+              color: PDFLib.rgb(1, 1, 1)
             });
-          }
+
+            for (let li = 0; li < linhasRodape.length; li++) {
+              pag.drawText(linhasRodape[li], {
+                x: margemX + 6,
+                y: footerY + padding + li * (fontSize + lineGap),
+                size: fontSize,
+                font: rodapeFont,
+                color: PDFLib.rgb(0, 0, 0)
+              });
+            }
         }
       }
 
-      progressFill.style.width = "100%";
-      progressText.textContent = "✅ Concluído!";
-      const totalTime = Math.round((Date.now() - startTime) / 1000);
-      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
-      setTimeout(() => {
-        progressBar.style.display = "none";
-      }, 2000);
+        progressFill.style.width = "100%";
+        progressText.textContent = "Processamento concluído (100%)";
+        const totalTime = Math.round((Date.now() - startTime) / 1000);
+        timerText.textContent = `Tempo decorrido: ${formatTime(totalTime)}`;
 
-      const pdfFinal = await novoPdf.save();
-      const blob = new Blob([pdfFinal], { type: "application/pdf" });
-      const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
-      const localUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = localUrl;
-      a.download = fileName;
-      a.click();
+        const pdfFinal = await novoPdf.save();
+        const blob = new Blob([pdfFinal], { type: "application/pdf" });
+        const fileName = `etiquetas_editadas_${Date.now()}.pdf`;
+        const localUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = localUrl;
+        a.download = fileName;
+        a.click();
 
-      const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
-      const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
-      status.textContent = "📤 Enviando ao servidor...";
-      uploadPdfToFirebase(blob, fileName, allExtractedItems, {
-        totalPaginas: totalPaginasGeradas,
-        paginasResumo,
-        contadorInicial: contadorInicializado ? contadorInicial : null,
-        contadorFinal
-      })
-        .then(() => {
+        const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
+        const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
+        status.textContent = "📤 Enviando ao servidor...";
+        try {
+          await uploadPdfToFirebase(blob, fileName, allExtractedItems, {
+            totalPaginas: totalPaginasGeradas,
+            paginasResumo,
+            contadorInicial: contadorInicializado ? contadorInicial : null,
+            contadorFinal
+          });
           status.textContent = "✅ PDF gerado com sucesso! Concluído.";
-        })
-        .catch(() => {
+          const finalTime = Math.round((Date.now() - startTime) / 1000);
+          completeProcessingModal(finalTime);
+        } catch (err) {
+          console.error('Erro ao enviar PDF gerado:', err);
           status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
-        });
+          failProcessingModal('Não foi possível salvar o arquivo final. Tente novamente.');
+        }
+      } catch (err) {
+        console.error('Erro no processamento de etiquetas:', err);
+        status.textContent = "⚠️ Ocorreu um erro durante o processamento das etiquetas.";
+        failProcessingModal('O processamento falhou. Verifique o arquivo e tente novamente.');
+      }
     }
 
     window.processar = processar;
     async function processarMercadoLivre() {
-      const progressBar = document.getElementById("progressBar");
-      const progressFill = document.getElementById("progressFill");
-      const progressText = document.getElementById("progressText");
-      const timerText = document.getElementById("timerText");
-      progressBar.style.display = "block";
-      progressFill.style.width = "0%";
-      progressText.textContent = "";
-      timerText.textContent = "";
-      const startTime = Date.now();
-
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
+
       if (!pdfFile) {
-        progressBar.style.display = "none";
+        hideProcessingModal();
         return showMessage("Envie o arquivo PDF.");
       }
 
-      status.textContent = "📸 Lendo PDF Mercado Livre...";
-      const arrayBuffer = await pdfFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.style.display = "block";
-      const allItems = [];
-      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
+      openProcessingModal();
+      const startTime = Date.now();
 
-      for (let i = 0; i < pdf.numPages; i++) {
-        const page = await pdf.getPage(i + 1);
-        const scale = 3;
-        const viewport = page.getViewport({ scale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
-        const data = await extractMercadoLivreData(canvas);
-        if (data.sku) allItems.push(data);
-      }
+      try {
+        status.textContent = "📸 Lendo PDF Mercado Livre...";
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const canvas = document.getElementById("pdfCanvas");
+        const ctx = canvas.getContext("2d");
+        canvas.style.display = "block";
+        const allItems = [];
+        updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-      progressFill.style.width = "100%";
-      progressText.textContent = "✅ Concluído!";
-      const totalTime = Math.round((Date.now() - startTime) / 1000);
-      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
-      setTimeout(() => { progressBar.style.display = "none"; }, 2000);
+        for (let i = 0; i < pdf.numPages; i++) {
+          const page = await pdf.getPage(i + 1);
+          const scale = 3;
+          const viewport = page.getViewport({ scale });
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
+          const data = await extractMercadoLivreData(canvas);
+          if (data.sku) allItems.push(data);
+        }
 
-      if (currentUser) {
-        const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-        const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-        const fileName = `mercado_livre_${Date.now()}.pdf`;
-        const selecionado = await escolherGestorEmail(gestoresEmails);
-        const docRef = await db.collection('pdfDocs').add({
-          ownerUid: currentUser.uid,
-          ownerEmail: currentUser.email,
-          gestoresExpedicaoEmails: selecionado,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          name: fileName,
-          foraHorario: foraDoHorario()
-        });
-        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-        await fileRef.put(pdfFile);
-        const url = await fileRef.getDownloadURL();
-        await docRef.update({ url: url, storagePath: fileRef.fullPath });
-        const record = {
-          name: fileName,
-          url: url,
-          path: fileRef.fullPath,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-        if (responsavelExpedicaoUid) {
-          const respRecord = {
+        progressFill.style.width = "100%";
+        progressText.textContent = "Processamento concluído (100%)";
+        const totalTime = Math.round((Date.now() - startTime) / 1000);
+        timerText.textContent = `Tempo decorrido: ${formatTime(totalTime)}`;
+
+        status.textContent = "📤 Enviando ao servidor...";
+        if (currentUser) {
+          const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+          const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+          const fileName = `mercado_livre_${Date.now()}.pdf`;
+          const selecionado = await escolherGestorEmail(gestoresEmails);
+          const docRef = await db.collection('pdfDocs').add({
+            ownerUid: currentUser.uid,
+            ownerEmail: currentUser.email,
+            gestoresExpedicaoEmails: selecionado,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            name: fileName,
+            foraHorario: foraDoHorario()
+          });
+          const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+          await fileRef.put(pdfFile);
+          const url = await fileRef.getDownloadURL();
+          await docRef.update({ url: url, storagePath: fileRef.fullPath });
+          const record = {
             name: fileName,
             url: url,
             path: fileRef.fullPath,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
-          await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+          await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+          if (responsavelExpedicaoUid) {
+            const respRecord = {
+              name: fileName,
+              url: url,
+              path: fileRef.fullPath,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
+          }
+          if (
+            window.ExpedicaoNotifier &&
+            typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+          ) {
+            await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+              db,
+              firebase,
+              currentUser,
+              destinatarioEmails: selecionado,
+              destinatarioUids: responsavelExpedicaoUid
+                ? [responsavelExpedicaoUid]
+                : [],
+              arquivoNome: fileName,
+              totalEtiquetas: allItems.length,
+              foraHorario: foraDoHorario(),
+              origem: 'Etiquetas Mercado Livre',
+              pdfDocId: docRef.id,
+            });
+          }
         }
-        if (
-          window.ExpedicaoNotifier &&
-          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
-        ) {
-          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
-            db,
-            firebase,
-            currentUser,
-            destinatarioEmails: selecionado,
-            destinatarioUids: responsavelExpedicaoUid
-              ? [responsavelExpedicaoUid]
-              : [],
-            arquivoNome: fileName,
-            totalEtiquetas: allItems.length,
-            foraHorario: foraDoHorario(),
-            origem: 'Etiquetas Mercado Livre',
-            pdfDocId: docRef.id,
-          });
-        }
-      }
 
-      await savePrintedSkuQuantities(allItems);
-      status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
+        await savePrintedSkuQuantities(allItems);
+        status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
+        const finalTime = Math.round((Date.now() - startTime) / 1000);
+        completeProcessingModal(finalTime);
+      } catch (err) {
+        console.error('Erro no processamento Mercado Livre:', err);
+        status.textContent = "⚠️ Não foi possível processar as etiquetas do Mercado Livre.";
+        failProcessingModal('Não foi possível salvar o arquivo do Mercado Livre. Tente novamente.');
+      }
     }
 
     window.processarMercadoLivre = processarMercadoLivre;
