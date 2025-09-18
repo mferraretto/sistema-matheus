@@ -174,6 +174,19 @@
     const equipeUsuarios = new Map();
     let checklistRows = [];
 
+    const CARD_STATUS_CLASS_MAP = {
+      nao_impresso: 'expedicao-pdf-card--pending',
+      impresso: 'expedicao-pdf-card--printed',
+      concluido: 'expedicao-pdf-card--done'
+    };
+    const CARD_STATUS_CLASSES = Object.values(CARD_STATUS_CLASS_MAP);
+
+    function applyPdfCardStatus(card, status) {
+      if (!card) return;
+      card.classList.remove(...CARD_STATUS_CLASSES);
+      card.classList.add(CARD_STATUS_CLASS_MAP[status] || CARD_STATUS_CLASS_MAP.nao_impresso);
+    }
+
     function getResumoTimeWindow() {
       const now = new Date();
       const end = new Date(now);
@@ -1458,8 +1471,7 @@
       }
       await db.collection('pdfDocs').doc(id).update({ status: checked ? 'impresso' : 'nao_impresso' });
       if (card) {
-        card.classList.remove('expedicao-pdf-card--pending', 'expedicao-pdf-card--printed', 'expedicao-pdf-card--done');
-        card.classList.add(checked ? 'expedicao-pdf-card--printed' : 'expedicao-pdf-card--pending');
+        applyPdfCardStatus(card, checked ? 'impresso' : 'nao_impresso');
         card.dataset.status = checked ? 'impresso' : 'nao_impresso';
       }
       showToast('Status atualizado');
@@ -1525,7 +1537,10 @@
       }
 
       showToast('Status atualizado');
-      if (card) card.dataset.status = newStatus;
+      if (card) {
+        applyPdfCardStatus(card, newStatus);
+        card.dataset.status = newStatus;
+      }
       if (newStatus === 'impresso' && previousStatus !== 'impresso') {
         await notifyEtiquetaStatusChange({ id, newStatus: 'impresso', card });
       }
@@ -1546,10 +1561,13 @@
         badge.textContent = statusInfo[newStatus].text;
         badge.className = `status-badge text-xs text-white px-2 py-0.5 rounded-full ${statusInfo[newStatus].color}`;
       }
+      if (card) {
+        applyPdfCardStatus(card, newStatus);
+        card.dataset.status = newStatus;
+      }
       if (newStatus === 'concluido' && currentFilter === 'all') {
         card.remove();
       }
-      if (card) card.dataset.status = newStatus;
       showToast('Status atualizado');
       if (['impresso', 'concluido'].includes(newStatus) && previousStatus !== newStatus) {
         await notifyEtiquetaStatusChange({ id, newStatus, card });
