@@ -43,14 +43,6 @@
       0% { background-position: 0% 0; }
       100% { background-position: -200% 0; }
     }
-    .progress-bar-fill.progress-complete {
-      background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
-      animation: none;
-    }
-    .progress-bar-fill.progress-error {
-      background: linear-gradient(90deg, #EF4444 0%, #F97316 100%);
-      animation: none;
-    }
     #timerText {
       font-size: 0.875rem;
       color: #374151;
@@ -58,61 +50,6 @@
     }
     #status {
       min-height: 2rem;
-    }
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(17, 24, 39, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      z-index: 9999;
-    }
-    .modal-content {
-      background: #ffffff;
-      border-radius: 0.75rem;
-      width: 100%;
-      max-width: 28rem;
-      padding: 1.75rem 1.5rem;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
-      border: 2px solid transparent;
-      transition: all 0.3s ease;
-    }
-    .modal-content.modal-success {
-      background: #ecfdf5;
-      border-color: #34d399;
-      color: #065f46;
-    }
-    .modal-content.modal-error {
-      background: #fef2f2;
-      border-color: #f87171;
-      color: #991b1b;
-    }
-    .processing-alert {
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: #1f2937;
-    }
-    .modal-content.modal-success .processing-alert {
-      color: #047857;
-    }
-    .modal-content.modal-error .processing-alert {
-      color: #b91c1c;
-    }
-    .modal-close {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 1.25rem;
-      border-radius: 9999px;
-      font-weight: 600;
-      background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-      color: #ffffff;
-      transition: filter 0.2s ease;
-    }
-    .modal-close:hover {
-      filter: brightness(1.05);
     }
   </style>
 </head>
@@ -148,6 +85,15 @@
       Etiquetas Mercado Livre
     </button>
 
+    <div class="mt-6">
+      <div class="progress-bar-bg" id="progressBar" style="display:none;">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%;">
+          <span id="progressText" class="w-full text-center"></span>
+        </div>
+      </div>
+      <div id="timerText" class="text-center text-sm text-gray-700 mt-2"></div>
+    </div>
+
     <div class="status mt-4 text-blue-700 font-medium" id="status"></div>
     <canvas id="pdfCanvas" class="mt-8 mx-auto border rounded-lg shadow" style="display:none;max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,0.04);"></canvas>
     <div class="flex justify-center mt-8">
@@ -166,29 +112,6 @@
     </div>
   </div>
 
-  <div id="processingModal" class="modal-overlay hidden">
-    <div id="processingModalContent" class="modal-content">
-      <div class="flex items-start gap-3 mb-3">
-        <div class="text-3xl text-blue-500" id="processingIconWrapper">
-          <i id="processingIcon" class="fa-solid fa-gear fa-spin"></i>
-        </div>
-        <div>
-          <h3 id="processingTitle" class="text-xl font-semibold text-gray-800">Processando etiquetas</h3>
-          <p id="processingAlertText" class="processing-alert mt-1">Por favor, não feche a página durante o processamento.</p>
-        </div>
-      </div>
-      <div class="progress-bar-bg" id="progressBar" style="display:none;">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%;">
-          <span id="progressText" class="w-full text-center"></span>
-        </div>
-      </div>
-      <div id="timerText" class="text-center text-sm text-gray-700 mt-3"></div>
-      <div class="flex justify-end mt-6">
-        <button id="processingClose" class="modal-close hidden">Fechar</button>
-      </div>
-    </div>
-  </div>
-
       <script type="module">
     import { firebaseConfig } from './firebase-config.js';
 
@@ -202,69 +125,6 @@
     let currentUser = null;
     let responsavelExpedicaoUid = null;
     let horariosEtiquetas = [];
-    const progressBar = document.getElementById('progressBar');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const timerText = document.getElementById('timerText');
-    const processingModal = document.getElementById('processingModal');
-    const processingModalContent = document.getElementById('processingModalContent');
-    const processingTitle = document.getElementById('processingTitle');
-    const processingAlertText = document.getElementById('processingAlertText');
-    const processingClose = document.getElementById('processingClose');
-    const processingIcon = document.getElementById('processingIcon');
-    const processingIconWrapper = document.getElementById('processingIconWrapper');
-
-    function openProcessingModal(title = 'Processando etiquetas') {
-      processingModal.classList.remove('hidden');
-      processingModalContent.classList.remove('modal-success', 'modal-error');
-      processingTitle.textContent = title;
-      processingAlertText.textContent = 'Por favor, não feche a página durante o processamento.';
-      progressBar.style.display = 'block';
-      progressFill.style.width = '0%';
-      progressFill.classList.remove('progress-complete', 'progress-error');
-      progressText.textContent = '';
-      timerText.textContent = '';
-      processingClose.classList.add('hidden');
-      processingIcon.className = 'fa-solid fa-gear fa-spin';
-      processingIconWrapper.classList.remove('text-green-500', 'text-red-500');
-      processingIconWrapper.classList.add('text-blue-500');
-    }
-
-    function markProcessingSuccess(message = 'Arquivo salvo com sucesso! Você já pode fechar esta janela.') {
-      processingModalContent.classList.remove('modal-error');
-      processingModalContent.classList.add('modal-success');
-      processingTitle.textContent = 'Processamento concluído';
-      processingAlertText.textContent = message;
-      progressFill.classList.add('progress-complete');
-      processingClose.classList.remove('hidden');
-      processingIcon.className = 'fa-solid fa-circle-check';
-      processingIconWrapper.classList.remove('text-blue-500', 'text-red-500');
-      processingIconWrapper.classList.add('text-green-500');
-    }
-
-    function markProcessingError(message = 'Não foi possível concluir o processamento. Tente novamente.') {
-      processingModalContent.classList.remove('modal-success');
-      processingModalContent.classList.add('modal-error');
-      processingTitle.textContent = 'Ocorreu um erro';
-      processingAlertText.textContent = message;
-      progressFill.classList.add('progress-error');
-      processingClose.classList.remove('hidden');
-      processingIcon.className = 'fa-solid fa-triangle-exclamation';
-      processingIconWrapper.classList.remove('text-blue-500', 'text-green-500');
-      processingIconWrapper.classList.add('text-red-500');
-    }
-
-    function closeProcessingModal() {
-      processingModal.classList.add('hidden');
-      progressBar.style.display = 'none';
-    }
-
-    processingClose.addEventListener('click', closeProcessingModal);
-    processingModal.addEventListener('click', event => {
-      if (event.target === processingModal && !processingClose.classList.contains('hidden')) {
-        closeProcessingModal();
-      }
-    });
 
     function escolherGestorEmail(emails) {
       return new Promise(resolve => {
@@ -765,26 +625,32 @@ firebase.auth().onAuthStateChanged(async u => {
     }
 
     async function processar() {
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      const timerText = document.getElementById("timerText");
+      progressBar.style.display = "block";
+      progressFill.style.width = "0%";
+      progressText.textContent = "";
+      timerText.textContent = "";
+      const startTime = Date.now();
+
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
-
-      if (!pdfFile) {
-        return showMessage("Envie o arquivo PDF.");
-      }
-
-      openProcessingModal('Processando etiquetas Shopee');
-      const startTime = Date.now();
       const allExtractedItems = [];
       const paginasResumo = [];
       let contadorInicial = null;
       let proximoNumeroEtiqueta = 1;
       let contadorInicializado = false;
       let totalPrevisto = 0;
-      let uploadIniciado = false;
 
-      try {
-        status.textContent = "📸 Lendo PDF...";
-        const arrayBuffer = await pdfFile.arrayBuffer();
+      if (!pdfFile) {
+        progressBar.style.display = "none";
+        return showMessage("Envie o arquivo PDF.");
+      }
+
+      status.textContent = "📸 Lendo PDF...";
+      const arrayBuffer = await pdfFile.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const novoPdf = await PDFLib.PDFDocument.create();
       const rodapeFont = await novoPdf.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -1020,9 +886,12 @@ firebase.auth().onAuthStateChanged(async u => {
       }
 
       progressFill.style.width = "100%";
-      const processamentoTotal = Math.round((Date.now() - startTime) / 1000);
-      progressText.textContent = "Gerando arquivo final...";
-      timerText.textContent = `Processamento em: ${formatTime(processamentoTotal)}. Salvando arquivo...`;
+      progressText.textContent = "✅ Concluído!";
+      const totalTime = Math.round((Date.now() - startTime) / 1000);
+      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
+      setTimeout(() => {
+        progressBar.style.display = "none";
+      }, 2000);
 
       const pdfFinal = await novoPdf.save();
       const blob = new Blob([pdfFinal], { type: "application/pdf" });
@@ -1036,133 +905,122 @@ firebase.auth().onAuthStateChanged(async u => {
       const contadorFinal = contadorInicializado ? (proximoNumeroEtiqueta - 1) : null;
       const totalPaginasGeradas = paginasResumo.length || totalPrevisto;
       status.textContent = "📤 Enviando ao servidor...";
-      uploadIniciado = true;
-      await uploadPdfToFirebase(blob, fileName, allExtractedItems, {
+      uploadPdfToFirebase(blob, fileName, allExtractedItems, {
         totalPaginas: totalPaginasGeradas,
         paginasResumo,
         contadorInicial: contadorInicializado ? contadorInicial : null,
         contadorFinal
-      });
-      status.textContent = "✅ PDF gerado com sucesso! Concluído.";
-      progressText.textContent = "✅ Concluído!";
-      timerText.textContent = `Concluído em: ${formatTime(Math.round((Date.now() - startTime) / 1000))}`;
-      markProcessingSuccess('Arquivo final salvo com sucesso!');
-      } catch (error) {
-        console.error('Erro durante o processamento de etiquetas:', error);
-        if (uploadIniciado) {
+      })
+        .then(() => {
+          status.textContent = "✅ PDF gerado com sucesso! Concluído.";
+        })
+        .catch(() => {
           status.textContent = "⚠️ PDF gerado, mas houve erro no envio.";
-          markProcessingError('Não foi possível salvar o arquivo no servidor. Verifique e tente novamente.');
-        } else {
-          status.textContent = '⚠️ Ocorreu um erro ao processar o PDF.';
-          markProcessingError('Não foi possível concluir o processamento. Tente novamente.');
-        }
-      }
+        });
     }
 
     window.processar = processar;
     async function processarMercadoLivre() {
+      const progressBar = document.getElementById("progressBar");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      const timerText = document.getElementById("timerText");
+      progressBar.style.display = "block";
+      progressFill.style.width = "0%";
+      progressText.textContent = "";
+      timerText.textContent = "";
+      const startTime = Date.now();
+
       const status = document.getElementById("status");
       const pdfFile = document.getElementById("pdfInput").files[0];
-
       if (!pdfFile) {
+        progressBar.style.display = "none";
         return showMessage("Envie o arquivo PDF.");
       }
 
-      openProcessingModal('Processando etiquetas Mercado Livre');
-      const startTime = Date.now();
+      status.textContent = "📸 Lendo PDF Mercado Livre...";
+      const arrayBuffer = await pdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.style.display = "block";
       const allItems = [];
+      updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
 
-      try {
-        status.textContent = "📸 Lendo PDF Mercado Livre...";
-        const arrayBuffer = await pdfFile.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const canvas = document.getElementById("pdfCanvas");
-        const ctx = canvas.getContext("2d");
-        canvas.style.display = "block";
-        updateProgress(0, pdf.numPages, startTime, progressFill, progressText, timerText);
+      for (let i = 0; i < pdf.numPages; i++) {
+        const page = await pdf.getPage(i + 1);
+        const scale = 3;
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
+        const data = await extractMercadoLivreData(canvas);
+        if (data.sku) allItems.push(data);
+      }
 
-        for (let i = 0; i < pdf.numPages; i++) {
-          const page = await pdf.getPage(i + 1);
-          const scale = 3;
-          const viewport = page.getViewport({ scale });
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          await page.render({ canvasContext: ctx, viewport }).promise;
-          updateProgress(i + 1, pdf.numPages, startTime, progressFill, progressText, timerText);
-          const data = await extractMercadoLivreData(canvas);
-          if (data.sku) allItems.push(data);
-        }
+      progressFill.style.width = "100%";
+      progressText.textContent = "✅ Concluído!";
+      const totalTime = Math.round((Date.now() - startTime) / 1000);
+      timerText.textContent = `Concluído em: ${formatTime(totalTime)}`;
+      setTimeout(() => { progressBar.style.display = "none"; }, 2000);
 
-        progressFill.style.width = "100%";
-        const tempoProcessamento = Math.round((Date.now() - startTime) / 1000);
-        progressText.textContent = "Gerando resumo de etiquetas...";
-        timerText.textContent = `Processamento em: ${formatTime(tempoProcessamento)}. Salvando arquivo...`;
-
-        if (currentUser) {
-          status.textContent = "📤 Enviando ao servidor...";
-          const gestoresRaw = document.getElementById('gestoresEmails').value || '';
-          const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
-          const fileName = `mercado_livre_${Date.now()}.pdf`;
-          const selecionado = await escolherGestorEmail(gestoresEmails);
-          const docRef = await db.collection('pdfDocs').add({
-            ownerUid: currentUser.uid,
-            ownerEmail: currentUser.email,
-            gestoresExpedicaoEmails: selecionado,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            name: fileName,
-            foraHorario: foraDoHorario()
-          });
-          const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
-          await fileRef.put(pdfFile);
-          const url = await fileRef.getDownloadURL();
-          await docRef.update({ url: url, storagePath: fileRef.fullPath });
-          const record = {
+      if (currentUser) {
+        const gestoresRaw = document.getElementById('gestoresEmails').value || '';
+        const gestoresEmails = gestoresRaw.split(',').map(e => e.trim()).filter(e => e);
+        const fileName = `mercado_livre_${Date.now()}.pdf`;
+        const selecionado = await escolherGestorEmail(gestoresEmails);
+        const docRef = await db.collection('pdfDocs').add({
+          ownerUid: currentUser.uid,
+          ownerEmail: currentUser.email,
+          gestoresExpedicaoEmails: selecionado,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          name: fileName,
+          foraHorario: foraDoHorario()
+        });
+        const fileRef = storage.ref().child(`pdfs/${currentUser.uid}/${docRef.id}.pdf`);
+        await fileRef.put(pdfFile);
+        const url = await fileRef.getDownloadURL();
+        await docRef.update({ url: url, storagePath: fileRef.fullPath });
+        const record = {
+          name: fileName,
+          url: url,
+          path: fileRef.fullPath,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
+        if (responsavelExpedicaoUid) {
+          const respRecord = {
             name: fileName,
             url: url,
             path: fileRef.fullPath,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           };
-          await db.collection('users').doc(currentUser.uid).collection('etiquetaenvio').add({ ...record });
-          if (responsavelExpedicaoUid) {
-            const respRecord = {
-              name: fileName,
-              url: url,
-              path: fileRef.fullPath,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
-          }
-          if (
-            window.ExpedicaoNotifier &&
-            typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
-          ) {
-            await window.ExpedicaoNotifier.notifyNovaEtiqueta({
-              db,
-              firebase,
-              currentUser,
-              destinatarioEmails: selecionado,
-              destinatarioUids: responsavelExpedicaoUid
-                ? [responsavelExpedicaoUid]
-                : [],
-              arquivoNome: fileName,
-              totalEtiquetas: allItems.length,
-              foraHorario: foraDoHorario(),
-              origem: 'Etiquetas Mercado Livre',
-              pdfDocId: docRef.id,
-            });
-          }
+          await db.collection('users').doc(responsavelExpedicaoUid).collection('etiquetaenvio').add({ ...respRecord });
         }
-
-        await savePrintedSkuQuantities(allItems);
-        status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
-        progressText.textContent = "✅ Concluído!";
-        timerText.textContent = `Concluído em: ${formatTime(Math.round((Date.now() - startTime) / 1000))}`;
-        markProcessingSuccess('Arquivo final salvo com sucesso!');
-      } catch (error) {
-        console.error('Erro durante o processamento de etiquetas Mercado Livre:', error);
-        status.textContent = '⚠️ Não foi possível processar as etiquetas do Mercado Livre.';
-        markProcessingError('Não foi possível concluir o processamento. Tente novamente.');
+        if (
+          window.ExpedicaoNotifier &&
+          typeof window.ExpedicaoNotifier.notifyNovaEtiqueta === 'function'
+        ) {
+          await window.ExpedicaoNotifier.notifyNovaEtiqueta({
+            db,
+            firebase,
+            currentUser,
+            destinatarioEmails: selecionado,
+            destinatarioUids: responsavelExpedicaoUid
+              ? [responsavelExpedicaoUid]
+              : [],
+            arquivoNome: fileName,
+            totalEtiquetas: allItems.length,
+            foraHorario: foraDoHorario(),
+            origem: 'Etiquetas Mercado Livre',
+            pdfDocId: docRef.id,
+          });
+        }
       }
+
+      await savePrintedSkuQuantities(allItems);
+      status.textContent = "✅ Etiquetas Mercado Livre processadas! Concluído.";
     }
 
     window.processarMercadoLivre = processarMercadoLivre;
